@@ -12,6 +12,11 @@ modeling :
 - only creating an evidence entry if there is some evidence, might be faster to always create use the next sequence value and set it in the row, then in the future the evidence can be altered without the row needing an evidence ID added to it.
 - see more on modeling at "Model discussion" below
 
+questions about modeling data extraction structure :
+- Timestamps to everything with curator, or not.
+- Denormalization.  We're trying to avoid it, but we're already doing it for things like Brief_citation, which is an aggregate of multiple fields, presumably done for speed of access for web display (?)
+- Indexing mapping of IDs to names for web display.  Naively I would think that a place to look up mappings of IDs to names would be useful (if I'm wrong then ignore this), but for data with multiple names like WBGene, do we want to always display the same convereted name, or depending on the context is it better to use CGC / Sequence / Public ?  If these cases are few is it better to treat them as exceptions ?
+
 
 scripts :
 
