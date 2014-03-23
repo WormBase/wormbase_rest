@@ -15,7 +15,11 @@ modeling :
 questions about modeling data extraction structure :
 - Timestamps to everything with curator, or not.
 - Denormalization.  We're trying to avoid it, but we're already doing it for things like Brief_citation, which is an aggregate of multiple fields, presumably done for speed of access for web display (?)
+- Does it ever make sense to do curation through the page that gets displayed on the website ?  If the data is normalized, some data on the display page is showing relationships that are inferred and not directly editable (like in the Gene page editing a connection to Phenotype, which would require editing the annotation to RNAi and then going to the RNAi page to edit relationship to Phenotype.  Should the editing of RNAi-Phenotype through Gene also change the associated pages affected by the changing RNAi-Phenotype relationship ?)
 - Indexing mapping of IDs to names for web display.  Naively I would think that a place to look up mappings of IDs to names would be useful (if I'm wrong then ignore this), but for data with multiple names like WBGene, do we want to always display the same convereted name, or depending on the context is it better to use CGC / Sequence / Public ?  If these cases are few is it better to treat them as exceptions ?
+- Should we map all objects to object IDs, and have a standard field for name to display ?
+- Do we care about searching for data that is currently in hashes to get objects associated to them ?
+- If data for curation is too complicated to model in an efficient way to display, should we have a translation layer ?  If so, should Caltech curation DB that has more data not needed in WS skip directly through translation layer ?
 
 
 scripts :
