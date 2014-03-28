@@ -1,183 +1,35 @@
-full files, including source files and various test outputs at :
-  http://mangolassi.caltech.edu/~azurebrd/work/yace/
+source files in ace_source/
 
+different database schemas in yaceA/ yaceB/ etc.
 
-modeling :
-- creating all tables with the same structure for simplicity.
-- author data must be ordered, so creating all tables with structure 'joinkey', 'sort order', 'data', 'pointer to evidence id'
-- - if order is meaningless set value to 1
-- each .ace Class maps to a 3-letter datatype prefix shortcut in postgres to associate related tables with this prefix
-- if all objects don't have a required field, will probably need a table to keep track of objects that exist.
-- data that maps directly to a .ace #Evidence maps to a table whose data is the name of the object (like ?Paper has Abstract that points at LongText)
-- only creating an evidence entry if there is some evidence, might be faster to always create use the next sequence value and set it in the row, then in the future the evidence can be altered without the row needing an evidence ID added to it.
-- see more on modeling at "Model discussion" below
+scripts in yace*/bin/
 
-questions about modeling data extraction structure :
-- Timestamps to everything with curator, or not.
-- Denormalization.  We're trying to avoid it, but we're already doing it for things like Brief_citation, which is an aggregate of multiple fields, presumably done for speed of access for web display (?)
-- Does it ever make sense to do curation through the page that gets displayed on the website ?  If the data is normalized, some data on the display page is showing relationships that are inferred and not directly editable (like in the Gene page editing a connection to Phenotype, which would require editing the annotation to RNAi and then going to the RNAi page to edit relationship to Phenotype.  Should the editing of RNAi-Phenotype through Gene also change the associated pages affected by the changing RNAi-Phenotype relationship ?)
-- Indexing mapping of IDs to names for web display.  Naively I would think that a place to look up mappings of IDs to names would be useful (if I'm wrong then ignore this), but for data with multiple names like WBGene, do we want to always display the same convereted name, or depending on the context is it better to use CGC / Sequence / Public ?  If these cases are few is it better to treat them as exceptions ?
-- Should we map all objects to object IDs, and have a standard field for name to display ?
-- Do we care about searching for data that is currently in hashes to get objects associated to them ?
-- If data for curation is too complicated to model in an efficient way to display, should we have a translation layer ?  If so, should Caltech curation DB that has more data not needed in WS skip directly through translation layer ?
+schema documentation in yace*/postgresql_autodoc/
 
+yaceB :
+- normalized database with constraints, primary keys, foreign keys, serial IDs, junction tables.
+- curator and timestamp columns for all tables.
+- direction of data entered in acedb via XREF ignored.  hash data from both directions merged.
+- all tables searchable to traverse to any related table.
+cons :
+- does not maintain the direction data is entered in acedb.  if objA-objB-hashA should be different from objB-objA-hashB, a new set of tables will need to be created to differentiate them.
+- parser does not parse existing curators and timestamps into appropriate column, but could in the future.
+- lots of tables, presumably slow retrieval.
 
-scripts :
+yaceA :
+- a direct mapping of acedb table-tags to postgres tables.
+- no constraints, tables that map to the same ace object have the same 3-letter prefix in their name, and the same joinkey in the joinkey column.
+- all data parsed to be ordered, order stored in order column.
+- evidence hash treated as an object with other tables pointing to object key, each evidence tag is its own table.
+- all data parsed to have an evidence in the evidence column, but no value is assigned unless some type of evidence exists.
+- all tables have the same structure, keeping things simple.
+- data is entered in both directions from acedb XREF, supporting objA-objB-hashA + objB-objA-hashB (different hash connections in different direction)
+cons :
+- no timestamp nor curator column.
+- xref data entered twice in separate tables to account for different hashes in different direction.
+- does not support searching evidence to get back to the object-tag that references it.
+- order is not a standard attribute of ace objects, so wasted column for the most part.
+- does not follow normalized database standards.
+- lots of tables, presumably slow retrieval.
 
-populate_yaceA.pl
-- create 1609170 rows, update 247743 sequence (evidence)
-- 15 minutes to process data without touching postgres
-- 4 hours 16 min 40 sec to run with perl DBI INSERT commands (15:09:51 to 19:26:31)
-- 15 minutes 51 sec to write and copy (21:16:22 to 21:33:13)
-- 66 seconds to copy data to tables with psql from command line
-- 66Mb (68267574) size postgres dump
-- parser is stripping all backslashes, should find out which characters are escaped, and only remove backslashes from those.
-
-concise updates :
-script update_yaceA_concise.pl
-updating 10000 times took 89.4767119884491 seconds
-updating 10000 times took 86.3572800159454 seconds
-updating 10000 times took 88.3166408538818 seconds
-process :
-- get all genes with concise description
-- 10000 times choose one randomly and perl DBI update table gin_concise_description changing data column by joinkey of WBGeneID
-
-gene updates :
-script update_yaceA_geneRnaiPhenotype.pl
-creating 10000 updates with 60000 table changes took 589.331768035889 seconds
-creating 10000 updates with 60000 table changes took 562.089204072952 seconds
-creating 10000 updates with 60000 table changes took 589.936491966248 seconds
-- each annotation has 6 table row entries
-- - forward and backward phenotype-rnai
-- - forward and backward gene-rnai, each with separate evidence
-process :
-- get all genes with public_name
-- get all phenotype with primary_name
-- get highest existing WBRNAi ID.
-- 10000 times 
-- - generate a new WBRNAi ID
-- - randomly choose a WBGene and WBPhenotype
-- - assign phenotype-rnai mappings to tables  'phe_rnai'  and  'rna_phenotype'
-- - assign gene-rnai mappings to tables  'gin_rnai'  and  'rna_gene'  
-- - - get the next evidence id from evi_sequence for gene to rnai mapping
-- - - assign inferred automatically always to be 'RNAi_primary' to table  'evi_inferred_automatically' to evidence id
-- - - assign 'gin_rnai' mapping to gene and rnai with evidence 
-- - - get the next evidence id from evi_sequence for reverse (rnai to gene mapping)
-- - - assign inferred automatically always to be 'RNAi_primary' to table  'evi_inferred_automatically' to evidence id
-- - - assign 'rna_gene' mapping to rnai and gene with evidence 
-
-
-to install :
-install postgresql (came by default on ubuntu)
-install libdbd-pg (I used synaptic)
-$ cpan install Tie::IxHash
-$ createdb yaceadb
-put Kevin's dump*.ace into ace_source/ directory
-$ ./create_yace_tables.pl
-$ ./populate_yaceA.pl > populate_yaceA.out
-
-
-
-files : 
-  not all files are in github, don't see point of uploading large source files here, when they're also somewhere else ;  likewise files generated by these scripts.
-create_yace_tables.pl
-  wipe and recreate yace[a-c]db creating the tables and sequence
-parsed_data	
-  the data from dump*.ace files, parsed for structure
-populate_yaceA.pl	
-  1 - parse dump*.ace or test*.ace files 
-  2 - write parsed_data or not
-  3a - use perl DBI to insert to postgres directly line by line
-  3b - write to flatfiles in postgres dump format, and copy data to postgres tables
-populate_yaceA.out
-  output of perl script postgres population (parsed_data + sql commands)
-README
-  this file
-repopulate_yaceA
-  commands to drop and copy tables, and reset sequence
-  to repopulate postgres, do 
-    psql -e yaceadb < repopulate_yaceA
-schema.yaceadb
-  schema dump of yacedb
-table_dumps/
-  directory where postgres table dumps are written to
-update_yaceA_concise.pl*
-  test time to 10000 times update concise description of random genes
-update_yaceA_geneRnaiPhenotype.pl*
-  test time to 10000 times generate a new RNAi objects and attach to random gene + phenotype
-yaceadb.pg
-  full dump of yaceC postgres database yaceadb
-ace_source/
-  directory for files : dump*.ace, test*.ace, models.wrm 
-ace_source/dump*.ace
-  .ace files from Kevin Howe's smallace database
-ace_source/test.ace
-  sample .ace file for testing
-postgresql_autodoc/
-   directory for files generated by postgresql_autodoc to see database schema
-junk/
-  directory for temporary files, no longer needed
-
-
-
-Model discussion :
-
-Why model this way ?
-- Simplest way to have full complexity of smallace (minus curator / timestamp built into acedb)
-- - Accounts for implicit author order (later maybe move to evidence tables in some evidence_order table or column)
-- - Accounts for #Evidence as its own "ace object" with its own tables
-
-
-Why redundant tables mapping same pairs for data in both directions ?
-- Possibly some #Evidence are attached to object pairs in only one direction in full acedb, Kevin suggests restricting model to the simplest possible, Abby wants to plan ahead for scaling.
-- e.g. if Paper objects had an Author tag XREF Paper with #Evidence, but Author objects have a Paper tag XREF Author without #Evidence, we want to track #Evidence one way but not the other.
-
-Isn't this overmodeling, is this data relevant ?
-- I can't know without talking to the specific curators that deal with the data for the models we're talking about.
-
-
-Why not one table per object, and one column per tag ?
-- Could try a model like :
-	Table Gene
-	Column	GeneID
-	Column	CGC_name
-	Column	Sequence_name
-	Column	Public_name
-	Column	RNAi_result
-	Column	Concise_description
-	Column	Reference
-
-But then how to store data for separate RNAi001, RNAi002, RNAi003 ?
-- In caltech curation DB it's stored as "RNAi001","RNAi002","RNAi003"
-  But then for website display, the query would have to be on the table for the Gene's RNAi_result column, get all the RNAi IDs and parse them, then query for each of those in the RNAi table for corresponding Phenotype column to get all the Gene -> Phenotype mappings.  Abby says table joins are expensive, but I'd like to clarify if she means that she would rather do it through a query + parse + query, instead of the current (overly?)multi-table setup that could query for that data through one SQL query.  e.g : SELECT gin_rnai_result.joinkey, gin_rnai_result.data, rna_phenotype.data FROM rna_phenotype, gin_rnai_result WHERE gin_rnai_result.data = rna_phenotype.joinkey AND gin_rnai_result.joinkey = 'WBGene00000001';
-- Second thoughts, I will look into storing data in a single row delimited in a way that joining through IN will find all its values without parsing.  Still doesn't help with the next part.
-
-But if doing it this way, what happens to the #Evidence or RNAi_result and Concise_description ?
-- For the case of Concise_description, which is UNIQUE to a gene (but isn't modeled that way in acedb), another column for Concise_description_evidence would work.  
-	Table Gene
-	Column	GeneID
-	Column	CGC_name
-	Column	Sequence_name
-	Column	Public_name
-	Column	RNAi_result
-	Column	Concise_description
-	Column	Concise_description_evidence
-	Column	Reference
-- For the case of RNAi, where each RNAi that gets linked to the Gene could have different #Evidence, this just wouldn't work.  Could try curation to "Curated RNAi-Gene objects" as pointers to IDs, and those IDs could exist in a table that has separate columns for the arbitary ID + RNAi + Paper_evidence + Person_evidence + etc-evidence.  This could work, but arbitary IDs for each value-value pair seems ... bad.  I don't have a reason to say why it's bad.  In Caltech curation we don't have curation of RNAi-Gene, and mapping of Phenotype-RNAi always has the same #Evidence data.  In the cases where an object maps to multiple objects through different Paper evidence, there are separate "rows" (they're really separate entries in parallel tables, not in the same table with multiple columns) where object-evidence lists all the other objects in one entry, and separate object-evidence lists those objects in a different entry.  It's denormalized in that associated data (say the Concise description) is copied across multiple "rows", but it all gets flattenned in acedb.  
-
-An example ?
-	Table Barn
-	Column	BarnID
-	Column	Animal
-	Column	Milk
-	Column	Hide
-	Column	Address
-	Column	Owner
-Data
-	Pasadena	Cow	Yes	Yes	Caltech	Sternberg
-	Pasadena	Sheep	No	Yes	Caltech	Sternberg
-	Pasadena	Goat	Yes	No	Caltech	Sternberg
-
-Why not separate that into separate tables where relevant things go together ?
-- Then all UNIQUE tags without #Evidence could all go into a single table, but we'd still have separate tables for othe other tags, unless we can talk to the Curator in charge of the datatype to see what we really need to keep.  I don't know who that is for each datatype, but we can do that.  Also talking to the API developers would help to see whether the structure really makes sense or not.  Data with multiple rows per tag with #Evidence would still need separate database rows that each map to separate #Evidence.
 

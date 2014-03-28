@@ -1,0 +1,1146 @@
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = off;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET escape_string_warning = off;
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: evi_curator_confirmed; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE evi_curator_confirmed (
+    joinkey integer,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.evi_curator_confirmed OWNER TO azurebrd;
+
+--
+-- Name: evi_date_last_updated; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE evi_date_last_updated (
+    joinkey integer,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.evi_date_last_updated OWNER TO azurebrd;
+
+--
+-- Name: evi_inferred_automatically; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE evi_inferred_automatically (
+    joinkey integer,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.evi_inferred_automatically OWNER TO azurebrd;
+
+--
+-- Name: evi_paper_evidence; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE evi_paper_evidence (
+    joinkey integer,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.evi_paper_evidence OWNER TO azurebrd;
+
+--
+-- Name: evi_person_evidence; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE evi_person_evidence (
+    joinkey integer,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.evi_person_evidence OWNER TO azurebrd;
+
+--
+-- Name: evi_rnai_evidence; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE evi_rnai_evidence (
+    joinkey integer,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.evi_rnai_evidence OWNER TO azurebrd;
+
+--
+-- Name: evi_sequence; Type: SEQUENCE; Schema: public; Owner: azurebrd
+--
+
+CREATE SEQUENCE evi_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.evi_sequence OWNER TO azurebrd;
+
+--
+-- Name: gin_cgc_name; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE gin_cgc_name (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.gin_cgc_name OWNER TO azurebrd;
+
+--
+-- Name: gin_concise_description; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE gin_concise_description (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.gin_concise_description OWNER TO azurebrd;
+
+--
+-- Name: gin_public_name; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE gin_public_name (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.gin_public_name OWNER TO azurebrd;
+
+--
+-- Name: gin_reference; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE gin_reference (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.gin_reference OWNER TO azurebrd;
+
+--
+-- Name: gin_rnai_result; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE gin_rnai_result (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.gin_rnai_result OWNER TO azurebrd;
+
+--
+-- Name: gin_sequence_name; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE gin_sequence_name (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.gin_sequence_name OWNER TO azurebrd;
+
+--
+-- Name: pap_abstract; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_abstract (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_abstract OWNER TO azurebrd;
+
+--
+-- Name: pap_author; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_author (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_author OWNER TO azurebrd;
+
+--
+-- Name: pap_brief_citation; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_brief_citation (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_brief_citation OWNER TO azurebrd;
+
+--
+-- Name: pap_gene; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_gene (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_gene OWNER TO azurebrd;
+
+--
+-- Name: pap_journal; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_journal (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_journal OWNER TO azurebrd;
+
+--
+-- Name: pap_page; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_page (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_page OWNER TO azurebrd;
+
+--
+-- Name: pap_rnai; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_rnai (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_rnai OWNER TO azurebrd;
+
+--
+-- Name: pap_title; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_title (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_title OWNER TO azurebrd;
+
+--
+-- Name: pap_volume; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE pap_volume (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.pap_volume OWNER TO azurebrd;
+
+--
+-- Name: phe_description; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE phe_description (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.phe_description OWNER TO azurebrd;
+
+--
+-- Name: phe_not_in_rnai; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE phe_not_in_rnai (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.phe_not_in_rnai OWNER TO azurebrd;
+
+--
+-- Name: phe_primary_name; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE phe_primary_name (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.phe_primary_name OWNER TO azurebrd;
+
+--
+-- Name: phe_rnai; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE phe_rnai (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.phe_rnai OWNER TO azurebrd;
+
+--
+-- Name: rna_delivered_by; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE rna_delivered_by (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.rna_delivered_by OWNER TO azurebrd;
+
+--
+-- Name: rna_evidence; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE rna_evidence (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.rna_evidence OWNER TO azurebrd;
+
+--
+-- Name: rna_gene; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE rna_gene (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.rna_gene OWNER TO azurebrd;
+
+--
+-- Name: rna_phenotype; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE rna_phenotype (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.rna_phenotype OWNER TO azurebrd;
+
+--
+-- Name: rna_phenotype_not_observed; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE rna_phenotype_not_observed (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.rna_phenotype_not_observed OWNER TO azurebrd;
+
+--
+-- Name: rna_reference; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE rna_reference (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.rna_reference OWNER TO azurebrd;
+
+--
+-- Name: rna_strain; Type: TABLE; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE TABLE rna_strain (
+    joinkey text,
+    sort integer,
+    data text,
+    evidence integer
+);
+
+
+ALTER TABLE public.rna_strain OWNER TO azurebrd;
+
+--
+-- Name: evi_curator_confirmed_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX evi_curator_confirmed_idx ON evi_curator_confirmed USING btree (joinkey);
+
+
+--
+-- Name: evi_date_last_updated_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX evi_date_last_updated_idx ON evi_date_last_updated USING btree (joinkey);
+
+
+--
+-- Name: evi_inferred_automatically_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX evi_inferred_automatically_idx ON evi_inferred_automatically USING btree (joinkey);
+
+
+--
+-- Name: evi_paper_evidence_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX evi_paper_evidence_idx ON evi_paper_evidence USING btree (joinkey);
+
+
+--
+-- Name: evi_person_evidence_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX evi_person_evidence_idx ON evi_person_evidence USING btree (joinkey);
+
+
+--
+-- Name: evi_rnai_evidence_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX evi_rnai_evidence_idx ON evi_rnai_evidence USING btree (joinkey);
+
+
+--
+-- Name: gin_cgc_name_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX gin_cgc_name_idx ON gin_cgc_name USING btree (joinkey);
+
+
+--
+-- Name: gin_concise_description_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX gin_concise_description_idx ON gin_concise_description USING btree (joinkey);
+
+
+--
+-- Name: gin_public_name_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX gin_public_name_idx ON gin_public_name USING btree (joinkey);
+
+
+--
+-- Name: gin_reference_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX gin_reference_idx ON gin_reference USING btree (joinkey);
+
+
+--
+-- Name: gin_rnai_result_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX gin_rnai_result_idx ON gin_rnai_result USING btree (joinkey);
+
+
+--
+-- Name: gin_sequence_name_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX gin_sequence_name_idx ON gin_sequence_name USING btree (joinkey);
+
+
+--
+-- Name: pap_abstract_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX pap_abstract_idx ON pap_abstract USING btree (joinkey);
+
+
+--
+-- Name: pap_author_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX pap_author_idx ON pap_author USING btree (joinkey);
+
+
+--
+-- Name: pap_brief_citation_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX pap_brief_citation_idx ON pap_brief_citation USING btree (joinkey);
+
+
+--
+-- Name: pap_gene_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX pap_gene_idx ON pap_gene USING btree (joinkey);
+
+
+--
+-- Name: pap_journal_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX pap_journal_idx ON pap_journal USING btree (joinkey);
+
+
+--
+-- Name: pap_page_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX pap_page_idx ON pap_page USING btree (joinkey);
+
+
+--
+-- Name: pap_rnai_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX pap_rnai_idx ON pap_rnai USING btree (joinkey);
+
+
+--
+-- Name: pap_title_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX pap_title_idx ON pap_title USING btree (joinkey);
+
+
+--
+-- Name: pap_volume_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX pap_volume_idx ON pap_volume USING btree (joinkey);
+
+
+--
+-- Name: phe_description_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX phe_description_idx ON phe_description USING btree (joinkey);
+
+
+--
+-- Name: phe_not_in_rnai_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX phe_not_in_rnai_idx ON phe_not_in_rnai USING btree (joinkey);
+
+
+--
+-- Name: phe_primary_name_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX phe_primary_name_idx ON phe_primary_name USING btree (joinkey);
+
+
+--
+-- Name: phe_rnai_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX phe_rnai_idx ON phe_rnai USING btree (joinkey);
+
+
+--
+-- Name: rna_delivered_by_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE UNIQUE INDEX rna_delivered_by_idx ON rna_delivered_by USING btree (joinkey);
+
+
+--
+-- Name: rna_evidence_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX rna_evidence_idx ON rna_evidence USING btree (joinkey);
+
+
+--
+-- Name: rna_gene_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX rna_gene_idx ON rna_gene USING btree (joinkey);
+
+
+--
+-- Name: rna_phenotype_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX rna_phenotype_idx ON rna_phenotype USING btree (joinkey);
+
+
+--
+-- Name: rna_phenotype_not_observed_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX rna_phenotype_not_observed_idx ON rna_phenotype_not_observed USING btree (joinkey);
+
+
+--
+-- Name: rna_reference_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX rna_reference_idx ON rna_reference USING btree (joinkey);
+
+
+--
+-- Name: rna_strain_idx; Type: INDEX; Schema: public; Owner: azurebrd; Tablespace: 
+--
+
+CREATE INDEX rna_strain_idx ON rna_strain USING btree (joinkey);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- Name: evi_curator_confirmed; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE evi_curator_confirmed FROM PUBLIC;
+REVOKE ALL ON TABLE evi_curator_confirmed FROM azurebrd;
+GRANT ALL ON TABLE evi_curator_confirmed TO azurebrd;
+GRANT SELECT ON TABLE evi_curator_confirmed TO acedb;
+GRANT ALL ON TABLE evi_curator_confirmed TO apache;
+GRANT ALL ON TABLE evi_curator_confirmed TO cecilia;
+GRANT ALL ON TABLE evi_curator_confirmed TO "www-data";
+
+
+--
+-- Name: evi_date_last_updated; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE evi_date_last_updated FROM PUBLIC;
+REVOKE ALL ON TABLE evi_date_last_updated FROM azurebrd;
+GRANT ALL ON TABLE evi_date_last_updated TO azurebrd;
+GRANT SELECT ON TABLE evi_date_last_updated TO acedb;
+GRANT ALL ON TABLE evi_date_last_updated TO apache;
+GRANT ALL ON TABLE evi_date_last_updated TO cecilia;
+GRANT ALL ON TABLE evi_date_last_updated TO "www-data";
+
+
+--
+-- Name: evi_inferred_automatically; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE evi_inferred_automatically FROM PUBLIC;
+REVOKE ALL ON TABLE evi_inferred_automatically FROM azurebrd;
+GRANT ALL ON TABLE evi_inferred_automatically TO azurebrd;
+GRANT SELECT ON TABLE evi_inferred_automatically TO acedb;
+GRANT ALL ON TABLE evi_inferred_automatically TO apache;
+GRANT ALL ON TABLE evi_inferred_automatically TO cecilia;
+GRANT ALL ON TABLE evi_inferred_automatically TO "www-data";
+
+
+--
+-- Name: evi_paper_evidence; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE evi_paper_evidence FROM PUBLIC;
+REVOKE ALL ON TABLE evi_paper_evidence FROM azurebrd;
+GRANT ALL ON TABLE evi_paper_evidence TO azurebrd;
+GRANT SELECT ON TABLE evi_paper_evidence TO acedb;
+GRANT ALL ON TABLE evi_paper_evidence TO apache;
+GRANT ALL ON TABLE evi_paper_evidence TO cecilia;
+GRANT ALL ON TABLE evi_paper_evidence TO "www-data";
+
+
+--
+-- Name: evi_person_evidence; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE evi_person_evidence FROM PUBLIC;
+REVOKE ALL ON TABLE evi_person_evidence FROM azurebrd;
+GRANT ALL ON TABLE evi_person_evidence TO azurebrd;
+GRANT SELECT ON TABLE evi_person_evidence TO acedb;
+GRANT ALL ON TABLE evi_person_evidence TO apache;
+GRANT ALL ON TABLE evi_person_evidence TO cecilia;
+GRANT ALL ON TABLE evi_person_evidence TO "www-data";
+
+
+--
+-- Name: evi_rnai_evidence; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE evi_rnai_evidence FROM PUBLIC;
+REVOKE ALL ON TABLE evi_rnai_evidence FROM azurebrd;
+GRANT ALL ON TABLE evi_rnai_evidence TO azurebrd;
+GRANT SELECT ON TABLE evi_rnai_evidence TO acedb;
+GRANT ALL ON TABLE evi_rnai_evidence TO apache;
+GRANT ALL ON TABLE evi_rnai_evidence TO cecilia;
+GRANT ALL ON TABLE evi_rnai_evidence TO "www-data";
+
+
+--
+-- Name: evi_sequence; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON SEQUENCE evi_sequence FROM PUBLIC;
+REVOKE ALL ON SEQUENCE evi_sequence FROM azurebrd;
+GRANT ALL ON SEQUENCE evi_sequence TO azurebrd;
+GRANT SELECT ON SEQUENCE evi_sequence TO acedb;
+GRANT ALL ON SEQUENCE evi_sequence TO apache;
+GRANT ALL ON SEQUENCE evi_sequence TO cecilia;
+GRANT ALL ON SEQUENCE evi_sequence TO "www-data";
+
+
+--
+-- Name: gin_cgc_name; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE gin_cgc_name FROM PUBLIC;
+REVOKE ALL ON TABLE gin_cgc_name FROM azurebrd;
+GRANT ALL ON TABLE gin_cgc_name TO azurebrd;
+GRANT SELECT ON TABLE gin_cgc_name TO acedb;
+GRANT ALL ON TABLE gin_cgc_name TO apache;
+GRANT ALL ON TABLE gin_cgc_name TO cecilia;
+GRANT ALL ON TABLE gin_cgc_name TO "www-data";
+
+
+--
+-- Name: gin_concise_description; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE gin_concise_description FROM PUBLIC;
+REVOKE ALL ON TABLE gin_concise_description FROM azurebrd;
+GRANT ALL ON TABLE gin_concise_description TO azurebrd;
+GRANT SELECT ON TABLE gin_concise_description TO acedb;
+GRANT ALL ON TABLE gin_concise_description TO apache;
+GRANT ALL ON TABLE gin_concise_description TO cecilia;
+GRANT ALL ON TABLE gin_concise_description TO "www-data";
+
+
+--
+-- Name: gin_public_name; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE gin_public_name FROM PUBLIC;
+REVOKE ALL ON TABLE gin_public_name FROM azurebrd;
+GRANT ALL ON TABLE gin_public_name TO azurebrd;
+GRANT SELECT ON TABLE gin_public_name TO acedb;
+GRANT ALL ON TABLE gin_public_name TO apache;
+GRANT ALL ON TABLE gin_public_name TO cecilia;
+GRANT ALL ON TABLE gin_public_name TO "www-data";
+
+
+--
+-- Name: gin_reference; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE gin_reference FROM PUBLIC;
+REVOKE ALL ON TABLE gin_reference FROM azurebrd;
+GRANT ALL ON TABLE gin_reference TO azurebrd;
+GRANT SELECT ON TABLE gin_reference TO acedb;
+GRANT ALL ON TABLE gin_reference TO apache;
+GRANT ALL ON TABLE gin_reference TO cecilia;
+GRANT ALL ON TABLE gin_reference TO "www-data";
+
+
+--
+-- Name: gin_rnai_result; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE gin_rnai_result FROM PUBLIC;
+REVOKE ALL ON TABLE gin_rnai_result FROM azurebrd;
+GRANT ALL ON TABLE gin_rnai_result TO azurebrd;
+GRANT SELECT ON TABLE gin_rnai_result TO acedb;
+GRANT ALL ON TABLE gin_rnai_result TO apache;
+GRANT ALL ON TABLE gin_rnai_result TO cecilia;
+GRANT ALL ON TABLE gin_rnai_result TO "www-data";
+
+
+--
+-- Name: gin_sequence_name; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE gin_sequence_name FROM PUBLIC;
+REVOKE ALL ON TABLE gin_sequence_name FROM azurebrd;
+GRANT ALL ON TABLE gin_sequence_name TO azurebrd;
+GRANT SELECT ON TABLE gin_sequence_name TO acedb;
+GRANT ALL ON TABLE gin_sequence_name TO apache;
+GRANT ALL ON TABLE gin_sequence_name TO cecilia;
+GRANT ALL ON TABLE gin_sequence_name TO "www-data";
+
+
+--
+-- Name: pap_abstract; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_abstract FROM PUBLIC;
+REVOKE ALL ON TABLE pap_abstract FROM azurebrd;
+GRANT ALL ON TABLE pap_abstract TO azurebrd;
+GRANT SELECT ON TABLE pap_abstract TO acedb;
+GRANT ALL ON TABLE pap_abstract TO apache;
+GRANT ALL ON TABLE pap_abstract TO cecilia;
+GRANT ALL ON TABLE pap_abstract TO "www-data";
+
+
+--
+-- Name: pap_author; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_author FROM PUBLIC;
+REVOKE ALL ON TABLE pap_author FROM azurebrd;
+GRANT ALL ON TABLE pap_author TO azurebrd;
+GRANT SELECT ON TABLE pap_author TO acedb;
+GRANT ALL ON TABLE pap_author TO apache;
+GRANT ALL ON TABLE pap_author TO cecilia;
+GRANT ALL ON TABLE pap_author TO "www-data";
+
+
+--
+-- Name: pap_brief_citation; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_brief_citation FROM PUBLIC;
+REVOKE ALL ON TABLE pap_brief_citation FROM azurebrd;
+GRANT ALL ON TABLE pap_brief_citation TO azurebrd;
+GRANT SELECT ON TABLE pap_brief_citation TO acedb;
+GRANT ALL ON TABLE pap_brief_citation TO apache;
+GRANT ALL ON TABLE pap_brief_citation TO cecilia;
+GRANT ALL ON TABLE pap_brief_citation TO "www-data";
+
+
+--
+-- Name: pap_gene; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_gene FROM PUBLIC;
+REVOKE ALL ON TABLE pap_gene FROM azurebrd;
+GRANT ALL ON TABLE pap_gene TO azurebrd;
+GRANT SELECT ON TABLE pap_gene TO acedb;
+GRANT ALL ON TABLE pap_gene TO apache;
+GRANT ALL ON TABLE pap_gene TO cecilia;
+GRANT ALL ON TABLE pap_gene TO "www-data";
+
+
+--
+-- Name: pap_journal; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_journal FROM PUBLIC;
+REVOKE ALL ON TABLE pap_journal FROM azurebrd;
+GRANT ALL ON TABLE pap_journal TO azurebrd;
+GRANT SELECT ON TABLE pap_journal TO acedb;
+GRANT ALL ON TABLE pap_journal TO apache;
+GRANT ALL ON TABLE pap_journal TO cecilia;
+GRANT ALL ON TABLE pap_journal TO "www-data";
+
+
+--
+-- Name: pap_page; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_page FROM PUBLIC;
+REVOKE ALL ON TABLE pap_page FROM azurebrd;
+GRANT ALL ON TABLE pap_page TO azurebrd;
+GRANT SELECT ON TABLE pap_page TO acedb;
+GRANT ALL ON TABLE pap_page TO apache;
+GRANT ALL ON TABLE pap_page TO cecilia;
+GRANT ALL ON TABLE pap_page TO "www-data";
+
+
+--
+-- Name: pap_rnai; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_rnai FROM PUBLIC;
+REVOKE ALL ON TABLE pap_rnai FROM azurebrd;
+GRANT ALL ON TABLE pap_rnai TO azurebrd;
+GRANT SELECT ON TABLE pap_rnai TO acedb;
+GRANT ALL ON TABLE pap_rnai TO apache;
+GRANT ALL ON TABLE pap_rnai TO cecilia;
+GRANT ALL ON TABLE pap_rnai TO "www-data";
+
+
+--
+-- Name: pap_title; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_title FROM PUBLIC;
+REVOKE ALL ON TABLE pap_title FROM azurebrd;
+GRANT ALL ON TABLE pap_title TO azurebrd;
+GRANT SELECT ON TABLE pap_title TO acedb;
+GRANT ALL ON TABLE pap_title TO apache;
+GRANT ALL ON TABLE pap_title TO cecilia;
+GRANT ALL ON TABLE pap_title TO "www-data";
+
+
+--
+-- Name: pap_volume; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE pap_volume FROM PUBLIC;
+REVOKE ALL ON TABLE pap_volume FROM azurebrd;
+GRANT ALL ON TABLE pap_volume TO azurebrd;
+GRANT SELECT ON TABLE pap_volume TO acedb;
+GRANT ALL ON TABLE pap_volume TO apache;
+GRANT ALL ON TABLE pap_volume TO cecilia;
+GRANT ALL ON TABLE pap_volume TO "www-data";
+
+
+--
+-- Name: phe_description; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE phe_description FROM PUBLIC;
+REVOKE ALL ON TABLE phe_description FROM azurebrd;
+GRANT ALL ON TABLE phe_description TO azurebrd;
+GRANT SELECT ON TABLE phe_description TO acedb;
+GRANT ALL ON TABLE phe_description TO apache;
+GRANT ALL ON TABLE phe_description TO cecilia;
+GRANT ALL ON TABLE phe_description TO "www-data";
+
+
+--
+-- Name: phe_not_in_rnai; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE phe_not_in_rnai FROM PUBLIC;
+REVOKE ALL ON TABLE phe_not_in_rnai FROM azurebrd;
+GRANT ALL ON TABLE phe_not_in_rnai TO azurebrd;
+GRANT SELECT ON TABLE phe_not_in_rnai TO acedb;
+GRANT ALL ON TABLE phe_not_in_rnai TO apache;
+GRANT ALL ON TABLE phe_not_in_rnai TO cecilia;
+GRANT ALL ON TABLE phe_not_in_rnai TO "www-data";
+
+
+--
+-- Name: phe_primary_name; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE phe_primary_name FROM PUBLIC;
+REVOKE ALL ON TABLE phe_primary_name FROM azurebrd;
+GRANT ALL ON TABLE phe_primary_name TO azurebrd;
+GRANT SELECT ON TABLE phe_primary_name TO acedb;
+GRANT ALL ON TABLE phe_primary_name TO apache;
+GRANT ALL ON TABLE phe_primary_name TO cecilia;
+GRANT ALL ON TABLE phe_primary_name TO "www-data";
+
+
+--
+-- Name: phe_rnai; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE phe_rnai FROM PUBLIC;
+REVOKE ALL ON TABLE phe_rnai FROM azurebrd;
+GRANT ALL ON TABLE phe_rnai TO azurebrd;
+GRANT SELECT ON TABLE phe_rnai TO acedb;
+GRANT ALL ON TABLE phe_rnai TO apache;
+GRANT ALL ON TABLE phe_rnai TO cecilia;
+GRANT ALL ON TABLE phe_rnai TO "www-data";
+
+
+--
+-- Name: rna_delivered_by; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE rna_delivered_by FROM PUBLIC;
+REVOKE ALL ON TABLE rna_delivered_by FROM azurebrd;
+GRANT ALL ON TABLE rna_delivered_by TO azurebrd;
+GRANT SELECT ON TABLE rna_delivered_by TO acedb;
+GRANT ALL ON TABLE rna_delivered_by TO apache;
+GRANT ALL ON TABLE rna_delivered_by TO cecilia;
+GRANT ALL ON TABLE rna_delivered_by TO "www-data";
+
+
+--
+-- Name: rna_evidence; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE rna_evidence FROM PUBLIC;
+REVOKE ALL ON TABLE rna_evidence FROM azurebrd;
+GRANT ALL ON TABLE rna_evidence TO azurebrd;
+GRANT SELECT ON TABLE rna_evidence TO acedb;
+GRANT ALL ON TABLE rna_evidence TO apache;
+GRANT ALL ON TABLE rna_evidence TO cecilia;
+GRANT ALL ON TABLE rna_evidence TO "www-data";
+
+
+--
+-- Name: rna_gene; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE rna_gene FROM PUBLIC;
+REVOKE ALL ON TABLE rna_gene FROM azurebrd;
+GRANT ALL ON TABLE rna_gene TO azurebrd;
+GRANT SELECT ON TABLE rna_gene TO acedb;
+GRANT ALL ON TABLE rna_gene TO apache;
+GRANT ALL ON TABLE rna_gene TO cecilia;
+GRANT ALL ON TABLE rna_gene TO "www-data";
+
+
+--
+-- Name: rna_phenotype; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE rna_phenotype FROM PUBLIC;
+REVOKE ALL ON TABLE rna_phenotype FROM azurebrd;
+GRANT ALL ON TABLE rna_phenotype TO azurebrd;
+GRANT SELECT ON TABLE rna_phenotype TO acedb;
+GRANT ALL ON TABLE rna_phenotype TO apache;
+GRANT ALL ON TABLE rna_phenotype TO cecilia;
+GRANT ALL ON TABLE rna_phenotype TO "www-data";
+
+
+--
+-- Name: rna_phenotype_not_observed; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE rna_phenotype_not_observed FROM PUBLIC;
+REVOKE ALL ON TABLE rna_phenotype_not_observed FROM azurebrd;
+GRANT ALL ON TABLE rna_phenotype_not_observed TO azurebrd;
+GRANT SELECT ON TABLE rna_phenotype_not_observed TO acedb;
+GRANT ALL ON TABLE rna_phenotype_not_observed TO apache;
+GRANT ALL ON TABLE rna_phenotype_not_observed TO cecilia;
+GRANT ALL ON TABLE rna_phenotype_not_observed TO "www-data";
+
+
+--
+-- Name: rna_reference; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE rna_reference FROM PUBLIC;
+REVOKE ALL ON TABLE rna_reference FROM azurebrd;
+GRANT ALL ON TABLE rna_reference TO azurebrd;
+GRANT SELECT ON TABLE rna_reference TO acedb;
+GRANT ALL ON TABLE rna_reference TO apache;
+GRANT ALL ON TABLE rna_reference TO cecilia;
+GRANT ALL ON TABLE rna_reference TO "www-data";
+
+
+--
+-- Name: rna_strain; Type: ACL; Schema: public; Owner: azurebrd
+--
+
+REVOKE ALL ON TABLE rna_strain FROM PUBLIC;
+REVOKE ALL ON TABLE rna_strain FROM azurebrd;
+GRANT ALL ON TABLE rna_strain TO azurebrd;
+GRANT SELECT ON TABLE rna_strain TO acedb;
+GRANT ALL ON TABLE rna_strain TO apache;
+GRANT ALL ON TABLE rna_strain TO cecilia;
+GRANT ALL ON TABLE rna_strain TO "www-data";
+
+
+--
+-- PostgreSQL database dump complete
+--
+
