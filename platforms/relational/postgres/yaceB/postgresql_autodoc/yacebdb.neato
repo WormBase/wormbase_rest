@@ -1,0 +1,81 @@
+digraph g {
+node [ fontsize = "10", shape = record ];
+edge [];
+
+"author" [shape = record, label = "{<col0> \N| id:  serial\lwbauthor_id:  text\ldisplay_name:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"gene" [shape = record, label = "{<col0> \N| id:  serial\lwbgene_id:  text\ldisplay_name:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"gene_concise" [shape = record, label = "{<col0> \N| id:  serial\lgene:  integer\lconcise:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"gene_j_rnai" [shape = record, label = "{<col0> \N| id:  serial\lgene:  integer\lrnai:  integer\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"gene_namecgc" [shape = record, label = "{<col0> \N| id:  serial\lgene:  integer\lnamecgc:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"gene_namepub" [shape = record, label = "{<col0> \N| id:  serial\lgene:  integer\lnamepub:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"gene_nameseq" [shape = record, label = "{<col0> \N| id:  serial\lgene:  integer\lnameseq:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"geneconcise_curatorconfirmed" [shape = record, label = "{<col0> \N| id:  serial\lgene_concise:  integer\lcuratorconfirmed:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"geneconcise_datelastupdated" [shape = record, label = "{<col0> \N| id:  serial\lgene_concise:  integer\ldatelastupdated:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"geneconcise_j_paperevidence" [shape = record, label = "{<col0> \N| id:  serial\lgene_concise:  integer\lpaperevidence:  integer\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"geneconcise_personevidence" [shape = record, label = "{<col0> \N| id:  serial\lgene_concise:  integer\lpersonevidence:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"genernai_inferredautomatically" [shape = record, label = "{<col0> \N| id:  serial\lgene_j_rnai:  integer\linferredautomatically:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"paper" [shape = record, label = "{<col0> \N| id:  serial\lwbpaper_id:  text\ldisplay_name:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"paper_j_author" [shape = record, label = "{<col0> \N| id:  serial\lpaper:  integer\lauthor:  integer\lsort:  integer\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"paper_j_rnai" [shape = record, label = "{<col0> \N| id:  serial\lpaper:  integer\lrnai:  integer\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"paper_reference" [shape = record, label = "{<col0> \N| id:  serial\lpaper:  integer\ltitle:  text\ljournal:  text\lvolume:  text\lpage:  text\labstract:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"phenotype" [shape = record, label = "{<col0> \N| id:  serial\lwbphenotype_id:  text\ldisplay_name:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"phenotype_nameprimary" [shape = record, label = "{<col0> \N| id:  serial\lphenotype:  integer\lnameprimary:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"rnai" [shape = record, label = "{<col0> \N| id:  serial\lwbrnai_id:  text\ldisplay_name:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"rnai_deliveredby" [shape = record, label = "{<col0> \N| id:  serial\lrnai:  integer\ldeliveredby:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"rnai_j_notphenotype" [shape = record, label = "{<col0> \N| id:  serial\lrnai:  integer\lnotphenotype:  integer\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"rnai_j_phenotype" [shape = record, label = "{<col0> \N| id:  serial\lrnai:  integer\lphenotype:  integer\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"rnai_personevidence" [shape = record, label = "{<col0> \N| id:  serial\lrnai:  integer\lpersonevidence:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+"rnai_strain" [shape = record, label = "{<col0> \N| id:  serial\lrnai:  integer\lstrain:  text\lcurator_id:  text\ltimestamp:  timestamp with time zone\l}" ];
+
+
+"gene_concise" -> "gene" [label="gene_concise_gene_fkey"];
+"gene_j_rnai" -> "gene" [label="gene_j_rnai_gene_fkey"];
+"gene_j_rnai" -> "rnai" [label="gene_j_rnai_rnai_fkey"];
+"gene_namecgc" -> "gene" [label="gene_namecgc_gene_fkey"];
+"gene_namepub" -> "gene" [label="gene_namepub_gene_fkey"];
+"gene_nameseq" -> "gene" [label="gene_nameseq_gene_fkey"];
+"geneconcise_curatorconfirmed" -> "gene_concise" [label="geneconcise_curatorconfirmed_gene_concise_fkey"];
+"geneconcise_datelastupdated" -> "gene_concise" [label="geneconcise_datelastupdated_gene_concise_fkey"];
+"geneconcise_j_paperevidence" -> "gene_concise" [label="geneconcise_j_paperevidence_gene_concise_fkey"];
+"geneconcise_j_paperevidence" -> "paper" [label="geneconcise_j_paperevidence_paperevidence_fkey"];
+"geneconcise_personevidence" -> "gene_concise" [label="geneconcise_personevidence_gene_concise_fkey"];
+"genernai_inferredautomatically" -> "gene_j_rnai" [label="genernai_inferredautomatically_gene_j_rnai_fkey"];
+"paper_j_author" -> "paper" [label="paper_j_author_paper_fkey"];
+"paper_j_author" -> "author" [label="paper_j_author_author_fkey"];
+"paper_j_rnai" -> "paper" [label="paper_j_rnai_paper_fkey"];
+"paper_j_rnai" -> "rnai" [label="paper_j_rnai_rnai_fkey"];
+"paper_reference" -> "paper" [label="paper_reference_paper_fkey"];
+"phenotype_nameprimary" -> "phenotype" [label="phenotype_nameprimary_phenotype_fkey"];
+"rnai_deliveredby" -> "rnai" [label="rnai_deliveredby_rnai_fkey"];
+"rnai_j_notphenotype" -> "rnai" [label="rnai_j_notphenotype_rnai_fkey"];
+"rnai_j_notphenotype" -> "phenotype" [label="rnai_j_notphenotype_notphenotype_fkey"];
+"rnai_j_phenotype" -> "rnai" [label="rnai_j_phenotype_rnai_fkey"];
+"rnai_j_phenotype" -> "phenotype" [label="rnai_j_phenotype_phenotype_fkey"];
+"rnai_personevidence" -> "rnai" [label="rnai_personevidence_rnai_fkey"];
+"rnai_strain" -> "rnai" [label="rnai_strain_rnai_fkey"];
+}
+
+
