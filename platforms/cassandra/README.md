@@ -31,10 +31,10 @@ As large column storage engine with an emphasis on high write rate Cassandra is 
 #### Speed loading the dataset
 
 PlanB|time
--------------
-real| 3m27.498s
-user| 2m43.548s
-sys | 0m4.221s
+-----|----------
+real | 3m27.498s
+user | 2m43.548s
+sys  | 0m4.221s
 
 ## Modelling
 
