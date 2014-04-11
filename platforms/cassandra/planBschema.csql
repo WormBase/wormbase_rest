@@ -1,0 +1,51 @@
+CREATE KEYSPACE planB WITH REPLICATION = {'class':'SimpleStrategy','replication_factor':1};
+
+USE planB;
+
+CREATE TABLE genes (
+  Name text,
+  created timestamp,
+  CGC_name text,
+  Public_name text,
+  Concise_description text,
+  Concise_descriptionEvidence set<text>,
+  RNAi_result map<text,text>,
+  Reference set<text>,
+  PRIMARY KEY(Name)
+);
+
+CREATE TABLE RNAi (
+  Name text,
+  created timestamp,
+  Strain text,
+  Delivered_by text,
+  Evidence set<text>,
+  Gene  map<text,text>,
+  Phenotype set<text>,
+  Phenotype_not_observed set<text>,
+  Reference set<text>,
+  PRIMARY KEY(Name)
+);
+
+CREATE TABLE Phenotype (
+  Name text,
+  Primary_name text,
+  Description text,
+  RNAi set<text>,
+  Not_in_RNAi set<text>,
+  PRIMARY KEY(Name)
+);
+
+CREATE TABLE Paper (
+  Name text,
+  Author text,
+  Title text,
+  Journal text,
+  Volume text,
+  Page text,
+  Brief_citation text,
+  Abstract text,
+  Gene set<text>,
+  RNAi set<text>,
+  PRIMARY KEY(Name)
+);
