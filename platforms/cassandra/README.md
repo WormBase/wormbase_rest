@@ -18,6 +18,12 @@ As large column storage engine with an emphasis on high write rate Cassandra is 
 * models2.py contains the class definitions
 * import from XML (might change it read from GraphML instead)
 
+### Dependencies
+
+Apache Cassandra (tested with 2.0.6)
+Python (tested with 2.7.6)
+TitanDB (tested with 0.4.2)
+
 ## Plan B
 
 ### 1st Version
@@ -28,6 +34,17 @@ As large column storage engine with an emphasis on high write rate Cassandra is 
 * shmace2planb.pl converts from ACeDB to CSQL
 * planBschema.csql is the schema used
 * planb_tests.py is the testset
+
+### dependencies
+Apache Cassandra (tested with 2.0.6)
+Python (tested with 2.7.6)
+Datastax Driver (tested with 1.0.2) ... that driver will throw a warning when shutting down
+
+### usage
+a.) load the schema "csql -f planBschema.csql"
+b.) convert shmace to csql "perl shmace2planb.pl PATH_TO_SHMACEDB > all.csql"
+c.) load the csql file in "csql -k planb -f all.csql" ... now it will do tons of insert statements, but if speed is an issue (and there is another node available), you can precalculate the SSTABLEs and stream them in (but it requires a small custom Java program per table)
+d.) test it "python planb_tests.py"
 
 #### Speed loading the dataset
 
@@ -51,7 +68,7 @@ sys  | 0m4.221s
 
 	Test 3
 	=============================================================
-	connecting 10000x gene->RNAi<-phenotype
+	connecting 10000x gene<->RNAi<->phenotype
 	46.3017208576  seconds
 
 
