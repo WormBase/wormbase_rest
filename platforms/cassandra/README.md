@@ -41,10 +41,10 @@ Python (tested with 2.7.6)
 Datastax Driver (tested with 1.0.2) ... that driver will throw a warning when shutting down
 
 ### usage
-a.) load the schema "csql -f planBschema.csql"
-b.) convert shmace to csql "perl shmace2planb.pl PATH_TO_SHMACEDB > all.csql"
-c.) load the csql file in "csql -k planb -f all.csql" ... now it will do tons of insert statements, but if speed is an issue (and there is another node available), you can precalculate the SSTABLEs and stream them in (but it requires a small custom Java program per table)
-d.) test it "python planb_tests.py"
+1. load the schema "csql -f planBschema.csql"
+2. convert shmace to csql "perl shmace2planb.pl PATH_TO_SHMACEDB > all.csql"
+3. load the csql file in "csql -k planb -f all.csql" ... now it will do tons of insert statements, but if speed is an issue (and there is another node available), you can precalculate the SSTABLEs and stream them in (but it requires a small custom Java program per table)
+4. test it "python planb_tests.py"
 
 #### Speed loading the dataset
 
