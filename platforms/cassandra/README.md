@@ -27,6 +27,7 @@ As large column storage engine with an emphasis on high write rate Cassandra is 
 
 * shmace2planb.pl converts from ACeDB to CSQL
 * planBschema.csql is the schema used
+* planb_tests.py is the testset
 
 #### Speed loading the dataset
 
@@ -35,6 +36,24 @@ PlanB|time
 real | 3m27.498s
 user | 2m43.548s
 sys  | 0m4.221s
+
+#### Test Set
+	Test 1
+	============================================================
+	querying a random phenotype( WBPhenotype:0000487 ) for connected genes
+	WBPhenotype:0000487   WBGene00017842,WBGene00016057,WBGene00012773
+	0.0127401351929  seconds
+
+	Test 2
+	=============================================================
+	updating 10000x concise description
+	2.20414996147  seconds
+
+	Test 3
+	=============================================================
+	connecting 10000x gene->RNAi<-phenotype
+	46.3017208576  seconds
+
 
 ## Modelling
 

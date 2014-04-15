@@ -16,7 +16,8 @@ CREATE TABLE genes (
 
 CREATE TABLE RNAi (
   Name text,
-  created timestamp,
+  modified timestamp,
+  modified_by text,
   Strain text,
   Delivered_by text,
   Evidence set<text>,
@@ -24,8 +25,11 @@ CREATE TABLE RNAi (
   Phenotype set<text>,
   Phenotype_not_observed set<text>,
   Reference set<text>,
-  PRIMARY KEY(Name)
+  PRIMARY KEY(name)
 );
+
+CREATE INDEX RNAimodified ON RNAi(modified);
+CREATE INDEX RNAimodified_by ON RNAi(modified_by);
 
 CREATE TABLE Phenotype (
   Name text,

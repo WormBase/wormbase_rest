@@ -14,10 +14,11 @@ my $db = Ace->connect(-path => shift())||die(Ace->error);
 
 sub print_genes{
  # Gene section
+ $db->timestamps(1);
  my $genIt = $db->fetch_many(-class =>'Gene');
  while(my $g = $genIt->next){
   my $name = $g;
-  my $created = &getLoggingTime;
+  my ($created) = &a2cTimestamp($g);
   my $cgc_name = $g->CGC_name||'';
   my $public_name = $g->Public_name;
 
@@ -54,14 +55,17 @@ sub print_genes{
   say 'INSERT INTO genes(Name,created,CGC_name,Public_name,Concise_description,Concise_descriptionEvidence,RNAi_result,Reference)';
   say "VALUES('$g','$created','$cgc_name','$public_name','$conciseDescription',$cDEvidence,$rnai,$reference);";
  }
+ $db->timestamps(0);
 }
 
 # RNAi section
 sub print_rnai{
+
+ $db->timestamps(1); #to get timestamps
  my $rnaIt = $db->fetch_many(-class =>'RNAi');
  while(my $r = $rnaIt->next){
   my $name = $r;
-  my $created = &getLoggingTime;
+  my ($changed,$user) = &a2cTimestamp($r); # parse from ACeDB instead
   my $strain = $r->Strain;
   my $delivered_by = $r->Delivered_by;
 
@@ -108,10 +112,12 @@ sub print_rnai{
     $phenNOT.='}';
   }
 
-  say 'INSERT INTO RNAi(Name,created,strain,Delivered_by,Evidence,Gene,Phenotype,Phenotype_not_observed,Reference)';
-  say "VALUES('$r','$created','$strain','$delivered_by',$evidence,$gene,$phen,$phenNOT,$reference);";
+  say 'INSERT INTO RNAi(Name,modified,modified_by,strain,Delivered_by,Evidence,Gene,Phenotype,Phenotype_not_observed,Reference)';
+  say "VALUES('$r','$changed','$user','$strain','$delivered_by',$evidence,$gene,$phen,$phenNOT,$reference);";
  }
+ $db->timestamps(0);
 }
+
 
 # Phenotype section
 sub print_phenotype{
@@ -187,6 +193,19 @@ sub print_paper{
   say 'INSERT INTO Paper(Name,Author,Title,Journal,Volume,Page,Brief_citation,Abstract,Gene,RNAi)';
   say "VALUES('$r','$author','$title','$journal','$volume','$page','$citation','$abstract',$gene,$rnai);\n";
  }
+}
+
+# returns CSQL timestamp + user
+sub a2cTimestamp{
+   my ($ace)=@_;
+   my $ts=$ace->timestamp;
+   $ts=~s/_/ /g;
+   $ts=~/(.*)\s(\w+)$/;
+   my $t="$1";
+   my $u="$2";
+   $t||=&getLoggingTime();
+   $u||=$ENV{USER};
+   return $t,$u;
 }
 
 sub getLoggingTime {
