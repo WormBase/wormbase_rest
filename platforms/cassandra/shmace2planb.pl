@@ -21,6 +21,7 @@ sub print_genes{
   my ($created) = &a2cTimestamp($g);
   my $cgc_name = $g->CGC_name||'';
   my $public_name = $g->Public_name;
+  my $seq_name = $g->Sequence_name;
 
   # that is for set<text>
   my $conciseDescription=$g->Concise_description||'';
@@ -52,8 +53,8 @@ sub print_genes{
     $reference.='}';
   }
 
-  say 'INSERT INTO genes(Name,created,CGC_name,Public_name,Concise_description,Concise_descriptionEvidence,RNAi_result,Reference)';
-  say "VALUES('$g','$created','$cgc_name','$public_name','$conciseDescription',$cDEvidence,$rnai,$reference);";
+  say 'INSERT INTO genes(Name,created,CGC_name,Public_name,Sequence_name,Concise_description,Concise_descriptionEvidence,RNAi_result,Reference)';
+  say "VALUES('$g','$created','$cgc_name','$public_name','$seq_name','$conciseDescription',$cDEvidence,$rnai,$reference);";
  }
  $db->timestamps(0);
 }
@@ -154,8 +155,6 @@ sub print_paper{
  my $pIt = $db->fetch_many(-class =>'Paper');
  while(my $r = $pIt->next){
   my $name = "$r";
-  my $author = $r->Author||'';
-  $author=~s/'/''/g;
 
   my $title=$r->Title||'';
   $title=~s/'/''/g;
@@ -189,9 +188,17 @@ sub print_paper{
     $gene.=join(',',map{"'$_'"}$r->Gene);
     $gene.='}';
   }
+  my $author='{}';
+  if ($r->Author){
+    $author='{';
+    my @authors = $r->Author;
+    map {s/'/''/g} @authors;
+    $author.=join(',',@authors);
+    $author='}';
+  }
 
   say 'INSERT INTO Paper(Name,Author,Title,Journal,Volume,Page,Brief_citation,Abstract,Gene,RNAi)';
-  say "VALUES('$r','$author','$title','$journal','$volume','$page','$citation','$abstract',$gene,$rnai);\n";
+  say "VALUES('$r',$author,'$title','$journal','$volume','$page','$citation','$abstract',$gene,$rnai);\n";
  }
 }
 

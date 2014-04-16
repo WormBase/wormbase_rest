@@ -7,6 +7,7 @@ CREATE TABLE genes (
   created timestamp,
   CGC_name text,
   Public_name text,
+  Sequence_name text,
   Concise_description text,
   Concise_descriptionEvidence set<text>,
   RNAi_result map<text,text>,
