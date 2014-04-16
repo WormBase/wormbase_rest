@@ -49,7 +49,7 @@ Datastax Driver (tested with 1.0.2) ... that driver will throw a warning when sh
 #### Speed converting the dataset to CSQL
 
 PlanB|time
-------------------
+-----|-------------
 real | 10m58.025s
 user | 10m57.653s
 sys  | 0m22.390s
@@ -58,7 +58,7 @@ sys  | 0m22.390s
 #### Speed loading the dataset
 
 PlanB|time1      | time2
------|-------------------
+-----|-----------|-------
 real | 3m27.498s | 4m7.458s
 user | 2m43.548s | 2m58.626s
 sys  | 0m4.221s  | 0m5.715s
@@ -66,6 +66,7 @@ sys  | 0m4.221s  | 0m5.715s
 #### Test Set
 
 Round 1
+
 	Test 1
 	============================================================
 	querying a random phenotype( WBPhenotype:0000487 ) for connected genes
@@ -83,6 +84,7 @@ Round 1
 	46.3017208576  seconds
 
 Round 2
+
 	Test 1
 	============================================================
 	querying a random phenotype( WBPhenotype:0001472 ) for connected genes
