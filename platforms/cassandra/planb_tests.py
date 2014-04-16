@@ -46,16 +46,15 @@ rows = session.execute('SELECT name FROM genes LIMIT 500000') # get all gene ids
 print ""
 print "Test 2"
 print "============================================================="
-print "updating 10000x concise description"
+print "updating 10000x concise description with evidence"
 start=time.time()
 
 
 futures=[]
 samples=random.sample(uniqueGenes,10000)
-sth=session.prepare("INSERT INTO genes (concise_description,name) VALUES(?,?)")
 for sample in samples:
-	futures.append(session.execute_async(sth,['blub',sample]))
-	
+	futures.append(session.execute_async("UPDATE Genes SET Concise_descriptionEvidence=Concise_descriptionEvidence+{%s},Concise_description=%s WHERE name =%s",['Curator_confirmed WBPerson4055','This is a test Description',sample]))
+
 [future.result() for future in futures] #just to not cheat
 
 print time.time()-start,' seconds'
@@ -78,6 +77,29 @@ for n in range(10000):
 	futures.append(session.execute_async(gth,[name,'Curator_confirmed WBPerson4055',gene]))
 	futures.append(session.execute_async("UPDATE Phenotype SET RNAi=RNAi+{%s} WHERE name =%s",[name,phenotype]))
 #	print "name:",name," gene:",gene," phenotype:",phenotype
+
+[future.result() for future in futures] #just to not cheat
+
+print time.time()-start,' seconds'
+
+print ""
+print "Test 4"
+print "============================================================="
+print "adding a reference to 10000 RNAi"
+
+uniqueRNAi=set()
+rows = session.execute('SELECT name FROM RNAi LIMIT 5000000') # get all RNAi ids
+[uniqueRNAi.add(row[0]) for row in rows]
+
+start=time.time()
+
+futures=[]
+tmpl=string.Template("TestReference$namer")
+gth=session.prepare("UPDATE genes SET RNAi_result[?]=? WHERE name=?")
+
+for n in random.sample(uniqueRNAi,10000):
+        name = tmpl.substitute(namer=n)
+	futures.append(session.execute_async("UPDATE RNAi SET Reference=Reference+{%s} WHERE name =%s",[name,n]))
 
 [future.result() for future in futures] #just to not cheat
 
