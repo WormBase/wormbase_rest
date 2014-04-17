@@ -17,6 +17,8 @@
 # previous version for yace A db was using Tie::IxHash for storing order of all tags, but it makes processing incredibly slow 
 # (5 hours instead of 4 minutes for smallace)
 # 2014 03 30
+#
+# previous version didn't update sequences to setval to highest used value for sequences in 'id' primary key columns in all tables.  2014 04 16
 
 
 use strict;
@@ -35,7 +37,7 @@ my $outfile = 'logfile';
 open (OUT, ">$outfile") or die "Cannot open $outfile : $!"; 
 
 
-my @infiles = <ace_source/dump_2014-03-13_A.*.ace>;				# use real .ace files
+my @infiles = <../ace_source/dump_2014-03-13_A.*.ace>;				# use real .ace files
 # my @infiles = <ace_source/test*.ace>;				# use test files
 # my @infiles = <ace_source/tiny.ace>;				# use tiny test files
 
@@ -320,6 +322,10 @@ foreach my $class (sort keys %objTables) {			# generate data for "object" tables
     my ($classValues) = join"), (", @{ $classValues{$cols} };
     push @pgcommands, qq(INSERT INTO $class ($cols) VALUES ($classValues););
   } # foreach my $cols (sort keys %classValues)
+  my $highest_pgid = (sort {$b<=>$a} keys %{ $objTables{$class} })[0];			# get highest pgid to set sequence for primary key
+  if ($highest_pgid) {
+    my $pgClassSequence = $class . '_id_seq';						# sequence name is table '_' column (always id) '_seq'
+    push @pgcommands, qq(SELECT setval('$pgClassSequence', $highest_pgid, true);); }	# set sequence value for autoincrement
 } # foreach my $class (sort keys %objTables)
 
 &getTime("end generating object sql, start generating dataTables sql");
@@ -341,6 +347,10 @@ foreach my $pgtable (sort keys %dataTables) {
     my ($pgtableValues) = join"), (", @{ $pgtableValues{$cols} };
     push @pgcommands, qq(INSERT INTO $pgtable ($cols) VALUES ($pgtableValues););
   } # foreach my $cols (sort keys %pgtableValues)
+  my $highest_pgid = (sort {$b<=>$a} keys %{ $dataTables{$pgtable} })[0];		# get highest pgid to set sequence for primary key
+  if ($highest_pgid) {
+    my $pgClassSequence = $pgtable . '_id_seq';						# sequence name is table '_' column (always id) '_seq'
+    push @pgcommands, qq(SELECT setval('$pgClassSequence', $highest_pgid, true);); }	# set sequence value for autoincrement
 } # foreach my $pgtable (sort keys %dataTables)
 
 &getTime("end generating dataTables sql, start executing sql");

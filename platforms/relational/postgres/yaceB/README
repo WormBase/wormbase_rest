@@ -2,15 +2,18 @@ schema documentation  in postgresql_autodoc/yacebdb.*
   manually edited ERD in postgresql_autodoc/yaceB.dia
 
 files :
-constraintsDropYaceB		alter tables to drop constraints to test-load partial data
-bin/create_yaceB_tables.pl	create the database and constraints (use `createdb yacebdb` first)
-bin/populate_yaceB.pl		read .ace files and populate yacebdb
-logfile				log from populate_yaceB.pl
-yacebdb.pg			full database dump to recreate database and load with `psql -e yacebdb < yacebdb.pg`
+constraintsDropYaceB			alter tables to drop constraints to test-load partial data
+bin/create_yaceB_tables.pl		create the database and constraints (use `createdb yacebdb` first)
+bin/populate_yaceB.pl			read .ace files and populate yacebdb
+bin/update_yaceB_concise.pl		update concise description of 10000 genes that have concise description
+bin/update_yaceB_geneRnaiPhenotype.pl	test time to 10000 times generate a new RNAi objects and attach to random gene + phenotype + inferred automatically of gene_rnai
+logfile					log from populate_yaceB.pl
+yacebdb.pg				full database dump to recreate database and load with `psql -e yacebdb < yacebdb.pg`
 
 scripts in bin/
 source files in ace_source/
 different database schemas in ../yaceA/ ../yaceB/ etc.
+
 
 
 yaceB :
@@ -43,5 +46,31 @@ consider :
 - add a soft delete column to each table to allow undoing of deletions to original timestamp, and to see deleted data.
 - geneconcise_datelastupdated should probably store some type of timestamp instead of text.
 - a controlled vocabulary for inferred_automatically might be useful (or not as often script names go there, and there may be too many)
+- make even "unique" fields be multivalue, to allow different curator/timestamp association to the same object-object mappings, so data added by someone through some curation input can be differentiated from that entered by someone else. (make deletions either since currently connections can come from multiple .ace files in aggregation, and deleting something source .ace usually means not adding instead of actual removal).
 
 
+concise updates :
+script update_yaceB_concise.pl
+updating 10000 times took 85.923614025116 seconds
+updating 10000 times took 85.8680741786957 seconds
+updating 10000 times took 86.1078090667725 seconds
+process :
+- get all genes with concise description from gene_concise
+- 10000 times choose one randomly and perl DBI update table gene_concise changing data column by joinkey of WBGeneID, also set curator and timestamp to current_timestamp
+
+gene rnai phenotype updates :
+script update_yaceB_geneRnaiPhenotype.pl
+creating 10000 updates with 4x table changes took 349.515940904617 seconds
+creating 10000 updates with 4x table changes took 352.190929889679 seconds
+creating 10000 updates with 4x table changes took 349.06324005127 seconds
+- 4 tables, create an entry in 'rnai', make connections to that rnai in 'gene_j_rnai' and 'rnai_j_phenotype', then from 'gene_j_rnai' to 'genernai_inferredautomatically'
+process :
+- get all genes with public_name
+- get all phenotype with primary_name
+- get highest existing WBRNAi ID.
+- 10000 times
+- - generate a new WBRNAi ID (get value from id column)
+- - randomly choose a WBGene and WBPhenotype
+- - assign rnai-phenotype mapping to table 'rnai_j_phenotype'
+- - assign gene-rnai mapping to table 'gene_j_rnai' (get value from id column)
+- - assign gene-rnai inferredautomatically mapping to table 'genernai_inferredautomatically'
