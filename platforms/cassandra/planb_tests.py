@@ -1,4 +1,16 @@
 #!env/bin/python
+#
+# run some tests on a Cassandra Database (connecting through localhost)
+#  the schema is defined in planBschema.csql
+#  the keyspace is called planb
+#  the default limit of selects is 10000, so it needs to be upped to get all IDs
+#  the "just not to cheat" bits are to wait for the queued updates to finish, for ethical reasons
+#  I tend to use minienv with pip from an env subdirectory to separate the libraries/python versions
+#
+# warning: the datastax driver is a bit buggy and will not destruct itself cleanly
+#
+
+
 from cassandra.cluster import Cluster
 import random
 import datetime
@@ -18,19 +30,19 @@ rows = session.execute('SELECT Name FROM Phenotype LIMIT 500000') # get all phen
 sample=random.sample(uniquePhenotype,1)[0]
 
 
-uniqueGenes=set()
-
 print "Test 1"
 print "============================================================"
 print "querying a random phenotype(",sample,") for connected genes"
 start = time.time()
 
-rows = session.execute('SELECT rnai FROM phenotype WHERE name=%s',[sample]) # get a semi-random phenotype
+rows = session.execute('SELECT rnai FROM phenotype WHERE name=%s',[sample]) # get rnais from the random phenotype
+
+uniqueGenes=set()
 
 if rows[0][0] != None :
-   for rnai in rows[0][0]:
-        genes = session.execute('SELECT gene FROM rnai WHERE name=%s LIMIT 1',[rnai])
-        for g in genes[0][0]:
+   for rnai in rows[0][0]:   # that is actually a set due to the type conversion of the datastax driver
+        genes = session.execute('SELECT gene FROM rnai WHERE name=%s',[rnai])
+        for g in genes[0][0]: # that is a type converted dict, the iterator will return the keys
 	   uniqueGenes.add(g)
 
 print sample,' ',','.join(uniqueGenes)
@@ -57,6 +69,8 @@ for sample in samples:
 
 [future.result() for future in futures] #just to not cheat
 
+# test 3 hooking up 10000x RNAis to genes and phenotypes
+
 print time.time()-start,' seconds'
 print ""
 print "Test 3"
@@ -81,6 +95,8 @@ for n in range(10000):
 [future.result() for future in futures] #just to not cheat
 
 print time.time()-start,' seconds'
+
+# adding references to 10000 RNAis
 
 print ""
 print "Test 4"
