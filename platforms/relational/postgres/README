@@ -8,13 +8,32 @@ schema documentation in yace*/postgresql_autodoc/
 
 yaceB :
 - normalized database with constraints, primary keys, foreign keys, serial IDs, junction tables.
-- curator and timestamp columns for all tables.
+- curator and timestamp columns for all tables (not extracted by parser yet).
 - direction of data entered in acedb via XREF ignored.  hash data from both directions merged.
 - all tables searchable to traverse to any related table.
+- history tables for every table, not implemented.
+- db object ids different from wormbase ids, object tables have columns for display name and denormalized wormbase id that can be regenerated without changing any data in case of format changes (more/less digits, add/remove a colon). (see consider below)
+- acedb unique tags are not required, so need to differentiate curator/timestamp from that of the objects themselves.
+- junction tables between two objects are named with '_j_' in between the component tables.
+- ordered data has junction tables with order column.
+- authors are ordered data, so convereted to objects in its own table (will later be useful for mapping to possible and verified persons).
+- parsing to data, not to model.  smallace does not have data for no data for Gene to Paper nor Phenotype Description tag, parser ignores them, no tables created for them.  many of #Evidence's tags do not exist in the tags that connect to them.  No tables created for them either.
 cons :
 - does not maintain the direction data is entered in acedb.  if objA-objB-hashA should be different from objB-objA-hashB, a new set of tables will need to be created to differentiate them.
 - parser does not parse existing curators and timestamps into appropriate column, but could in the future.
 - lots of tables, presumably slow retrieval.
+- naming convention for junction tables won't scale to deeply nested junction tables with long tag names.
+consider :
+- curator_id columns are being treated as text, but should be treated as wbperson objects as foreign key, once person objects exist.
+- unique values related together by timestamp/curator (like paper info from pubmed) in separate columns of same table, but will community annotations be stored here, making the values not unique ?
+- object tables have denormalized wormbase id as an index.  is display name meaningful data, or just an index where there are fixed rules on how to populate it based on priority of other existing tags (e.g. public > cgc > sequence > wormbaseID)
+- authors come from source (pubmed, meeting organizers, etc.) and no one is allowed to change them, if community annotations will allow change, we'll need an author_name table and junction table to author objects.
+- paper reference separate from paper object table because paper object created by a curator, but reference data comes from another source (pubmed, meeting organizer, etc.)
+- brief citation is denormalization of data.  if it's needed as a searchable index, make a table for it, otherwise generate from components for display.
+- add a soft delete column to each table to allow undoing of deletions to original timestamp, and to see deleted data.
+- geneconcise_datelastupdated should probably store some type of timestamp instead of text.
+- a controlled vocabulary for inferred_automatically might be useful (or not as often script names go there, and there may be too many)
+
 
 yaceA :
 - a direct mapping of acedb table-tags to postgres tables.
