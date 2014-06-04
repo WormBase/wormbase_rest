@@ -18,11 +18,18 @@ As large column storage engine with an emphasis on high write rate Cassandra is 
 * models2.py contains the class definitions
 * import from XML (might change it read from GraphML instead)
 
+### 2nd Version
+* map the ACeDB objects more or less 1:1
+* added timestamps to edges and objects
+* stored through the GraphSON importer
+
+* still needs more/better indexing (through ElasticSearch and helper tables)
+
 ### Dependencies
 
-Apache Cassandra (tested with 2.0.6)
+Apache Cassandra (tested with 2.0.8)
 Python (tested with 2.7.6)
-TitanDB (tested with 0.4.2)
+TitanDB (tested with 0.4.4)
 
 ## Plan B
 
