@@ -1,11 +1,13 @@
+![Cassandra image](http://blog.monitis.com/wp-content/uploads/2011/12/apache_cassandra_logo.jpeg)
+
 db
 ==
 # Cassandra
 As large column storage engine with an emphasis on high write rate Cassandra is uniquely unsuited for our use case, so instead of resorting to the antipatterns section of [Cassandra Design Patterns](http://www.amazon.co.uk/Cassandra-Design-Patterns-Sanjay-Sharma/dp/1783288809) I will try to store our data through a graph API.
 
 ## sources:
-* [Apache Cassandra](http://www.apache.org/dyn/closer.cgi?path=/cassandra/2.0.6/apache-cassandra-2.0.6-bin.tar.gz) - database engine
-* [TITAN](http://thinkaurelius.github.io/titan/) - graph API based on [TinkerPop](http://www.tinkerpop.com/) (should be also compatible with Neo4J and OrientDB)
+* [Apache Cassandra](http://cassandra.apache.org) - database engine
+* [TITAN](http://thinkaurelius.github.io/titan/) - graph API based on [TinkerPop](http://www.tinkerpop.com/) (should be also compatible with Neo4J, HBase and OrientDB)
 * [bulbflow](http://bulbflow.com/) - Python API for [TinkerPop](http://www.tinkerpop.com/)
 
 ## Plan A
@@ -19,17 +21,40 @@ As large column storage engine with an emphasis on high write rate Cassandra is 
 * import from XML (might change it read from GraphML instead)
 
 ### 2nd Version
-* map the ACeDB objects more or less 1:1
-* added timestamps to edges and objects
-* stored through the GraphSON importer
-
-* still needs more/better indexing (through ElasticSearch and helper tables)
+* still try to get the objects close to 1:1
+* put selected timestamps in (edges + vertex creation)
+* prebuild as GraphSON
 
 ### Dependencies
 
 Apache Cassandra (tested with 2.0.8)
-Python (tested with 2.7.6)
-TitanDB (tested with 0.4.4)
+Aurelius Titan (tested with 0.4.4)
+TinkerPop
+
+### usage
+1. create the titan keyspace "csql -f planA.csql"
+2. convert shmace to csql "perl shmace2titan.pl PATH_TO_SHMACEDB > shmace.gson"
+3. load the gson file in "gremlin < planA.groovy" 
+4. test it ... 
+4.1 gremlin
+4.2 perl/whatever + rexter
+
+### Speed converting the dataset to GSON
+
+PlanA|time
+-----|-------------
+real | 15m20.661s
+user | 14m56.400s
+sys  | 0m47.970s
+
+
+### Speed loading the dataset
+
+PlanA| time1     | time2
+-----|-----------|-------
+real | 6m24.986s | 6m16.022s
+user | 1m47.469s | 1m45.911s
+sys  | 0m28.294s | 0m28.297s
 
 ## Plan B
 
@@ -38,7 +63,7 @@ TitanDB (tested with 0.4.4)
 * 1:n relationships are in sets
 * evidence on the 1:n relationships is modelled as key:value maps
 
-* shmace2planb.pl converts from ACeDB to CSQL
+* shmace2planb.pl converts from ACeDB to CQL3
 * planBschema.csql is the schema used
 * planb_tests.py is the testset
 
@@ -53,7 +78,7 @@ Datastax Driver (tested with 1.0.2) ... that driver will throw a warning when sh
 3. load the csql file in "csql -k planb -f all.csql" ... now it will do tons of insert statements, but if speed is an issue (and there is another node available), you can precalculate the SSTABLEs and stream them in (but it requires a small custom Java program per table)
 4. test it "python planb_tests.py"
 
-### Speed converting the dataset to CSQL
+### Speed converting the dataset to CQL3
 
 PlanB|time
 -----|-------------
@@ -94,7 +119,7 @@ sys  | 0m4.221s  | 0m5.715s
 	2.56632208824  seconds
 
 ### Comments
-* currently the python script consists of handcrafted CSQL statements. It should be wrapped into a OO layer to be a bit more approachable for generic programming.
+* currently the python script consists of handcrafted CQL3 statements. It should be wrapped into a OO layer to be a bit more approachable for generic programming.
 * the collections in Cassandra can't be nested and slow down the database considerably
 
 ## Modelling
@@ -105,3 +130,7 @@ will remove Gene_name and Phenotype_name, as they don't serve any non-ACeDB purp
 
 ### Strings
 will keep any dodgy characters fro the time being.
+
+### TimStamps
+
+keep only a selected subset of timestamps
