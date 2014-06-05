@@ -4,10 +4,11 @@
 use Ace;
 use MongoDB;
 use strict;
+use Benchmark;
 
 # set up MongoDB
 my $client = MongoDB::MongoClient->new;
-my $mongo = $client->get_database( 'wormbase' );
+my $mongo = $client->get_database( 'test' );
 
 # set up collections for each class
 my %classes = map { $_ => $mongo->get_collection( $_ ) } qw/Gene RNAi Phenotype Paper/;
@@ -16,6 +17,7 @@ my %classes = map { $_ => $mongo->get_collection( $_ ) } qw/Gene RNAi Phenotype 
 my $ace = Ace->connect(-host => 'localhost', -port => 23100)
 	or die 'Connection error', Ace->error;
 
+my $start_time = new Benchmark;
 
 # Begin loading each of the classes specified
 foreach my $class ( keys %classes) {
@@ -41,7 +43,10 @@ foreach my $class ( keys %classes) {
     print "Finished loading $class\n";
 }
 
+my $end_time   = new Benchmark;
+my $difference = timediff($end_time, $start_time);
 
+print "It took ", timestr($difference), "\n";
 
 # this should all probably be in a config file somewhere
 sub _getModel {
