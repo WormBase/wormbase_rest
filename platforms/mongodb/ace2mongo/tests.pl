@@ -6,7 +6,7 @@ use strict;
 
 # set up MongoDB
 my $client = MongoDB::MongoClient->new;
-my $mongo = $client->get_database( 'test' );
+my $mongo = $client->get_database( 'wormbase' );
 
 # set up collections for each class
 my %classes = map { $_ => $mongo->get_collection( $_ ) } qw/Gene RNAi Phenotype Paper/;
@@ -37,14 +37,14 @@ while(my $doc = $geneCursor->next) {
 # }
 
 
-# # print contents of mongo
-# foreach my $col (keys %classes){
-#     print "$col\n";
-#     my $collection = $classes{$col};
-#     my $cursor = $collection->find();
+# print contents of mongo
+foreach my $col (qw/ Gene /){ #keys %classes){
+    print "$col\n";
+    my $collection = $classes{$col};
+    my $cursor = $collection->find();
 
-#     while(my $doc = $cursor->next) {
-#         print "\t" . $doc->{'_id'} . "\n";
-#     }
-# }
+    while(my $doc = $cursor->next) {
+        print "\t" . $doc->{'_id'} . "\n";
+    }
+}
 

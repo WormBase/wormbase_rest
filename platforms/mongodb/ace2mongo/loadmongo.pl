@@ -7,7 +7,7 @@ use strict;
 
 # set up MongoDB
 my $client = MongoDB::MongoClient->new;
-my $mongo = $client->get_database( 'test' );
+my $mongo = $client->get_database( 'wormbase' );
 
 # set up collections for each class
 my %classes = map { $_ => $mongo->get_collection( $_ ) } qw/Gene RNAi Phenotype Paper/;
@@ -49,7 +49,7 @@ sub _getModel {
 
     if($class eq 'Paper'){
         return {
-            "_id" => _getObjID($obj),
+            "_id" => _getObjID($obj, 'Paper'),
             "Reference" => {
                 "Title" => _getTag($obj, "Title", { unique => 1 }),
                 "Journal" => _getTag($obj, "Journal", { unique => 1 }),
@@ -64,7 +64,7 @@ sub _getModel {
         };
     } elsif ($class eq 'Gene') {
         return {
-            "_id" => _getObjID($obj),
+            "_id" => _getObjID($obj, 'Gene'),
             "Name"  => { "CGC_name" => _getTag($obj, "CGC_name", { unique => 1}),
                          "Sequence_name" => _getTag($obj, "Sequence_name", { unique => 1}),
                          "Public_name"   =>  _getTag($obj, "Public_name", { unique => 1})
@@ -75,7 +75,7 @@ sub _getModel {
         };
     } elsif ($class eq 'RNAi') {
         return {
-            "_id" => _getObjID($obj),
+            "_id" => _getObjID($obj, 'RNAi'),
             "Evidence" => _getHash($obj),
             "Experiment" => {
                 "Delivered_by" => _getTag($obj, "Delivered_by", {unique => 1}),
@@ -88,7 +88,7 @@ sub _getModel {
         };
     } elsif ($class eq 'Phenotype') {
         return {
-            "_id" => _getObjID($obj),
+            "_id" => _getObjID($obj, 'Phenotype'),
             "Description" => _getTag($obj, "Description", { unique => 1 }),
             "Name" => _getTag($obj, "Primary_name"),
             "Attribute_of" => { "RNAi" => _getTag($obj, "RNAi", { class => "RNAi" }),
@@ -107,25 +107,14 @@ sub _getModel {
 #   evidence: attach the evidence hash info to each object returned
 sub _getTag {
     my ($obj, $tag, $args) = @_;
-    my $ret;
-    if ($args->{unique}){
-        $tag = $obj->$tag;
-        $ret = _getObjID($tag, $args->{class});
-    } else {
-        my @tag = map {
-            if($args->{evidence}){
-                my $ev = { _getObjID($_, $args->{class}) => _getHash($_)
-                };
-                $ev;
-            } else {
-                _getObjID($_, $args->{class})
-            }
-        } _get($obj, $tag, $args->{evidence});
 
-        return \@tag;
-    }
+    return _getObjID($obj->$tag, $args->{class} || $obj->class) if $args->{unique};
 
-    return $ret;
+    return [ map {
+        $args->{evidence} ?
+            ({ _getObjID($_, $args->{class}) => _getHash($_)})
+            : _getObjID($_, $args->{class})
+    } _get($obj, $tag, $args->{evidence}) ];
 }
 
 # generate obj id Class~ID
@@ -139,10 +128,9 @@ sub _getObjID{
 # Handles the evidence hash
 sub _getHash {
     my ($obj) = @_;
-    my %hash;
-    my @keys = $obj->col;
 
-    foreach my $key (@keys){
+    my %hash;
+    foreach my $key ($obj->col){
         my @tag = map { _getObjID($_) } $key->col;
         $hash{"$key"} = \@tag;
     }
