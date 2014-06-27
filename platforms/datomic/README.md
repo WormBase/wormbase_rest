@@ -15,7 +15,7 @@ entities, i.e.:
     {:paper/id       "WBPaper12345"
      :paper/author   [{:paper.author/ordinal   1
                        :paper.author/name "Blogs F"}
-		      {:paper.author/ordinal   2
+                       {:paper.author/ordinal   2
                        :paper.author/name "Public J"}]
      ; ...
     }
@@ -144,7 +144,7 @@ Metrics
 
 4. Updating 10,000 concise descriptions? (choose a gene at random, set description, and write it back)
 
-
+      ```
       (use 'acedb.update-tests)
       ; Perform each update as a separate transaction
       (time (update-gene-descriptions conn 10000))
@@ -153,18 +153,22 @@ Metrics
       ; Batch-update 10000 descriptions in a single transactions
       (time (count (update-gene-descriptions conn 10000)))
       "Elapsed time: 1385.387 msecs"
+      ```
 
 
 5. Add 10,000 Phenotypes and RNAI (random phenotype, random gene, new RNAi, add phenotype to gene via RNAi)
 
+      ```
       (use 'acedb.update-tests)
       (time (count (make-random-rnai conn "test" 10000)))
       "Elapsed time: 9809.942 msecs"
+      ```
 
 6. Web page loading time.   10,000 random gene pages.
 
    Quick'n'dirty...
 
+       ```
        (def gids (->> (q '[:find ?gid :where [?g :gene/id ?gid]] 
                          (db conn))
 		      (map first)
@@ -176,6 +180,7 @@ Metrics
                  (rand-nth gids)))))
 
        "Elapsed time: 56731.178 msecs"
+       ```
 
    i.e 5.7ms per request.  Not a particularly realistic workload
    because each request has to be completely processed and returned
