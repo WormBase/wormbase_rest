@@ -1,5 +1,5 @@
-(defproject smallace-datomic "0.0.1-SNAPSHOT"
-  :description "ACeDB/Datomic playground"
+(defproject platform-couchdb "0.0.1-SNAPSHOT"
+  :description "ACeDB/CouchDB import playground"
   :dependencies [[org.clojure/tools.reader "0.8.3"]
                  [org.clojure/clojure "1.6.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
