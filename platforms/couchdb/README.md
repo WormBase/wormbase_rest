@@ -71,9 +71,11 @@ Metrics
 
 3. How long does the load take?
 
-   - 123 seconds to load .ace files and create CouchDB-compatible documents
-   - 38 seconds to load into CouchDB
-   - ??? seconds to materialize views (roughly equivalent to creating indices)
+    123 seconds to load .ace files and create CouchDB-compatible documents
+    
+    38 seconds to load into CouchDB
+    
+    ??? seconds to materialize views (roughly equivalent to creating indices)
 
 4. Updating 10,000 concise descriptions? (choose a gene at random, set description, and write it back)
 
