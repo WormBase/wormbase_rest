@@ -97,19 +97,11 @@ sub print_paper{
   push @vertex, qq({"AceClass":"Paper","name":"$r","_id":"$vertexID","_type":"vertex","created":"$created","title":"$title","journal":"$journal","Volume":"$volume","Page":"$page","brief_citation":"$citation","abstract":"$abstract","author":"$author"});
 
   foreach my $rn ($r->RNAi){
-    my $_id = $edgeC++;
-    my $outV = $name2vertex{$rn}||$vertC++;
-    $name2vertex{"$rn"}=$outV;
-    my $created = join(' ',&a2cTimestamp($rn));
-    push @edges, qq({"_id":$_id,"_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"PaperRNAi","created":"$created"});
+    buildEdge($rn,$vertexID,'PaperRNAi');
   }
 
   foreach my $rn ($r->Gene){
-    my $_id = $edgeC++;
-    my $outV = $name2vertex{$rn}||$vertC++;
-    $name2vertex{"$rn"}=$outV;
-    my $created = join(' ',&a2cTimestamp($rn));
-    push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"PaperGene","created":"$created"});
+    buildEdge($rn,$vertexID,'PaperGene');
   }
 
  }
@@ -135,19 +127,11 @@ sub print_phenotype{
   push @vertex, qq({"AceClass":"Phenotype","name":"$name","_id":"$vertexID","_type":"vertex","created":"$created","primary_name":"$pName","description":"$description"});
 
   foreach my $rn ($r->RNAi){
-    my $_id = $edgeC++;
-    my $outV = $name2vertex{"$rn"}||$vertC++;
-    $name2vertex{"$rn"}=$outV;
-    my $created = join(' ',&a2cTimestamp($rn));
-    push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"PhenotypeRNAi","created":"$created"});
+     buildEdge($rn,$vertexID,'PhenotypeRNAi');
   }
 
   foreach my $rn ($r->Not_in_RNAi){ # segfaults in the copy step :-(
-     my $_id = $edgeC++;
-     my $outV = $name2vertex{"$rn"}||$vertC++;
-     $name2vertex{"$rn"}=$outV;
-     my $created = join(' ',&a2cTimestamp($rn));
-     push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"PhenotypeNot_in_RNAi","created":"$created"});
+     buildEdge($rn,$vertexID,'PhenotypeNot_in_RNAi');
   }
  }
  say join(",\n",@vertex);
@@ -184,12 +168,7 @@ sub print_rnai{
   if ($r->Reference){
     my @Rs=$r->Reference;
     foreach my $rn(@Rs){
-        my $_id = $edgeC++;
-	my $outV = $name2vertex{"$rn"}||$vertC++;
-	$name2vertex{"$rn"}=$outV;
-        my $created = join(' ',&a2cTimestamp($rn));
-        # that needs somehow a created stamp            
-	push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"RNAiReference","created":"$created"});
+        buildEdge($rn,$vertexID,'RNAiReference');
     }
   }
 
@@ -209,29 +188,20 @@ sub print_rnai{
   # edge to phenotype
   if ($r->Phenotype){
     foreach my $rn ($r->Phenotype){
-	my $_id = $edgeC++;
-	my $outV = $name2vertex{"$rn"}||$vertC++;
-	$name2vertex{"$rn"}=$outV;
-        my $created = join(' ',&a2cTimestamp($rn));
-	push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"RNAiPhenotype","created":"$created"});
+        buildEdge($rn,$vertexID,'RNAiPhenotype');
     }
   }
 
   # another edge to phenotype
   if ($r->Phenotype_not_observed){
     foreach my $rn($r->Phenotype_not_observed){
-	my $_id = $edgeC++;
-	my $outV = $name2vertex{"$rn"}||$vertC++;
-	$name2vertex{"$rn"}=$outV;
-        my $created = join(' ',&a2cTimestamp($rn));
-	push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"RNAiPhenotype_not_observed","created":"$created"});
+        buildEdge($rn,$vertexID,'RNAiPhenotype_not_observed');
     }
   }
  }
  say join(",\n",@vertex);
  $db->timestamps(0);
 }
-
 
 
 sub print_genes{
@@ -283,16 +253,21 @@ sub print_genes{
   # edge -> Reference
   if ($g->Reference){
     foreach my $ref ($g->Reference){
-        my $_id = $edgeC++;
-	my $outV = $name2vertex{$ref}||$vertC++;
-	$name2vertex{"$ref"}=$outV;
-        my $created = join(' ',&a2cTimestamp($ref));
-	push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$vertexID","_label":"GeneReference","created":"$created"});
+        buildEdge($ref,$vertexID,'GeneReference');
     }
   }
  }
  say join(",\n",@vertex);
  $db->timestamps(0);
+}
+
+sub buildEdge{
+	my ($e,$v,$label) = @_;
+        my $_id = $edgeC++;
+	my $outV = $name2vertex{$e}||$vertC++;
+	$name2vertex{"$e"}=$outV;
+        my $created = join(' ',&a2cTimestamp($e));
+	push @edges, qq({"_id":"$_id","_type":"edge","_outV":"$outV","_inV":"$v","_label":"$label","created":"$created"});
 }
 
 sub a2cTimestamp{
