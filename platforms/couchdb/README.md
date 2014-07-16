@@ -13,7 +13,13 @@ relationships.
 For version 1, I've gone for a nearly 1:1 mapping of ACeDB objects to
 CouchDB documents.  This may not be optimal (see below...).  One exception
 is the LongText class -- these have all been rolled into their referring
-objects (in this case, always Papers)
+objects (in this case, always Papers).  This version doesn't have any
+per-node timestamps or other metadata, but there is per-document versioning
+which you get "for free" from CouchDB.  Given a commitment to CouchDB, there
+may be an argument for thinking carefully about document granularity in order
+to maximize the amount of metadata that can be managed on a per-document
+basis rather than having to decorate every document tree with extra
+metadata nodes.
 
 
 Prerequisites
@@ -34,7 +40,7 @@ Loading data
 (Assumes that you've unpacked the ".ace" files in the data directory).
 
      (use 'wb.import-couch)
-     (use 'com.ashafa.clust)
+     (use 'com.ashafa.clutch)
      (get-database "smallace")    ; Creates if doesn't already exist
 
      (bulk-update "smallace"
@@ -80,11 +86,24 @@ Metrics
 
 5. Add 10,000 Phenotypes and RNAI (random phenotype, random gene, new RNAi, add phenotype to gene via RNAi)
 
-   TBD
+   (time (make-random-rnais "smallace" "test3_" 10000))
+   "Elapsed time: 203289.603 msecs"
 
 6. Web page loading time.   10,000 random gene pages.
 
-   TBD
+   Imperfect but comparable to the current Datomic test:
+
+       ```
+       (def gids (mapv :_id (get-genes "smallace")))
+
+       (time (dotimes [n 10000] 
+          (http/get 
+            (str "http://localhost:8103/gene-phenotypes/" 
+                 (rand-nth gids)))))
+       "Elapsed time: 209203.374 msecs"
+       ```
+
+   Ouch.  Need to look into optimisations...
 
 7. How long did it take to write the website API?
 
@@ -96,9 +115,10 @@ Qualitative Considerations
 
 1. Is the documentation good?
 
-   The text of a book is available on the web-site.  It looks quite professional, but
-   I found the chapters on views and querying a little bit thin.  It's possible that
-   things get fleshed out in later chapters (The "...for SQL jockeys" chapter was quite
+   The text of a book is available on the web-site.  It looks quite
+   professional, but I found the chapters on views and querying a
+   little bit thin.  It's possible that things get fleshed out in
+   later chapters (The "...for SQL jockeys" chapter was quite
    helpful).
 
 2. Are there user groups?  Community?

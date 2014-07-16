@@ -88,7 +88,7 @@
            :reference      refs)]))
 
 (defmethod ace-to-couch "RNAi"
-(co  [obj]
+  [obj]
   (let [[[delivery]]        (select obj ["Experiment" "Delivered_by"])
         [[strain]]          (select obj ["Experiment" "Strain"])
         phenotypes          (map first (select obj ["Phenotype"]))
