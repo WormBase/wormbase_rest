@@ -71,23 +71,27 @@ Metrics
 
 3. How long does the load take?
 
-   123 seconds to load .ace files and create CouchDB-compatible documents
-   38 seconds to load into CouchDB
-   ??? seconds to materialize views (roughly equivalent to creating indices)
+   - 123 seconds to load .ace files and create CouchDB-compatible documents
+   - 38 seconds to load into CouchDB
+   - ??? seconds to materialize views (roughly equivalent to creating indices)
 
 4. Updating 10,000 concise descriptions? (choose a gene at random, set description, and write it back)
 
+   ```
    (use 'wb.update-couch)
    (time (update-gene-descriptions "smallace" 10000))
    "Elapsed time: 82906.651 msecs"
+   ```
 
    Need to try bulk document API as well.
 
 
 5. Add 10,000 Phenotypes and RNAI (random phenotype, random gene, new RNAi, add phenotype to gene via RNAi)
 
+   ```
    (time (make-random-rnais "smallace" "test3_" 10000))
    "Elapsed time: 203289.603 msecs"
+   ```
 
 6. Web page loading time.   10,000 random gene pages.
 
