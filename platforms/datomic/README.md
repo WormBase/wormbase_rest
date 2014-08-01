@@ -101,7 +101,7 @@ Loading data
     (count @(d/transact con schema))
 
     (doseq [block (range 1 11)
-            :let [file (str "../../data/dump_2014-03-13_A." block ".ace")]]
+            :let [file (str "../../data/dump_2014-06-30_A." block ".ace")]]
       (doseq [t (import-acefile file)]
         (time @(d/transact con t))))
 
@@ -121,14 +121,14 @@ Smallace issues
 ---------------
 
  - Gene Reference tag is in the model, but doesn't appear in any of the dumps,
-   therefore Gene references widget is rather uninteresting (!)
+   therefore Gene references widget is rather uninteresting (FIXED)
 
  - Insufficient gene information to do anything except a very stripped down
    "overview" widget.
 
  - Authors tags in papers are in alphabetical order, not as listed in the
    publication.  Appears to be no way of reconstructing actual authorship
-   order (?)
+   order (FIXED)
 
 Metrics
 -------
@@ -246,6 +246,12 @@ Qualitative Considerations
 
    C/C++: multiple options.  REST+EDN certainly works.  Embedding the Peer library and
    accessing via JNI would be more performant.
+
+   Update: Cognitect have recently released the [Transit](https://github.com/cognitect/transit-format)
+   format, which looks like it may largely replace EDN as the data format for the
+   Datomic REST interface.  This may make life easier.  I've asked on the mailing
+   list about timescales for this (and also about doing bulk entity queries over
+   the REST API).
 
 6. Licensing?  Commercial support?  Pricing?
 
