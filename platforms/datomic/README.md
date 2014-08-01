@@ -2,15 +2,16 @@ Modelling process
 -----------------
 
 Every ACeDB object is a Datomic entities.  Tags in the ACeDB model map
-to attributes in Datomic, with some flatting, e.g. Gene.Identity.Name.Public_name
-becomes :gene/name.public.  In cases where an internal tag can have multiple child
-tags (values?) *and* can occur multiple times in the same object, Datomic child
+to attributes in Datomic, with some flatting,
+e.g. Gene.Identity.Name.Public_name becomes :gene/name.public.  In
+cases where an internal tag can have multiple child tags (values?)
+*and* can occur multiple times in the same object, Datomic child
 entities are used.
 
-One special case: since Datomic is just a bag of datoms ("facts"), it doesn't have
-any concept of ordered collections.  There is one case where this seems important in
-smallace: the order of authorship on a paper.  This is also modeled using component
-entities, i.e.:
+One special case: since Datomic is just a bag of datoms ("facts"), it
+doesn't have any concept of ordered collections.  There is one case
+where this seems important in smallace: the order of authorship on a
+paper.  This is also modeled using component entities, i.e.:
 
     {:paper/id       "WBPaper12345"
      :paper/author   [{:paper.author/ordinal   1
@@ -47,32 +48,37 @@ EAV-triple+datestamp.  Then just sort by datestamp (might need to be
 done on disk unless a big-memory machine is available) and chop into
 sensible transactions.
 
-It's possible that some of the evidence tags could be moved into transactions at the same
-time, but that's a matter for wider discussion.
+It's possible that some of the evidence tags could be moved into
+transactions at the same time, but that's a matter for wider
+discussion.
 
 Prerequisites
 -------------
 
-You'll need at least Java 6.  Java 7 will probably perform better.  On platforms
-where you have a choice, always install Oracle Java in preference to any other version.
+You'll need at least Java 6.  Java 7 will probably perform better.  On
+platforms where you have a choice, always install Oracle Java in
+preference to any other version.
 
-You'll need [Leiningen](http://leiningen.org/).  The downloadable for this is just
-a shell script, put it somewhere convenient on your PATH.
+You'll need [Leiningen](http://leiningen.org/).  The downloadable for
+this is just a shell script, put it somewhere convenient on your PATH.
 
-You'll need [Datomic Free](https://my.datomic.com/downloads/free).  I was using
-version 0.9.4699, but would expect newer versions to work fine.
+You'll need [Datomic Free](https://my.datomic.com/downloads/free).  I
+was using version 0.9.4699, but would expect newer versions to work
+fine.
 
-You'll want an instance of the Datomic Transactor running.  This is the component
-which looks most like the "server" in a conventional database architecture.  In the
-Free edition, the transactor includes some in-process storage, which makes it look
-even more like a conventional server.  You can run the transactor from a freshly-unpacked
-Datomic download with:
+You'll want an instance of the Datomic Transactor running.  This is
+the component which looks most like the "server" in a conventional
+database architecture.  In the Free edition, the transactor includes
+some in-process storage, which makes it look even more like a
+conventional server.  You can run the transactor from a
+freshly-unpacked Datomic download with:
 
        bin/transactor config/samples/free-transactor-template.properties
 
-Finally, you'll need a Clojure command prompt ("REPL") at which to issue some of these
-commands.  Easiest way to do this is to type "lein repl" in the probject directory.  If
-you haven't used a LISP before, try a few simple forms, e.g.:
+Finally, you'll need a Clojure command prompt ("REPL") at which to
+issue some of these commands.  Easiest way to do this is to type "lein
+repl" in the probject directory.  If you haven't used a LISP before,
+try a few simple forms, e.g.:
 
        (+ 2 2)
        (range 10)
@@ -142,7 +148,8 @@ Metrics
      transaction, which I suspect contains too many "upserts" and is upsetting the
      transactor's temporary ID resolution code.
 
-4. Updating 10,000 concise descriptions? (choose a gene at random, set description, and write it back)
+4. Updating 10,000 concise descriptions? (choose a gene at random, set
+description, and write it back)
 
       ```
       (use 'acedb.update-tests)
@@ -244,18 +251,20 @@ Qualitative Considerations
 
    http://www.datomic.com/pricing.html
 
-   It's actually possible that Datomic Pro Starter (limited to two peers) would
-   suffice for Wormbase's requirements, especially if much of the code is accessing
-   via the REST adapter (which counts as a single Peer, regardless of how many clients
-   connent to it) -- but this would need exploration.
+   It's actually possible that Datomic Pro Starter (limited to two
+   peers) would suffice for Wormbase's requirements, especially if
+   much of the code is accessing via the REST adapter (which counts as
+   a single Peer, regardless of how many clients connent to it) -- but
+   this would need exploration.
 
    Commercial support would probably be appreciated anyway.
 
 7. Scalability?
 
-   May need more exploration.  In principle, Datomic should support more-or-less arbitrary
-   read scalability.  Write scalability is potentially bottlenecked by the Transactor, but
-   seems extremely unlikely to be limiting for Wormbase.
+   May need more exploration.  In principle, Datomic should support
+   more-or-less arbitrary read scalability.  Write scalability is
+   potentially bottlenecked by the Transactor, but seems extremely
+   unlikely to be limiting for Wormbase.
 
 TODO
 ----
