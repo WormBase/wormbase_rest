@@ -12,7 +12,7 @@
   [ace]
     (AceReader. (reader ace)))
 
-(defn- null-line? [l]
+(defn- null-line? [^String l]
   (or (empty? l)
       (.startsWith (.trim l) "//")))
 
@@ -22,7 +22,7 @@
 (def ^:private header-re #"^(\w+) : \"([^\"]+)\"")
 (def ^:private line-re #"[A-Za-z_-]+|\".*?[^\\]\"")
 
-(defn- unquote-str [s]
+(defn- unquote-str [^String s]
   (if (.startsWith s "\"")
     (if (.endsWith s "\"")
       (.substring s 1 (dec (count s)))
@@ -76,3 +76,12 @@
   "Unescape \\-escaped characters in a string."
   (when s
     (str/replace s #"\\(.)" "$1")))
+
+(defn query-ace [server port ace-class]
+  "Minimal interface to a socket ace server"
+  (let [ace (acetyl.AceSocket. server port)]
+    (.transact ace (str "find " ace-class))
+    (->> (.transactToStream ace "show -a -T")
+         (reader)
+         (line-seq)
+         (aceobj-seq))))
