@@ -50,37 +50,38 @@
       (match (vec e)
         []                             nil   ; For now, no complains about missing evidence.
         ["Inferred_automatically" s]   [:evidence/automatic s]
-        ["Paper_evidence" p]           [:evidence/paper {:paper/id p}]
-        ["Person_evidence" s]          [:evidence/person {:person/id s}]
-        ["Curator_confirmed" s]        [:evidence/curator {:person/id s}]
+        ["Paper_evidence" p]           [:evidence/paper (holder :paper/id p)]
+        ["Person_evidence" s]          [:evidence/person (holder :person/id s)]
+        ["Curator_confirmed" s]        [:evidence/curator (holder :person/id s)]
         ["Author_evidence" s text]     [:evidence/author
-                                        {:evidence.author/author {:thing/id s}
+                                        {:evidence.author/author (holder :thing/id s)
                                          :evidence.author/note   text}]
         ["Accession_evidence" db id]   [:evidence/accession
-                                        {:evidence.accession/database {:thing/id db}
+                                        {:evidence.accession/database (holder :thing/id db)
                                          :evidence.accession/accession id}]
         ["Protein_id_evidence" s]      [:evidence/protein-id]
-        ["GO_term_evidence" g]         [:evidence/go-term {:go/id g}]
-        ["Expr_pattern_evidence" e]    [:evidence/expr-patern {:thing/id e}]
+        ["GO_term_evidence" g]         [:evidence/go-term (holder :go/id g)]
+        ["Expr_pattern_evidence" e]    [:evidence/expr-patern (holder :thing/id e)]
         ["Microarray_results_evidence"
-         m]                            [:evidence/microarray-results {:thing/id m}]
-        ["RNAi_evidence" s]            [:evidence/rnai {:rnai/id s}]
+         m]                            [:evidence/microarray-results (holder :thing/id m)]
+        ["RNAi_evidence" s]            [:evidence/rnai (holder :rnai/id s)]
         ["CGC_data_submission"]        [:evidence/cgc-submission true]
-        ["Curator_confirmed" p]        [:evidence/curator {:person/id p}]
-        ["Feature_evidence" f]         [:evidence/feature {:feature/id f}]
-        ["Laboratory_evidence" l]      [:evidence/laboratory {:laboratory/id l}]
-        ["From_analysis" a]            [:evidence/analysis {:analysis/id a}]
-        ["Variation_evidence" v]       [:evidence/variation {:variation/id v}]
-        ["Mass_spec_evidence" m]       [:evidence/mass-spec {:thing/id m}]
-        ["Sequence_evidence" s]        [:evidence/sequence {:sequence/id s}]
+        ["Curator_confirmed" p]        [:evidence/curator (holder :person/id p)]
+        ["Feature_evidence" f]         [:evidence/feature (holder :feature/id f)]
+        ["Laboratory_evidence" l]      [:evidence/laboratory (holder :laboratory/id l)]
+        ["From_analysis" a]            [:evidence/analysis (holder :analysis/id a)]
+        ["Variation_evidence" v]       [:evidence/variation (holder :variation/id v)]
+        ["Mass_spec_evidence" m]       [:evidence/mass-spec (holder :thing/id m)]
+        ["Sequence_evidence" s]        [:evidence/sequence (holder :sequence/id s)]
         ["Remark" r]                   [:evidence/remark r]
         ["Date_last_updated" _]        nil    ; This should be handled by transactions...
-        :else (throw (Exception. (str "Don't understand evidence " e)))))))
+                                        ; :else (throw (Exception. (str "Don't understand evidence " (vec e))))))))
+        :else (println "Don't understand evidence " (vec e))))))
   
 
 (defn- gene-rnai-to-datomic [[rnai & evidence]]
   (assoc (evidence-to-datomic [evidence])
-         :gene.rnai/rnai {:rnai/id rnai}))
+         :evidence/link {:rnai/id rnai}))
 
 (defn- gene-desc-to-datomic [concise]
   (when (seq concise)
@@ -104,6 +105,8 @@
     {:db/id   (d/tempid :db.part/user)
      key      value}))
 
+
+
 (defmethod ace-to-datomic "Gene"
   [obj]
   (let [[evidence]          (select obj ["Evidence"])
@@ -126,16 +129,99 @@
            :gene/name.molecular     mol_name
            :gene/name.other         (seq (map first other-names))
 
+           ; :gene/db-info  ...
+
+           :gene/species            (holder :species/id (ffirst (select obj ["Identity" "Species"])))
+           
            :gene/status             (gene-status-to-datomic status)
 
            :gene/class              (holder :thing/id gene-class)
            :gene/laboratory         (laboratory-to-datomic laboratory)
-           
+           :gene/cloned-by          (when-let [cbe (seq (select obj ["Gene_info" "Cloned_by"]))]
+                                      (evidence-to-datomic cbe))
+           :gene/ref-allele         (seq (for [[a & evidence] (select obj ["Gene_info" "Reference_allele"])]
+                                      (assoc (evidence-to-datomic [evidence])
+                                        :evidence/link (holder :variation/id a))))
+           :gene/allele             (seq (for [[a & evidence] (select obj ["Gene_info" "Allele"])]
+                                           (assoc (evidence-to-datomic [evidence])
+                                             :evidence/link (holder :variation/id a))))
+           :gene/possibly-affected  (seq (for [[a & evidence] (select obj ["Gene_info" "Possibly_affected_by"])]
+                                      (assoc (evidence-to-datomic [evidence])
+                                        :evidence/link (holder :variation/id a))))
+           :gene/legacy-info        (seq (for [[a & evidence] (select obj ["Gene_info Legacy_information"])]
+                                      (assoc (evidence-to-datomic [evidence])
+                                        :evidence/note a)))
+           :gene/complementation    (seq (map first (select obj ["Gene_info" "Complementation_data"])))
+           :gene/strain             (seq (for [[s] (select obj ["Gene_info" "Strain"])]
+                                           (holder :strain/id s)))
+
+           :gene/in-cluster         (seq (for [[c] (select obj ["Gene_info" "In_cluster"])]
+                                           (holder :thing/id c)))
+           :gene/rnaseq             (seq (for [[[life-stage fpkm] evidence] (->> (select obj ["Gene_info" "RNASeq_FPKM"])
+                                                                                 (group-by-prefix 2))]
+                                           (assoc (evidence-to-datomic evidence)
+                                             :gene.rnaseq/lifestage (holder :lifestage/id life-stage)
+                                             :gene.rnaseq/fpkm (parse-float fpkm))))
+           :gene/go                 (seq (for [[go-term go-code & evidence] (select obj ["Gene_info" "GO_term"])]
+                                           (assoc (evidence-to-datomic [evidence])
+                                             :gene.go/term (holder :go/id go-term)
+                                             :gene.go/code (holder :thing/id go-code))))
+           :gene/operon             (when-let [[[o]] (select obj ["Gene_info" "Contained_in_operon"])]
+                                      (holder :operon/id o))
+
+           ; There seem to be one or two orthologs without any metadata, e.g. "WBGene000000436 -> WBGene00153017"
+           ; so using vassoc to avoid nils in the Datomic transaction.  Should check....
+           :gene/ortholog           (seq (for [[[gene species] evidence] (->> (select obj ["Gene_info" "Ortholog"])
+                                                                              (group-by-prefix 2))]
+                                           (vassoc (evidence-to-datomic evidence)
+                                             :gene.relation/gene (holder :gene/id gene)
+                                             :gene.relation/species (holder :species/id species))))
+           :gene/paralog            (seq (for [[[gene species] evidence] (->> (select obj ["Gene_info" "Ortholog"])
+                                                                              (group-by (partial take 2)))]
+                                           (vassoc (evidence-to-datomic (map (partial drop 2) evidence))
+                                             :gene.relation/gene (holder :gene/id gene)
+                                             :gene.relation/species (holder :species/id species))))
+           :gene/ortholog-other     (seq (for [[[protein] evidence] (->> (select obj ["Gene_info" "Ortholog_other"])
+                                                                         (group-by-prefix 1))]
+                                           (assoc (evidence-to-datomic evidence)
+                                             :evidence/link (holder :protein/id protein))))
+
+           ; :gene/expt-model ...
+           ; :gene/potential-model ...
+           ; :gene/disease-relevance ...
+
+           ; :gene/cds ...
+           ; :gene/transcript ...
+           ; :gene/pseudogene ...
+           ; :gene/transposon ...
+           ; :gene/other-seq ...
+           ; :gene/associated-feature ...
+           ; :gene/product-binds ...
+           ; :gene/transcription-factor ...
+
+           :gene/rnai           (seq (map gene-rnai-to-datomic rnais))
+           ; :gene/expr-pattern ...
+           ; :gene/drives-transgene ...
+           ; :gene/transgene-product ... 
+           ; :gene/regulate-expr-cluster ..
+           ; :gene/antibody ..
+           ; :gene/microarray-results ..
+           ; :gene/expr-cluster ..
+           ; :gene/sage-tag ..
+           ; :gene/3d-data ..
+           ; :gene/interaction ..
+           ; :gene/anatomy-function ..
+           ; :gene/product-binds-matrix ..
+           ;  :gene/process ..
+
            :gene/desc               (gene-desc-to-datomic concise)
-           :gene/rnai           (seq (map gene-rnai-to-datomic rnais)) ; `seq` replaces empty collection with `nil`
+           
            :gene/reference      (seq (for [r refs]
                                        {:db/id        (d/tempid :db.part/user)
-                                        :paper/id     r})))]))  
+                                        :paper/id     r}))
+           ; :gene/remark ..
+           ; :gene/method ..
+           )]))
 
 (def ^:private rnai-delivery-to-datomic
   {"Bacterial_feeding"       :rnai.delivery/feeding

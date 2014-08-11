@@ -122,15 +122,15 @@
      [:class :ref]
      [:laboratory :ref]
      [:cloned-by :ref :component] ; "bare" evidence object
-     [:ref-allele :ref :component]
-     [:allele :ref :component]
-     [:possibly-affected :ref :component]
+     [:ref-allele :ref :component :many]
+     [:allele :ref :component :many]
+     [:possibly-affected :ref :component :many]
      [:legacy-info :ref :component]
-     [:complementation :string]
-     [:strain :ref]
-     [:in-cluster :ref]
-     [:rnaseq :ref :component]
-     [:go :ref :component]
+     [:complementation :string :many]
+     [:strain :ref :many]
+     [:in-cluster :ref :many]
+     [:rnaseq :ref :component :many]
+     [:go :ref :component :many]
      [:operon :ref]              ; Equivalent to "Contained_in", which doesn't seem terribly descriptive
      [:ortholog :ref :component :many]
      [:paralog :ref :component :many]
@@ -173,7 +173,6 @@
      [:remark :ref :component :many]
      [:method :ref]))
 
-  
   (schema gene.desc
     (fields
      ; Also has evidence
@@ -185,24 +184,29 @@
     [:accession :string]))
   (schema gene.status
    (fields
-    ; has evidence        
-    [:status :enum [:life :suppressed :dead]]))
+    ; has evidence
+    [:status :enum [:live :suppressed :dead]]))
   (schema gene.rnaseq
    (fields
     ; has evidence        
-    [:life-stage :ref]
+    [:lifestage :ref]
     [:fpkm :float]))
   (schema gene.go
    (fields
     ; has evidence
     [:term :ref]
     [:code :ref]))  ; Kind-of an enum...
+  (schema gene.relation
+   (fields
+    ; has evidence
+    [:gene :ref]
+    [:species :ref]))
   (schema gene.disease-model
    (fields
     ; has evidence
     [:do-term :ref]
     [:species :ref]))
-  (schema gene-diseaase-relevance
+  (schema gene-disease-relevance
    (fields        
     ; has evidence
     [:note :string]
@@ -229,12 +233,30 @@
   (schema sequence
    (fields
     [:id :string :unique-identity]))
-  
+
+  (schema protein
+   (fields
+    [:id :string :unique-identity]))
+          
   (schema feature
    (fields
     [:id :string :unique-identity]))
 
-  
+  (schema lifestage
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema operon
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema species
+   (fields       
+    [:id :string :unique-identity]))
+
+  (schema strain
+   (fields
+    [:id :string :unique-identity]))
   ;
   ; Evidence model and sub-tags
   ;
@@ -245,9 +267,9 @@
      [:note :string]          ; Not an evidence tag.
      [:paper :ref :many]
      [:published :string :many]
-     [:person :string :many]
-     [:author :ref :many]     ; link entity
-     [:accession :ref :many]  ; link entity
+     [:person :ref :many]
+     [:author :ref :many :component]     ; link entity
+     [:accession :ref :many :component]  ; link entity
      [:protein-id :string :many]
      [:go-term :ref :many]
      [:expr-pattern :ref :many]
