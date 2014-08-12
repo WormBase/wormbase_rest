@@ -8,6 +8,11 @@
 ; "version 2" Datomic importer, for more credible ACeDB models.
 ;
 
+(defn- holder [key value]
+  (when value
+    {:db/id   (d/tempid :db.part/user)
+     key      value}))
+
 (defmulti ace-to-datomic :class)
 
 (defmethod ace-to-datomic "LongText"
@@ -79,6 +84,14 @@
         :else (println "Don't understand evidence " (vec e))))))
   
 
+(defn- elinks-to-datomic 
+  "Datomize evidenced links, with a target as a placeholder entity using
+   `holder-rel` to link to its key."
+  [elinks holder-rel]
+  (seq (for [[[k] evidence] (group-by-prefix 1 elinks)]
+         (assoc (evidence-to-datomic evidence)
+           :evidence/link (holder holder-rel k)))))
+
 (defn- gene-rnai-to-datomic [[rnai & evidence]]
   (assoc (evidence-to-datomic [evidence])
          :evidence/link {:rnai/id rnai}))
@@ -89,10 +102,11 @@
       :gene.desc/concise (unescape (ffirst concise)))))
 
 (defn- gene-status-to-datomic [status]
-  (assoc (evidence-to-datomic (map rest status))
-    :gene.status/status ({"Live"        :gene.status.status/live
-                          "Suppressed"  :gene.status.status/suppressed
-                          "Dead"        :gene.status.status/dead} (ffirst status))))
+  (when (seq status)
+    (assoc (evidence-to-datomic (map rest status))
+      :gene.status/status ({"Live"        :gene.status.status/live
+                            "Suppressed"  :gene.status.status/suppressed
+                            "Dead"        :gene.status.status/dead} (ffirst status)))))
 
 (defn- laboratory-to-datomic [lab]
   (when lab
@@ -100,10 +114,11 @@
      :laboratory/id   lab}))
 
 
-(defn- holder [key value]
-  (when value
-    {:db/id   (d/tempid :db.part/user)
-     key      value}))
+(defn- disease-model-to-datomic [dm]
+  (seq (for [[[do-term species] evidence] (group-by-prefix 2 dm)]
+         (assoc (evidence-to-datomic evidence)
+           :gene.disease-model/do-term (holder :do/id do-term)
+           :gene.disease-model/species (holder :species/id species)))))
 
 
 
@@ -119,8 +134,7 @@
         rnais               (select obj ["Experimental_info" "RNAi_result"])
         concise             (select obj ["Structured_description" "Concise_description"])
         [[gene-class]]      (select obj ["Gene_info" "Gene_class"])
-        [[laboratory]]      (select obj ["Gene_info" "Laboratory"])
-        refs                (map first (select obj ["Reference"]))]
+        [[laboratory]]      (select obj ["Gene_info" "Laboratory"])]
     [(vmap :db/id                   (d/tempid :db.part/user)
            :gene/id                 (:id obj)
            :gene/name.cgc           cgc_name
@@ -129,7 +143,10 @@
            :gene/name.molecular     mol_name
            :gene/name.other         (seq (map first other-names))
 
-           ; :gene/db-info  ...
+           :gene/db-info            (seq (for [[db db-field acc] (select obj ["Identity" "DB_info" "Database"])]
+                                           {:gene.db-info/db          (holder :database/id db)
+                                            :gene.db-info/field       (holder :database-field/id db-field)
+                                            :gene.db-info/accession   acc}))
 
            :gene/species            (holder :species/id (ffirst (select obj ["Identity" "Species"])))
            
@@ -169,8 +186,6 @@
            :gene/operon             (when-let [[[o]] (select obj ["Gene_info" "Contained_in_operon"])]
                                       (holder :operon/id o))
 
-           ; There seem to be one or two orthologs without any metadata, e.g. "WBGene000000436 -> WBGene00153017"
-           ; so using vassoc to avoid nils in the Datomic transaction.  Should check....
            :gene/ortholog           (seq (for [[[gene species] evidence] (->> (select obj ["Gene_info" "Ortholog"])
                                                                               (group-by-prefix 2))]
                                            (vassoc (evidence-to-datomic evidence)
@@ -186,18 +201,24 @@
                                            (assoc (evidence-to-datomic evidence)
                                              :evidence/link (holder :protein/id protein))))
 
-           ; :gene/expt-model ...
-           ; :gene/potential-model ...
-           ; :gene/disease-relevance ...
+           :gene/expt-model         (disease-model-to-datomic (select obj ["Disease_info" "Experimental_model"]))
+           :gene/potential-model    (disease-model-to-datomic (select obj ["Disease_info" "Potential_model"]))
+           :gene/disease-relevance  (seq (for [[[text species] evidence] (->> (select obj ["Disease_info" "Disease_relevance"])
+                                                                              (group-by-prefix 2))]
+                                           (assoc (evidence-to-datomic evidence)
+                                             :gene.disease-relevance/note (unescape text)
+                                             :gene.disease-relevance/species (holder :species/id species))))
 
-           ; :gene/cds ...
-           ; :gene/transcript ...
-           ; :gene/pseudogene ...
-           ; :gene/transposon ...
-           ; :gene/other-seq ...
-           ; :gene/associated-feature ...
-           ; :gene/product-binds ...
-           ; :gene/transcription-factor ...
+           :gene/cds                (elinks-to-datomic (select obj ["Molecular_info" "Corresponding_CDS"]) :cds/id)
+           :gene/transcript         (elinks-to-datomic (select obj ["Molecular_info" "Corresponding_transcript"]) :transcript/id)
+           :gene/pseudogene         (elinks-to-datomic (select obj ["Molecular_info" "Corresponding_pseudogene"]) :pseudogene/id)
+           :gene/transposon         (elinks-to-datomic (select obj ["Molecular_info" "Corresponding_transposon"]) :transposon/id)
+           :gene/other-seq          (elinks-to-datomic (select obj ["Molecular_info" "Other_sequence"]) :sequence/id)
+           :gene/associated-feature (elinks-to-datomic (select obj ["Molecular_info" "Associated_feature"]) :feature/id)
+           :gene/product-binds      (seq (for [[f] (select obj ["Molecular_info" "Gene_product_binds"])]
+                                           (holder :feature/id f)))
+           :gene/transcription-factor (seq (for [[f] (select obj ["Molecular_info" "Transcription_factor"])]
+                                             (holder :txn-factor/id f)))
 
            :gene/rnai           (seq (map gene-rnai-to-datomic rnais))
            ; :gene/expr-pattern ...
@@ -212,15 +233,18 @@
            ; :gene/interaction ..
            ; :gene/anatomy-function ..
            ; :gene/product-binds-matrix ..
-           ;  :gene/process ..
+           ; :gene/process ..
 
            :gene/desc               (gene-desc-to-datomic concise)
            
-           :gene/reference      (seq (for [r refs]
-                                       {:db/id        (d/tempid :db.part/user)
-                                        :paper/id     r}))
-           ; :gene/remark ..
-           ; :gene/method ..
+           :gene/reference          (elinks-to-datomic (select obj ["Reference"])
+                                                       :paper/id)
+           :gene/remark             (seq (for [[[text] evidence] (->> (select obj ["Remark"])
+                                                                      (group-by-prefix 1))]
+                                           (assoc (evidence-to-datomic evidence)
+                                             :evidence/note text)))
+           :gene/method             (when-let [[[method]] (select obj ["Method"])]
+                                      (holder :method/id method))
            )]))
 
 (def ^:private rnai-delivery-to-datomic

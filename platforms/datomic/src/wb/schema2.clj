@@ -149,7 +149,7 @@
      [:other-seq :ref :component :many]
      [:associated-feature :ref :component :many]
      [:product-binds :ref :many]
-     [:transcription-factor :ref]
+     [:transcription-factor :ref :many]
 
      ; Experimental_info
      [:rnai :ref :many :component]
@@ -169,7 +169,7 @@
 
      ; Map_info (elide for now...)
      
-     [:reference :ref :many]
+     [:reference :ref :component :many]
      [:remark :ref :component :many]
      [:method :ref]))
 
@@ -178,7 +178,7 @@
      ; Also has evidence
      [:concise :string :fulltext]))
   (schema gene.db-info
-   (fields
+   (fields      ; Would it make more sense to just reach the DB via field?
     [:db :ref]
     [:field :ref]
     [:accession :string]))
@@ -206,15 +206,21 @@
     ; has evidence
     [:do-term :ref]
     [:species :ref]))
-  (schema gene-disease-relevance
+  (schema gene.disease-relevance
    (fields        
     ; has evidence
     [:note :string]
     [:species :ref]))
 
-
+  (schema method
+   (fields
+    [:id :string :unique-identity]))
 
   (schema go
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema do
    (fields
     [:id :string :unique-identity]))
 
@@ -257,6 +263,36 @@
   (schema strain
    (fields
     [:id :string :unique-identity]))
+
+
+  (schema cds
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema transcript
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema transposon
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema pseudogene
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema txn-factor
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema database
+   (fields
+    [:id :string :unique-identity]))
+
+  (schema database-field
+   (fields
+    [:id :string :unique-identity]))
+
   ;
   ; Evidence model and sub-tags
   ;
@@ -275,7 +311,7 @@
      [:expr-pattern :ref :many]
      [:microarray-results :ref :many]
      [:rnai :ref :many]
-     [:cgc-submission :boolean]
+     [:cgc-submission :boolean :many]    ; :many is silly, but keeps evidence-to-datomic regular
      [:curator :ref :many]
      [:automatic :string :many]
      [:feature :ref :many]
