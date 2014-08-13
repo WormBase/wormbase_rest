@@ -6,13 +6,31 @@
   (concat
    (generate-schema d/tempid
                     
- [(schema longtext
+  [
+
+;
+; Bits and pieces that are used in multiple places
+;                                        ;
+
+
+   (schema db-info
+    (fields      ; Would it make more sense to just reach the DB via field?
+      [:db :ref]
+      [:field :ref]
+      [:accession :string]))
+   
+
+   (schema longtext
     (fields
      [:id :string :unique-identity]
      [:text :string :fulltext]))
 
 
-  (schema thing   ;something we haven't modelled yet.
+;
+; Placeholder for something we haven't modelled yet.  Should eventually die.
+;
+   
+  (schema thing
    (fields
     [:id :string :unique-identity]))        
   
@@ -21,23 +39,68 @@
      [:id :string :unique-identity]
      [:description :string :fulltext]
      [:name :string]))
+
+  ;
+  ; Paper model and sub-tags
+  ;
   
   (schema paper
     (fields
      [:id :string :unique-identity]
+     [:legacy-name :string :many]
+     [:db-info :ref :many :component]
+     ; Eliding history for now.
+     [:status :enum [:valid :invalid]]
+     [:erratum-for :ref :many]
+     
+     
      [:author :ref :component :many]
+     [:person :ref :component :many]
+     [:not-person :ref :component :many]
+     [:affiliation :ref :component :many]
+
+     [:describes :ref :many]    ; --> :analysis
+     
      [:brief.citation :string]
+     [:abstract :string :fulltext]
+     [:url :string]
+
+     [:type :ref :many :component]
+     
+     
      [:ref.title :string]
      [:ref.journal :string]
+     [:ref.publisher :string]
+     [:ref.editor :string :many]
      [:ref.volume :string]
      [:ref.page :string]
-     [:abstract :ref]))
+     [:ref.date :string]        ; Following Ace models in not using :instant
+     [:ref.contained-in :ref]
+
+     [:abstract :ref]
+
+     [:curation-pipeline :enum [:phenotype2go]]
+     [:keyword :ref :many]
+     [:remark :ref :many :component]))
   (schema paper.author
     (fields
      [:ordinal :long]
-     [:name :string]))
-
-  
+     [:author :ref]
+     [:person :ref]
+     [:address :string]))
+  (schema paper.person
+    (fields
+     [:ordinal :long]
+     [:person :ref]))
+  (schema paper.type
+    (fields
+     ; has evidence     
+     [:type :enum [:journal-article :review :comment :news :letter :editorial
+                   :congresses :historical :biography :interview :lectures
+                   :interactive-tutorial :retracted :techical-report :directory
+                   :monograph :erratum :meeting-abstract :gazette-article
+                   :book-chapter :book :email :wormbook :other]]))
+     
   ;
   ; Person model and sub-tags
   ;
@@ -58,7 +121,7 @@
 
     [:affiliation :string :many]
 
-    [:conducted :ref :many]
+    ; [:conducted :ref :many]           -- Link other way...
 
     [:address :ref :component]
 
@@ -68,30 +131,60 @@
     [:worked-with :ref :many :component]
     
     [:comment :string :many]
-    [:paper :ref :many]
-    [:not.paper :ref :many]
+    ; [:paper :ref :many]              -- Link from paper
+    ; [:not.paper :ref :many]
     [:publishes-as :ref :many]
     [:possibly-publishes-as :ref :many]))
 
   (schema address
    (fields
-    [:street :string :many]
+    [:street :string :many]     ; FIXME: needs to be ordered.
     [:country :string]
     [:institution :string]
     [:email :string :many]
     [:phone.main :string :many]
     [:phone.lab :string :many]
     [:phone.office :string :many]
-    [:phone.other :string :many]     ; Currently not modeling notes
+    [:phone.other :ref :many :component]
     [:fax :string :many]
     [:web-page :string :many]))
+  (schema address.phone.other
+   (fields
+    [:phone :string]
+    [:note :string]))
+  
     
   (schema person.lineage
    (fields
     [:person :ref]
     [:role :enum [:assistant-professor :phd :postdoc :masters :undergrad
                   :highschool :sabbatical :lab-visitor :collaborated
-                  :research-staff :unknown]]))
+                  :research-staff :unknown]]
+    [:date-from :instant]
+    [:date-to :instant]))
+    
+
+
+  ;
+  ; Author model
+  ;
+
+  (schema author
+   (fields
+    [:id :string :unique-identity]
+    [:full-name :string :many]
+    [:alias :string :many]
+    [:old-lab :ref :many]
+
+    ; Why doesn't this use "real" address?
+    [:addr.mail :string :many]
+    [:addr.email :string :many]
+    [:addr.phone :string :many]
+    [:addr.fax :string :many]
+
+    [:paper :ref :many]
+    ; [:sequence :ref :many]
+    [:keyword :ref :many]))
     
     
   ;
@@ -177,11 +270,7 @@
     (fields
      ; Also has evidence
      [:concise :string :fulltext]))
-  (schema gene.db-info
-   (fields      ; Would it make more sense to just reach the DB via field?
-    [:db :ref]
-    [:field :ref]
-    [:accession :string]))
+
   (schema gene.status
    (fields
     ; has evidence
@@ -293,6 +382,9 @@
    (fields
     [:id :string :unique-identity]))
 
+  (schema keyword
+   (fields
+    [:name :string :unique-identity]))        
   ;
   ; Evidence model and sub-tags
   ;

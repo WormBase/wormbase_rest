@@ -2,7 +2,8 @@
   (:use acedb.acefile wb.utils)
   (:require [clojure.core.match :refer (match)]
             [clojure.string :as str]
-            [datomic.api :as d]))
+            [datomic.api :as d]
+            [clojure.instant :as inst]))
 
 ;
 ; "version 2" Datomic importer, for more credible ACeDB models.
@@ -13,41 +14,19 @@
     {:db/id   (d/tempid :db.part/user)
      key      value}))
 
-(defmulti ace-to-datomic :class)
+(defn- str-single [obj & path]
+  (ffirst (select obj path)))
 
-(defmethod ace-to-datomic "LongText"
-  [obj]
-  (let [{:keys [id text]} obj]
-    [{:db/id           (d/tempid :db.part/user)
-      :longtext/id     id
-      :longtext/text   (unescape text)}]))
+(defn- str-many [obj & path]
+  (seq (map first (select obj path))))
 
-(defmethod ace-to-datomic "Paper"
-  [obj]
-  (let [authors         (select obj ["Author"])
-        [[ref_title]]   (select obj ["Reference" "Title"])
-        [[ref_journal]] (select obj ["Reference" "Journal"])
-        [[ref_volume]]  (select obj ["Reference" "Volume"])
-        [[ref_page]]    (select obj ["Reference" "Page"])
-        [[brief_cite]]  (select obj ["Brief_citation"])
-        [[abstract]]    (select obj ["Abstract"])
-        trans (vmap :db/id            (d/tempid :db.part/user)
-                    :paper/id         (:id obj)
-                    :paper/author     (map-indexed
-                                       (fn [index [author & _]]
-                                         {:db/id     (d/tempid :db.part/user)
-                                          :paper.author/ordinal (inc index)
-                                          :paper.author/name author})
-                                       authors)
-                    :paper/ref.title   ref_title
-                    :paper/ref.journal ref_journal
-                    :paper/ref.volume  ref_volume
-                    :paper/ref.page    ref_page
-                    :paper/brief.citation  (unescape brief_cite))]
-    [(if abstract
-       (assoc trans :paper/abstract {:db/id        (d/tempid :db.part/user)
-                                     :longtext/id  abstract})
-       trans)]))
+(defn- ustr-single [obj & path]
+  (when-let [t (ffirst (select obj path))]
+    (unescape t)))
+
+(defn- link-many [obj type & path]
+  (seq (for [[k] (select obj path)]
+         (holder type k))))
 
 (defn- evidence-to-datomic [evseq]
   (conj-into {}
@@ -91,6 +70,97 @@
   (seq (for [[[k] evidence] (group-by-prefix 1 elinks)]
          (assoc (evidence-to-datomic evidence)
            :evidence/link (holder holder-rel k)))))
+
+(defmulti ace-to-datomic :class)
+
+(defmethod ace-to-datomic "LongText"
+  [obj]
+  (let [{:keys [id text]} obj]
+    [{:db/id           (d/tempid :db.part/user)
+      :longtext/id     id
+      :longtext/text   (unescape text)}]))
+
+(defn- paper-type-to-datomic [lines]
+  (seq
+   (for [[t evidence] (group-by-prefix 1 lines)]
+     (assoc (evidence-to-datomic evidence)
+       :paper.type/type (or ({"Journal_article"       :paper.type.type/journal-article
+                             "Review"                :paper.type.type/review
+                             "Comment"               :paper.type.type/comment
+                             "News"                  :paper.type.type/news
+                             "Letter"                :paper.type.type/letter
+                             "Editorial"             :paper.type.type/editorial
+                             "Congresses"            :paper.type.type/congresses
+                             "Historical_article"    :paper.type.type/historical
+                             "Biography"             :paper.type.type/biography
+                             "Interview"             :paper.type.type/interview
+                             "Lectures"              :paper.type.type/lectures
+                             "Interactive_tutorial"  :paper.type.type/interactive
+                             "Retracted_publication" :paper.type.type/retracted
+                             "Techical_report"       :paper.type.type/technical-report
+                             "Directory"             :paper.type.type/directory
+                             "Monograph"             :paper.type.type/monograph
+                             "Published_erratum"     :paper.type.type/erratum
+                             "Meeting_abstract"      :paper.type.type/meeting-abstract
+                             "Gazette_article"       :paper.type.type/gazette-article
+                             "Book_chapter"          :paper.type.type/book-chapter
+                             "Book"                  :paper.type.type/book
+                             "Email"                 :paper.type.type/email
+                             "WormBook"              :paper.type.type/wormbook
+                             "Other"                 :paper.type.type/other} t)
+                            (except "Bad paper type " t))))))
+
+(defmethod ace-to-datomic "Paper"
+  [obj]
+ [(vmap :db/id                  (d/tempid :db.part/user)
+        :paper/id               (:id obj)
+        :paper/legacy-name      (str-many obj "Name")
+        :paper/status           (when-let [[[status]] (select obj ["Status"])]
+                                  (or ({"Valid"    :paper.status/valid
+                                        "Invalid"  :paper.status/invalid} status)
+                                      (except "Bad paper status " status)))
+        :paper/erratum-for      (link-many :paper/id obj "Erratum_for")
+        
+        :paper/author           (seq
+                                 (map-indexed
+                                  (fn [index [author ptag person]]
+                                    (vmap
+                                     :paper.author/ordinal (inc index)
+                                     :paper.author/author (holder :author/id author)
+                                     :paper.author/person (when (= ptag "Person")
+                                                            (holder :person/id person))))
+                                  (select obj ["Author"])))
+        :paper/person           (elinks-to-datomic (select obj ["Person"]) :person/id)
+        :paper/not-person       (elinks-to-datomic (select obj ["Not_person"]) :person/id)
+
+        :paper/affiliation            nil ;; FIXME
+                                 
+        :paper/describes        (link-many :analysis/id obj "Describes_analysis")
+        :paper/brief.citation   (ustr-single obj "Brief_citation")
+        :paper/url              (str-single obj "URL")
+        :paper/type             (paper-type-to-datomic (select obj "Type"))
+
+        :paper/ref.title        (ustr-single obj "Reference" "Title")
+        :paper/ref.journal      (str-single obj "Reference" "Journal")
+        :paper/ref.publusher    (str-single obj "Reference" "Publisher")
+        :paper/ref.editor       (str-many obj "Reference" "Editor")
+        :paper/ref.page         (str-single obj "Reference" "Page")
+        :paper/ref.volume       (str-single obj "Reference" "Volume")
+        :paper/ref.date         (str-single obj "Reference" "Publication_date")
+        :paper/ref.contained-in (link-many :paper/id obj "Reference" "Contained_in")
+
+        ; :paper/abstract is never defined here because it comes via longtext
+
+        :paper/curation-pipeline (when-let [_ (select obj ["Curation_pipeline" "Phenotype2GO"])]
+                                   :paper.curation-pipeline/phenotype2go)
+        :paper/keyword          (link-many :keyword/id obj "Keyword")
+        :paper/remark           (seq (for [[a & evidence] (select obj ["Remark"])]
+                                      (assoc (evidence-to-datomic [evidence])
+                                        :evidence/note a))))])
+
+
+
+
 
 (defn- gene-rnai-to-datomic [[rnai & evidence]]
   (assoc (evidence-to-datomic [evidence])
@@ -220,7 +290,10 @@
            :gene/transcription-factor (seq (for [[f] (select obj ["Molecular_info" "Transcription_factor"])]
                                              (holder :txn-factor/id f)))
 
-           :gene/rnai           (seq (map gene-rnai-to-datomic rnais))
+
+           ; Most of these seem to belong on the experiment, not on the gene ????
+           
+           ; :gene/rnai           (seq (map gene-rnai-to-datomic rnais))
            ; :gene/expr-pattern ...
            ; :gene/drives-transgene ...
            ; :gene/transgene-product ... 
@@ -246,6 +319,79 @@
            :gene/method             (when-let [[[method]] (select obj ["Method"])]
                                       (holder :method/id method))
            )]))
+
+
+
+(defn- addr-to-datomic [lines]
+  (when (seq lines)
+    (let [obj {:lines lines}]
+      (vmap
+       :address/street          (str-many   obj "Street_address")
+       :address/country         (str-single obj "Country")
+       :address/institution     (str-single obj "Institution")
+       :address/email           (str-many   obj "Email")
+       :address/phone.main      (str-many   obj "Main_phone")
+       :address/phone.lab       (str-many   obj "Lab_phone")
+       :address/phone.office    (str-many   obj "Office_phone")
+       :address/phone.other     (seq (for [[phone note] (select obj ["Other_phone"])]
+                                       (vmap :address.phone.other/phone phone
+                                             :address.phone.other/note note)))
+       :address/fax             (str-many   obj "Fax")
+       :address/web-page        (str-many   obj "Web_page")))))
+
+(defn- lineage-to-datomic [lines]
+  (seq
+   (for [[p role from to] lines]
+     (vmap
+       :person.lineage/person
+         (holder :person/id p)
+         :person.lineage/role
+         (when role
+           (or ({"Assistant_professor"       :person.lineage.role/assistant-professor
+                 "Phd"                       :person.lineage.role/phd
+                 "Postdoc"                   :person.lineage.role/postdoc
+                 "Masters"                   :person.lineage.role/masters
+                 "Undergrad"                 :person.lineage.role/undergrad
+                 "Highschool"                :person.lineage.role/highschool
+                 "Sabbatical"                :person.lineage.role/sabbatical
+                 "Lab_visitor"               :person.lineage.role/lab-visitor
+                 "Collaborated"              :person.lineage.role/collaborated
+                 "Research_staff"            :person.lineage.role/research-staff
+                 "Unknown"                   :person.lineage.role/unknown} role)      ; Maybe better to leave blank?
+               (throw (Exception. (str "Unknown role " role)))))
+       :person.lineage/date-from
+         (when from
+           (inst/read-instant-date from))
+       :person.lineage/date-to
+         (when to
+           (inst/read-instant-date to))))))
+
+(defmethod ace-to-datomic "Person"
+  [obj]
+  [(vmap :db/id                        (d/tempid :db.part/user)
+         :person/id                    (:id obj)
+         :person/name.first            (str-single obj "Name" "First_name")
+         :person/name.middle           (str-many   obj "Name" "Middle_name")
+         :person/name.last             (str-single obj "Name" "Last_name")
+         :person/name.standard         (str-single obj "Name" "Standard_name")
+         :person/name.full             (str-single obj "Name" "Full_name")
+         :person/alias                 (str-many   obj "Name" "Also_known_as")
+
+         :person/cgc.rep               (link-many :laboratory/id obj "CGC_representative_for")
+         :person/laboratory            (link-many :laboratory/id obj "Laboratory")
+
+         :person/address               (addr-to-datomic (select obj ["Address"]))
+
+         :person/supervised            (lineage-to-datomic (select obj ["Lineage" "Supervised"])) 
+         :person/worked-with           (lineage-to-datomic (select obj ["Lineage" "Worked_with"]))
+         
+         :person/comment               (str-many obj "Comment")
+         :person/publishes-as          (link-many :author/id obj "Publication" "Publishes_as")
+         :person/possibly-publishes-as (link-many :author/id obj "Publication" "Possibly_publishes_as"))])
+         
+         
+
+         
 
 (def ^:private rnai-delivery-to-datomic
   {"Bacterial_feeding"       :rnai.delivery/feeding

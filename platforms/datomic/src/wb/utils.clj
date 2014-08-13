@@ -51,3 +51,8 @@
       (let [k (take n x)]
         (assoc! ret k (conj (get ret k []) (drop n x)))))
     (transient {}) coll)))
+
+(defn except
+  "Concatenate args as if with `str` then throw an exception"
+  [& args]
+  (throw (Exception. (apply str args))))
