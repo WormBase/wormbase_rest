@@ -148,34 +148,44 @@ yes
 
 4. Is there a help forum? Are there answers?
 http://planetcassandra.org/general-faq/
+
 there is an IRC channel/mailing lists/stackoverflow/....
 
 5. Language bindings: Does it have:
-	Perl (yes)
-	Javascript (yes)
-	Python (yes, that is the reference API)
-	Java (yes)
-	SQL (there is a mySQL plugin that works with old databases)
-	C/C++ (yes)
+	* Perl (yes)
+	* Javascript (yes)
+	* Python (yes, that is the reference API)
+	* Java (yes)
+	* SQL (there is a mySQL plugin that works with old databases)
+	* C/C++ (yes)
+
 6. Licensing? Apache License 2.0
-        Commercial support? yes, from DataStax
-	Pricing? couldn't find numbers
+        * Commercial support? yes, from DataStax
+	* Pricing? couldn't find numbers
+
 7. Scalability?
-	Auto-scaling (yes, ring based clusters)
-	Sharding (yes, automatically based on the primary key and a sharding algorithm)
-	Fail-over (multiple seed servers per ring, redundancy and automatic rebalancing of the ring)
-	Hadoop (yes)
+	* Auto-scaling (yes, ring based clusters)
+	* Sharding (yes, automatically based on the primary key and a sharding algorithm)
+	* Fail-over (multiple seed servers per ring, redundancy and automatic rebalancing of the ring)
+	* Hadoop (yes)
+
 8. Data dumping (snapshots)
-	snapshots can be done per node
+snapshots can be done per node
+
 9. ACID?
-	nope, there is an eventual consistency
+nope, there is an eventual consistency
+
 10. How intuitive was the modelling process?
-	it is bit unintuitive, but using CQL3 makes it more SQL like (including schemata)
+it is bit unintuitive, but using CQL3 makes it more SQL like (including schemata)
+
 11. Support for constraints
-	no foreign keys, but type contraints
+no foreign keys, but type contraints
+
 ## TitanDB / PlanA
+
 1. Is the documentation good?
 is here: https://github.com/thinkaurelius/titan/wiki
+
 reasonably useable
 
 2. Are there user groups? Community?
@@ -188,26 +198,33 @@ yes
 basically though github and the groups
 
 5. Language bindings: Does it have:
-	Perl (yes, through Rexter/REST)
-	Javascript (yes, through Rexter/REST)
-	Python (yes, through Rexter/Bulbflow)
-	Java (yes, through the tinkerpop stack or directly from Titan)
-	SQL (no)
-	C/C++ (no, but could use the Rexter/REST interface)
+	* Perl (yes, through Rexter/REST)
+	* Javascript (yes, through Rexter/REST)
+	* Python (yes, through Rexter/Bulbflow)
+	* Java (yes, through the tinkerpop stack or directly from Titan)
+	* SQL (no)
+	* C/C++ (no, but could use the Rexter/REST interface)
+
 6. Licensing? Apache License 2.0
-        Commercial support? yes, from Aurelius
-	Pricing? quote on request
+        * Commercial support? yes, from Aurelius
+	* Pricing? quote on request
+
 7. Scalability?
-	Auto-scaling (yes, ring based clusters)
-	Sharding (yes, automatically based on the primary key and a sharding algorithm)
-	Fail-over (multiple seed servers per ring, redundancy and automatic rebalancing of the ring)
-	Hadoop (yes, see below)
+	* Auto-scaling (yes, ring based clusters)
+	* Sharding (yes, automatically based on the primary key and a sharding algorithm)
+	* Fail-over (multiple seed servers per ring, redundancy and automatic rebalancing of the ring)
+	* Hadoop (yes, see below)
+
 most of the scalability comes through the Cassandra backend, but there is a fast Hadoop implementation called Faunus/Fulgora
+
 8. Data dumping (snapshots)
-	snapshots can be done per cassandra node
+snapshots can be done per cassandra node
+
 9. ACID?
-	nope, there is an eventual consistency
+nope, there is an eventual consistency
+
 10. How intuitive was the modelling process?
-	it is bit unintuitive, the various data interchange formats GSON (Tinkerpop variant), GSON (Faunus variant) and GraphML, didn't help.
+it is bit unintuitive, the various data interchange formats GSON (Tinkerpop variant), GSON (Faunus variant) and GraphML, didn't help.
+
 11. Support for constraints
-	no, unless using external libraries like Python/Bulbflow
+no, unless using external libraries like Python/Bulbflow
