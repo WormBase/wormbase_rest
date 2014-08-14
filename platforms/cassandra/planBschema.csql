@@ -1,4 +1,4 @@
-CREATE KEYSPACE planB WITH REPLICATION = {'class':'SimpleStrategy','replication_factor':1};
+CREATE KEYSPACE planB WITH REPLICATION = {'class':'SimpleStrategy','replication_factor':2};
 
 USE planB;
 
