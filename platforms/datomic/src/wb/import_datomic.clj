@@ -24,6 +24,9 @@
   (when-let [t (ffirst (select obj path))]
     (unescape t)))
 
+(defn- ustr-many [obj & path]
+  (seq (map #(unescape (first %)) (select obj path))))
+
 (defn- link-many [obj type & path]
   (seq (for [[k] (select obj path)]
          (holder type k))))
@@ -70,6 +73,13 @@
   (seq (for [[[k] evidence] (group-by-prefix 1 elinks)]
          (assoc (evidence-to-datomic evidence)
            :evidence/link (holder holder-rel k)))))
+
+(defn- enotes-to-datomic 
+  "Datomize evidenced notes."
+  [enotes]
+  (seq (for [[[note] evidence] (group-by-prefix 1 enotes)]
+         (assoc (evidence-to-datomic evidence)
+           :evidence/note note))))
 
 (defmulti ace-to-datomic :class)
 
@@ -339,13 +349,13 @@
        :address/fax             (str-many   obj "Fax")
        :address/web-page        (str-many   obj "Web_page")))))
 
-(defn- lineage-to-datomic [lines]
+(defn- person-lineage-to-datomic [lines]
   (seq
    (for [[p role from to] lines]
      (vmap
        :person.lineage/person
          (holder :person/id p)
-         :person.lineage/role
+       :person.lineage/role
          (when role
            (or ({"Assistant_professor"       :person.lineage.role/assistant-professor
                  "Phd"                       :person.lineage.role/phd
@@ -382,8 +392,10 @@
 
          :person/address               (addr-to-datomic (select obj ["Address"]))
 
-         :person/supervised            (lineage-to-datomic (select obj ["Lineage" "Supervised"])) 
-         :person/worked-with           (lineage-to-datomic (select obj ["Lineage" "Worked_with"]))
+         :person/supervised            (person-lineage-to-datomic
+                                        (select obj ["Lineage" "Supervised"])) 
+         :person/worked-with           (person-lineage-to-datomic
+                                        (select obj ["Lineage" "Worked_with"]))
          
          :person/comment               (str-many obj "Comment")
          :person/publishes-as          (link-many :author/id obj "Publication" "Publishes_as")
@@ -391,6 +403,22 @@
          
          
 
+(defmethod ace-to-datomic "Laboratory"
+  [obj]
+  [(vmap
+    :db/id                            (d/tempid :db.part/user)
+    :laboratory/id                    (:id obj)
+    :laboratory/addr.mail             (ustr-many obj "Address" "Mail")
+    :laboratory/addr.phone            (ustr-many obj "Address" "Phone")
+    :laboratory/addr.email            (ustr-many obj "Address" "E_mail")
+    :laboratory/addr.fax              (ustr-many obj "Address" "Fax")
+    :laboratory/addr.url              (ustr-many obj "Address" "URL")
+
+    :laboratory/cgc.strain-designation   (str-single obj "CGC" "Strain_designation")
+    :laboratory/cgc.allele-designation   (str-single obj "CGC" "Allele_designation")
+    :laboratory/cgc.alleles              (link-many :variant/id obj "CGC" "Alleles")
+
+    :laboratory/remark                   (enotes-to-datomic (select obj ["Remark"])))]) 
          
 
 (def ^:private rnai-delivery-to-datomic

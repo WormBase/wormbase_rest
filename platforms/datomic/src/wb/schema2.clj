@@ -10,7 +10,7 @@
 
 ;
 ; Bits and pieces that are used in multiple places
-;                                        ;
+;                  
 
 
    (schema db-info
@@ -301,6 +301,18 @@
     [:note :string]
     [:species :ref]))
 
+  (schema gene-class
+   (fields       
+    [:id :string :unique-identity]
+    ; What to do about the top-level evidence, if any?  Is this used anywhere?
+    [:phenotype :string :many]    ; Why not refs to Phenotype objects?
+    [:description :string :many]
+    [:designating-laboratory :ref]
+    [:former-designating-laboratory :ref]
+    [:main-name :ref :many]
+    [:remark :ref :many]))
+    
+    
   (schema method
    (fields
     [:id :string :unique-identity]))
@@ -315,7 +327,24 @@
 
   (schema laboratory
    (fields
-    [:id :string :unique-identity]))
+    [:id :string :unique-identity]
+
+    ; Icky non-standard address to mirror ACeDB.
+    ; Can we regularize this?
+    [:addr.mail :string :many]
+    [:addr.phone :string :many]
+    [:addr.email :string :many]
+    [:addr.fax :string :many]
+    [:addr.url :string :many]
+
+    [:cgc.strain-designation :string]
+    [:cgc.allele-designation :string]
+    [:cgc.alleles :ref :many]
+    ; Gene_classes handled on :gene-class
+   
+    ; Staff handled on :person
+    
+    [:remark :ref :many]))
 
   (schema analysis
    (fields
