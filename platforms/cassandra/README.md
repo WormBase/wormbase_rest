@@ -159,8 +159,9 @@ there is an IRC channel/mailing lists/stackoverflow/....
 	* SQL (there is a mySQL plugin that works with old databases)
 	* C/C++ (yes)
 
-6. Licensing? Apache License 2.0
-        * Commercial support? yes, from DataStax
+6. Licensing?
+	* Apache License 2.0
+	* Commercial support? yes, from DataStax
 	* Pricing? couldn't find numbers
 
 7. Scalability?
@@ -205,8 +206,9 @@ basically though github and the groups
 	* SQL (no)
 	* C/C++ (no, but could use the Rexter/REST interface)
 
-6. Licensing? Apache License 2.0
-        * Commercial support? yes, from Aurelius
+6. Licensing? 
+	* Apache License 2.0
+	* Commercial support? yes, from Aurelius
 	* Pricing? quote on request
 
 7. Scalability?
