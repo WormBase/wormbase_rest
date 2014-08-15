@@ -9,7 +9,7 @@ MongoDB, like CouchDB is a document store. It's flexible enough to hold our sche
 
 Unique key of the mongo document = "$class~$obj"
 
-Running the site off this model will have similar downsides as the AceCouch experiment. So, I was planning on having an Elastic Search layer that would denormalize the data to more widget-centric pieces for us. This way we could keep most of the original acedb data model but have an efficient layer to serve the database from. -- This is similar to the architecture of the ICGC DCC submission system here at OICR.
+Running the site off this model will have similar downsides as the AceCouch experiment. So, I was planning on having an Elastic Search layer that would denormalize the data to more widget-centric pieces for us. This way we could keep most of the original acedb data model but have an efficient layer to serve the website from. -- This is similar to the architecture of the ICGC DCC submission system here at OICR.
 
 
 Prerequisites
@@ -22,6 +22,8 @@ Loading data
 -------------
 
 <code>perl ./loadmongo.pl</code>
+
+Creates a mongo database named 'wormbase'.
 
 
 Metrics
