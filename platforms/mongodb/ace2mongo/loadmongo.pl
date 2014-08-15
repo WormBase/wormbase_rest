@@ -8,7 +8,7 @@ use Benchmark;
 
 # set up MongoDB
 my $client = MongoDB::MongoClient->new;
-my $mongo = $client->get_database( 'test' );
+my $mongo = $client->get_database( 'wormbase' );
 
 # set up collections for each class
 my %classes = map { $_ => $mongo->get_collection( $_ ) } qw/Gene RNAi Phenotype Paper/;
