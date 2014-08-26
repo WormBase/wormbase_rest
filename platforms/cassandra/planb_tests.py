@@ -17,7 +17,9 @@ import datetime
 import time
 import string
 
-cluster = Cluster(['127.0.0.1'])
+#cluster = Cluster(['127.0.0.1'])
+cluster = Cluster(['172.17.0.2','172.17.0.3','172.17.0.4'])
+
 session = cluster.connect('planb')
 
 
