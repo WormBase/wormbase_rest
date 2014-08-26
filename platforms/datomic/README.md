@@ -92,7 +92,7 @@ Loading data
     (use 'acedb.importd)
     (require '[datomic.api :as d :refer (q db)])
 
-    (def uri "datomic:free://localhost:4334/smallace")
+    (def uri "datomic:free://localhost:4334/smaqllace")
     (d/delete-database uri)  ; No-op if DB doesn't exist, otherwise cleans up
     (d/create-database uri)
 
@@ -233,8 +233,7 @@ Qualitative Considerations
 
 5. Lanugage bindings:
 
-   Perl: Use REST API.  Will need an EDN library.  @dasmoth will write if he
-   gets free time in July.
+   Perl: Use REST API. + https://github.com/dasmoth/perl-edn
 
    Javascript: REST API + https://github.com/shaunxcode/jsedn
 
@@ -245,7 +244,7 @@ Qualitative Considerations
    SQL: N/A
 
    C/C++: multiple options.  REST+EDN certainly works.  Embedding the Peer library and
-   accessing via JNI would be more performant.
+   accessing via JNI might be more performant.
 
    Update: Cognitect have recently released the [Transit](https://github.com/cognitect/transit-format)
    format, which looks like it may largely replace EDN as the data format for the
