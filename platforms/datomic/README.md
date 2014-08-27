@@ -92,7 +92,7 @@ Loading data
     (use 'acedb.importd)
     (require '[datomic.api :as d :refer (q db)])
 
-    (def uri "datomic:free://localhost:4334/smaqllace")
+    (def uri "datomic:free://localhost:4334/smallace")
     (d/delete-database uri)  ; No-op if DB doesn't exist, otherwise cleans up
     (d/create-database uri)
 
