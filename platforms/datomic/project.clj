@@ -9,7 +9,7 @@
                  [ring "1.2.1"]
                  [compojure "1.1.6"]
                  [clj-http "0.9.2"]
-                 [acetyl "0.0.1-SNAPSHOT"]
+                 [acetyl "0.0.2-SNAPSHOT"]
                  [datomic-schema "1.1.0"]]
   :repositories [["dasmoth" {:url "http://www.biodalliance.org/people/thomas/repo"}]]
   :jvm-opts ["-Xmx3G" "-Ddatomic.txTimeoutMsec=500000"])

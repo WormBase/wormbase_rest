@@ -7,6 +7,7 @@
 
 ;
 ; "version 2" Datomic importer, for more credible ACeDB models.
+; Note that this needs to be used with the wb.schema2/wb2 schema.
 ;
 
 (defn- holder [key value]
