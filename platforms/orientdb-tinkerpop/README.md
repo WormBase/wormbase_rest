@@ -4,7 +4,8 @@ Modelling process
 OrientDB is a multi-paradigm database, supported "graph" and "document"
 (and potentially also hybrid) models.  This is explicitly a graph-based
 approach, using the Tinkerpop Blueprints interface supported by a number
-of different GraphDB.  @a8wright is working on something more document-
+of different GraphDB.  Following discussions with @a8wright, I've been
+experimentign with graphs while he is working on something more document-
 oriented.
 
 Loading data
@@ -19,6 +20,13 @@ Loading data
 
 (use 'wb.import-orient-tinker :reload)
 (time (import-acefiles (for [b (range 1 11)] (str "../../data/dump_2014-06-30_A." b ".ace")))))
+
+; Example query
+(require '[ogre.core :as q])
+(q/query (v/find-by-kv :_id "WBGene00000100")
+         (q/--> [:rnai])
+         (q/--> [:phenotype-observed])
+         q/into-vec!)
 
 Metrics
 -------
