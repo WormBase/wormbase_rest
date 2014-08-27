@@ -20,7 +20,7 @@
   (= l "***LongTextEnd***"))
 
 (def ^:private header-re #"^(\w+) : \"([^\"]+)\"")
-(def ^:private line-re #"[A-Za-z_-]+|\".*?[^\\]\"")
+(def ^:private line-re #"[A-Za-z_0-9.-]+|\".*?[^\\]\"")
 
 (defn- unquote-str [^String s]
   (if (.startsWith s "\"")
@@ -77,11 +77,25 @@
   (when s
     (str/replace s #"\\(.)" "$1")))
 
+(defn- fetch-ace-block [ace pos max]
+  (when (< pos max)
+    (lazy-cat 
+     (->> (.transactToStream ace (str "show -a -T -b " pos " -c 100"))
+          (reader)
+          (line-seq)
+          (aceobj-seq)
+          (doall))
+     (fetch-ace-block ace (+ pos 100) max))))
+
 (defn query-ace [server port ace-class]
   "Minimal interface to a socket ace server"
-  (let [ace (acetyl.AceSocket. server port)]
-    (.transact ace (str "find " ace-class))
-    (->> (.transactToStream ace "show -a -T")
-         (reader)
-         (line-seq)
-         (aceobj-seq))))
+  (let [ace (acetyl.AceSocket. server port)
+        msg (.transact ace (str "find " ace-class))]
+    (if-let [[_ cnt] (re-find #"// (\d+) Active Objects" msg)]
+      (fetch-ace-block ace 0 (Integer/parseInt cnt)))))
+
+(defn query-aceobj [server port ace-class name]
+  "Minimal interface to a socket ace server"
+  (let [ace (acetyl.AceSocket. server port)
+        msg (.transact ace (str "find " ace-class " " name))]
+    (first (fetch-ace-block ace 0 1))))
