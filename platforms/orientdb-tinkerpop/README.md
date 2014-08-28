@@ -5,12 +5,50 @@ OrientDB is a multi-paradigm database, supported "graph" and "document"
 (and potentially also hybrid) models.  This is explicitly a graph-based
 approach, using the Tinkerpop Blueprints interface supported by a number
 of different GraphDB.  Following discussions with @a8wright, I've been
-experimentign with graphs while he is working on something more document-
+experimenting with graphs while he is working on something more document-
 oriented.
+
+Arbitrary scalar properties can be attached to nodes.  There's the
+possibility of defining "classes" with schemas of allowed properties,
+but I haven't explored that yet, and it's not entirely clear how well
+this fits with doing everything via Tinkerpop.
+
+Unlike Neo4J, there doesn't seem to be any support for more than one
+value of a simple property (i.e. attaching a list of strings to
+represent the authors of a paper).  Solution is to have extra
+"paper-author" nodes, since (obviously) you're allowed arbitary
+numbers of out-bound edges in the graph.  Wasn't a problem to do this
+for the Paper class in smallace, but it did get me worrying slightly
+that an awful lot of tags in the Wormbase models are non-UNIQUE (at
+least in principle, even if they generally only have a single value).
+Something to think about, both in terms of DB selection and also in
+terms of whether there's scope for cleaning up the Wormbase model
+making more things explicitly UNIQUE/cardinality-one.
+
+Prerequisites
+-------------
+
+You'll need at least Java 6.  Java 7 will probably perform better.  On
+platforms where you have a choice, always install Oracle Java in
+preference to any other version.
+
+You'll need [Leiningen](http://leiningen.org/).  The downloadable for
+this is just a shell script, put it somewhere convenient on your PATH.
+
+You'll need [OrientDB](http://www.orientechnologies.com/).  I used
+version 1.7.8.  Unpack and run the server.sh script.  You'll then need
+to run console.sh and type:
+
+     create database remote:localhost/smallace root <password> plocal
+
+Finally, you'll need a Clojure command prompt ("REPL") at which to
+issue some of these commands.  Easiest way to do this is to type "lein
+repl" in the probject directory.  
 
 Loading data
 ------------
 
+```
 (require '[archimedes.core :as g])
 (require '[archimedes.vertex :as v])
 (require '[archimedes.edge :as e])
@@ -26,13 +64,14 @@ Loading data
 (q/query (v/find-by-kv :_id "WBGene00000100")
          (q/--> [:rnai])
          (q/--> [:phenotype-observed])
-         q/into-vec!)
+         q/into-vec!)```
 
 Metrics
 -------
 
 1. How long did it take developer to get up to speed on back-end storage?
 
+   Circa 12 hours (but did look at both native and Tinkerpop access methods).
 
 2. How long did it take to write the importer script?
 
@@ -66,7 +105,13 @@ Qualitative Considerations
 
 1. Is the documentation good?
 
-   TBD
+   There's plenty of it, and it's mostly comprehensive, although I ran
+   into a few issues with odd corners of the native Java API.  This
+   may be less of an issue if we're happy to stick with graph access
+   via the Tinkerpop stack.
+
+   One thing I did think was sorely lacking was advice on when to use
+   the graph model and when to use the document model.
 
 2. Are there user groups?  Community?
 
@@ -101,7 +146,10 @@ Qualitative Considerations
 
 6. Licensing?  Commercial support?  Pricing?
 
-   Apache2 License
+   Apache2 License.
+
+   Commercial support available from OrienTechnologies: £3000
+   for first server, £1500 for additional servers.
 
 7. Scalability?
 
