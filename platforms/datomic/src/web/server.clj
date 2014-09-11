@@ -90,9 +90,17 @@
    [:div.ev.ui-helper-hidden
     (when-let [curator (first (:evidence/curator ent))]
       [:span [:b "Curator: "] curator [:br]])
+    (when-let [auto (first (:evidence/automatic ent))]
+      [:span [:b "Inferred automatically: "] auto [:br]])
     (when-let [papers (seq (:evidence/paper ent))]
-      [:span [:b "Paper evidence: "] (str/join "; " (map paper-link papers))])]))
+      [:span [:b "Paper evidence: "] (str/join "; " (map paper-link papers)) [:br]])]))
 
+(defn gene-name [gene]
+  (or (:gene/name.public gene)
+      (:gene/name.cgc gene)
+      (:gene/name.sequence gene)
+      "tgwnn-1"))
+   
 (defn get-gene [id]
   (let [ddb  (db conn)
         gids (q gene-by-id ddb id)]
@@ -111,7 +119,7 @@
          [:body {:onload "wb_gene_init();"}
           [:div#header {:data-page "{'history': '0'}"}]
           [:div#content
-           [:div#page-title.species-bg [:h2 "Gene foo"]]
+           [:div#page-title.species-bg [:h2 "Gene " (gene-name gene)]]
            [:div#widgets
             [:div.navigation
              [:div#navigation
@@ -125,22 +133,8 @@
     (if (seq gids)
       (let [gene (d/entity ddb (ffirst gids))]
         (html
-         [:head
-          [:link {:rel "stylesheet"
-                  :href "http://www.wormbase.org/css/jquery-ui.min.css"}]
-          [:link {:rel "stylesheet"
-                  :href "http://www.wormbase.org/css/main.min.css?va14b17b7c91a52904182ba6f3814c35b94296328"}]
-          [:script {:src "http://www.wormbase.org/js/jquery-1.9.1.min.js"}]
-          [:script {:src "http://www.wormbase.org/js/jquery-ui-1.10.1.custom.min.js"}]
-          [:script {:src "http://www.wormbase.org/js/wormbase.min.js?va14b17b7c91a52904182ba6f3814c35b94296328"}]]
-
-         
-         
          [:h2
-          [:i (or (:gene/name.public gene)
-                  (:gene/name.cgc gene)
-                  (:gene/name.sequence gene)
-                  "tgwnn-1")]
+          [:i (gene-name gene)]
           [:span#fade {:style {:font-size "0.7em"}}
            " (Gene_class description)"]]
          
