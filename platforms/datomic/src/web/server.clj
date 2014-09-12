@@ -115,6 +115,8 @@
           [:script {:src "http://www.wormbase.org/js/jquery-1.9.1.min.js"}]
           [:script {:src "http://www.wormbase.org/js/jquery-ui-1.10.1.custom.min.js"}]
           [:script {:src "http://www.wormbase.org/js/wormbase.min.js?va14b17b7c91a52904182ba6f3814c35b94296328"}]
+          [:script {:src "/js/promise-1.0.0.min.js"}]
+          [:script {:src "/js/eventsource.js"}]
           [:script {:src "/js/wb.js"}]]
          [:body {:onload "wb_gene_init();"}
           [:div#header {:data-page "{'history': '0'}"}]
@@ -235,9 +237,10 @@
       (str "Couldn't find " id))))
 
 (defn updates []
-  (->> (chan)
-       (tap update-mult)
-       (json-events)))
+  (let [c (chan 2)]
+    (tap update-mult c)
+    (put! c {:test (str/join "," (repeat 1000 "test"))})
+    (json-events c)))
 
 (defroutes routes
   (GET "/phenotype/:id" {params :params}
