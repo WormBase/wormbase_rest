@@ -6,7 +6,7 @@
                  [org.clojure/core.match "0.2.1"]
                  [com.datomic/datomic-free "0.9.4899"]
                  [hiccup "1.0.5"]
-                 [ring "1.2.1"]
+                 [ring "1.3.1"]
                  [compojure "1.1.6"]
                  [clj-http "0.9.2"]
                  [acetyl "0.0.2-SNAPSHOT"]

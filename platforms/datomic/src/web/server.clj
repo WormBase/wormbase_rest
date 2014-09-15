@@ -109,12 +109,12 @@
         (html
          [:head
           [:link {:rel "stylesheet"
-                  :href "http://www.wormbase.org/css/jquery-ui.min.css"}]
+                  :href "/css/jquery-ui.min.css"}]
           [:link {:rel "stylesheet"
-                  :href "http://www.wormbase.org/css/main.min.css?va14b17b7c91a52904182ba6f3814c35b94296328"}]
-          [:script {:src "http://www.wormbase.org/js/jquery-1.9.1.min.js"}]
-          [:script {:src "http://www.wormbase.org/js/jquery-ui-1.10.1.custom.min.js"}]
-          [:script {:src "http://www.wormbase.org/js/wormbase.min.js?va14b17b7c91a52904182ba6f3814c35b94296328"}]
+                  :href "/css/main.min.css?va14b17b7c91a52904182ba6f3814c35b94296328"}]
+          [:script {:src "/js/jquery-1.9.1.min.js"}]
+          [:script {:src "/js/jquery-ui-1.10.1.custom.min.js"}]
+          [:script {:src "/js/wormbase.min.js?va14b17b7c91a52904182ba6f3814c35b94296328"}]
           [:script {:src "/js/promise-1.0.0.min.js"}]
           [:script {:src "/js/eventsource.js"}]
           [:script {:src "/js/wb.js"}]]
