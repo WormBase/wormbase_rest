@@ -48,6 +48,9 @@ function initWidget(name, prefix) {
         var msg = JSON.parse(ev.data);
         if (msg.type == 'gene' && msg.id == geneID && name == "Overview") {
             refresh();
+	    document.head.appendChild(
+		makeElement('style',
+			    '.gene-desc-timestamp a {color: red}'));
         }
     });
 }

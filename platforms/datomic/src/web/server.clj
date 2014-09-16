@@ -1,14 +1,15 @@
 (ns web.server
   (:use hiccup.core
         ring.middleware.stacktrace)
-  (:require [datomic.api :as d :refer (db q touch entity)]
+  (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
             [compojure.core :refer [defroutes GET]]
             [compojure.route :as route]
             [compojure.handler :as handler]
             [clojure.core.async :as async :refer (go chan put! mult tap >! <!)]
-            [ninjudd.eventual.server :refer (json-events)]))
+            [ninjudd.eventual.server :refer (json-events)])
+  (:import  [java.text SimpleDateFormat]))
 
 (def uri "datomic:free://localhost:4334/smallace")
 (def conn (d/connect uri))
@@ -128,6 +129,18 @@
               "foo"]]
             [:div#widget-holder.gene]]]])))))
 
+(defn gene-desc-timestamp [db gid]
+  (ffirst (q '[:find ?inst 
+               :in $ ?gid 
+               :where [?gid :gene/desc _ ?t]
+                      [?t :db/txInstant ?inst]] 
+             db gid)))
+
+(def format-date
+  (let [format (SimpleDateFormat. "dd/MM/yyyyy HH:mm:ss")]
+    (fn [inst]
+      (when inst
+        (.format format inst)))))
 
 (defn get-gene-overview [id]
   (let [ddb  (db conn)
@@ -172,6 +185,9 @@
          [:div.description
           [:div.evidence.result
            (:gene.desc/concise (:gene/desc gene))
+           [:div.gene-desc-timestamp
+            [:a {:href (str "/gene-desc-history/" id)}
+             (format-date (gene-desc-timestamp ddb (:db/id gene)))]]
            (evidence (:gene/desc gene))
            [:div.ev-more
             [:div.v.ev-more-line]
@@ -180,7 +196,26 @@
 
       (str "Couldn't find " id))))
 
-
+(defn get-gene-desc-history [id]
+  (let [ddb (db conn)
+        gids (q gene-by-id ddb id)
+        hdb (history ddb)]
+    (if (seq gids)
+      (html
+       [:h2 "History for " (:gene/id (entity ddb (ffirst gids)))]
+       (for [[desc-id inst] (->> (q '[:find ?desc ?inst
+                                      :in $ ?gid
+                                      :where [?gid :gene/desc ?desc ?t true]
+                                             [?t :db/txInstant ?inst]]
+                                    hdb (ffirst gids))
+                                 (vec)
+                                 (sort-by second)
+                                 (reverse))
+             :let [desc (entity ddb desc-id)]]
+         [:div
+          [:h3 (format-date inst)]
+          [:p (:gene.desc/concise desc)]])))))
+         
 
 (defn- gene-phenotype-table [gene key]
   (html
@@ -253,6 +288,8 @@
     (get-gene-phenotypes (:id params)))
   (GET "/gene-refs/:id" {params :params}
     (get-gene-refs (:id params)))
+  (GET "/gene-desc-history/:id" {params :params}
+    (get-gene-desc-history (:id params)))
   (GET "/paper/:id" {params :params}
        (get-paper (:id params)))
   (GET "/updates" [] (updates))
