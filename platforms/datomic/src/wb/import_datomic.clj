@@ -32,6 +32,10 @@
   (seq (for [[k] (select obj path)]
          (holder type k))))
 
+(defn- link-single [obj type & path]
+  (when-let [t (ffirst (select obj path))]
+    (holder type t)))
+
 (defn- evidence-to-datomic [evseq]
   (conj-into {}
     (for [e evseq]
@@ -457,6 +461,18 @@
            :phenotype/id           (:id obj)
            :phenotype/name         name
            :phenotype/description  desc)]))
+
+(defmethod ace-to-datomic "Protein"
+  [obj]
+  [(vmap
+    :db/id                  (d/tempid :db.part/user)
+    :protein/id             (:id obj)
+    :protein/species        (link-single obj :species/id "Origin" "Species")
+    :protein/db-info        (seq (for [[db db-field acc] (select obj ["DB_info" "Database"])]
+                                   {:db-info/db          (holder :database/id db)
+                                    :db-info/field       (holder :database-field/id db-field)
+                                    :db-info/accession   acc})))])
+   
 
 (defmethod ace-to-datomic :default
   [obj]

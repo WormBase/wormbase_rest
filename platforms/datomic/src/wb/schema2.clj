@@ -360,7 +360,9 @@
 
   (schema protein
    (fields
-    [:id :string :unique-identity]))
+    [:id :string :unique-identity]
+    [:species :ref]
+    [:db-info :ref :many :component]))
           
   (schema feature
    (fields
