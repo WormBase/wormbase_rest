@@ -18,6 +18,7 @@ my %classes = map { $_ => $mongo->get_collection( $_ ) } qw/Gene RNAi Phenotype 
 my $ace = Ace->connect(-host => 'localhost', -port => 23100)
 	or die 'Connection error', Ace->error;
 
+my $batch_size = 100;
 my $start_time = new Benchmark;
 
 # Begin loading each of the classes specified
@@ -34,8 +35,8 @@ foreach my $class ( keys %classes) {
         #print Dumper(_getModel($obj, $class));
         push @mObjs, _getModel($obj, $class);
 
-        # insert every 10K objects
-        if((scalar @mObjs) > 10000){
+        # insert every $batch_size objects
+        if((scalar @mObjs) >= $batch_size){
             $mObjs->batch_insert(\@mObjs);
             @mObjs = ();
         }

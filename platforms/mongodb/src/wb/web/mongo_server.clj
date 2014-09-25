@@ -10,7 +10,7 @@
             [compojure.handler :as handler]))
 
 (def con (m/connect))
-(def db (m/get-db con "test"))
+(def db (m/get-db con "wormbase"))
 
 (defn- gene-phenotype-table [rnais key]
   (let [phenotypes (->> (mapcat key rnais)
