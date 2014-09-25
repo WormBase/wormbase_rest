@@ -5,6 +5,7 @@ use Ace;
 use MongoDB;
 use strict;
 use Benchmark;
+use Data::Dumper;
 
 # set up MongoDB
 my $client = MongoDB::MongoClient->new;
@@ -30,6 +31,7 @@ foreach my $class ( keys %classes) {
 
     my @mObjs;
     while(my $obj = $aceObjs->next){
+        #print Dumper(_getModel($obj, $class));
         push @mObjs, _getModel($obj, $class);
 
         # insert every 10K objects
@@ -61,6 +63,7 @@ sub _getModel {
                 "Volume" => _getTag($obj, "Volume", { unique => 1 }),
                 "Page" => _getTag($obj, "Page", { unique => 1 })
             },
+            "Author" => _getTag($obj, "Author"),
             "Brief_citation" => _getTag($obj, "Brief_citation", { unique => 1}),
             "Refers_to" => {
                 "Gene" => _getTag($obj, "Gene", { class => "Gene" }),
@@ -97,7 +100,7 @@ sub _getModel {
             "Description" => _getTag($obj, "Description", { unique => 1 }),
             "Name" => _getTag($obj, "Primary_name"),
             "Attribute_of" => { "RNAi" => _getTag($obj, "RNAi", { class => "RNAi" }),
-                                "Not_in_RNAi" => _getTag($obj, "Not_in_RNAi"), { class => "RNAi" }}
+                                "Not_in_RNAi" => _getTag($obj, "Not_in_RNAi", { class => "RNAi" })}
         };
     }
 
