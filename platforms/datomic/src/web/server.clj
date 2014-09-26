@@ -1,14 +1,16 @@
 (ns web.server
   (:use hiccup.core
-        ring.middleware.stacktrace)
+        ring.middleware.stacktrace
+        ring.middleware.params)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
-            [ring.adapter.jetty :refer (run-jetty)]
+            [ring.adapter.jetty-async :refer (run-jetty-async)]
             [compojure.core :refer [defroutes GET]]
             [compojure.route :as route]
             [compojure.handler :as handler]
             [clojure.core.async :as async :refer (go chan put! mult tap >! <!)]
-            [ninjudd.eventual.server :refer (json-events)])
+            [ninjudd.eventual.server :refer (json-events)]
+            [cheshire.core :refer (generate-string)])
   (:import  [java.text SimpleDateFormat]))
 
 (def uri "datomic:free://localhost:4334/smallace")
@@ -277,6 +279,22 @@
     (put! c {:test (str/join "," (repeat 1000 "test"))})
     (json-events c)))
 
+(defn get-gene-by-name [q]
+  {:status 200
+   :headers {"Content-Type" "application/json"
+             "Access-Control-Allow-Origin" "*"}
+   :body
+   (generate-string
+    (if (< (count q) 2)
+      {:status (str "Insufficient prefix " q)}
+      (let [ddb (db conn)]
+        {:status "OK"
+         :suggestions
+         (for [[gid _ name] (->> (d/seek-datoms ddb :avet :gene/name.public q)
+                                 (take 10))
+               :when (.startsWith name q)]
+           [name (:gene/id (entity ddb gid))])})))})
+
 (defroutes routes
   (GET "/phenotype/:id" {params :params}
     (get-phenotype (:id params)))
@@ -290,10 +308,15 @@
     (get-gene-refs (:id params)))
   (GET "/gene-desc-history/:id" {params :params}
     (get-gene-desc-history (:id params)))
+  (GET "/api/gene-by-name" {params :params}
+    (get-gene-by-name (params "q")))
   (GET "/paper/:id" {params :params}
        (get-paper (:id params)))
   (GET "/updates" [] (updates))
   (GET "/rest/auth" [] "Hello world")
   (route/files "/" {:root "resources/public"}))
 
-(def appn (wrap-stacktrace routes))
+(def appn (-> routes
+              (wrap-params)
+              (wrap-stacktrace)))
+
