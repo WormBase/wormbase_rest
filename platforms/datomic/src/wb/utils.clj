@@ -56,3 +56,16 @@
   "Concatenate args as if with `str` then throw an exception"
   [& args]
   (throw (Exception. (apply str args))))
+
+(defmacro times [count & body]
+  (let [times (gensym)
+        counter (gensym)
+        before (gensym)]
+    `(loop [~times []
+            ~counter ~count]
+       (if (zero? ~counter)
+         ~times
+         (let [~before (System/nanoTime)]
+           ~@body
+           (recur (conj ~times (double (/ (- (System/nanoTime) ~before) 1000000)))
+                  (dec ~counter)))))))
