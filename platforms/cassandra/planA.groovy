@@ -1,5 +1,8 @@
-g = TitanFactory.open('/scratch/cassandra/titan/titan-server-0.4.4/conf/titan-cassandra.properties')
-g.makeKey("name").dataType(String.class).indexed(Vertex.class).unique().make();
-g.makeKey("AceClass").dataType(String.class).indexed(Vertex.class).make();
-g.loadGraphSON('/scratch/db/platforms/cassandra/shmace.gson')
-
+g = TitanFactory.open('titan-cassandra.properties')
+mgmt = g.getManagementSystem()
+name = mgmt.makePropertyKey("name").dataType(String.class).make()
+mgmt.buildIndex("name", Vertex.class).addKey(name).unique().buildCompositeIndex()
+clazz = mgmt.makePropertyKey('AceClass').dataType(String.class).make()
+mgmt.buildIndex('AceClass', Vertex.class).addKey(clazz).unique().buildCompositeIndex()
+g.loadGraphSON('shmace.gson')
+g.commit();
