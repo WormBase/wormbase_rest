@@ -1,0 +1,83 @@
+.txn {
+    font-size: 70%;
+    color: brown;
+    margin-right: 5px;
+}
+
+div.trace-header {
+    position: fixed;
+    width: 100%;
+    background: #eeeeee;
+    padding: 5px;
+    border-bottom: 1px solid gray;
+}
+
+div.trace-body {
+    padding-top: 120px;
+}
+
+.values-holder {
+    display: flex;
+}
+
+.collapse-button {
+    flex: none;
+    flex-basis: 24px;
+    align-self: flex-start;
+    margin-right: 5px;
+}
+
+div.column-holder {
+    display: flex;
+    background-color: #eeeeee;
+    border-radius: 5px;
+    border: solid 1px #888888;
+    margin-bottom: 8px;
+}
+
+form.form-inline {
+    margin: 8px;
+}
+
+button.remove {
+    background: none;
+    border: none;
+    border-right: 1px solid #888888;
+}
+
+div.form-group {
+    margin-right: 8px;
+}
+
+div.candidate-list {
+    position: absolute;
+    background: white;
+    border: solid grey 2px;
+    padding: 4px;
+}
+
+div.candidate-item {
+}
+
+div.add-list {
+    position: absolute;
+    background: white;
+    border: solid grey 2px;
+    padding: 4px;
+}
+
+div.add-item {
+}
+
+div.add-item:hover {
+    background: yellow;
+}
+
+div.add-item-disabled {
+    color: #cccccc;
+    pointer-events: none;
+}
+
+div.add-item-disabled:hover {
+    background: none;
+}
