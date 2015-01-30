@@ -1,7 +1,7 @@
 (defproject pseudoace "0.0.3-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
-                 [com.datomic/datomic-free "0.9.5078"]
+                 [com.datomic/datomic-free "0.9.5130"]
                  [datomic-schema "1.1.0"]
                  [org.clojure/tools.cli "0.3.1"]
                  [acetyl "0.0.4-SNAPSHOT"]
@@ -13,12 +13,11 @@
                  [compojure "1.1.6"]
                  [clj-http "0.9.2"]
                  [acetyl "0.0.4-SNAPSHOT"]
-                 [datomic-schema "1.1.0"]
                  [com.ninjudd/ring-async "0.3.1"]
                  [com.ninjudd/eventual "0.4.1"]
-                 [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
-                 [org.clojure/clojurescript "0.0-2411"]
-                 [om "0.8.0-rc1"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 [org.clojure/clojurescript "0.0-2727"]
+                 [org.omcljs/om "0.8.7"]
                  [secretary "1.2.1"]
                  [bk/ring-gzip "0.1.1"]
                  [com.cemerick/friend "0.2.1"]
@@ -30,7 +29,7 @@
   :java-source-paths ["src/java"]
   :resource-paths ["resources"]
 
-  :plugins [[lein-cljsbuild "1.0.3"]]
+  :plugins [[lein-cljsbuild "1.0.4"]]
 
   :cljsbuild {
     :builds [{:id "dev"

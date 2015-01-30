@@ -143,4 +143,28 @@
     :db/unique       :db.unique/identity
     :db/cardinality  :db.cardinality/one
     :db.install/_attribute :db.part/db
-    :pace/identifies-class "Keyword"}])
+    :pace/identifies-class "Keyword"}
+
+
+   ;;
+   ;; Special #Ordered virtual hash-model
+   ;;
+   
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :ordered/id
+    :db/valueType    :db.type/string
+    :db/unique       :db.unique/identity
+    :db/cardinality  :db.cardinality/one
+    :db.install/_attribute :db.part/db
+    :pace/identifies-class "Ordered"
+    :pace/is-hash    true}
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :ordered/index
+    :db/valueType    :db.type/long
+    :db/cardinality  :db.cardinality/one
+    :db/doc          "Index in an ordered collection."
+    :db.install/_attribute :db.part/db}   ;; no :pace/tags since we'd never want these to appear in ACeDB-
+                                          ;; style output.
+
+   ])

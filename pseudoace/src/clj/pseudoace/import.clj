@@ -101,26 +101,36 @@
   ((:tags imp) ns))
 
 (defn datomize-components [ti imp vals]
-  (let [concs  (sort-by
-                  :pace/order
-                  (pace-items-for-ns
-                    imp
-                    (str (namespace (:db/ident ti)) "." (name (:db/ident ti)))))
-        hashes (for [ns (:pace/use-ns ti)]
-                 (entity (:db imp) (keyword ns "id")))]
-    (for [[cvals hlines] (group-by (partial take (count concs)) vals)]
-      (import-acenodes
-       (if (seq cvals)
-         (into {}
-               (map
-                (fn [conc val]
-                  [(:db/ident conc) (datomize-value conc imp [val])])
-                concs cvals))
-         {:db/doc "placeholder"})
-       (map (partial drop (count concs)) hlines)
-       (get-tags imp (:pace/use-ns ti))
-       imp))))           
-      
+  (let [concs    (sort-by
+                    :pace/order
+                    (pace-items-for-ns
+                      imp
+                      (str (namespace (:db/ident ti)) "." (name (:db/ident ti)))))
+        nss      (:pace/use-ns ti)
+        ordered? (if nss
+                   (nss "ordered"))
+        hashes   (for [ns nss]
+                   (entity (:db imp) (keyword ns "id")))]
+
+    (map-indexed
+     (fn [idx [cvals hlines]]
+       (import-acenodes
+        (vassoc
+         (if (seq cvals)
+           (into {}
+                 (map
+                  (fn [conc val]
+                    [(:db/ident conc) (datomize-value conc imp [val])])
+                  concs cvals))
+           {:db/doc "placeholder"})
+         :ordered/index
+         (if ordered?
+           idx))
+        (map (partial drop (count concs)) hlines)
+        (get-tags imp nss)
+        imp))
+     (group-by (partial take (count concs)) vals))))
+
 (defn import-acenodes [base lines tags imp]
   (reduce
    (fn [ent [ti vals]]

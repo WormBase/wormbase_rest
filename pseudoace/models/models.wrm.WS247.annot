@@ -3256,8 +3256,8 @@
                  Publication_date UNIQUE ?Text         //YYYY-MM-DD or YYYY-MM, replaces DateType which led to erroneous pub dates
                  Contained_in ?Paper YESXREF Contains       // old form
                  Contains ?Paper NOXREF Contained_in
-       Author ?Author YESXREF Paper #Affiliation
-       Person ?Person YESXREF Paper #Evidence
+       Author ?Author YESXREF Paper #Ordered #Affiliation
+       Person ?Person YESXREF Paper #Ordered #Evidence
        Describes_analysis ?Analysis NOXREF Reference
        Not_person ?Person YESXREF Not_Paper #Evidence
        Affiliation Text        // Authors' affiliation if available
