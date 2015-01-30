@@ -114,21 +114,25 @@
 
     (map-indexed
      (fn [idx [cvals hlines]]
-       (import-acenodes
-        (vassoc
-         (if (seq cvals)
-           (into {}
-                 (map
-                  (fn [conc val]
-                    [(:db/ident conc) (datomize-value conc imp [val])])
-                  concs cvals))
-           {:db/doc "placeholder"})
-         :ordered/index
-         (if ordered?
-           idx))
-        (map (partial drop (count concs)) hlines)
-        (get-tags imp nss)
-        imp))
+       (let [comp
+             (import-acenodes
+              (vassoc
+               (if (seq cvals)
+                 (into {}
+                       (map
+                        (fn [conc val]
+                          [(:db/ident conc) (datomize-value conc imp [val])])
+                        concs cvals))
+                 {})
+               :ordered/index
+               (if ordered?
+                 idx))
+              (map (partial drop (count concs)) hlines)
+              (get-tags imp nss)
+              imp)]
+         (if (empty? comp)
+           {:db/doc "placeholder"}
+           comp)))
      (group-by (partial take (count concs)) vals))))
 
 (defn import-acenodes [base lines tags imp]
