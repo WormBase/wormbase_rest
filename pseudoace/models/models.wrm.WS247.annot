@@ -32,7 +32,35 @@
 //  "Name" this should always be implemented as Public_name or Similar
 //
 
-
+//
+//                                   PSEUDOACE
+//
+// This is an "annotated" model file, being maintained in parallel to the standard
+// ACeDB model file.  The syntax is very similar, but it has a few additions in order
+// to smooth migration to other document-store-like databases.
+//
+// * Alternate name annotations *
+//
+// Any node in the model can be annotated with an alternate name which can be used
+// in the new database.  Alternate names are indicated with a caret (^) and apply to
+// the node before them, e.g.:
+//
+//      ?MyClass ^magic  Foo Text
+//                       Bar ^description Text
+//
+//
+// * XREF directionality *
+//
+// "Outbound" ends of XREF links should be marked "YESXREF".  "Inbound" ends should
+// be marked NOXREF.
+//
+//
+// * FILL_DEFAULT *
+//
+// An extra attribute to indicate that importers should fill in a default value if
+// a tag is present in ACeDB without a value, and it is suspected that the presence
+// of the tag is "interesting" even in the absence of any value.
+//
 
 ////////////////////////
 // Basic map classes  //
@@ -325,7 +353,7 @@
                   Paralog ?Gene YESXREF Paralog ?Species #Evidence
                   Ortholog_other ?Protein YESXREF Ortholog_gene #Evidence // to allow Orthologues links to none ?Gene genes eg remanei (ar2 Nov06)
                   Structured_description Provisional_description ?Text #Evidence         // Erich [020322 krb]
-                                         Detailed_description ?Text #Evidence            // Erich [020322 krb]
+//                                         Detailed_description ?Text #Evidence            // Erich [020322 krb]
                                          Concise_description ?Text #Evidence             // Erich [020523 krb]
                                          Other_description ?Text #Evidence               // Carol [050202 dl]
                                          Automated_description ?Text #Evidence           // Ranjana [140917 pad]
@@ -390,10 +418,10 @@
 //
 ////////////////////////////
 
-?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster 
-              Description ?Text
+?Gene_cluster Description ?Text
+//              Title UNIQUE ?Text                                        // Information on the Gene cluster 
               Contains_gene ?Gene YESXREF In_cluster
-              Contains_non_WB_gene   DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession  //for genes from non WB species
+//              Contains_non_WB_gene   DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession  //for genes from non WB species
               Attribute_of Analysis ?Analysis YESXREF Gene_cluster
               Associated_with WBProcess ?WBProcess NOXREF Gene_cluster 
               Reference ?Paper YESXREF Gene_cluster
@@ -913,8 +941,8 @@
                                    One_recombinant UNIQUE Int ^wt UNIQUE Int ^x // WT X
                                    Selected UNIQUE Int ^x UNIQUE Int ^xy // X XY
                                    One_all UNIQUE Int ^x UNIQUE Int ^all // X ALL
-                                   Recs_all UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^all UNIQUE Int ^fixme // X Y ALL
-                                   One_let UNIQUE Int ^x UNIQUE Int ^all // X ALL
+                                   Recs_all UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^all UNIQUE // X Y ALL     thomasd: there was an extra Int here which was unused
+                                   One_let UNIQUE Int ^x UNIQUE Int ^all // X ALL                                      and has been removed
                                    Tested UNIQUE Int ^x UNIQUE Int ^h // X H
                                    Selected_trans UNIQUE Int ^x UNIQUE Int ^xy // X XY
                                    Backcross UNIQUE Int ^wt UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^xy // WT X Y XY
@@ -1109,8 +1137,8 @@
                Component ?GO_term YESXREF Component_of
          Parent Instance_of ?GO_term NOXREF Instance
                 Component_of ?GO_term NOXREF Component
-         Attributes_of Cell ?Cell NOXREF GO_term
-                       Motif ?Motif NOXREF GO_term
+         Attributes_of Motif ?Motif NOXREF GO_term
+//                       Cell ?Cell NOXREF GO_term
                        Gene ?Gene NOXREF GO_term // will this replace CDS? [040203 krb]
                        CDS ?CDS NOXREF GO_term
                        Sequence ?Sequence NOXREF GO_term // Erich, [011210 krb]
@@ -1189,7 +1217,7 @@
                        Obsolete
          Alternate_id ?Text
          Definition UNIQUE ?Text
-         Worm_disease_model ?Text ?Species #Evidence  // Textual description of the worm disease model
+//         Worm_disease_model ?Text ?Species #Evidence  // Textual description of the worm disease model
          Comment Text
          Synonym Broad ?Text
                  Exact ?Text
@@ -1208,7 +1236,7 @@
                       Gene_by_orthology ?Gene NOXREF Potential_model
                       Phenotype ?Phenotype NOXREF DO_term
                       WBProcess ?WBProcess NOXREF DO_term
-                      Reference ?Paper YESXREF DO_term 
+//                      Reference ?Paper YESXREF DO_term 
          Version UNIQUE Text
 
 //////////////////////////////////////////////////////////
@@ -1263,8 +1291,8 @@
 // ?Reconstruction class
 ////////////////////////////
 
-?Reconstruction Cell ?Cell
-                Anatomy_term ?Anatomy_term //[2006-04-21 ar2] Raymond
+?Reconstruction Anatomy_term ?Anatomy_term //[2006-04-21 ar2] Raymond
+//                Cell ?Cell
                 Author ?Author
                 Date UNIQUE DateType
                 Remark ?Text #Evidence
@@ -2178,16 +2206,16 @@
 
 ?Expr_pattern Expression_of Gene ?Gene YESXREF Expr_pattern #Evidence
                             Reflects_endogenous_expression_of ?Gene
-                            CDS ?CDS YESXREF Expr_pattern               // for coding genes
+//                            CDS ?CDS YESXREF Expr_pattern               // for coding genes
                             Sequence ?Sequence YESXREF Expr_pattern     // for clones???
-                            Pseudogene ?Pseudogene YESXREF Expr_pattern // [030801 krb]
+//                            Pseudogene ?Pseudogene YESXREF Expr_pattern // [030801 krb]
                             Clone ?Clone YESXREF Expr_pattern
                             Protein ?Protein YESXREF Expr_pattern
                             Protein_description Text   // information for Expr_patterns with unknown antigens [031105 krb]
 //              Homol Homol_homol ?Homol_data XREF Expr_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //Expr_pattern mapping [060427 ar2]
-              Expressed_in Cell ?Cell YESXREF Expr_pattern #Qualifier
-                           Cell_group ?Cell_group YESXREF Expr_pattern #Qualifier
-                           Life_stage ?Life_stage YESXREF Expr_pattern #Qualifier
+              Expressed_in Life_stage ?Life_stage YESXREF Expr_pattern #Qualifier
+//                           Cell_group ?Cell_group YESXREF Expr_pattern #Qualifier
+//                           Cell ?Cell YESXREF Expr_pattern #Qualifier
                            Anatomy_term ?Anatomy_term YESXREF Expr_pattern #Qualifier
                            GO_term ?GO_term YESXREF Expr_pattern #GR_condition
               Subcellular_localization ?Text
@@ -2312,8 +2340,8 @@
 /////////////////////////////////////////////////////
 
 
-?Picture Evidence #Evidence
-         Description ?Text
+?Picture Description ?Text
+//       Evidence #Evidence
          Name UNIQUE Text
          Species UNIQUE ?Species
          Crop Crop_picture ?Picture NOXREF Cropped_from
@@ -2344,58 +2372,58 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-?Cell   Main_name ?Text #Evidence   // ?Anatomy_name YESXREF Name_for_cell #Evidence
-        Other_name ?Text #Evidence   // ?Anatomy_name NOXREF Synonym_for_cell #Evidence
-        Brief_id ?Text                   //put in for Raymond and Paul, equivalent to old Remark but shorter
-        Fate Cell_type ?Text             // e.g. muscle, neuron,hypodermis, gland
-             Program ?Text               //division, differentiation, death, and differs between sexes
-             Syncitial_cell ?Cell_group YESXREF Nucleus //see Cell_group,
-        Summary Text                     // the whole of old remark plus more to be added by Raymond
-        Embryo_division_time Text
-        Remark ?Text #Evidence
-        Lineage Parent UNIQUE ?Cell YESXREF Daughter
-                Daughter ?Cell NOXREF Parent
-                Lineage_name Text
-                Equivalence_fate ?Cell NOXREF Equivalence_origin
-                Equivalence_origin ?Cell YESXREF Equivalence_fate
-                Sex_dimorphism Herm_origin ?Cell YESXREF Herm_fate // Added according to Sylvia 5/06/2000
-                               Herm_fate ?Cell NOXREF Herm_origin
-                               Male_origin ?Cell YESXREF Male_fate
-                               Male_fate ?Cell NOXREF Male_origin
-        Cell_group ?Cell_group YESXREF Cell
-        Life_stage ?Life_stage YESXREF Cell
-        Anatomy_term ?Anatomy_term YESXREF Cell
-        Tree_Node ?TreeNode NOXREF Cell
-        Reference ?Paper YESXREF Cell
-        GO_term ?GO_term YESXREF Cell ?GO_code #Evidence
-        Data    Expr_pattern ?Expr_pattern NOXREF Cell
-                Reconstruction ?Reconstruction YESXREF Cell #ReconCellInfo
-                Neurodata ?Cell #Neurodata
-        // Atlas ?Atlas XREF Cell
-        Link_diagram Text
+//?Cell   Main_name ?Text #Evidence   // ?Anatomy_name YESXREF Name_for_cell #Evidence
+//        Other_name ?Text #Evidence   // ?Anatomy_name NOXREF Synonym_for_cell #Evidence
+//        Brief_id ?Text                   //put in for Raymond and Paul, equivalent to old Remark but shorter
+//        Fate Cell_type ?Text             // e.g. muscle, neuron,hypodermis, gland
+//             Program ?Text               //division, differentiation, death, and differs between sexes
+//             Syncitial_cell ?Cell_group YESXREF Nucleus //see Cell_group,
+//        Summary Text                     // the whole of old remark plus more to be added by Raymond
+//        Embryo_division_time Text
+//        Remark ?Text #Evidence
+//        Lineage Parent UNIQUE ?Cell YESXREF Daughter
+//                Daughter ?Cell NOXREF Parent
+//                Lineage_name Text
+//                Equivalence_fate ?Cell NOXREF Equivalence_origin
+//                Equivalence_origin ?Cell YESXREF Equivalence_fate
+//                Sex_dimorphism Herm_origin ?Cell YESXREF Herm_fate // Added according to Sylvia 5/06/2000
+//                               Herm_fate ?Cell NOXREF Herm_origin
+//                               Male_origin ?Cell YESXREF Male_fate
+//                               Male_fate ?Cell NOXREF Male_origin
+//        Cell_group ?Cell_group YESXREF Cell
+//        Life_stage ?Life_stage YESXREF Cell
+//        Anatomy_term ?Anatomy_term YESXREF Cell
+//        Tree_Node ?TreeNode NOXREF Cell
+//        Reference ?Paper YESXREF Cell
+//        GO_term ?GO_term YESXREF Cell ?GO_code #Evidence
+//        Data    Expr_pattern ?Expr_pattern NOXREF Cell
+//                Reconstruction ?Reconstruction YESXREF Cell #ReconCellInfo
+//                Neurodata ?Cell #Neurodata
+//        // Atlas ?Atlas XREF Cell
+//        Link_diagram Text
  
 
 
-?Cell_group     Main_name ?Text #Evidence     // tad killed anatomy name
-                Other_name ?Text #Evidence    // ditto
-                Fate ?Text      
-                Remark  ?Text #Evidence
-                Contains        Cell ?Cell NOXREF Cell_group
-                                Nucleus ?Cell NOXREF Syncitial_cell // for syncitia like hyp7
-                                Sub_group ?Cell_group NOXREF Contained_in
-                Contained_in ?Cell_group YESXREF Sub_group
-                Type    UNIQUE  Tissue
-                                Organ
-                                Region
-                                Lineage //put in for Lilncoln some time ago
-                Expr_pattern ?Expr_pattern NOXREF Cell_group      
-                Life_stage ?Life_stage YESXREF Cell_group
-                Anatomy_term ?Anatomy_term YESXREF Cell_group
-                Reference ?Paper YESXREF Cell_group
-                Tree_Node ?TreeNode NOXREF Cell_group
-                Group_derivation Expression_experiment          //groups made by experimenters in their reports
-                                 Top_down_modelling             // sylvia's anatomy modelling shown on dendrograms starting with whole animal and working downwards
-                                 Bottom_up_modelling            // for Raymond in the future for cell upwards approach
+//?Cell_group     Main_name ?Text #Evidence     // tad killed anatomy name
+//                Other_name ?Text #Evidence    // ditto
+//                Fate ?Text      
+//                Remark  ?Text #Evidence
+//                Contains        Cell ?Cell NOXREF Cell_group
+//                                Nucleus ?Cell NOXREF Syncitial_cell // for syncitia like hyp7
+//                                Sub_group ?Cell_group NOXREF Contained_in
+//                Contained_in ?Cell_group YESXREF Sub_group
+//                Type    UNIQUE  Tissue
+//                                Organ
+//                                Region
+//                                Lineage //put in for Lilncoln some time ago
+//                Expr_pattern ?Expr_pattern NOXREF Cell_group      
+//                Life_stage ?Life_stage YESXREF Cell_group
+//                Anatomy_term ?Anatomy_term YESXREF Cell_group
+//                Reference ?Paper YESXREF Cell_group
+//                Tree_Node ?TreeNode NOXREF Cell_group
+//                Group_derivation Expression_experiment          //groups made by experimenters in their reports
+//                                 Top_down_modelling             // sylvia's anatomy modelling shown on dendrograms starting with whole animal and working downwards
+//                                 Bottom_up_modelling            // for Raymond in the future for cell upwards approach
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -2423,13 +2451,12 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
-?Anatomy_term   Evidence #Evidence
-                Version UNIQUE Int UNIQUE Int          // empty?
-                Definition UNIQUE ?Text #Evidence
+?Anatomy_term   Definition UNIQUE ?Text #Evidence
+                // Version UNIQUE Int UNIQUE Int          // empty?
                 Term UNIQUE ?Text #Evidence
                 Synonym ?Text #Evidence
-                Legacy Cell ?Cell NOXREF Anatomy_term
-                       Embryo_division_time Text
+                Legacy Embryo_division_time Text
+//                       Cell ?Cell NOXREF Anatomy_term
                        Fate    Cell_type ?Text         // e.g. muscle, neuron,hypodermis, gland
                                Program ?Text           //division, differentiation, death, and differs between sexes
                                Syncitial_cell ?Anatomy_term NOXREF Nucleus //see Cell_group,
@@ -2444,7 +2471,7 @@
                                               Male_fate ?Anatomy_term NOXREF Male_origin
                        Life_stage ?Life_stage YESXREF Anatomy_term
                        Tree_Node ?TreeNode NOXREF Anatomy_term
-                       Cell_group ?Cell_group NOXREF Anatomy_term
+//                       Cell_group ?Cell_group NOXREF Anatomy_term
                        Contains Cell_term ?Anatomy_term NOXREF Sub_group
                                 Nucleus ?Anatomy_term YESXREF Syncitial_cell //for syncitia like hyp7
                                 Sub_group ?Anatomy_term NOXREF Contained_in
@@ -2453,7 +2480,7 @@
                 Neurodata ?Anatomy_term #Neurodata
                 Link_diagram Text
                 DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession 
-                URL Text // for storing static URLs, such as WormAtlas, WormBook
+//                URL Text // for storing static URLs, such as WormAtlas, WormBook
                 Child PART_OF_c ?Anatomy_term NOXREF PART_OF_p
                       IS_A_c            ?Anatomy_term NOXREF IS_A_p
                       DESCENDENT_OF_c   ?Anatomy_term NOXREF DESCENDENT_OF_p
@@ -2473,7 +2500,7 @@
                 Attribute_of Expr_pattern ?Expr_pattern NOXREF Anatomy_term
                              Expression_cluster ?Expression_cluster NOXREF Anatomy_term #Evidence 
                              GO_term ?GO_term YESXREF Anatomy_term ?AO_code #Evidence
-                             Reference ?Paper YESXREF Anatomy_term
+//                             Reference ?Paper YESXREF Anatomy_term
                              Function Anatomy_function ?Anatomy_function NOXREF Involved
                                       Anatomy_function_not ?Anatomy_function NOXREF Not_involved
                 Attribute_index Expr_ancestor ?Expr_pattern  //attribute assigned to broader terms       // tad are any of these neeeded?  really?
@@ -2513,9 +2540,9 @@
 //
 ///////////////////
 
-?Life_stage     Contains Cell ?Cell NOXREF Life_stage
-                         Cell_group ?Cell_group YESXREF Life_stage
-                         Anatomy_term ?Anatomy_term YESXREF Life_stage
+?Life_stage     Contains Anatomy_term ?Anatomy_term YESXREF Life_stage
+//                         Cell ?Cell NOXREF Life_stage
+//                         Cell_group ?Cell_group YESXREF Life_stage
                          Sub_stage ?Life_stage NOXREF Contained_in
                 Contained_in ?Life_stage YESXREF Sub_stage            // changed for Wen 010516
                 Preceded_by ?Life_stage YESXREF Followed_by
@@ -2574,8 +2601,8 @@
                         Hide_Bootstraps         // Hide all bootstraps in subtree...
                         Show_Bootstrap          // ... except those with the "Show_Bootstrap" tag set
                 Contains Taxon                   // UNIQUE ?Taxon YESXREF Tree_Node
-                         Cell UNIQUE ?Cell YESXREF Tree_Node
-                         Cell_group UNIQUE ?Cell_group YESXREF Tree_Node 
+//                         Cell UNIQUE ?Cell YESXREF Tree_Node
+//                         Cell_group UNIQUE ?Cell_group YESXREF Tree_Node 
                          Anatomy_term UNIQUE ?Anatomy_term YESXREF Tree_Node // [2006-04-21 ar2] Raymond
                          Embedded_Tree ?Tree
 
@@ -2734,7 +2761,7 @@
                 Remark ?Text #Evidence // specific remarks about the phenotype
                 Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
                 Quantity UNIQUE Int UNIQUE Int #Evidence
-                Not #Evidence //This is being phased out but is needed for the next phase [06/08/10].
+//                Not #Evidence //This is being phased out but is needed for the next phase [06/08/10].
                 Anatomy_term ?Anatomy_term #Evidence 
                 Penetrance Incomplete Text #Evidence
                            Low Text #Evidence
@@ -3169,7 +3196,7 @@
           Main_phone Text               // phone number for the institution, I presume
           Lab_phone Text
           Office_phone Text
-          Other_phone Text ^number UNIQUE Text ^type // second text can be used to indicate type
+          Other_phone Text // ^number UNIQUE Text ^type // second text can be used to indicate type   (type field was never used...)
           Fax Text 
           Web_page Text                 // web page is part of the address info I think
 
@@ -3238,8 +3265,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-?Paper Original_timestamp Datetype // temporary tag in transition period [krb 040223]
-       Name ?Text     //used for storing legacy names, like cgc5654 or wm95p426
+?Paper Name ?Text     //used for storing legacy names, like cgc5654 or wm95p426
+//       Original_timestamp Datetype // temporary tag in transition period [krb 040223]
        DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession     //used for storing PubMed or other database identifiers, for PubMed, Database_field would be PMID 
        History Merged_into UNIQUE ?Paper YESXREF Acquires_merge
                Acquires_merge ?Paper NOXREF Merged_into
@@ -3278,7 +3305,7 @@
                Interactive_tutorial #Evidence
                Retracted_publication #Evidence
                Technical_report #Evidence
-               Directory #Evidence
+//               Directory #Evidence
                Monograph #Evidence
                Published_erratum #Evidence
                Meeting_abstract #Evidence
@@ -3299,8 +3326,8 @@
                  Clone ?Clone NOXREF Reference #Evidence
                  Expr_pattern ?Expr_pattern NOXREF Reference #Evidence
                  Expr_profile ?Expr_profile NOXREF Reference #Evidence
-                 Cell ?Cell NOXREF Reference #Evidence
-                 Cell_group ?Cell_group NOXREF Reference #Evidence
+//                 Cell ?Cell NOXREF Reference #Evidence
+//                 Cell_group ?Cell_group NOXREF Reference #Evidence
                  Life_stage ?Life_stage NOXREF Reference #Evidence
                  RNAi ?RNAi NOXREF Reference #Evidence
                  Transgene ?Transgene NOXREF Reference #Evidence
@@ -3309,7 +3336,7 @@
                  Gene_cluster ?Gene_cluster NOXREF Reference #Evidence
                  Feature ?Feature NOXREF Defined_by_paper                 // added [030424 dl]
                  Microarray_experiment ?Microarray_experiment NOXREF Reference //added for Microarray_experiment model
-                 Anatomy_term ?Anatomy_term NOXREF Reference #Evidence
+//                 Anatomy_term ?Anatomy_term NOXREF Reference #Evidence
                  Anatomy_function ?Anatomy_function NOXREF Reference
                  Antibody ?Antibody NOXREF Reference #Evidence // added [031120 krb]
                  SAGE_experiment ?SAGE_experiment NOXREF Reference
@@ -3319,7 +3346,7 @@
                  WBProcess ?WBProcess NOXREF Reference
                  Picture ?Picture NOXREF Reference
                  Movie ?Movie NOXREF Reference
-                 DO_term ?DO_term NOXREF Reference #Evidence
+//                 DO_term ?DO_term NOXREF Reference #Evidence
                  GO_annotation ?GO_annotation NOXREF Reference
        Curation_pipeline Phenotype2GO
        Keyword ?Keyword
@@ -3366,8 +3393,8 @@
 // regulation happen.
 
 #GR_condition          Life_stage ?Life_stage      
-                       Cell ?Cell
-                       Cell_group ?Cell_group
+//                       Cell ?Cell
+//                       Cell_group ?Cell_group
                        Anatomy_term ?Anatomy_term //Added by wen 02132006
                        Subcellular_localization ?Text 
 
@@ -3567,7 +3594,7 @@
                              Genotype ?Text            // in many cases the proper strain name is not available, use this instead
                              Life_stage ?Life_stage
                              Anatomy_term ?Anatomy_term
-                             Cell_type ?Cell
+//                             Cell_type ?Cell
                              Sub_cellular_localization Text
                       Digestion UNIQUE Trypsin
                                        Red_ALK
@@ -3682,8 +3709,8 @@
 //
 //////////////////////////////////////////////////      
 
-?Molecule  Name ?Text
-           Public_name ?Text
+?Molecule  Public_name ?Text
+//         Name ?Text
            Synonym ?Text
            DB_info Database ?Database ?Database_field ?Text
            Regulate_expr_cluster ?Expression_cluster NOXREF Regulated_by_molecule    // Wen WS228
