@@ -300,7 +300,7 @@
         Negative Outside_rearr ?Rearrangement NOXREF Locus_outside ?Author
                  Negative_clone ?Clone NOXREF Negative_locus ?Author
         Mapping_data    Well_ordered            // "on the line"
-                        2_point ?2_point_data  NOXREF xxx
+                        2_point ^two-point ?2_point_data  NOXREF xxx
                         Multi_point ?Multi_pt_data NOXREF xxx
                         Pos_neg_data ?Pos_neg_data NOXREF xxx
         Laboratory ?Laboratory
@@ -400,7 +400,7 @@
                            Positive_clone ?Clone NOXREF Positive_gene #Evidence
                   Negative Outside_rearr ?Rearrangement NOXREF Gene_outside #Evidence
                            Negative_clone ?Clone NOXREF Negative_gene #Evidence
-                  Mapping_data  2_point ?2_point_data NOXREF Point1|Point2
+                  Mapping_data  2_point ^two-point ?2_point_data NOXREF Point1|Point2
                                 Multi_point ?Multi_pt_data NOXREF xxxx
                                 Pos_neg_data ?Pos_neg_data NOXREF Gene1|Gene2
                   Interpolated_map_position UNIQUE ?Map UNIQUE Float ^position // for loci with CDSs but no real Map position
@@ -663,7 +663,7 @@
                          Clone_outside ?Clone NOXREF Outside_rearr ?Author
                          Rearr_outside ?Rearrangement
                 Mapping_data    Pos_neg_data ?Pos_neg_data
-                                2_point ?2_point_data
+                                2_point ^two-point ?2_point_data
                                 Multi_point ?Multi_pt_data
                 Display Hide_under UNIQUE ?Rearrangement YESXREF Hides
                         Hides ?Rearrangement NOXREF Hide_under 
@@ -920,54 +920,54 @@
 //
 ////////////////////
 
-?2_point_data   Evidence #Evidence
-                Genotype UNIQUE Text
-                Results UNIQUE Text
-                Experiment      Mapper ?Author
-                                Laboratory ?Laboratory
-                                Date UNIQUE DateType
-                                Temperature UNIQUE Text
-                Point_1 UNIQUE Gene_1 UNIQUE ?Gene YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
-                               Locus_1 UNIQUE ?Locus YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
-                               Allele_1 UNIQUE ?Variation YESXREF 2_point
-                               Rearrangement_1 UNIQUE ?Rearrangement YESXREF 2_point
-                Point_2 UNIQUE Gene_2 UNIQUE ?Gene YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
-                               Locus_2 UNIQUE ?Locus YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
-                               Allele_2 UNIQUE ?Variation YESXREF 2_point
-                               Rearrangement_2 UNIQUE ?Rearrangement YESXREF 2_point
-                        // Point_1 and Point_2 are tag2 for the mapped loci
-                        // for now to use this on a map both must be on it with Position type Map info.
-                Calculation UNIQUE Full UNIQUE Int ^wt UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^xy // WT X Y XY
-                                   One_recombinant UNIQUE Int ^wt UNIQUE Int ^x // WT X
-                                   Selected UNIQUE Int ^x UNIQUE Int ^xy // X XY
-                                   One_all UNIQUE Int ^x UNIQUE Int ^all // X ALL
-                                   Recs_all UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^all UNIQUE // X Y ALL     thomasd: there was an extra Int here which was unused
-                                   One_let UNIQUE Int ^x UNIQUE Int ^all // X ALL                                      and has been removed
-                                   Tested UNIQUE Int ^x UNIQUE Int ^h // X H
-                                   Selected_trans UNIQUE Int ^x UNIQUE Int ^xy // X XY
-                                   Backcross UNIQUE Int ^wt UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^xy // WT X Y XY
-                                   Back_one UNIQUE Int ^wt UNIQUE Int ^x // WT X
-                                   Sex_full UNIQUE Int ^wt UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^xy // WT X Y XY
-                                   Sex_one UNIQUE Int ^wt UNIQUE Int ^x // WT X
-                                   Sex_cis UNIQUE Int ^x UNIQUE Int ^all // X ALL
-                                   Dom_one UNIQUE Int ^wt UNIQUE Int ^non-wt // WT nonWT
-                                   Dom_selected UNIQUE Int ^wt UNIQUE Int ^x // WT X
-                                   Dom_semi UNIQUE Int ^xd UNIQUE Int ^all // XD ALL
-                                   Dom_let UNIQUE Int ^wt UNIQUE Int ^all // WT ALL
-                                   Direct UNIQUE Int ^r UNIQUE Int ^t // R T
-                                   Complex_mixed UNIQUE Int ^x UNIQUE Int ^all // X ALL
-                        // calculation fields can be used for full likelihood calculations
-                Calc  Calc_distance UNIQUE Float
-                      Calc_lower_conf UNIQUE Float
-                      Calc_upper_conf UNIQUE Float
-                        // these fields are filled in by software from the Calculation data
-                Simple_distance Min UNIQUE Float 
-                                Distance UNIQUE Float
-                                Max UNIQUE Float
-                                Error UNIQUE Float
-                                Linkage UNIQUE Text
-                        // some of these are used for drawing in the absence of Calculation data
-                Remark ?Text #Evidence
+?2_point_data ^two-point-data  Evidence #Evidence
+                               Genotype UNIQUE Text
+                               Results UNIQUE Text
+                               Experiment      Mapper ?Author
+                                               Laboratory ?Laboratory
+                                               Date UNIQUE DateType
+                                               Temperature UNIQUE Text
+                               Point_1 UNIQUE Gene_1 UNIQUE ?Gene YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
+                                              Locus_1 UNIQUE ?Locus YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
+                                              Allele_1 UNIQUE ?Variation YESXREF 2_point
+                                              Rearrangement_1 UNIQUE ?Rearrangement YESXREF 2_point
+                               Point_2 UNIQUE Gene_2 UNIQUE ?Gene YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
+                                              Locus_2 UNIQUE ?Locus YESXREF 2_point UNIQUE ?Variation YESXREF In_2_point
+                                              Allele_2 UNIQUE ?Variation YESXREF 2_point
+                                              Rearrangement_2 UNIQUE ?Rearrangement YESXREF 2_point
+                                    // Point_1 and Point_2 are tag2 for the mapped loci
+                                    // for now to use this on a map both must be on it with Position type Map info.
+                               Calculation UNIQUE Full UNIQUE Int ^wt UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^xy // WT X Y XY
+                                                  One_recombinant UNIQUE Int ^wt UNIQUE Int ^x // WT X
+                                                  Selected UNIQUE Int ^x UNIQUE Int ^xy // X XY
+                                                  One_all UNIQUE Int ^x UNIQUE Int ^all // X ALL
+                                                  Recs_all UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^all UNIQUE // X Y ALL     thomasd: there was an extra Int here which was unused      
+                                                  One_let UNIQUE Int ^x UNIQUE Int ^all // X ALL                                      and has been removed
+                                                  Tested UNIQUE Int ^x UNIQUE Int ^h // X H
+                                                  Selected_trans UNIQUE Int ^x UNIQUE Int ^xy // X XY
+                                                  Backcross UNIQUE Int ^wt UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^xy // WT X Y XY
+                                                  Back_one UNIQUE Int ^wt UNIQUE Int ^x // WT X
+                                                  Sex_full UNIQUE Int ^wt UNIQUE Int ^x UNIQUE Int ^y UNIQUE Int ^xy // WT X Y XY
+                                                  Sex_one UNIQUE Int ^wt UNIQUE Int ^x // WT X
+                                                  Sex_cis UNIQUE Int ^x UNIQUE Int ^all // X ALL
+                                                  Dom_one UNIQUE Int ^wt UNIQUE Int ^non-wt // WT nonWT
+                                                  Dom_selected UNIQUE Int ^wt UNIQUE Int ^x // WT X
+                                                  Dom_semi UNIQUE Int ^xd UNIQUE Int ^all // XD ALL
+                                                  Dom_let UNIQUE Int ^wt UNIQUE Int ^all // WT ALL
+                                                  Direct UNIQUE Int ^r UNIQUE Int ^t // R T
+                                                  Complex_mixed UNIQUE Int ^x UNIQUE Int ^all // X ALL
+                                       // calculation fields can be used for full likelihood calculations
+                               Calc  Calc_distance UNIQUE Float
+                                     Calc_lower_conf UNIQUE Float
+                                     Calc_upper_conf UNIQUE Float
+                                      // these fields are filled in by software from the Calculation data
+                               Simple_distance Min UNIQUE Float 
+                                               Distance UNIQUE Float
+                                               Max UNIQUE Float
+                                               Error UNIQUE Float
+                                               Linkage UNIQUE Text
+                                      // some of these are used for drawing in the absence of Calculation data
+                               Remark ?Text #Evidence
         // code uses Point_1, Point_2, Calculation and all its subtags, all the Calc subtags,
         // and most of the Simple_distance subtags.
 
@@ -2668,7 +2668,7 @@
            Sequence_feature ?Feature YESXREF Associated_with_construct
            Driven_by_gene ?Gene YESXREF Drives_construct #Evidence
            Gene ?Gene YESXREF Construct_product #Evidence
-           3_UTR ?Gene #Evidence
+           3_UTR ^three-prime-utr ?Gene #Evidence
            Fusion_reporter ?Text              //fluorescent proteins GFP, RFP, mCherry, etc.
            Other_reporter ?Text               //to add reporters, tags that arent included in model
            Purification_tag ?Text             //FLAG, HA, Myc, TAP, etc.  
@@ -3490,7 +3490,7 @@
                                                             HME3_Mating_always_successful #Evidence
                     Map ?Map YESXREF Variation #Map_position
                     Interpolated_map_position UNIQUE ?Map ^map UNIQUE Float ^position
-                    Mapping_data 2_point ?2_point_data NOXREF xxxx
+                    Mapping_data 2_point ^two-point ?2_point_data NOXREF xxxx
                                  Multi_point ?Multi_pt_data NOXREF xxxx
                                  Pos_neg_data ?Pos_neg_data NOXREF xxxx
                                  // above three are for mapping on its own behalf

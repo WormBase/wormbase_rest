@@ -6,6 +6,8 @@
   (:import [pseudoace.model ModelNode]))
 
 (defn- datomize-name [^String n]
+  (if (Character/isDigit (first n))
+    (println "WARNING: name starts with a digit: " n))
   (let [dn (-> (.toLowerCase n)
                (str/replace #"[?#]" "")
                (str/replace #"_" "-"))]
@@ -54,88 +56,85 @@
          
 
 (defn tag->schema [mns tagpath node]
- (let [fchild (first (:children node))]
-   (cond
-   ;; "plain tag" case
-   (empty? (:children node))
-   (let [attribute  (keyword mns (datomize-name (last tagpath)))]
+  (let [attribute  (keyword mns (or (:alt-name node)
+                                     (datomize-name (last tagpath))))
+        fchild (first (:children node))]
+    (cond
+     ;; "plain tag" case
+     (empty? (:children node))
      [(vmap
        :db/id               (tempid :db.part/db)
        :db/ident            attribute
        :db/valueType        :db.type/boolean
        :db/cardinality      :db.cardinality/one
        :db.install/_attribute :db.part/db
-       :pace/tags           (str/join " " tagpath))])
+       :pace/tags           (str/join " " tagpath))]
     
-   ;; "enum" case
-   (every? simple-tag? (:children node))
-   (let      [attribute (keyword mns (datomize-name (last tagpath)))
-              vns       (str mns "." (datomize-name (last tagpath)))]
-     (conj
-      (for [c (:children node)]
+     ;; "enum" case
+     (every? simple-tag? (:children node))
+     (let      [vns       (str mns "." (datomize-name (last tagpath)))]
+       (conj
+        (for [c (:children node)]
+          (vmap
+           :db/id         (tempid :db.part/user)
+           :db/ident      (keyword vns (or (:alt-name c)
+                                           (datomize-name (:name c))))
+           :pace/tags     (:name c)))
+        
         (vmap
-         :db/id         (tempid :db.part/user)
-         :db/ident      (keyword vns (datomize-name (:name c)))
-         :pace/tags     (:name c)))
-
-      (vmap
-       :db/id              (tempid :db.part/db)
-       :db/ident           attribute
-       :db/valueType       :db.type/ref
-       :db/cardinality     (if (:unique? node)
-                             :db.cardinality/one
-                             :db.cardinality/many)
-       :db.install/_attribute :db.part/db
-       :pace/tags       (str/join " " tagpath))))
+         :db/id              (tempid :db.part/db)
+         :db/ident           attribute
+         :db/valueType       :db.type/ref
+         :db/cardinality     (if (:unique? node)
+                               :db.cardinality/one
+                               :db.cardinality/many)
+         :db.install/_attribute :db.part/db
+         :pace/tags       (str/join " " tagpath))))
    
    
-   (and (= (count (:children node)) 1)
-        (#{:int :float :text :ref :date :hash} (:type fchild)))
-   (if (and (empty? (:children fchild))
-            (not= (:type fchild) :hash))
-     ;; "simple datum" case
-     (when (not (:suppress-xref fchild))
-       (let [cname       (:name fchild)
-             attribute   (keyword mns (datomize-name (last tagpath)))
-             type        (modeltype-to-datomic  (:type fchild))
-             obj-ref     (if (= type :db.type/ref)
-                           (keyword (datomize-name cname) "id"))
-             schema [(vmap
-                      :db/id           (tempid :db.part/db)
-                      :db/ident        attribute
-                      :db/valueType    type
-                      :db/cardinality  (if (:unique? node)
-                                         :db.cardinality/one
-                                         :db.cardinality/many)
-                      :db.install/_attribute :db.part/db
-                      :pace/tags       (str/join " " tagpath)
-                      :pace/obj-ref    (if obj-ref
-                                         {:db/id (tempid :db.part/db)
-                                          :db/ident obj-ref})
-                      :db/index      (if (= type :db.type/string)
-                                         (.startsWith cname "?"))
-                      :pace/fill-default (or (:fill-default fchild) nil))]]
-         (if-let [x (:xref fchild)]
-           (conj schema
-                 {:db/id          (tempid :db.part/db)
-                  :db/ident       obj-ref
-                  :pace/xref      {:db/id                (tempid :db.part/user)
-                                   :pace.xref/tags       x
-                                   :pace.xref/attribute  {:db/id    (tempid :db.part/db)
-                                                          :db/ident attribute}
-                                   :pace.xref/obj-ref    {:db/id    (tempid :db.part/db)
-                                                          :db/ident (keyword mns "id")}}})
-           schema)))
+     (and (= (count (:children node)) 1)
+          (#{:int :float :text :ref :date :hash} (:type fchild)))
+     (if (and (empty? (:children fchild))
+              (not= (:type fchild) :hash))
+       ;; "simple datum" case
+       (when (not (:suppress-xref fchild))
+         (let [cname       (:name fchild)
+               type        (modeltype-to-datomic  (:type fchild))
+               schema [(vmap
+                        :db/id           (tempid :db.part/db)
+                        :db/ident        attribute
+                        :db/valueType    type
+                        :db/cardinality  (if (:unique? node)
+                                           :db.cardinality/one
+                                           :db.cardinality/many)
+                        :db.install/_attribute :db.part/db
+                        :pace/tags       (str/join " " tagpath)
+                        :pace/obj-ref    (if (= type :db.type/ref)
+                                           {:db/id (tempid :db.part/db)
+                                            :pace/identifies-class (.substring cname 1)})
+                        :db/index        (if (= type :db.type/string)
+                                           (.startsWith cname "?"))
+                        :pace/fill-default (or (:fill-default fchild) nil))]]
+           (if-let [x (:xref fchild)]
+             (conj schema
+                   {:db/id          (tempid :db.part/db)
+                    :pace/identifies-class (.substring cname 1)
+                    :pace/xref      {:db/id                (tempid :db.part/user)
+                                     :pace.xref/tags       x
+                                     :pace.xref/attribute  {:db/id    (tempid :db.part/db)
+                                                            :db/ident attribute}
+                                     :pace.xref/obj-ref    {:db/id (tempid :db.part/db)
+                                                            :pace/identifies-class (.substring cname 1)}}})
+             schema)))
 
-     ;; "compound datum" case
-     (let [fc         (->> (flatten-children node)
-                           (take-while (complement :suppress-xref)))
-           hashes     (filter #(= (:type %) :hash) fc)
-           concretes  (filter #(not= (:type %) :hash) fc)
-           attribute  (keyword mns (datomize-name (last tagpath)))
-           cns        (str mns "." (datomize-name (last tagpath)))]
+       ;; "compound datum" case
+       (let [fc         (->> (flatten-children node)
+                             (take-while (complement :suppress-xref)))
+             hashes     (filter #(= (:type %) :hash) fc)
+             concretes  (filter #(not= (:type %) :hash) fc)
+             cns        (str (namespace attribute) "." (name attribute))]
 
-       (when (seq fc)
+         (when (seq fc)
            (concat
             [(vmap
                     :db/id           (tempid :db.part/db)
@@ -154,8 +153,7 @@
             (mapcat
              (fn [[i c] mname]
                (let [type     (modeltype-to-datomic (:type c))
-                     obj-ref  (if (= type :db.type/ref)
-                                (keyword (datomize-name (:name c)) "id"))
+                     cname    (:name c)
                      cattr    (keyword cns mname)
                      schema [(vmap
                               :db/id           (tempid :db.part/db)
@@ -168,19 +166,19 @@
                               :db/index      (if (= type :db.type/string)
                                                  (.startsWith (:name c) "?"))
                               :pace/fill-default (or (:fill-default c) nil)
-                              :pace/obj-ref    (if obj-ref
+                              :pace/obj-ref    (if (= type :db.type/ref)
                                                  {:db/id (tempid :db.part/db)
-                                                  :db/ident obj-ref}))]]
+                                                  :pace/identifies-class (.substring cname 1)}))]]
                  (if-let [x (:xref c)]
                    (conj schema
                          {:db/id          (tempid :db.part/db)
-                          :db/ident       obj-ref
+                          :pace/identifies-class (.substring cname 1)
                           :pace/xref      {:db/id                (tempid :db.part/user)
                                            :pace.xref/tags       x
                                            :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                                   :db/ident cattr}
-                                           :pace.xref/obj-ref    {:db/id    (tempid :db.part/db)
-                                                                  :db/ident (keyword mns "id")}}})
+                                           :pace.xref/obj-ref    {:db/id (tempid :db.part/db)
+                                                                  :pace/identifies-class (.substring cname 1)}}})
                    schema)))
              (indexed concretes)
              (tuple-member-names concretes attribute))))))
@@ -193,20 +191,19 @@
     (tag->schema mns (conj tagpath (:name node)) node)))
 
 
-(defn model->schema [model]
-  (let [name (.substring (:name model) 1)
-        mns (datomize-name (:name model))]
+(defn model->schema [{:keys [name alt-name] :as model}]
+  (let [mns (or alt-name
+                (datomize-name name))]
     (conj
      (mapcat (partial node->schema mns []) (:children model))
-
      {:db/id          (tempid :db.part/db)
       :db/ident       (keyword mns "id")
       :db/valueType   :db.type/string
       :db/unique      :db.unique/identity
       :db/cardinality :db.cardinality/one
       :db.install/_attribute :db.part/db
-      :pace/identifies-class name
-      :pace/is-hash (.startsWith (:name model) "#")})))
+      :pace/identifies-class (.substring name 1)
+      :pace/is-hash (.startsWith name "#")})))
 
 (defn conj-in-tagpath [root tagpath nodes]
   (if (empty? tagpath)
