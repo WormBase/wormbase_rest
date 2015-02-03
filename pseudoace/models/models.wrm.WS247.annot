@@ -1968,8 +1968,9 @@
                   Brief_id UNIQUE ?Text                 // Addition Xiaodong 
                   Type UNIQUE Frequency
                               Weight
-                  Background_model Text ^base UNIQUE Float ^frequency
-                  Site_values Text ^base UNIQUE Float REPEAT ^frequencies
+// Actual PWM data uses a hand-written importer.
+//                  Background_model Text ^base UNIQUE Float ^frequency
+//                  Site_values Text ^base UNIQUE Float REPEAT ^frequencies
                   Threshold Float
                   Consensus Text #Evidence
                   Associated_feature ?Feature NOXREF Associated_with_Position_Matrix #Evidence

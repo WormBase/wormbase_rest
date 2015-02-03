@@ -167,4 +167,47 @@
     :db.install/_attribute :db.part/db}   ;; no :pace/tags since we'd never want these to appear in ACeDB-
                                           ;; style output.
 
+
+   ;;
+   ;; Position_Matrix data
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :position-matrix/background
+    :db/valueType    :db.type/ref
+    :db/isComponent  true
+    :db/cardinality  :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :position-matrix/values
+    :db/valueType    :db.type/ref
+    :db/isComponent  true
+    :db/cardinality  :db.cardinality/many
+    :pace/use-ns     #{"ordered"}
+    :db.install/_attribute :db.part/db}
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :position-matrix.value/a
+    :db/valueType    :db.type/float
+    :db/cardinality  :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :position-matrix.value/c
+    :db/valueType    :db.type/float
+    :db/cardinality  :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :position-matrix.value/g
+    :db/valueType    :db.type/float
+    :db/cardinality  :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :position-matrix.value/t
+    :db/valueType    :db.type/float
+    :db/cardinality  :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+
    ])

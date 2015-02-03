@@ -168,6 +168,41 @@
    (get-tags imp #{(namespace (:db/ident ci))})
    imp))
 
+(defmulti import-custom :class)
+
+(defmethod import-custom "Position_Matrix" [obj]
+  (let [values (->> (ace/select obj ["Site_values"])
+                    (map (juxt first #(mapv parse-double (rest %))))
+                    (into {}))
+        bgs  (->> (ace/select obj ["Background_model"])
+                  (map (juxt first #(parse-double (second %))))
+                  (into {}))]
+    (vmap
+     :position-matrix/values
+     (map-indexed
+      (fn [idx item]
+        (assoc item :ordered/index idx))
+      (map 
+       (fn [a c g t]
+         {:position-matrix.value/a a
+          :position-matrix.value/c c
+          :position-matrix.value/g g
+          :position-matrix.value/t t})
+       (values "A")
+       (values "C")
+       (values "G")
+       (values "T")))
+
+     :position-matrix/background
+     (if (seq bgs)
+       {:position-matrix.value/a (bgs "A")
+        :position-matrix.value/c (bgs "C")
+        :position-matrix.value/g (bgs "G")
+        :position-matrix.value/t (bgs "T")}))))
+
+(defmethod import-custom :default [obj]
+  {})
+
 (defn import-acefile
   "Read ACeDB objects from r and attempt to convert them to match the 
    pseudoace schema in con"
@@ -194,7 +229,9 @@
 
           ;; default
           (when-let [ci (classes (:class obj))]
-            [(import-aceobj obj ci imp)])))
+            [(merge 
+              (import-aceobj obj ci imp)
+              (import-custom obj))])))
       (ace/ace-seq (ace/ace-reader f))))))
 
 
