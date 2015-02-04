@@ -33,7 +33,7 @@
 
   :cljsbuild {
     :builds [{:id "dev"
-              :source-paths ["src/clj" "src/cljs"]
+              :source-paths ["src/cljs"]
               :compiler {
                 :output-to "resources/public/js/main.js"
                 :output-dir "resources/public/js/out"

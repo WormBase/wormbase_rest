@@ -5,9 +5,12 @@
             [clojure.string :as str])
   (:import [pseudoace.model ModelNode]))
 
+(def ^:dynamic *schema-notes* false)
+
 (defn- datomize-name [^String n]
   (if (Character/isDigit (first n))
-    (println "WARNING: name starts with a digit: " n))
+    (if *schema-notes*
+      (println "WARNING: name starts with a digit: " n)))
   (let [dn (-> (.toLowerCase n)
                (str/replace #"[?#]" "")
                (str/replace #"_" "-"))]
@@ -46,7 +49,8 @@
                   (map first)
                   (set))]
     (when (seq dups)
-      (println "WARNING: using synthetic names for" attr basenames))
+      (when *schema-notes*
+        (println "WARNING: using synthetic names for" attr basenames)))
     (map-indexed
      (fn [index bn]
        (if (dups bn)
@@ -74,12 +78,13 @@
      (every? simple-tag? (:children node))
      (let      [vns       (str mns "." (datomize-name (last tagpath)))]
        (conj
-        (for [c (:children node)]
-          (vmap
-           :db/id         (tempid :db.part/user)
-           :db/ident      (keyword vns (or (:alt-name c)
-                                           (datomize-name (:name c))))
-           :pace/tags     (:name c)))
+        (doall
+         (for [c (:children node)]
+           (vmap
+            :db/id         (tempid :db.part/user)
+            :db/ident      (keyword vns (or (:alt-name c)
+                                            (datomize-name (:name c))))
+            :pace/tags     (:name c))))
         
         (vmap
          :db/id              (tempid :db.part/db)
@@ -92,8 +97,9 @@
          :pace/tags       (str/join " " tagpath))))
    
    
-     (and (= (count (:children node)) 1)
-          (#{:int :float :text :ref :date :hash} (:type fchild)))
+     (or (and (= (count (:children node)) 1)
+              (#{:int :float :text :ref :date :hash} (:type fchild)))
+         (:enum node))      ;; "Simple" enums have already been caught at this point.
      (if (and (empty? (:children fchild))
               (not= (:type fchild) :hash))
        ;; "simple datum" case
@@ -128,7 +134,8 @@
              schema)))
 
        ;; "compound datum" case
-       (let [fc         (->> (flatten-children node)
+       (let [enum       (:enum node) 
+             fc         (->> (flatten-children (if enum fchild node))
                              (take-while (complement :suppress-xref)))
              hashes     (filter #(= (:type %) :hash) fc)
              concretes  (filter #(not= (:type %) :hash) fc)
@@ -146,12 +153,30 @@
                                        :db.cardinality/many)
                     :db/isComponent  true
                     :db.install/_attribute :db.part/db
-                    :pace/use-ns     (for [h hashes]
-                                       (datomize-name (:name h)))
+                    :pace/use-ns     (doall
+                                      (for [h hashes]
+                                       (datomize-name (:name h))))
                     :pace/tags       (str/join " " tagpath))]
 
+            (if enum
+              (conj
+               (doall
+                (for [c (:children node)]
+                  (vmap
+                   :db/id            (tempid :db.part/user)
+                   :db/ident         (keyword (str cns "." (if (string? enum) enum "value"))
+                                              (or (:alt-name c) (datomize-name (:name c))))
+                   :pace/tags        (:name c))))
+               {:db/id           (tempid :db.part/db)
+                :db/ident        (keyword cns (if (string? enum) enum "value"))
+                :db/valueType    :db.type/ref
+                :db/cardinality  :db.cardinality/one
+                :db.install/_attribute :db.part/db
+                :pace/tags       ""
+                :pace/order      0}))
+
             (mapcat
-             (fn [[i c] mname]
+             (fn [i c mname]
                (let [type     (modeltype-to-datomic (:type c))
                      cname    (:name c)
                      cattr    (keyword cns mname)
@@ -180,8 +205,19 @@
                                            :pace.xref/obj-ref    {:db/id (tempid :db.part/db)
                                                                   :pace/identifies-class (.substring cname 1)}}})
                    schema)))
-             (indexed concretes)
+             (iterate inc (if enum 1 0))   ;; In enum case, order 0 is reserved for the enum.
+             concretes
              (tuple-member-names concretes attribute))))))
+
+   (and (> (count (:children node)) 2)
+        (= (count (:children fchild)) 1)
+        (every? #(= (:children fchild)
+                    (:children %))
+                (rest (:children node))))
+   (do
+     (when *schema-notes*
+       (println "Candidate augmented enum at " mns ":" tagpath))
+     (mapcat (partial node->schema mns tagpath) (:children node)))
 
    :default 
    (mapcat (partial node->schema mns tagpath) (:children node)))))

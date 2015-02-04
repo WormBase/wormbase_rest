@@ -61,6 +61,24 @@
 // a tag is present in ACeDB without a value, and it is suspected that the presence
 // of the tag is "interesting" even in the absence of any value.
 //
+// * ENUM *
+//
+// A hint that the immediate children of the previous tag should form the keys of
+// an enum.  These tags may themselves have children (the "augmented enum" case) but
+// it may be a schema-generation-time error if the augmentations differ between
+// keys.  For example:
+//
+//      ?Gene Identity Status ENUM ^status Live #Evidence
+//                                         Suppressed #Evidence
+//                                         Dead #Evidence
+//
+// yields a Datomic schema such that gene status can be stored like:
+//
+//      {:db/id [:gene/id "...]
+//       :gene/status {
+//         :gene.status/status :gene.status.status/live
+//         :evidence/remark "And believe me I am Still Alive."}}
+//           
 
 ////////////////////////
 // Basic map classes  //
@@ -331,9 +349,9 @@
                          Split_from UNIQUE ?Gene NOXREF Split_into
                          Split_into ?Gene YESXREF Split_from
                          Transposon_in_origin // for genes that are identified as having CDSs/Proteins that are Transposon in origin
-                 Status UNIQUE Live #Evidence
-                               Suppressed #Evidence
-                               Dead #Evidence   
+                 Status UNIQUE ENUM ^status Live #Evidence
+                                            Suppressed #Evidence
+                                            Dead #Evidence   
         Gene_info Gene_class UNIQUE ?Gene_class YESXREF Genes
                   Laboratory ?Laboratory
                   Cloned_by #Evidence      // mt3 acreditation of person who cloned gene [060829 ar2]

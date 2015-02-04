@@ -51,8 +51,14 @@
                                    :suppress-xref (= peek "NOXREF"))
                           (drop 2 toks))
      (= peek "FILL_DEFAULT")
-       (parse-model-line* (assoc n :fill-default true) (rest toks))   
+       (parse-model-line* (assoc n :fill-default true) (rest toks))
 
+     (= peek "ENUM")
+       (let [[p2 _] (first (rest toks))]
+         (if (.startsWith p2 "^")
+           (parse-model-line* (assoc n :enum (.substring p2 1)) (drop 2 toks))
+           (parse-model-line* (assoc n :enum true (rest toks)))))
+     
      (.startsWith peek "^")
        (parse-model-line* (assoc n :alt-name (.substring peek 1)) (rest toks))
      :default
