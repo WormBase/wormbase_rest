@@ -6,18 +6,20 @@
            [clojure.string :as str])
   (import java.io.FileInputStream java.util.zip.GZIPInputStream))
 
-;;
-;; TODO
-;;   - Ensure correct ordering of multiple concretes per component
-;;   - What happens if a single component has more than one hash?
-;;
+(defrecord Importer [db classes tags])
 
-(defrecord Importer [db tags])
+(defn get-classes [db]
+   (->> (for [[class ci] (q '[:find ?class ?ci
+                              :where [?ci :pace/identifies-class ?class]]
+                            db)]
+          [class (touch (entity db ci))])
+        (into {})))
 
 (defn importer [con]
   (let [db (db con)]
     (Importer.
      db
+     (get-classes db)
      (->> (q '[:find ?ai
                :where [?ai :pace/tags _]]
              db)
@@ -27,13 +29,6 @@
 
 (declare import-acenodes)
 (declare datomize-value)
-
-(defn get-classes [db]
-   (->> (for [[class ci] (q '[:find ?class ?ci
-                              :where [?ci :pace/identifies-class ?class]]
-                            db)]
-          [class (touch (entity db ci))])
-        (into {})))
 
 (defn get-tags [imp nss]
   (->> (mapcat (:tags imp) nss)
