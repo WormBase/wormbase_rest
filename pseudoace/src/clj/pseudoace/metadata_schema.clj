@@ -91,6 +91,9 @@
    :db/cardinality   :db.cardinality/one
    :db.install/_attribute :db.part/db}
 
+  {:db/id            (tempid :db.part/tx)
+   :db/txInstant     #inst "1970-01-01T00:00:01"}
+
 ])
 
 (def basetypes
@@ -145,6 +148,17 @@
     :db.install/_attribute :db.part/db
     :pace/identifies-class "Keyword"}
 
+   ;;
+   ;; Importer support
+   ;;
+
+   {:db/id           (tempid :db.part/db)
+    :db/valueType    :db.type/uuid
+    :db/cardinality  :db.cardinality/one
+    :db/unique       :db.unique/identity
+    :db/ident        :importer/temp
+    :db/doc          "Identifier used as scaffolding by the timestamp-aware importer.  Should generally be excised after import is complete."
+    :db.install/_attribute :db.part/db}
 
    ;;
    ;; Special #Ordered virtual hash-model
@@ -209,5 +223,8 @@
     :db/valueType    :db.type/float
     :db/cardinality  :db.cardinality/one
     :db.install/_attribute :db.part/db}
+
+   {:db/id            (tempid :db.part/tx)
+    :db/txInstant     #inst "1970-01-01T00:00:01"}
 
    ])

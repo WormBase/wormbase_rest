@@ -238,7 +238,9 @@
   (if txn
     (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn)))
          (if-let [c (:wormbase/curator txn)]
-           (str " (" (second c) ")")))
+           (str " (" (second c) ")")
+           (if-let [d (:db/doc txn)]
+             (str " (" d ")"))))
     "NEW"))
 
 (defn render-item [{:keys [val edit txn remove] :as val-holder} key type txnData edit-mode comp?]

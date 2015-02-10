@@ -29,6 +29,14 @@
                (conj o v)
                [v])))
 
+(defn conj-if
+  ([col x]
+     (if x
+       (conj col x)
+       col))
+  ([col x & xs]
+     (reduce conj-if (conj-if col x) xs)))
+
 (defmacro except
   "Concatenate args as if with `str` then throw an exception"
   [& args]
@@ -56,4 +64,24 @@
       (if (pred (nth col i))
         i
         (recur is)))))
+
+;;
+;; From Clojure 1.7
+;;
+
+(defn update
+  "'Updates' a value in an associative structure, where k is a
+  key and f is a function that will take the old value
+  and any supplied args and return the new value, and returns a new
+  structure.  If the key does not exist, nil is passed as the old value."
+  ([m k f]
+   (assoc m k (f (get m k))))
+  ([m k f x]
+   (assoc m k (f (get m k) x)))
+  ([m k f x y]
+   (assoc m k (f (get m k) x y)))
+  ([m k f x y z]
+   (assoc m k (f (get m k) x y z)))
+  ([m k f x y z & more]
+   (assoc m k (apply f (get m k) x y z more))))
 

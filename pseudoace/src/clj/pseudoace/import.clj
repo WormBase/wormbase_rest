@@ -16,7 +16,8 @@
         (into {})))
 
 (defn importer [con]
-  (let [db (db con)]
+  (let [db     (db con)
+        attrs  
     (Importer.
      db
      (get-classes db)
