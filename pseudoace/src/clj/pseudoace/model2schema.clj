@@ -130,7 +130,7 @@
                                      :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                             :db/ident attribute}
                                      :pace.xref/obj-ref    {:db/id (tempid :db.part/db)
-                                                            :pace/identifies-class (.substring cname 1)}}})
+                                                            :db/ident (keyword mns "id")}}})
              schema)))
 
        ;; "compound datum" case
@@ -203,7 +203,7 @@
                                            :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                                   :db/ident cattr}
                                            :pace.xref/obj-ref    {:db/id (tempid :db.part/db)
-                                                                  :pace/identifies-class (.substring cname 1)}}})
+                                                                  :db/ident (keyword mns "id")}}})
                    schema)))
              (iterate inc (if enum 1 0))   ;; In enum case, order 0 is reserved for the enum.
              concretes
