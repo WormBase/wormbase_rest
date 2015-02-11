@@ -7,6 +7,8 @@
             [clojure.string :as str])
   (:import java.io.FileInputStream java.util.zip.GZIPInputStream))
 
+(declare log-nodes)
+
 (defn merge-logs [l1 l2]
   (reduce
    (fn [m [key vals]]
@@ -118,7 +120,11 @@
 
 (defn obj->log [imp obj]
   (when-let [ci ((:classes imp) (:class obj))]
-    (log-nodes (:lines obj) imp #{(namespace (:db/ident ci))})))
+    (log-nodes
+     [(:db/ident ci) (:id obj)]
+     (:lines obj)
+     imp
+     #{(namespace (:db/ident ci))})))
 
 (defn objs->log [imp objs]
   (reduce
