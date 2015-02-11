@@ -4,7 +4,8 @@
   (:require [pseudoace.import :refer [get-tags datomize-objval]]
             [datomic.api :as d :refer (db q entity touch tempid)]
             [acetyl.parser :as ace]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clojure.java.io :refer (file reader writer)])
   (:import java.io.FileInputStream java.util.zip.GZIPInputStream))
 
 (declare log-nodes)
@@ -15,7 +16,7 @@
      (assoc m key (concat (get m key) vals)))
    l1 l2))
 
-(defn log-datomize-value [ti imp val]
+(defn- log-datomize-value [ti imp val]
   (case (:db/valueType ti)
     :db.type/string
       (or (ace/unescape (first val))
@@ -42,15 +43,15 @@
     ;;default
       (except "Can't handle " (:db/valueType ti))))
 
-(defn take-ts [n seq]
+(defn- take-ts [n seq]
   (with-meta (take n seq)
     {:timestamps (take n (:timestamps (meta seq)))}))
 
-(defn drop-ts [n seq]
+(defn- drop-ts [n seq]
   (with-meta (drop n seq)
     {:timestamps (drop n (:timestamps (meta seq)))}))
 
-(defn log-components [this ti imp vals]
+(defn- log-components [this ti imp vals]
   (let [concs    (sort-by
                   :pace/order
                   ((:tags imp)
@@ -134,7 +135,7 @@
        log))
    {} objs))
 
-(defn temp-datom [db datom temps index]
+(defn- temp-datom [db datom temps index]
   (let [ref (datom index)]
     (if (vector? ref)
       (if (entity db ref)
@@ -147,7 +148,7 @@
              [:db/add tid (first ref) (second ref)]])))
       [datom temps])))
 
-(defn temp-datoms
+(defn- temp-datoms
   "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids"
   [db datoms]
   (->>
@@ -160,8 +161,6 @@
     {:done [] :temps {}}
     datoms)
    :done))
-           
-            
 
 (defn play-log [con log]
   (doseq [[stamp datoms] (sort-by first log)
@@ -173,3 +172,41 @@
       @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
                                      :db/txInstant time
                                      :db/doc       name})))))
+
+
+(defn split-logs-to-dir
+  "Convert `objs` to log entries then spread them into .edn files split by date."
+  [imp objs dir]
+  (doseq [[stamp logs] (objs->log imp objs)
+          :let  [[_ date time name]
+                 (re-matches #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})_(.*)" stamp)]]
+    (with-open [w (writer (file dir (str date ".edn")) :append true)]
+      (binding [*out* w]
+        (doseq [l logs]
+          (println stamp (pr-str l)))))))
+
+(defn logfile-seq [r]
+  (for [l (line-seq r)
+        :let [i (.indexOf l " ")]]
+    [(.substring l 0 i)
+     (read-string (.substring l (inc i)))]))
+    
+
+(defn play-logfile [con logfile]
+  (with-open [r (reader logfile)]
+    (doseq [rblk (partition-all 1000 (logfile-seq r))]
+      (doseq [sblk (partition-by first rblk)
+              :let [[_ ds ts name]
+                    (re-matches #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})_(.*)" (ffirst sblk))
+                    time (read-instant-date (str ds "T" ts))]]
+        (doseq [blk (partition-all 1000 (map second sblk))]
+          (let [db      (db con)
+                fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
+                datoms  (temp-datoms db fdatoms)]
+            @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
+                                           :db/txInstant time
+                                           :db/doc       name}))))))))
+        
+              
+        
+  
