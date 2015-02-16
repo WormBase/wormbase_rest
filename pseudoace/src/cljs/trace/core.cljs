@@ -232,74 +232,121 @@
           (if (> ncand (count candidates))
             (dom/div (dom/em (str "And " (- ncand (count candidates)) " more")))))))))))
       
-(defn render-txn
-  "Return a string describing a transaction"
-  [txn]
-  (if txn
-    (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn)))
-         (if-let [c (:wormbase/curator txn)]
-           (str " (" (second c) ")")
-           (if-let [d (:db/doc txn)]
-             (str " (" d ")"))))
-    "NEW"))
+(defn txn-view [{:keys [txn] :as val-holder} owner {:keys [entid key]}]
+  (reify
+    om/IInitState
+    (init-state [_]
+      {:history false})
 
-(defn render-item [{:keys [val edit txn remove] :as val-holder} key type txnData edit-mode comp?]
-  (dom/div 
-   nil
+    om/IRenderState
+    (render-state [_ {:keys [history hdata]}]
+      (dom/span 
+       {:class "txn"
+        :on-click (fn [_]
+                    (when (and (not history)
+                             (not hdata))
+                      (edn-xhr
+                       (str "/history2/" entid "/" key)
+                       (fn [resp]
+                         (om/set-state! owner :hdata resp))))
+                    (om/update-state! owner :history not))}
+       (if history
+         (dom/div {:class "history-box-holder"}
+            (dom/div {:class "history-box"} 
+               (if hdata
+                 (let [txmap (->> (map (juxt :db/id identity) (:txns hdata))
+                                  (into {}))]
+                   (dom/table {:class "history-table" :border "1" :cellpadding "2"}
+                    (dom/thead 
+                     (dom/tr
+                      (for [c ["Date" "Action" "Value" "Who?"]]
+                        (dom/th c))))
+                    (dom/tbody
+                     (for [[e a v txid added?] (:datoms hdata)
+                           :let [txn (txmap txid)]]
+                       (dom/tr
+                        (dom/td (time/unparse time-formatter (tc/from-date (:db/txInstant txn))))
+                        (dom/td (if added? 
+                                  "added"
+                                  "retracted"))
+                        (dom/td (str v))
+                        (dom/td 
+                         (if-let [c (:wormbase/curator txn)]
+                           (str " (" (second c) ")")
+                           (if-let [d (:db/doc txn)]
+                             (str " (" d ")")))))))))
+                 (dom/img {:src "/img/spinner_24.gif"})))))
+        (if txn
+          (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn)))
+               (if-let [c (:wormbase/curator txn)]
+                 (str " (" (second c) ")")
+                 (if-let [d (:db/doc txn)]
+                   (str " (" d ")"))))
+          "NEW")))))
 
-   (if (and edit-mode (not comp?))
-     (dom/button
-      {:on-click #(om/transact! val-holder :remove not)}
-      (dom/i {:class "fa fa-eraser"})))
-   
-   (if txnData
-     (dom/span {:class "txn"} (render-txn txn)))
+(defn item-view [{:keys [val edit txn remove] :as val-holder} owner {:keys [key type entid comp?]}]
+  (reify
+    om/IRender
+    (render [_]
+     (let [mode      (om/observe owner (mode))
+           txnData   (:txnData mode)
+           edit-mode (:editing mode)]
+      (dom/div 
+       nil
+       
+       (if (and edit-mode (not comp?))
+         (dom/button
+          {:on-click #(om/transact! val-holder :remove not)}
+          (dom/i {:class "fa fa-eraser"})))
+       
+       (if txnData
+         (om/build txn-view val-holder {:opts {:key key :entid entid}}))
+       
+       (dom/span
+        {:style (if remove
+                  {:text-decoration "line-through"
+                   :text-decoration-color "red"})}
+        (cond
+         comp?
+         (om/build tree-view val-holder)
+         
+         (or (sequential? val)
+             (sequential? edit))
+         (if edit-mode
+           (om/build ref-edit val-holder
+                     {:opts {:class (:pace/obj-ref ((:attrs-by-ident (schema)) key))}})
+           (let [id (second val)
+                 uri (str "/view/" (namespace (first val)) "/" (second val))]
+             (dom/a {:href uri
+                     :onClick (fn [e]
+                                (.preventDefault e)
+                                (.stopPropagation e)
+                                (.pushState js/window.history
+                                            #js {:url uri}
+                                            id
+                                            uri)
+                                (secretary/dispatch! uri))}
+                    (str id))))
 
-   (dom/span
-    {:style (if remove
-              {:text-decoration "line-through"
-               :text-decoration-color "red"})}
-    (cond
-     comp?
-     (om/build tree-view val-holder)
-    
-     (or (sequential? val)
-         (sequential? edit))
-     (if edit-mode
-       (om/build ref-edit val-holder
-                 {:opts {:class (:pace/obj-ref ((:attrs-by-ident (schema)) key))}})
-       (let [id (second val)
-             uri (str "/view/" (namespace (first val)) "/" (second val))]
-         (dom/a {:href uri
-                 :onClick (fn [e]
-                            (.preventDefault e)
-                            (.stopPropagation e)
-                            (.pushState js/window.history
-                                        #js {:url uri}
-                                        id
-                                        uri)
-                            (secretary/dispatch! uri))}
-                (str id))))
+         (= type :db.type/long)
+         (if edit-mode
+           (om/build int-edit val-holder)
+           (dom/span (str val)))
+         
+         (= type :db.type/boolean)
+         (if edit-mode
+           (om/build boolean-edit val-holder)
+           (dom/span (str val)))
 
-     (= type :db.type/long)
-     (if edit-mode
-       (om/build int-edit val-holder)
-       (dom/span (str val)))
+         (= type :db.type/ref)
+         (if edit-mode
+           (om/build enum-edit val-holder {:opts {:tns (str (namespace key) "." (name key))}})
+           (dom/span (str val)))
 
-     (= type :db.type/boolean)
-     (if edit-mode
-       (om/build boolean-edit val-holder)
-       (dom/span (str val)))
-
-     (= type :db.type/ref)
-     (if edit-mode
-       (om/build enum-edit val-holder {:opts {:tns (str (namespace key) "." (name key))}})
-       (dom/span (str val)))
-
-     :default
-     (if edit-mode
-       (om/build text-edit val-holder)
-       (dom/span (str val)))))))
+         :default
+         (if edit-mode
+           (om/build text-edit val-holder)
+           (dom/span (str val))))))))))
       
 
 (defn list-view [data owner {:keys [entid]}]
@@ -346,9 +393,17 @@
                      :default
                      (dom/div nil
                               (for [v (:values data)]
-                                (render-item v (:key data) (:type data) (:txnData mode) (:editing mode) (:comp data))))))
+                                (om/build item-view v
+                                  {:opts {:key   (:key data)
+                                          :type  (:type data)
+                                          :comp? (:comp data)
+                                          :entid entid}})))))
           (let [[v] (:values data)]
-            (render-item v (:key data) (:type data) (:txnData mode) (:editing mode) (:comp data))))))))
+            (om/build item-view v 
+              {:opts {:key     (:key data)
+                      :type    (:type data)
+                      :comp?   (:comp data)
+                      :entid   entid}})))))))
 
 (defn dummy-item [item]
   (case (:db/valueType item)

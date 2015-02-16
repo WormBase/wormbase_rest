@@ -212,7 +212,16 @@
       (get-raw-attr2-in ddb entid (keyword (namespace attr)
                                             (.substring (name attr) 1)))
       (get-raw-attr2-out ddb entid attr))))
-      
+
+(defn get-raw-history2 [db entid attr]
+  (let [hdb (d/history db)
+        datoms (sort-by :tx (seq (d/datoms hdb :eavt entid attr)))]
+    {:status 200
+     :headers {"Content-Type" "text/plain"}
+     :body (pr-str {:datoms (map (fn [[e a v tx a]] [e a v tx a]) datoms)
+                    :endid entid
+                    :attr attr
+                    :txns (get-raw-txns db (set (map :tx datoms)))})}))
 
 (defn get-raw-ent [id]
   (let [ddb   (db con)]
@@ -303,7 +312,6 @@
              :href "//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"}]
      [:link {:rel "stylesheet"
              :href "/css/trace.css"}]
-     [:script {:src "http://fb.me/react-0.12.2.js"}]
      [:script {:src "/js/out/goog/base.js"
                :type "text/javascript"}]
      [:script {:src "/js/main.js"
@@ -362,6 +370,11 @@
         (db con)
         (Long/parseLong (:entid params))
         (str (:attrns params) "/" (:attrname params))))
+  (GET "/history2/:entid/:attrns/:attrname" {params :params}
+       (get-raw-history2
+        (db con)
+        (Long/parseLong (:entid params))
+        (keyword (.substring (:attrns params) 1) (:attrname params))))
   (GET "/ent/:id" {params :params}
        (get-raw-ent (Long/parseLong (:id params))))
   (GET "/view/:class/:id" req (viewer-page req))

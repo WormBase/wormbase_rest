@@ -81,3 +81,21 @@ div.add-item-disabled {
 div.add-item-disabled:hover {
     background: none;
 }
+
+div.history-box-holder {
+    position: relative;
+    top: 25px;
+    left 5px;
+}
+
+div.history-box {
+    position: absolute;
+    display: inline-block;
+    background: white;
+    padding: 5px;
+    border: solid black 1px;
+}
+
+table.history-table td {
+    padding: 5px;
+}
