@@ -341,15 +341,9 @@
 
                                          
 
-(defn gene-genetics-alleles-table [db id]
-  (let [alleles (q '[:find ?var
-                     :in $ ?gid
-                     :where [?gene :gene/id ?gid]
-                            [?vh :variation.gene/gene ?gene]
-                            [?var :variation/gene ?vh]
-                            [?var :variation/allele _]]
-                   db id)]
-    (html
+(defn gene-genetics-alleles-table [db id alleles]
+  (let [alleles (filter :variation/allele alleles)]
+    (list
      [:table.display {:id "table_alleles_by"}
       [:thead
        [:tr
@@ -364,8 +358,7 @@
         [:th "Method"]
         [:th "Strain"]]
        [:tbody
-        (for [[aid] alleles
-              :let [allele      (entity db aid)]]
+        (for [allele alleles]
           [:tr
            [:td [:a.variation-link {:href (str "/view/variation/" (:variation/id allele))}
                  (:variation/public-name allele)]]
@@ -419,7 +412,7 @@
 
            [:td
             (for [cc (:variation/predicted-cds allele)]
-              (html
+              (list
                (if-let [n (first (:molecular-change/missense cc))]
                  [:span (:molecular-change.missense/text n)])
                (if-let [n (first (nonsense cc))]
@@ -427,7 +420,7 @@
 
            [:td
             (for [cc (:variation/predicted-cds allele)]
-              (html
+              (list
                (if-let [n (first (:molecular-change/missense cc))]
                  [:span (:molecular-change.missense/int n)])))]
             
@@ -447,24 +440,18 @@
             (:method/id (:variation/method allele))]
 
            [:td
-            (for [vs (:variation/strain allele)
-                  :let [strain (:variation.strain/strain vs)
-                        sid (:strain/id strain)]]
-              [:a.strain-link {:href (str "/view/strain/" sid)}
-               sid]
-              [:br])]
+            (interpose [:br]
+              (for [vs (:variation/strain allele)
+                    :let [strain (:variation.strain/strain vs)
+                          sid (:strain/id strain)]]
+                [:a.strain-link {:href (str "/view/strain/" sid)}
+                 sid]))]
 
            ])]]])))
-         
-(defn gene-genetics-poly-table [db id]
-  (let [alleles (q '[:find ?var
-                     :in $ ?gid
-                     :where [?gene :gene/id ?gid]
-                            [?vh :variation.gene/gene ?gene]
-                            [?var :variation/gene ?vh]
-                            [(missing? $ ?var :variation/allele)]]
-                   db id)]
-    (html
+        
+(defn gene-genetics-poly-table [db id alleles]
+  (let [alleles (filter (complement :variation/allele) alleles)]
+    (list
      [:table.display {:id "table_polymorphisms_by"}
       [:thead
        [:tr
@@ -478,8 +465,7 @@
         [:th "# of Phenotypes"]
         [:th "Strain"]]
        [:tbody
-        (for [[aid] alleles
-              :let [allele      (entity db aid)]]
+        (for [allele alleles]
           [:tr
            [:td [:a.variation-link {:href (str "/view/variation/" (:variation/id allele))}
                  (:variation/public-name allele)]]
@@ -540,7 +526,7 @@
 
            [:td
             (for [cc (:variation/predicted-cds allele)]
-              (html
+              (list
                (if-let [n (first (:molecular-change/missense cc))]
                  [:span (:molecular-change.missense/text n)])
                (if-let [n (first (nonsense cc))]
@@ -548,7 +534,7 @@
 
            [:td
             (for [cc (:variation/predicted-cds allele)]
-              (html
+              (list
                (if-let [n (first (:molecular-change/missense cc))]
                  [:span (:molecular-change.missense/int n)])))]
 
@@ -556,14 +542,14 @@
             (count (:variation/phenotype allele))]
 
            [:td
-            (for [vs (:variation/strain allele)
-                  :let [strain (:variation.strain/strain vs)
-                        sid (:strain/id strain)]]
-              [:a.strain-link {:href (str "/view/strain/" sid)}
-               sid]
-              [:br])]
+            (interpose [:br]
+              (for [vs (:variation/strain allele)
+                    :let [strain (:variation.strain/strain vs)
+                          sid (:strain/id strain)]]
+                [:a.strain-link {:href (str "/view/strain/" sid)}
+                 sid]))]
 
-           ])]]]))) 
+           ])]]])))
 
 (defn- is-cgc? [strain]
   (some #(= (->> (:strain.location/laboratory %)
@@ -572,24 +558,26 @@
         (:strain/location strain)))
 
 (defn- strain-list [strains]
-  (str/join 
+  (interpose
    ", "
    (for [strain strains]
-     (html
       [:a.strain-link {:href (str "/view/strain/" (:strain/id strain))}
-       (:strain/id strain)]))))
+       (:strain/id strain)])))
             
 
 (defn gene-genetics-strain-table [db id]
   (let [gene    (entity db [:gene/id id])
-        strains (->> (q '[:find ?strain
+        strains (->> (q '[:find (pull ?strain [:strain/id
+                                               :gene/_strain
+                                               :transgene/_strain
+                                               :strain/genotype
+                                               {:strain/location [{:strain.location/laboratory [:laboratory/id]}]}])
                           :in $ ?gid
                           :where [?gene :gene/id ?gid]
                                  [?gene :gene/strain ?strain]]
                         db id)
-                     (map (fn [[sid]]
-                            (entity db sid))))]
-    (html
+                     (map first))]
+    (list
      [:table.venn {:cellspacing "0" :cellpadding "5"}
       [:tbody
        [:tr.venn-a
@@ -651,7 +639,50 @@
   (let [gids (q '[:find ?g :in $ ?gid :where [?g :gene/id ?gid]] db id)]
     (if-let [[gid] (first gids)]
      (let [g (entity db gid)
-           gene-name (:gene/public-name g)]
+           gene-name (:gene/public-name g)
+           alleles (->> (q '[:find (pull ?var [{(limit :variation/predicted-cds 20)
+                                                    [{:variation.predicted-cds/cds [:cds/id]
+                                                      :molecular-change/missense [:molecular-change.missense/int
+                                                                                  :molecular-change.missense/text]
+                                                      :molecular-change/intron   [:db/id]
+                                                      :molecular-change/coding-exon [:db/id]
+                                                      :molecular-change/utr-5 [:db/id]
+                                                      :molecular-change/utr-3 [:db/id]
+                                                      :molecular-change/silent [:db/id]
+                                                      :molecular-change/amber-uag [:db/id :molecular-change.amber-uag/text]
+                                                      :molecular-change/ochre-uaa [:db/id :molecular-change.ochre-uaa/text]
+                                                      :molecular-change/opal-uga [:db/id :molecular-change.opal-uga/text]
+                                                      :molecular-change/ochre-uaa-or-opal-uga [:db/id :molecular-change.ochre-uaa-or-opal-uga/text]
+                                                      :molecular-change/amber-uag-or-ochre-uaa [:db/id :molecular-change.amber-uag-or-ochre-uaa/text]
+                                                      :molecular-change/amber-uag-or-opal-uga [:db/id :molecular-change.amber-uag-or-opal-uga/text]
+                                                      :molecular-change/frameshift [:db/id]}]
+                                                    (limit :variation/transcript 20)
+                                                    [{:molecular-change/missense [:molecular-change.missense/int
+                                                                                  :molecular-change.missense/text]
+                                                      :molecular-change/intron   [:db/id]
+                                                      :molecular-change/coding-exon [:db/id]
+                                                      :molecular-change/utr-5 [:db/id]
+                                                      :molecular-change/utr-3 [:db/id]
+                                                      :molecular-change/silent [:db/id]
+                                                      :molecular-change/frameshift [:db/id]}]
+                                                    :variation/method [:method/id]
+                                                    :variation/strain [{:variation.strain/strain [:strain/id]}]
+                                                    :variation/insertion [:db/id]
+                                                    :variation/substition [:db/id]
+                                                    :variation/deletion [:db/id]
+                                                    :variation/inversion [:db/id]
+                                                    :variation/tandem-duplication [:db/id]
+                                                    :variation/phenotype [:db/id]}
+                                               :variation/allele
+                                               :variation/predicted-snp
+                                               :variation/public-name
+                                               :variation/id])
+                             :in $ ?gid
+                             :where [?gene :gene/id ?gid]
+                                    [?vh :variation.gene/gene ?gene]
+                                    [?var :variation/gene ?vh]]
+                           db id)
+                        (map first))]
        (html
         [:html
          [:head
@@ -682,13 +713,13 @@
            [:div.field
             [:div.field-title "Alleles:"]
             [:div.field-content
-             (gene-genetics-alleles-table db id)
+             (gene-genetics-alleles-table db id alleles)
              [:script allele-table-script]]]
 
            [:div.field
             [:div.field-title "Polymorphisms & Natural variants:"]
             [:div.field-content 
-             (gene-genetics-poly-table db id)]]
+             (gene-genetics-poly-table db id alleles)]]
 
            [:div.field
             [:div.field-title "Strains:"]
