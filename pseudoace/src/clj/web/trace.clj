@@ -218,7 +218,9 @@
         datoms (sort-by :tx (seq (d/datoms hdb :eavt entid attr)))]
     {:status 200
      :headers {"Content-Type" "text/plain"}
-     :body (pr-str {:datoms (map (fn [[e a v tx a]] [e a v tx a]) datoms)
+     :body (pr-str {:datoms (map (fn [[e a v tx a]] 
+                                   {:e e :a a :v v :txid tx :added? a})
+                                 datoms)
                     :endid entid
                     :attr attr
                     :txns (get-raw-txns db (set (map :tx datoms)))})}))

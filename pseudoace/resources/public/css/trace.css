@@ -96,6 +96,11 @@ div.history-box {
     border: solid black 1px;
 }
 
+table.history-table {
+    margin-bottom: 0px;
+    font-size: 10pt;
+}
+
 table.history-table td {
-    padding: 5px;
+    padding: 3px;
 }

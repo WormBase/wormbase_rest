@@ -256,25 +256,42 @@
                (if hdata
                  (let [txmap (->> (map (juxt :db/id identity) (:txns hdata))
                                   (into {}))]
-                   (dom/table {:class "history-table" :border "1" :cellpadding "2"}
+                   (dom/table {:class "history-table table table-striped"}
                     (dom/thead 
                      (dom/tr
                       (for [c ["Date" "Action" "Value" "Who?"]]
                         (dom/th c))))
                     (dom/tbody
-                     (for [[e a v txid added?] (:datoms hdata)
-                           :let [txn (txmap txid)]]
-                       (dom/tr
-                        (dom/td (time/unparse time-formatter (tc/from-date (:db/txInstant txn))))
-                        (dom/td (if added? 
-                                  "added"
-                                  "retracted"))
-                        (dom/td (str v))
-                        (dom/td 
-                         (if-let [c (:wormbase/curator txn)]
-                           (str " (" (second c) ")")
-                           (if-let [d (:db/doc txn)]
-                             (str " (" d ")")))))))))
+                     (for [datoms (->> (sort-by :txid (:datoms hdata))
+                                       (partition-by :txid))
+                           :let [{added true retracted false}
+                                   (group-by :added? datoms)
+                                 txn (txmap (:txid (first datoms)))
+                                 time (->> (:db/txInstant txn)
+                                           (tc/from-date)
+                                           (time/unparse time-formatter))
+                                 who (if-let [c (:wormbase/curator txn)]
+                                       (second c)
+                                       (:db/doc txn))]]
+                       (if (= (count added) (count retracted) 1)
+                         (dom/tr
+                          (dom/td time)
+                          (dom/td "changed")
+                          (dom/td (:v (first added)))
+                          (dom/td who))
+                         (concat
+                          (for [d retracted]
+                            (dom/tr
+                             (dom/td time)
+                             (dom/td "retracted")
+                             (dom/td (:v d))
+                             (dom/td who)))
+                          (for [d added]
+                            (dom/tr
+                             (dom/td time)
+                             (dom/td "added")
+                             (dom/td (:v d))
+                             (dom/td who)))))))))
                  (dom/img {:src "/img/spinner_24.gif"})))))
         (if txn
           (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn)))
