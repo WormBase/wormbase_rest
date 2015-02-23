@@ -61,9 +61,10 @@
         hashes   (for [ns nss]
                    (entity (:db imp) (keyword ns "id")))]      ;; performance?
     (reduce
-     (fn [log [index [cvals hlines]]]
-       (let [compid [:importer/temp (d/squuid)]]
-         (update 
+     (fn [log [index lines]]
+       (let [cvals (take-ts (count concs) (first lines))
+             compid [:importer/temp (d/squuid)]]
+         (->
           (merge-logs
            ;; concretes
            (reduce
@@ -81,15 +82,26 @@
            ;; hashes
            (log-nodes
             compid
-            (map (partial drop-ts (count concs)) hlines)
+            (map (partial drop-ts (count concs)) lines)
             imp
             nss))
-          (first (:timestamps (meta (first hlines))))
-          conj
-          [:db/add this (:db/ident ti) compid])))
+          (update (first (:timestamps (meta (first lines))))
+                  conj
+                  [:db/add this (:db/ident ti) compid])
+          (update (first (:timestamps (meta (first lines))))
+                  conj-if
+                  (if ordered?
+                    [:db/add compid :ordered/index index])))))
      {}
-     (indexed (group-by (partial take-ts (count concs)) vals)))))
-      
+     (indexed (partition-by (partial take (count concs)) vals)))))
+
+(defn conjv
+  "Like `conj` but creates a single-element vector if `coll` is nil."
+  [coll x]
+  (if (nil? coll)
+    [x]
+    (conj coll x)))
+
 (defn log-nodes [this lines imp nss]
   (let [tags (get-tags imp nss)]
     (reduce
@@ -113,7 +125,7 @@
                [stamp & stamps] (:timestamps (meta line))]
           (if node
             (if-let [ti (tags node)]
-              (update-in m [ti] conj (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
+              (update-in m [ti] conjv (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
               (recur nodes stamps))
             m)))
       {} lines))))
@@ -206,7 +218,3 @@
             @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
                                            :db/txInstant time
                                            :db/doc       name}))))))))
-        
-              
-        
-  

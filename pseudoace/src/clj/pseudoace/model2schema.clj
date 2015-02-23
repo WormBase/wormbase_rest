@@ -59,7 +59,7 @@
      basenames)))
          
 
-(defn tag->schema [mns tagpath node]
+(defn tag->schema [sid mns tagpath node]
   (let [attribute  (keyword mns (or (:alt-name node)
                                      (datomize-name (last tagpath))))
         fchild (first (:children node))]
@@ -129,8 +129,9 @@
                                      :pace.xref/tags       x
                                      :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                             :db/ident attribute}
-                                     :pace.xref/obj-ref    {:db/id (tempid :db.part/db)
-                                                            :db/ident (keyword mns "id")}}})
+                                     :pace.xref/obj-ref    sid
+                                                           #_{:db/id (tempid :db.part/db)
+                                                                              :db/ident (keyword mns "id")}}})
              schema)))
 
        ;; "compound datum" case
@@ -202,7 +203,8 @@
                                            :pace.xref/tags       x
                                            :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                                   :db/ident cattr}
-                                           :pace.xref/obj-ref    {:db/id (tempid :db.part/db)
+                                           :pace.xref/obj-ref    sid
+                                                                 #_{:db/id (tempid :db.part/db)
                                                                   :db/ident (keyword mns "id")}}})
                    schema)))
              (iterate inc (if enum 1 0))   ;; In enum case, order 0 is reserved for the enum.
@@ -217,22 +219,23 @@
    (do
      (when *schema-notes*
        (println "Candidate augmented enum at " mns ":" tagpath))
-     (mapcat (partial node->schema mns tagpath) (:children node)))
+     (mapcat (partial node->schema sid mns tagpath) (:children node)))
 
    :default 
-   (mapcat (partial node->schema mns tagpath) (:children node)))))
+   (mapcat (partial node->schema sid mns tagpath) (:children node)))))
 
-(defn node->schema [mns tagpath node]
+(defn node->schema [sid mns tagpath node]
   (if (= (:type node) :tag)
-    (tag->schema mns (conj tagpath (:name node)) node)))
+    (tag->schema sid mns (conj tagpath (:name node)) node)))
 
 
 (defn model->schema [{:keys [name alt-name] :as model}]
   (let [mns (or alt-name
-                (datomize-name name))]
+                (datomize-name name))
+        sid (tempid :db.part/db)]
     (conj
-     (mapcat (partial node->schema mns []) (:children model))
-     {:db/id          (tempid :db.part/db)
+     (mapcat (partial node->schema sid mns []) (:children model))
+     {:db/id          sid
       :db/ident       (keyword mns "id")
       :db/valueType   :db.type/string
       :db/unique      :db.unique/identity
