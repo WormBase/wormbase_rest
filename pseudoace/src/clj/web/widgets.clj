@@ -453,7 +453,8 @@
                   [:span.ui-icon.ui-icon-triangle-1-e {:style "float: left"}]
                   " " (count (:variation/strain allele)) " results "]
                  [:div.returned {:style "display: none"}
-                  strain-list])))]
+                  strain-list])
+                strain-list))]
 
            ])]]])))
         
@@ -563,7 +564,8 @@
                   [:span.ui-icon.ui-icon-triangle-1-e {:style "float: left"}]
                   " " (count (:variation/strain allele)) " results "]
                  [:div.returned {:style "display: none"}
-                  strain-list])))]
+                  strain-list])
+               strain-list))]
 
            ])]]])))
 
