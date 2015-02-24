@@ -6,14 +6,15 @@
             [acetyl.parser :as ace]
             [clojure.string :as str]
             [clojure.java.io :refer (file reader writer)])
-  (:import java.io.FileInputStream java.util.zip.GZIPInputStream))
+  (:import java.io.FileInputStream java.util.zip.GZIPInputStream
+           java.io.FileOutputStream java.util.zip.GZIPOutputStream))
 
 (declare log-nodes)
 
 (defn merge-logs [l1 l2]
   (reduce
    (fn [m [key vals]]
-     (assoc m key (concat (get m key) vals)))
+     (assoc m key (into (get m key []) vals)))
    l1 l2))
 
 (defn- log-datomize-value [ti imp val]
@@ -191,8 +192,11 @@
   [imp objs dir]
   (doseq [[stamp logs] (objs->log imp objs)
           :let  [[_ date time name]
-                 (re-matches #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})_(.*)" stamp)]]
-    (with-open [w (writer (file dir (str date ".edn")) :append true)]
+                 (re-matches #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})(?:\.\d+)?_(.*)" stamp)]]
+    (with-open [w (-> (file dir (str date ".edn.gz"))
+                      (FileOutputStream. true)
+                      (GZIPOutputStream.)
+                      (writer))]
       (binding [*out* w]
         (doseq [l logs]
           (println stamp (pr-str l)))))))
