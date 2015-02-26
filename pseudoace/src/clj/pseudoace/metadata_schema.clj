@@ -160,6 +160,12 @@
     :db/doc          "Identifier used as scaffolding by the timestamp-aware importer.  Should generally be excised after import is complete."
     :db.install/_attribute :db.part/db}
 
+   {:db/id           (tempid :db.part/db)
+    :db/valueType    :db.type/string
+    :db/cardinality  :db.cardinality/one
+    :db/ident        :importer/ts-name
+    :db/doc          "Username from a legacy timestamp."
+    :db.install/_attribute :db.part/db}
    ;;
    ;; Special #Ordered virtual hash-model
    ;;
