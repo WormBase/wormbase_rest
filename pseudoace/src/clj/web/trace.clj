@@ -169,7 +169,7 @@
       (assoc te :wormbase/curator [:person/id (:person/id curator)])
       te)))
 
-(defn get-raw-obj2 [class id max-out max-in]
+(defn get-raw-obj2 [class id max-out max-in txns?]
   (let [ddb   (db con)
         clid  (keyword class "id")
         entid (->> [clid id]
@@ -183,35 +183,37 @@
          :headers {"Content-Type" "text/plain"}
          :body (pr-str {:props  props
                         :id     entid
-                        :txns   (get-raw-txns ddb txids)})})
+                        :txns   (if txns?
+                                  (get-raw-txns ddb txids))})})
       {:status 404
        :body "Not found"})))
 
-(defn get-raw-attr2-out [ddb entid attr]
+(defn get-raw-attr2-out [ddb entid attr txns?]
   (let [prop (obj2-attr ddb nil (seq (d/datoms ddb :eavt entid attr)))
         txids (set (find-txids [prop]))]
    {:status 200
     :headers {"Content-Type" "text/plain"}
     :body (pr-str (assoc
                     prop
-                    :txns (get-raw-txns ddb txids)))}))
+                    :txns (if txns? (get-raw-txns ddb txids))))}))
 
-(defn get-raw-attr2-in [ddb entid attr]
+(defn get-raw-attr2-in [ddb entid attr txns?]
   (let [prop (xref-obj2-attr ddb entid attr nil)
         txids (set (find-txids [prop]))]
     {:status 200
      :headers {"Content-Type" "text/plain"}
      :body (pr-str (assoc
                      prop
-                     :txns (get-raw-txns ddb txids)))}))
+                     :txns (if txns? (get-raw-txns ddb txids))))}))
   
 
-(defn get-raw-attr2 [ddb entid attr-name]
+(defn get-raw-attr2 [ddb entid attr-name txns?]
   (let [attr (keyword (.substring attr-name 1))]
     (if (.startsWith (name attr) "_")
       (get-raw-attr2-in ddb entid (keyword (namespace attr)
-                                            (.substring (name attr) 1)))
-      (get-raw-attr2-out ddb entid attr))))
+                                            (.substring (name attr) 1))
+                        txns?)
+      (get-raw-attr2-out ddb entid attr txns?))))
 
 (defn get-raw-history2 [db entid attr]
   (let [hdb (d/history db)
@@ -353,6 +355,12 @@
           {:count (count names)
            :names (take 10 names)})}))
 
+(defn get-raw-txns2 [db ids]
+  {:status 200
+   :header {"Content-Type" "text/plain"}
+   :body (pr-str
+          {:txns (get-raw-txns db ids)})})
+
 (defn parse-int-if [s]
   (if s
     (Integer/parseInt s)))
@@ -366,12 +374,21 @@
         (:class params)
         (:id params)
         (parse-int-if (params "max-out"))
-        (parse-int-if (params "max-in"))))
+        (parse-int-if (params "max-in"))
+        (= (params "txns") "true")))
   (GET "/attr2/:entid/:attrns/:attrname" {params :params}
        (get-raw-attr2
         (db con)
         (Long/parseLong (:entid params))
-        (str (:attrns params) "/" (:attrname params))))
+        (str (:attrns params) "/" (:attrname params))
+        (= (params "txns") "true")))
+  (GET "/txns" {params :params}
+       (get-raw-txns2
+        (db con)
+        (let [ids (params "id")]
+          (if (string? ids)
+            [(Long/parseLong ids)]
+            (map #(Long/parseLong %) ids)))))
   (GET "/history2/:entid/:attrns/:attrname" {params :params}
        (get-raw-history2
         (db con)

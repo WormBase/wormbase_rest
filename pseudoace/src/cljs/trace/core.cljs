@@ -1,5 +1,6 @@
 (ns trace.core
   (:require [cljs.reader :as reader]
+            [clojure.string :as str]
             [om.core :as om :include-macros true]
             [om-tools.dom :as dom :include-macros true]
             [secretary.core :as secretary :refer-macros [defroute]]
@@ -27,24 +28,51 @@
   []
   (om/ref-cursor (:schema (om/root-cursor app-state))))
 
-(defn- props->state [txns props]
+(defn txns
+  "Get a ref-cursor to a map of transactions"
+  []
+  (om/ref-cursor (:txns (om/root-cursor app-state))))
+
+(defn- fetch-missing-txns [app]
+  (let [txns (or (:txns @app) {})]
+    (letfn [(scan-missing [missing {:keys [txn val]}]
+              (let [missing 
+                    (if (sequential? val)
+                      (reduce scan-missing missing (mapcat :values val))
+                      missing)]
+                (if (txns txn)
+                  missing
+                  (conj missing txn))))]
+      (let [missing (reduce scan-missing #{} (mapcat :values (:props @app)))]
+        (if (seq missing)
+          (edn-xhr
+           (str "/txns?"
+                (str/join "&"
+                  (for [i missing]
+                    (str "id=" i))))
+           (fn [resp]
+             (om/transact! app :txns #(merge %  (->> (for [t (:txns resp)]
+                                                       [(:db/id t) t])
+                                                     (into {})))))))))))
+                           
+(defn- props->state [props]
   (vec (for [p props :let [v (:values p)]]
          (assoc p
            :collapsed (> (count v 1))
            :values (vec
                     (for [{:keys [txn val id]} v]
-                      {:txn (txns txn)
+                      {:txn txn
                        :id id
                        :key (:key p)
                        :val (if (:comp p)
-                              (props->state txns val)
+                              (props->state val)
                               val)}))))))
 
 (defn resp->state [resp]
   (let [txns (->> (for [t (:txns resp)]
                     [(:db/id t) t])
                   (into {}))]
-    (props->state txns (:props resp))))
+    (props->state (:props resp))))
 
 (deftype TempIDObj [part id]
   IPrintWithWriter
@@ -240,6 +268,7 @@
 
     om/IRenderState
     (render-state [_ {:keys [history hdata]}]
+     (let [txn-map (om/observe owner (txns))]
       (dom/span 
        {:class "txn"
         :on-click (fn [_]
@@ -294,12 +323,14 @@
                              (dom/td who)))))))))
                  (dom/img {:src "/img/spinner_24.gif"})))))
         (if txn
-          (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn)))
-               (if-let [c (:wormbase/curator txn)]
-                 (str " (" (second c) ")")
-                 (if-let [d (:db/doc txn)]
-                   (str " (" d ")"))))
-          "NEW")))))
+          (if-let [txn-data (txn-map txn)]
+            (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn-data)))
+                 (if-let [c (:wormbase/curator txn-data)]
+                   (str " (" (second c) ")")
+                   (if-let [d (:db/doc txn-data)]
+                     (str " (" d ")"))))
+            (str txn))
+          "NEW"))))))
 
 (defn item-view [{:keys [val edit txn remove] :as val-holder} owner {:keys [key type entid comp?]}]
   (reify
@@ -383,19 +414,24 @@
                                    (edn-xhr
                                     (str "/attr2/" entid "/" (:key data))
                                     (fn [resp]
-                                      (let [txns (->> (for [t (:txns resp)]
+                                      (let [txn-map (->> (for [t (:txns resp)]
                                                         [(:db/id t) t])
                                                       (into {}))]
-                                       (om/update!
-                                        data
-                                        :values
-                                        (vec
-                                         (for [v (:values resp)]
-                                           (assoc v
-                                             :txn (txns (:txn v))
-                                             :val (if (:comp resp)
-                                                    (props->state txns (:val v))
-                                                    (:val v)))))))))))
+                                        (om/transact!
+                                         (txns)
+                                         #(merge % txn-map))
+                                        (om/update!
+                                         data
+                                         :values
+                                         (vec
+                                          (for [v (:values resp)]
+                                            (assoc v
+                                              :txn (:txn v)
+                                              :val (if (:comp resp)
+                                                     (props->state (:val v))
+                                                     (:val v))))))
+                                        (if (:txnData @mode)
+                                          (fetch-missing-txns (om/root-cursor app-state))))))))
                       :className "collapse-button"}
                      (if (:collapsed data)
                        "+"
@@ -575,12 +611,15 @@
       (defroute "/view/:class/:id" {c :class i :id}
         (om/update! app [:mode :loading] true)
         (edn-xhr 
-         (str "/raw2/" c "/" i "?max-in=5&max-out=10")
+         (str "/raw2/" c "/" i "?max-in=5&max-out=10&txns=false")
          (fn [resp]
            (om/update! app {:mode {:loading false
                                    :editing false
                                    :txnData false}
-                            :props   (resp->state resp)
+                            :props   (props->state (:props resp))
+                            :txns    (->> (for [t (:txns resp)]
+                                            [(:db/id t) t])
+                                          (into {}))
                             :id      (:id resp)
                             :ident [(keyword c "id") i]}))))
       (secretary/dispatch! (.-pathname js/window.location))
@@ -603,7 +642,9 @@
                   (dom/label "Timestamps")
                   (dom/input {:type "checkbox"
                               :checked (:txnData (:mode app))
-                              :on-click #(om/transact! app [:mode :txnData] not)})
+                              :on-click (fn [_]
+                                          (if (:txnData (:mode @(om/transact! app [:mode :txnData] not)))
+                                            (fetch-missing-txns app)))})
                   
                   (when (:fetching-schema mode)
                     (dom/span "Fetching schema..."))
