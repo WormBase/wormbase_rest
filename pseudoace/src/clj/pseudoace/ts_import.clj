@@ -6,14 +6,28 @@
             [acetyl.parser :as ace]
             [clojure.string :as str]
             [clojure.java.io :refer (file reader writer)])
-  (:import java.io.FileInputStream java.util.zip.GZIPInputStream))
+  (:import java.io.FileInputStream java.util.zip.GZIPInputStream
+           java.io.FileOutputStream java.util.zip.GZIPOutputStream))
 
 (declare log-nodes)
+
+(def timestamp-pattern #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})(?:\.\d+)?_(.*)")
+
+(def pmatch @#'ace/pmatch)
+
+(defn select-ts
+  "Return any lines in acedb object `obj` with leading tags matching `path`" 
+  [obj path]
+  (for [l (:lines obj)
+        :when (pmatch path l)]
+    (with-meta
+      (nthrest l (count path))
+      {:timestamps (nthrest (:timestamps (meta l)) (count path))})))
 
 (defn merge-logs [l1 l2]
   (reduce
    (fn [m [key vals]]
-     (assoc m key (concat (get m key) vals)))
+     (assoc m key (into (get m key []) vals)))
    l1 l2))
 
 (defn- log-datomize-value [ti imp val]
@@ -61,9 +75,10 @@
         hashes   (for [ns nss]
                    (entity (:db imp) (keyword ns "id")))]      ;; performance?
     (reduce
-     (fn [log [index [cvals hlines]]]
-       (let [compid [:importer/temp (d/squuid)]]
-         (update 
+     (fn [log [index lines]]
+       (let [cvals (take-ts (count concs) (first lines))
+             compid [:importer/temp (d/squuid)]]
+         (->
           (merge-logs
            ;; concretes
            (reduce
@@ -81,15 +96,26 @@
            ;; hashes
            (log-nodes
             compid
-            (map (partial drop-ts (count concs)) hlines)
+            (map (partial drop-ts (count concs)) lines)
             imp
             nss))
-          (first (:timestamps (meta (first hlines))))
-          conj
-          [:db/add this (:db/ident ti) compid])))
+          (update (first (:timestamps (meta (first lines))))
+                  conj
+                  [:db/add this (:db/ident ti) compid])
+          (update (first (:timestamps (meta (first lines))))
+                  conj-if
+                  (if ordered?
+                    [:db/add compid :ordered/index index])))))
      {}
-     (indexed (group-by (partial take-ts (count concs)) vals)))))
-      
+     (indexed (partition-by (partial take (count concs)) vals)))))
+
+(defn conjv
+  "Like `conj` but creates a single-element vector if `coll` is nil."
+  [coll x]
+  (if (nil? coll)
+    [x]
+    (conj coll x)))
+
 (defn log-nodes [this lines imp nss]
   (let [tags (get-tags imp nss)]
     (reduce
@@ -113,19 +139,88 @@
                [stamp & stamps] (:timestamps (meta line))]
           (if node
             (if-let [ti (tags node)]
-              (update-in m [ti] conj (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
+              (update-in m [ti] conjv (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
               (recur nodes stamps))
             m)))
       {} lines))))
      
 
+(defmulti log-custom :class)
+
+(defmethod log-custom "LongText" [{:keys [timestamp id text]}]
+  {timestamp
+   [[:db/add [:longtext/id id] :longtext/text (ace/unescape text)]]})
+
+(defmethod log-custom "DNA" [{:keys [timestamp id text]}]
+  {timestamp
+   [[:db/add [:dna/id id] :dna/sequence text]]})
+
+(defmethod log-custom "Peptide" [{:keys [timestamp id text]}]
+  {timestamp
+   [[:db/add [:peptide/id id] :peptide/sequence text]]})
+
+(defn- pair-ts [s]
+  (map vector s (:timestamps (meta s))))
+
+(defmethod log-custom "Position_Matrix" [{:keys [id timestamp] :as obj}]
+  (let [values (->> (select-ts obj ["Site_values"])
+                    (map (juxt first (partial drop-ts 1)))
+                    (into {}))
+        bgs  (->> (select-ts obj ["Background_model"])
+                  (map (juxt first (partial drop-ts 1)))
+                  (into {}))]
+    (->>
+     (concat
+      (if (seq bgs)
+        (let [holder [:importer/temp (d/squuid)]]
+          (conj
+           (for [base ["A" "C" "G" "T"]
+                 :let [val (bgs base)]]
+             [(first (:timestamps (meta val)))
+              [:db/add holder (keyword "position-matrix.value" (.toLowerCase base)) (parse-double (first val))]])
+           [timestamp [:db/add [:position-matrix/id id] :position-matrix/background holder]])))
+      (if (seq values)
+        (mapcat
+         (fn [index
+              [a a-ts]
+              [c c-ts]
+              [g g-ts]
+              [t t-ts]]
+           (let [holder [:importer/temp (d/squuid)]]
+             [[timestamp [:db/add [:position-matrix/id id] :position-matrix/values holder]]
+              [timestamp [:db/add holder :ordered/index index]]
+              [a-ts [:db/add holder :position-matrix.value/a (parse-double a)]]
+              [c-ts [:db/add holder :position-matrix.value/c (parse-double c)]]
+              [g-ts [:db/add holder :position-matrix.value/g (parse-double g)]]
+              [t-ts [:db/add holder :position-matrix.value/t (parse-double t)]]]))
+         (iterate inc 0)
+         (pair-ts (values "A"))
+         (pair-ts (values "C"))
+         (pair-ts (values "G"))
+         (pair-ts (values "T")))))
+           
+     (reduce
+      (fn [log [ts datom]]
+        (update log ts conjv datom))
+      {}))))
+           
+  
+
+(defmethod log-custom :default [obj]
+  nil)
+
 (defn obj->log [imp obj]
-  (when-let [ci ((:classes imp) (:class obj))]
-    (log-nodes
-     [(:db/ident ci) (:id obj)]
-     (:lines obj)
-     imp
-     #{(namespace (:db/ident ci))})))
+  (let [core (if-let [ci ((:classes imp) (:class obj))]
+               (log-nodes
+                [(:db/ident ci) (:id obj)]
+                (:lines obj)
+                imp
+                #{(namespace (:db/ident ci))}))
+        custom (log-custom obj)]
+    (cond
+     (nil? core)   custom
+     (nil? custom) core
+     :default      (merge-logs core custom))))
 
 (defn objs->log [imp objs]
   (reduce
@@ -165,22 +260,35 @@
 (defn play-log [con log]
   (doseq [[stamp datoms] (sort-by first log)
           :let [[_ ds ts name]
-                (re-matches #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})_(.*)" stamp)
+                (re-matches timestamp-pattern stamp)
                 time (read-instant-date (str ds "T" ts))]]
     (let [db (db con)
           datoms (temp-datoms db datoms)]
       @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
                                      :db/txInstant time
-                                     :db/doc       name})))))
+                                     :importer/tx-name name})))))
+
+
+(def log-fixups
+  {nil        "1977-01-01_01:01:01_nil"
+   "original" "1970-01-02_01:01:01_original"})
+
+(defn clean-log-keys [log]
+  (->> (for [[k v] log]
+         [(or (log-fixups k) k) v])
+       (into {})))
 
 
 (defn split-logs-to-dir
   "Convert `objs` to log entries then spread them into .edn files split by date."
   [imp objs dir]
-  (doseq [[stamp logs] (objs->log imp objs)
+  (doseq [[stamp logs] (clean-log-keys (objs->log imp objs))
           :let  [[_ date time name]
-                 (re-matches #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})_(.*)" stamp)]]
-    (with-open [w (writer (file dir (str date ".edn")) :append true)]
+                 (re-matches timestamp-pattern stamp)]]
+    (with-open [w (-> (file dir (str date ".edn.gz"))
+                      (FileOutputStream. true)
+                      (GZIPOutputStream.)
+                      (writer))]
       (binding [*out* w]
         (doseq [l logs]
           (println stamp (pr-str l)))))))
@@ -190,14 +298,13 @@
         :let [i (.indexOf l " ")]]
     [(.substring l 0 i)
      (read-string (.substring l (inc i)))]))
-    
 
 (defn play-logfile [con logfile]
   (with-open [r (reader logfile)]
     (doseq [rblk (partition-all 1000 (logfile-seq r))]
       (doseq [sblk (partition-by first rblk)
               :let [[_ ds ts name]
-                    (re-matches #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})_(.*)" (ffirst sblk))
+                    (re-matches timestamp-pattern (ffirst sblk))
                     time (read-instant-date (str ds "T" ts))]]
         (doseq [blk (partition-all 1000 (map second sblk))]
           (let [db      (db con)
@@ -206,7 +313,6 @@
             @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
                                            :db/txInstant time
                                            :db/doc       name}))))))))
-        
-              
-        
-  
+
+
+

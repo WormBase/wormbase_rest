@@ -440,12 +440,21 @@
             (:method/id (:variation/method allele))]
 
            [:td
-            (interpose [:br]
-              (for [vs (:variation/strain allele)
-                    :let [strain (:variation.strain/strain vs)
-                          sid (:strain/id strain)]]
-                [:a.strain-link {:href (str "/view/strain/" sid)}
-                 sid]))]
+            (let [strain-list
+                  (interpose [:br]
+                             (for [vs (:variation/strain allele)
+                                   :let [strain (:variation.strain/strain vs)
+                                         sid (:strain/id strain)]]
+                               [:a.strain-link {:href (str "/view/strain/" sid)}
+                                sid]))]
+              (if (> (count (:variation/strain allele)) 5)
+                (list
+                 [:div.toggle
+                  [:span.ui-icon.ui-icon-triangle-1-e {:style "float: left"}]
+                  " " (count (:variation/strain allele)) " results "]
+                 [:div.returned {:style "display: none"}
+                  strain-list])
+                strain-list))]
 
            ])]]])))
         
@@ -542,12 +551,21 @@
             (count (:variation/phenotype allele))]
 
            [:td
-            (interpose [:br]
-              (for [vs (:variation/strain allele)
-                    :let [strain (:variation.strain/strain vs)
-                          sid (:strain/id strain)]]
-                [:a.strain-link {:href (str "/view/strain/" sid)}
-                 sid]))]
+            (let [strain-list
+                  (interpose [:br]
+                             (for [vs (:variation/strain allele)
+                                   :let [strain (:variation.strain/strain vs)
+                                         sid (:strain/id strain)]]
+                               [:a.strain-link {:href (str "/view/strain/" sid)}
+                                sid]))]
+              (if (> (count (:variation/strain allele)) 5)
+                (list
+                 [:div.toggle
+                  [:span.ui-icon.ui-icon-triangle-1-e {:style "float: left"}]
+                  " " (count (:variation/strain allele)) " results "]
+                 [:div.returned {:style "display: none"}
+                  strain-list])
+               strain-list))]
 
            ])]]])))
 

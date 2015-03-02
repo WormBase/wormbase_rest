@@ -4,7 +4,7 @@
                  [com.datomic/datomic-free "0.9.5130"]
                  [datomic-schema "1.1.0"]
                  [org.clojure/tools.cli "0.3.1"]
-                 [acetyl "0.0.5-SNAPSHOT"]
+                 [acetyl "0.0.6-SNAPSHOT"]
                  [com.novemberain/monger "2.0.0"]
                  [org.clojure/tools.reader "0.8.3"]
                  [hiccup "1.0.5"]
