@@ -1,0 +1,8 @@
+*~
+target
+.nrepl-port
+pom.xml
+.lein-repl-history
+resources/public/js/main.js
+resources/public/js/out
+celelist2.docx
