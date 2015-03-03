@@ -213,9 +213,9 @@
          {:strain.location/laboratory [:laboratory/id "CGC"]}
 
        :extras 
-         (process-simple-locus genotype strain species strain-tid))
+         (process-genotype genotype strain species strain-tid))
              
              )))
                            
      
-     
+(defn -main [& args])
