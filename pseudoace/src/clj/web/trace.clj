@@ -7,7 +7,8 @@
         ring.middleware.session
         ring.middleware.anti-forgery
         web.widgets
-        web.colonnade)
+        web.colonnade
+        web.rest.gene)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
@@ -19,7 +20,7 @@
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])))
 
-(def uri "datomic:free://localhost:4334/wb244-imp2")
+(def uri "datomic:free://localhost:4334/wb247-imp1")
 (def con (d/connect uri))
 
 (declare touch-link)
@@ -399,10 +400,14 @@
   (GET "/view/:class/:id" req (viewer-page req))
   (GET "/gene-by-name/:name" {params :params}
        (get-gene-by-name (:name params)))
+  
   (GET "/gene-phenotypes/:id" {params :params}
        (gene-phenotypes-widget (db con) (:id params)))
   (GET "/gene-genetics/:id" {params :params}
        (gene-genetics-widget (db con) (:id params)))
+  (GET "/rest/widget/gene/:id/phenotype" {params :params}
+       (gene-phenotype-rest (db con) (:id params)))
+  
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))
   (GET "/schema" [] (get-schema))
