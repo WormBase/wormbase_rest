@@ -25,10 +25,18 @@
       {:timestamps (nthrest (:timestamps (meta l)) (count path))})))
 
 (defn merge-logs [l1 l2]
-  (reduce
-   (fn [m [key vals]]
-     (assoc m key (into (get m key []) vals)))
-   l1 l2))
+  (cond
+   (nil? l2)
+   l1
+
+   (nil? l1)
+   l2
+
+   :default
+   (reduce
+    (fn [m [key vals]]
+      (assoc m key (into (get m key []) vals)))
+    l1 l2)))
 
 (defn- log-datomize-value [ti imp val]
   (case (:db/valueType ti)
@@ -143,6 +151,27 @@
               (recur nodes stamps))
             m)))
       {} lines))))
+
+(defn log-deletes [this lines imp nss]
+  (let [tags (get-tags imp nss)]
+    (reduce
+     (fn [log line]
+       (loop [[node & nodes]   line
+              [stamp & stamps] (:timestamps (meta line))]
+         (if node
+           (if-let [ti (tags node)]
+             (update
+              log
+              stamp
+              conj
+              (conj-if
+               [:db/retract this (:db/ident ti)]
+               (log-datomize-value     ;; If no value then this returns nil and
+                ti                     ;; we get a "wildcard" retract that will be handled
+                imp                    ;; at playback time.
+                (if nodes
+                  (with-meta nodes {:timestamps stamps})))))))))
+     {} lines)))
      
 
 (defmulti log-custom :class)
@@ -210,17 +239,31 @@
   nil)
 
 (defn obj->log [imp obj]
-  (let [core (if-let [ci ((:classes imp) (:class obj))]
-               (log-nodes
-                [(:db/ident ci) (:id obj)]
-                (:lines obj)
-                imp
-                #{(namespace (:db/ident ci))}))
-        custom (log-custom obj)]
-    (cond
-     (nil? core)   custom
-     (nil? custom) core
-     :default      (merge-logs core custom))))
+  (merge-logs
+   (if-let [ci ((:classes imp) (:class obj))]
+     (cond
+      (:delete obj)
+      {nil
+       [[:db.fn/retractEntity [(:db/ident ci) (:id obj)]]]}
+
+      (:rename obj)
+      {nil
+       [[:db/add [(:db/ident ci) (:id obj)] (:db/ident ci) (:rename obj)]]}
+
+      :default
+      (merge-logs
+       (log-nodes
+        [(:db/ident ci) (:id obj)]
+        (:lines obj)
+        imp
+        #{(namespace (:db/ident ci))})
+       (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
+         (log-deletes
+          [(:db/ident ci) (:id obj)]
+          (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
+          imp
+          #{(namespace (:db/ident ci))})))))
+   (log-custom obj)))
 
 (defn objs->log [imp objs]
   (reduce
@@ -243,8 +286,9 @@
              [:db/add tid (first ref) (second ref)]])))
       [datom temps])))
 
-(defn- temp-datoms
-  "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids"
+(defn fixup-datoms
+  "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids,
+   and expand wildcare :db/retracts"
   [db datoms]
   (->>
    (reduce
@@ -254,7 +298,14 @@
         {:done  (conj-if done datom ex1 ex2)
          :temps temps}))
     {:done [] :temps {}}
-    datoms)
+    (mapcat
+     (fn [[op e a v :as datom]]
+       (if (and (= op :db/retract)
+                (nil? v))
+         (for [[_ _ v] (d/datoms db :eavt e a)]
+           (conj datom v))
+         [datom]))
+     datoms))
    :done))
 
 (defn play-log [con log]
@@ -263,7 +314,7 @@
                 (re-matches timestamp-pattern stamp)
                 time (read-instant-date (str ds "T" ts))]]
     (let [db (db con)
-          datoms (temp-datoms db datoms)]
+          datoms (fixup-datoms db datoms)]
       @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
                                      :db/txInstant time
                                      :importer/tx-name name})))))
@@ -309,7 +360,7 @@
         (doseq [blk (partition-all 1000 (map second sblk))]
           (let [db      (db con)
                 fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
-                datoms  (temp-datoms db fdatoms)]
+                datoms  (fixup-datoms db fdatoms)]
             @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
                                            :db/txInstant time
                                            :db/doc       name}))))))))
