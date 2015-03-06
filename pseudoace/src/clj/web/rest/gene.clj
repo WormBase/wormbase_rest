@@ -189,4 +189,4 @@
 (defn gene-phenotype-rest [db id]
   {:status 200
    :content-type "application/json"
-   :body (generate-string (gene-phenotype db id) {:pretty true})})
+   :body (generate-string (gene-phenotype db id) {:pretty false})})

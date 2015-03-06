@@ -7,8 +7,7 @@
         ring.middleware.session
         ring.middleware.anti-forgery
         web.widgets
-        web.colonnade
-        web.rest.gene)
+        web.colonnade)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
@@ -18,7 +17,8 @@
             [ring.util.response :refer [file-response]]
             [cemerick.friend :as friend]
             (cemerick.friend [workflows :as workflows]
-                             [credentials :as creds])))
+                             [credentials :as creds])
+            [web.rest.gene :refer (gene-phenotype-rest)]))
 
 (def uri "datomic:free://localhost:4334/wb247-imp1")
 (def con (d/connect uri))
