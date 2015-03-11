@@ -1216,7 +1216,7 @@
 ///////////////////////////////////////////////////////////////
 
 ?Ace2SO Description UNIQUE Text
-        SO_subparts Exons UNIQUE ?SO_Term
+        SO_subparts Exons UNIQUE ?SO_term
                     Introns UNIQUE ?SO_term
                     Coding_region UNIQUE ?SO_term
         No_span
