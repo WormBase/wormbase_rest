@@ -18,7 +18,8 @@
             [cemerick.friend :as friend]
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
-            [web.rest.gene :refer (gene-phenotype-rest)]))
+            [web.rest.gene :refer (gene-phenotype-rest)]
+            [web.rest.interactions :refer (get-interactions)]))
 
 (def uri "datomic:free://localhost:4334/wb247-imp1")
 (def con (d/connect uri))
@@ -407,6 +408,8 @@
        (gene-genetics-widget (db con) (:id params)))
   (GET "/rest/widget/gene/:id/phenotype" {params :params}
        (gene-phenotype-rest (db con) (:id params)))
+  (GET "/rest/widget/gene/:id/interactions" {params :params}
+       (get-interactions "gene" (db con) (:id params)))
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))
