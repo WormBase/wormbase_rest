@@ -56,7 +56,7 @@
    :default
    "Unknown"))
 
-(defn- interaction-info [int ref-obj]
+(defn- interaction-info [int ref-obj nearby?]
   (if (or (not (:interaction/predicted int))
           (> (or (:interaction/log-likelihood-score int) 1000) 1.5))
     (let [{effectors :effector
@@ -78,7 +78,8 @@
                 obj2h affecteds
                 :let [obj (interactor-target objh)
                       obj2 (interactor-target obj2h)]
-                :when (or (= obj ref-obj)
+                :when (or nearby?
+                          (= obj ref-obj)
                           (= obj2 ref-obj))]
             [(str (:label (pack-obj obj)) " " (:label (pack-obj obj2)))
              {:type type
@@ -90,7 +91,8 @@
                 :let [obj (interactor-target objh)
                       obj2 (interactor-target obj2h)]
                 :when (and (not= obj obj2)
-                           (or (= obj ref-obj)
+                           (or nearby?
+                               (= obj ref-obj)
                                (= obj2 ref-obj)))]
             [(str/join " " (sort [(:label (pack-obj obj)) (:label (pack-obj obj2))]))
              {:type type
@@ -100,14 +102,56 @@
        (into {})
        (vals)))))
 
-(defn obj-interactions [class obj]
-  (let [follow #(map :interaction/_interactor-overlapping-gene
-                     (:interaction.interactor-overlapping-gene/_gene %))
-        ints (follow obj)]
+(def int-rules
+  '[[(gene-interaction ?gene ?int) [?ih :interaction.interactor-overlapping-gene/gene ?gene]
+                                   [?int :interaction/interactor-overlapping-gene ?ih]]
+    [(gene-neighbour ?gene ?neighbour) (gene-interaction ?gene ?ix)
+                                       [?ix :interaction/interactor-overlapping-gene ?ih]
+                                       (not 
+                                        [?ix :interaction/predicted _])
+                                       [?ih :interaction.interactor-overlapping-gene/gene ?neighbour]
+                                       [(not= ?gene ?neighbour)]]
+
+    ;; Not actually used since count trick is subtantially faster.
+    [(gene-neighbour-interaction ?gene ?int) (gene-neighbour ?gene ?n1)
+                                             (gene-interaction ?n1 ?int)
+                                             [?int :interaction/interactor-overlapping-gene ?ih]
+                                             [?ih :interaction.interactor-overlapping-gene/gene ?n2]
+                                             [(not= ?n1 ?n2)]
+                                             (gene-neighbour ?gene ?n2)]])
+
+(defn gene-direct-interactions [db gene]
+  (q '[:find [?int ...]
+       :in $ % ?gene
+       :where (gene-interaction ?gene ?int)]
+     db int-rules gene))
+
+(defn gene-nearby-interactions [db gene]
+  (->> (q '[:find ?int (count ?ng)
+            :in $ % ?gene
+            :where (gene-neighbour ?gene ?ng)
+                   (gene-interaction ?ng ?int)]
+          db int-rules gene)
+       (filter (fn [[_ cnt]] (> cnt 1)))
+       (map first)))
+            
+
+(defn gene-interactions [obj nearby?]
+  (let [db (d/entity-db obj)
+        id (:db/id obj)]
+    (map 
+     (partial entity db)
+     (concat
+      (gene-direct-interactions db id)
+      (if nearby?
+        (gene-nearby-interactions db id))))))
+
+(defn obj-interactions [class obj nearby?]
+  (let [ints (gene-interactions obj nearby?)]
     (->> (mapcat (fn [interaction]
                    (map vector
                         (repeat interaction)
-                        (interaction-info interaction obj)))
+                        (interaction-info interaction obj nearby?)))
                  ints)
          (reduce
           (fn [data [interaction {:keys [type effector affected direction]}]]
@@ -126,8 +170,12 @@
                     pack-affected (pack-obj affected)
                     data (-> data
                              ;; Check how "predicted" flags are supposed to compose
-                             (assoc-in [:nodes (:id pack-effector)] (assoc pack-effector :predicted (if (= type "Predicted") 1 0)))
-                             (assoc-in [:nodes (:id pack-affected)] (assoc pack-affected :predicted (if (= type "Predicted") 1 0)))
+                             (assoc-in [:nodes (:id pack-effector)] (vassoc pack-effector 
+                                                                       :predicted (if (= type "Predicted") 1 0)
+                                                                       :main (if (= effector obj) 1)))
+                             (assoc-in [:nodes (:id pack-affected)] (vassoc pack-affected 
+                                                                       :predicted (if (= type "Predicted") 1 0)
+                                                                       :main (if (= affected obj) 1))) 
                              (assoc-in [:types type] 1)
                              (assoc-in [:ntypes (:class pack-effector)] 1)
                              (assoc-in [:ntypes (:class pack-affected)] 1)
@@ -170,7 +218,7 @@
                {:name (obj-name class db id)
                 :interactions
                 {:description "genetic and predicted interactions"
-                 :data {:edges (vals (:edges (obj-interactions class obj)))}}}}
+                 :data {:edges (vals (:edges (obj-interactions class obj false)))}}}}
               {:pretty true})})))
 
 (defn get-interaction-details [class db id]
@@ -185,7 +233,7 @@
                :fields
                {:name (obj-name class db id)
                 :data (let [{:keys [types edges ntypes nodes phenotypes]}
-                            (obj-interactions class obj)]
+                            (obj-interactions class obj true)]
                         {:types types
                          :edges (vals edges)
                          :ntypes ntypes
