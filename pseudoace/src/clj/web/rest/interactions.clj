@@ -20,11 +20,18 @@
    :interaction.interactor-overlapping-gene/gene
    :interaction.interactor-overlapping-cds/cds
    :interaction.interactor-overlapping-protein/protein
+   :interaction.feature-interactor/feature
    ;; and more...
    ))
 
+(def ^:private interactor-gene
+  (some-fn
+   (comp :gene/_corresponding-cds :gene.corresponding-cds/_cds)))
+
 (defn- interactor-role [interactor]
   (or (interactor-role-map (first (:interactor-info/interactor-type interactor)))
+      (if (interactor-gene (interactor-target interactor))
+        :associated-product)
       :other))
 
 (defn- humanize-name [ident]
@@ -54,34 +61,42 @@
           (> (or (:interaction/log-likelihood-score int) 1000) 1.5))
     (let [{effectors :effector
            affecteds :affected
-           others :other}
-          (group-by interactor-role (:interaction/interactor-overlapping-gene int))
+           others :other
+           associated :associated-product}
+          (group-by interactor-role (concat 
+                                     (:interaction/interactor-overlapping-cds int)
+                                     (:interaction/interactor-overlapping-gene int)
+                                     (:interaction/interactor-overlapping-protein int)
+                                     (:interaction/feature-interactor int)))
           type (interaction-type int)]
       (->>
-       (if (or effectors affecteds)
-         (for [objh  (concat effectors others)
-               obj2h affecteds
-               :let [obj (interactor-target objh)
-                     obj2 (interactor-target obj2h)]
-               :when (or (= obj ref-obj)
-                         (= obj2 ref-obj))]
-           [(str (:label (pack-obj obj)) " " (:label (pack-obj obj2)))
-            {:type type
-             :effector obj
-             :affected obj2
-             :direction "Effector->Affected"
-             :phenotype nil}])
-         (for [objh  others
-               obj2h others
-               :let [obj (interactor-target objh)
-                     obj2 (interactor-target obj2h)]
-               :when (not= obj obj2)]
-           [(str/join " " (sort [(:label (pack-obj obj)) (:label (pack-obj obj2))]))
-            {:type type
-             :effector obj
-             :affected obj2
-             :direction "non-directional"
-             :phenotype nil}]))
+       ;(concat
+        ;; need to include associateds?
+
+        (if (or effectors affecteds)
+          (for [objh  (concat effectors others)
+                obj2h affecteds
+                :let [obj (interactor-target objh)
+                      obj2 (interactor-target obj2h)]
+                :when (or (= obj ref-obj)
+                          (= obj2 ref-obj))]
+            [(str (:label (pack-obj obj)) " " (:label (pack-obj obj2)))
+             {:type type
+              :effector obj
+              :affected obj2
+              :direction "Effector->Affected"}])
+          (for [objh  others
+                obj2h others
+                :let [obj (interactor-target objh)
+                      obj2 (interactor-target obj2h)]
+                :when (and (not= obj obj2)
+                           (or (= obj ref-obj)
+                               (= obj2 ref-obj)))]
+            [(str/join " " (sort [(:label (pack-obj obj)) (:label (pack-obj obj2))]))
+             {:type type
+              :effector obj
+              :affected obj2
+             :direction "non-directional"}]))  ;)
        (into {})
        (vals)))))
 
@@ -95,36 +110,41 @@
                          (repeat interaction)
                          (interaction-info interaction obj)))
                   ints)
-      
           (reduce
-           (fn [data [interaction {:keys [type effector affected direction phenotype]}]]
-             (let [ename (:label (pack-obj effector))
-                   aname (:label (pack-obj affected))
-                   key1 (str ename " " aname " " type)
-                   key2 (str aname " " ename " " type)
-                   pack-int (pack-obj "interaction" interaction :label (str ename " : " aname))
-                   papers (map (partial pack-obj "paper") (:interaction/paper interaction))]
-               (cond
-                (data key1)
-                (-> data
-                    (update-in [key1 :interactions] conj pack-int)
-                    (update-in [key1 :citations] into papers))
-                
-                (data key2)
-                (-> data
-                    (update-in [key2 :interactions] conj pack-int)
-                    (update-in [key2 :citations] into papers))
-           
-                :default
-                (assoc data key1
-                       {:interactions [pack-int]
-                        :citations    (set papers)
-                        :type         type
-                        :effector     (pack-obj effector)
-                        :affected     (pack-obj affected)
-                        :direction    direction
-                        :phenotype    phenotype
-                        :nearby       0}))))
+           (fn [data [interaction {:keys [type effector affected direction]}]]
+             (if (and ((some-fn :molecule/id :gene/id :rearrangement/id :feature/id) effector)
+                      ((some-fn :molecule/id :gene/id :rearrangement/id :feature/id) affected))
+               (let [ename (:label (pack-obj effector))
+                     aname (:label (pack-obj affected))
+                     phenotype (pack-obj 
+                                "phenotype" 
+                                (first (:interaction/interaction-phenotype interaction))) ;; warning, could be more than one.
+                     key1 (str ename " " aname " " type " " (:label phenotype))   ; interactions with the same endpoints but
+                     key2 (str aname " " ename " " type " " (:label phenotype))   ; a different phenotype get a separate row.
+                     pack-int (pack-obj "interaction" interaction :label (str/join " : " (sort [ename aname])))
+                     papers (map (partial pack-obj "paper") (:interaction/paper interaction))]
+                 (cond
+                   (data key1)
+                   (-> data
+                       (update-in [key1 :interactions] conj pack-int)
+                       (update-in [key1 :citations] into papers))
+                   
+                   (data key2)
+                   (-> data
+                       (update-in [key2 :interactions] conj pack-int)
+                       (update-in [key2 :citations] into papers))
+                   
+                   :default
+                   (assoc data key1
+                          {:interactions [pack-int]
+                           :citations    (set papers)
+                           :type         type
+                           :effector     (pack-obj effector)
+                           :affected     (pack-obj affected)
+                           :direction    direction
+                           :phenotype    phenotype
+                           :nearby       0})))
+               data))
            {})
           (vals))}))
 

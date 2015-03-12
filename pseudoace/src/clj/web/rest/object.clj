@@ -18,6 +18,42 @@
   (or (:gene/public-name obj)
       (:gene/id obj)))
 
+(defmethod obj-label "phenotype" [_ obj]
+  (or (->> (:phenotype/primary-name obj)
+           (:phenotype.primary-name/text))
+      (:phenotype/id obj)))
+
+(defn- author-lastname [author-holder]
+  (or
+   (->> (:affiliation/person author-holder)
+        (first)
+        (:person/last-name))
+   (-> (:paper.author/author author-holder)
+       (:author/id)
+       (str/split #"\s+")
+       (last))))
+
+(defn- author-list [paper]
+  (let [authors (->> (:paper/author paper)
+                     (sort-by :ordered/index))]
+    (cond
+     (= (count authors) 1)
+     (author-lastname (first authors))
+
+     (< (count authors) 6)
+     (let [names (map author-lastname authors)]
+       (str (str/join ", " (butlast names)) " & " (last names)))
+
+     :default
+     (str (author-lastname (first authors)) " et al."))))
+
+(defmethod obj-label "paper" [_ paper]
+  (str (author-list paper) ", " (:paper/publication-date paper)))
+
+(defmethod obj-label "feature" [_ feature]
+  (or (:feature/public-name feature)
+      (:feature/id feature)))
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
@@ -40,15 +76,19 @@
    "cds"
 
    (:protein/id obj)
-   "protein"))
+   "protein"
+   
+   (:feature/id obj)
+   "feature"))
 
 (defn pack-obj
   ([obj]
      (pack-obj (obj-class obj) obj))
   ([class obj & {:keys [label]}]
+   (if obj
      {:id       ((keyword class "id") obj)
       :label    (or label
                   (obj-label class obj))
       :class    class
-      :taxonomy "c_elegans"}))
+      :taxonomy "c_elegans"})))
   
