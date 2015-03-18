@@ -271,9 +271,14 @@
 (defn model->schema [{:keys [name alt-name] :as model}]
   (let [mns (or alt-name
                 (datomize-name name))
-        sid (tempid :db.part/db)]
-    (conj
+        sid (tempid :db.part/db)
+        is-hash? (.startsWith name "#")]
+    (conj-if
      (mapcat (partial node->schema sid mns []) (:children model))
+     (if (not is-hash?)
+       {:db/id       (tempid :db.part/db)
+        :db/ident    (keyword "wb.part" mns)
+        :db.install/_partition :db.part/db})
      {:db/id          sid
       :db/ident       (keyword mns "id")
       :db/valueType   :db.type/string
@@ -281,7 +286,7 @@
       :db/cardinality :db.cardinality/one
       :db.install/_attribute :db.part/db
       :pace/identifies-class (.substring name 1)
-      :pace/is-hash (.startsWith name "#")})))
+      :pace/is-hash is-hash?})))
 
 (defn conj-in-tagpath [root tagpath nodes]
   (if (empty? tagpath)
