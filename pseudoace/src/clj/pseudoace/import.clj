@@ -36,7 +36,11 @@
               [(last (str/split (:pace/tags attr) #" "))
                attr]))
        (into {})))
-  
+
+(defn get-tagpaths [imp nss]
+  (->> (mapcat (:tags imp) nss)
+       (map (juxt :pace/tags identity))
+       (into {})))
 
 (defn datomize-tags [tags line]
   (if (seq line)
@@ -46,10 +50,13 @@
 
 (defn datomize-objval [ti imp val]
   (let [ident      (:db/ident ti)
-        tags       (get-tags imp #{(str (namespace ident) "." (name ident))
-                                  "evidence"})
-        maybe-obj  (tags (first val))]
-
+        tags       (get-tagpaths imp #{(str (namespace ident) "." (name ident))
+                                        "evidence"})
+        ;; Unusually, we want to be greedy here -- so will iterate backwards through "val"
+        maybe-obj  (loop [vals val]
+                     (if (seq vals)
+                       (or (tags (str/join " " vals))
+                           (recur (butlast vals)))))]
     (cond
      maybe-obj
      (if (zero? (d/part (:db/id maybe-obj)))

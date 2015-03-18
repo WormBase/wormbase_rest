@@ -37,16 +37,21 @@
 //
 // This is an "annotated" model file, being maintained in parallel to the standard
 // ACeDB model file.  The syntax is very similar, but it has a few additions in order
-// to smooth migration to other document-store-like databases.
+// to smooth migration to Datomic.
 //
 // * Alternate name annotations *
 //
 // Any node in the model can be annotated with an alternate name which can be used
 // in the new database.  Alternate names are indicated with a caret (^) and apply to
-// the node before them, e.g.:
+// the node before them, e.g.
 //
 //      ?MyClass ^magic  Foo Text
 //                       Bar ^description Text
+//
+// ...will result in a datomic schema with attribute idents:
+//
+//     :magic/foo
+//     :magic/description
 //
 //
 // * XREF directionality *
@@ -78,6 +83,21 @@
 //       :gene/status {
 //         :gene.status/status :gene.status.status/live
 //         :evidence/remark "And believe me I am Still Alive."}}
+//
+// as of 2015-03-18, there is also support for multi-level enums e.g.:
+//
+//    ?Interaction Type ENUM Physical
+//                           Predicted
+//                           Regulatory Change_of_localization
+//                                      Change_of_expression_level
+//
+// yields the following key-entity idents in Datomic:
+//
+//     :interaction.type/physical
+//     :interaction.type/predicted
+//     :interaction.type/regulatory
+//     :interaction.type/regulatory:change-of-localization
+//     :interaction.type/regulatory:change-of-expression-level
 //           
 
 ////////////////////////
@@ -495,43 +515,43 @@
 //   
 //////////////////////////////////////////////////////////////////////////////////////
                                    
-?Interaction    Interaction_type Physical
-                                 Predicted
-                                 Regulatory Change_of_localization
-                                            Change_of_expression_level
-                                 Genetic Genetic_interaction
-                                         Neutral_genetic
-                                         Synthetic
-                                         Enhancement
-                                         Unilateral_enhancement
-                                         Mutual_enhancement
-                                         Positive_genetic
-                                         Suppression
-                                         Complete_suppression
-                                         Partial_suppression
-                                         Unilateral_suppression
-                                         Complete_unilateral_suppression
-                                         Partial_unilateral_suppression
-                                         Mutual_suppression
-                                         Complete_mutual_suppression
-                                         Partial_mutual_suppression
-                                         Suppression_enhancement
-                                         Asynthetic
-                                         Negative_genetic
-                                         Oversuppression        
-                                         Unilateral_oversuppression
-                                         Mutual_oversuppression         
-                                         Oversuppression_enhancement
-                                         Phenotype_bias                         
-                                         No_interaction                         // Negative data; no interaction was observed after testing
-                                         Epistasis
-                                         Positive_epistasis
-                                         Maximal_epistasis
-                                         Minimal_epistasis
-                                         Neutral_epistasis
-                                         Qualitative_epistasis
-                                         Opposing_epistasis
-                                         Quantitative_epistasis
+?Interaction    Interaction_type ^type ENUM Physical
+                                            Predicted
+                                            Regulatory Change_of_localization
+                                                       Change_of_expression_level
+                                            Genetic Genetic_interaction
+                                                    Neutral_genetic
+                                                    Synthetic
+                                                    Enhancement
+                                                    Unilateral_enhancement
+                                                    Mutual_enhancement
+                                                    Positive_genetic
+                                                    Suppression
+                                                    Complete_suppression
+                                                    Partial_suppression
+                                                    Unilateral_suppression
+                                                    Complete_unilateral_suppression
+                                                    Partial_unilateral_suppression
+                                                    Mutual_suppression
+                                                    Complete_mutual_suppression
+                                                    Partial_mutual_suppression
+                                                    Suppression_enhancement
+                                                    Asynthetic
+                                                    Negative_genetic
+                                                    Oversuppression        
+                                                    Unilateral_oversuppression
+                                                    Mutual_oversuppression         
+                                                    Oversuppression_enhancement
+                                                    Phenotype_bias                         
+                                                    No_interaction                         // Negative data; no interaction was observed after testing
+                                                    Epistasis
+                                                    Positive_epistasis
+                                                    Maximal_epistasis
+                                                    Minimal_epistasis
+                                                    Neutral_epistasis
+                                                    Qualitative_epistasis
+                                                    Opposing_epistasis
+                                                    Quantitative_epistasis
                 Interactor PCR_interactor ?PCR_product YESXREF Interaction #Interactor_info       // PCR_product of the interacting gene or protein, e.g. Yeast Two Hybrid experiments
                            Sequence_interactor ?Sequence YESXREF Interaction #Interactor_info     // Sequence of the interacting gene or protein
                            Interactor_overlapping_CDS ?CDS YESXREF Interaction #Interactor_info   // CDS of the interacting gene or protein (or related sequence)
@@ -1915,7 +1935,7 @@
                     Strain UNIQUE ?Strain//added by pad, as we are moving towards multi strain readyness.
          History    Merged_into UNIQUE ?Feature YESXREF Acquires_merge #Evidence
                     Acquires_merge ?Feature NOXREF Merged_into #Evidence
-                    Deprecated Text FILL_DEFAULT #Evidence 
+                    Deprecated Text #Evidence      // This was tagged FILL_DEFAULT but seems to cause trouble when applying schema?
          Visible    Description ?Text
                     SO_term ?SO_term
          Defined_by Defined_by_sequence ?Sequence YESXREF Defines_feature #Evidence

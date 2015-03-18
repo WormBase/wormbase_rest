@@ -41,7 +41,7 @@
    :date     :db.type/instant
    :ref      :db.type/ref})
 
-(defn tuple-member-names [items attr]
+(defn- tuple-member-names [items attr]
   (let [basenames (map (comp datomize-name (some-fn :alt-name :name)) items)
         dups (->> (frequencies basenames)
                   (filter (fn [[k count]]
@@ -57,7 +57,30 @@
          (str bn "-" (char (+ (int \a) index)))
          bn))
      basenames)))
-         
+
+;;
+;; This should probably also be doing UNIQUE-ness testing (and returning it as metadata?)
+;;
+
+(defn- enum-keys
+  "Walk a seq of tags, including any tag children, and synthesize entities which can be
+   used as enum keys."
+  ([enum-ns nodes]
+     (enum-keys enum-ns "" [] nodes))
+  ([enum-ns datomic-prefix ace-prefix nodes]
+     (doall
+      (mapcat
+       (fn [{:keys [type name alt-name children]}]
+         (if (= type :tag)
+           (let [lname (str datomic-prefix (or alt-name (datomize-name name)))
+                 path  (conj ace-prefix name)]
+             (cons
+              (vmap
+               :db/id     (tempid :db.part/user)
+               :db/ident  (keyword enum-ns lname)
+               :pace/tags (str/join " " path))
+              (enum-keys enum-ns (str lname ":") path children)))))
+       nodes))))
 
 (defn tag->schema [sid mns tagpath node]
   (let [attribute  (keyword mns (or (:alt-name node)
@@ -74,17 +97,12 @@
        :db.install/_attribute :db.part/db
        :pace/tags           (str/join " " tagpath))]
     
-     ;; "enum" case
+     ;; "simple enum" case -- the only ones we auto-detect.
+     ;; Could this be merged with the other enum case?
      (every? simple-tag? (:children node))
-     (let      [vns       (str mns "." (datomize-name (last tagpath)))]
+     (let      [vns       (str (namespace attribute) "." (name attribute))]
        (conj
-        (doall
-         (for [c (:children node)]
-           (vmap
-            :db/id         (tempid :db.part/user)
-            :db/ident      (keyword vns (or (:alt-name c)
-                                            (datomize-name (:name c))))
-            :pace/tags     (:name c))))
+        (enum-keys vns (:children node))
         
         (vmap
          :db/id              (tempid :db.part/db)
@@ -101,7 +119,8 @@
               (#{:int :float :text :ref :date :hash} (:type fchild)))
          (:enum node))      ;; "Simple" enums have already been caught at this point.
      (if (and (empty? (:children fchild))
-              (not= (:type fchild) :hash))
+              (not= (:type fchild) :hash)
+              (not (:enum node)))
        ;; "simple datum" case
        (when (not (:suppress-xref fchild))
          (let [cname       (:name fchild)
@@ -136,14 +155,21 @@
 
        ;; "compound datum" case
        (let [enum       (:enum node) 
-             fc         (->> (flatten-children (if enum fchild node))
+             fc         (->> (flatten-children
+                              (if enum
+                                (loop [n node]
+                                  (let [first-child (first (:children n))]
+                                    (if (= (:type first-child) :tag)
+                                      (recur first-child)
+                                      n)))
+                                node))
                              (take-while (complement :suppress-xref)))
              hashes     (filter #(= (:type %) :hash) fc)
              concretes  (filter #(not= (:type %) :hash) fc)
              cns        (str (namespace attribute) "." (name attribute))]
-
-         (when (seq fc)
-           (concat
+         (cond
+          (seq fc)
+          (concat
             [(vmap
                     :db/id           (tempid :db.part/db)
                     :db/ident        attribute
@@ -161,13 +187,8 @@
 
             (if enum
               (conj
-               (doall
-                (for [c (:children node)]
-                  (vmap
-                   :db/id            (tempid :db.part/user)
-                   :db/ident         (keyword (str cns "." (if (string? enum) enum "value"))
-                                              (or (:alt-name c) (datomize-name (:name c))))
-                   :pace/tags        (:name c))))
+               (enum-keys (str cns "." (if (string? enum) enum "value")) (:children node))
+               
                {:db/id           (tempid :db.part/db)
                 :db/ident        (keyword cns (if (string? enum) enum "value"))
                 :db/valueType    :db.type/ref
@@ -209,7 +230,25 @@
                    schema)))
              (iterate inc (if enum 1 0))   ;; In enum case, order 0 is reserved for the enum.
              concretes
-             (tuple-member-names concretes attribute))))))
+             (tuple-member-names concretes attribute)))
+
+          ;; potentially-complex enum without augmentation
+          enum
+          (let      [vns       (str (namespace attribute) "." (name attribute))]
+            (conj
+             (enum-keys vns (:children node))
+        
+             (vmap
+              :db/id              (tempid :db.part/db)
+              :db/ident           attribute
+              :db/valueType       :db.type/ref
+              :db/cardinality     (if (:unique? node)
+                                    :db.cardinality/one
+                                    :db.cardinality/many)
+              :db.install/_attribute :db.part/db
+              :pace/tags       (str/join " " tagpath)))))
+
+         ))
 
    (and (> (count (:children node)) 2)
         (= (count (:children fchild)) 1)

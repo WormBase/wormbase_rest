@@ -317,7 +317,7 @@
           datoms (fixup-datoms db datoms)]
       @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
                                      :db/txInstant time
-                                     :importer/tx-name name})))))
+                                     :importer/ts-name name})))))
 
 
 (def log-fixups
