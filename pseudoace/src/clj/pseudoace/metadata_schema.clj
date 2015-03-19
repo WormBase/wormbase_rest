@@ -8,24 +8,35 @@
     :db/valueType    :db.type/string
     :db/cardinality  :db.cardinality/one
     :db/unique       :db.unique/identity
+    :db/doc          "Attribute of object-identifers (e.g. :gene/id), indicating the name of the corresponding ACeDB class."
     :db.install/_attribute :db.part/db}
 
    {:db/id           (tempid :db.part/db)
     :db/ident        :pace/is-hash
     :db/valueType    :db.type/boolean
     :db/cardinality  :db.cardinality/one
+    :db/doc          "Marks an object-identifier as identifying a hash-model."
+    :db.install/_attribute :db.part/db}
+
+   {:db/id           (tempid :db.part/db)
+    :db/ident        :pace/prefer-part
+    :db/valueType    :db.type/ref
+    :db/cardinality  :db.cardinality/one
+    :db/doc          "Attribute of object-identifiers indicating a preferred Datomic partition for storing entities of this type."
     :db.install/_attribute :db.part/db}
    
    {:db/id           (tempid :db.part/db)
     :db/ident        :pace/tags
     :db/valueType    :db.type/string
     :db/cardinality  :db.cardinality/one
+    :db/doc          "Space-separated sequence of tag names from the ACeDB model."
     :db.install/_attribute :db.part/db}
    
   {:db/id            (tempid :db.part/db)
    :db/ident         :pace/obj-ref
    :db/valueType     :db.type/ref
    :db/cardinality   :db.cardinality/one
+   :db/doc           "The object-identifier for the type of object referenced by this attribute."
    :db.install/_attribute :db.part/db}
 
   ; Used to impose an ordering on Datomic components which
@@ -34,18 +45,21 @@
    :db/ident         :pace/order
    :db/valueType     :db.type/long
    :db/cardinality   :db.cardinality/one
+   :db/doc           "The order of positional parameters within a component."
    :db.install/_attribute :db.part/db}
 
   {:db/id            (tempid :db.part/db)
    :db/ident         :pace/use-ns
    :db/valueType     :db.type/string
    :db/cardinality   :db.cardinality/many
+   :db/doc           "For a component attribute, specifies that the component entity may contain attributes from the specied namespace (e.g. \"evidence\")."
    :db.install/_attribute :db.part/db}
 
   {:db/id            (tempid :db.part/db)
    :db/ident         :pace/fill-default
    :db/valueType     :db.type/boolean
    :db/cardinality   :db.cardinality/one
+   :db/doc           "Hint that the importer should supply a default value if none is specified in ACeDB."
    :db.install/_attribute :db.part/db}
   
   {:db/id            (tempid :db.part/db)
@@ -53,12 +67,14 @@
    :db/valueType     :db.type/ref
    :db/cardinality   :db.cardinality/many
    :db/isComponent   true
+   :db/doc           "Information about XREFs to this attribute from other classes."
    :db.install/_attribute :db.part/db}
 
   {:db/id            (tempid :db.part/db)
    :db/ident         :pace.xref/tags
    :db/valueType     :db.type/string
    :db/cardinality   :db.cardinality/one
+   :db/doc           "The XREF's tag-path within this class."
    :db.install/_attribute :db.part/db}
 
   {:db/id            (tempid :db.part/db)
@@ -67,27 +83,12 @@
                                                ;; if we transact this multiple times.
    :db/valueType     :db.type/ref
    :db/cardinality   :db.cardinality/one
+   :db/doc           "The attribute from the foreign class corresponding to this XREF."
    :db.install/_attribute :db.part/db}
 
   {:db/id            (tempid :db.part/db)
    :db/ident         :pace.xref/obj-ref
    :db/valueType     :db.type/ref
-   :db/cardinality   :db.cardinality/one
-   :db.install/_attribute :db.part/db}
-
-  ;;
-  ;; Short-term solution to make the "model" command work...
-  ;;
-  
-  {:db/id            (tempid :db.part/db)
-   :db/ident         :pacemodel/name
-   :db/valueType     :db.type/string
-   :db/cardinality   :db.cardinality/one
-   :db.install/_attribute :db.part/db}
-
-  {:db/id            (tempid :db.part/db)
-   :db/ident         :pacemodel/model
-   :db/valueType     :db.type/string
    :db/cardinality   :db.cardinality/one
    :db.install/_attribute :db.part/db}
 
@@ -102,6 +103,7 @@
     :db/valueType    :db.type/string
     :db/unique       :db.unique/identity
     :db/cardinality  :db.cardinality/one
+    :db/doc          "Built-in ?LongText class."
     :db.install/_attribute :db.part/db
     :pace/identifies-class "LongText"}
 
@@ -110,6 +112,7 @@
     :db/cardinality  :db.cardinality/one
     :db/valueType    :db.type/string
     :db/fulltext     true
+    :db/doc          "The text associated with this object.  A full-text index will be built."
     :db.install/_attribute :db.part/db}
 
    {:db/id           (tempid :db.part/db)
@@ -117,6 +120,7 @@
     :db/valueType    :db.type/string
     :db/unique       :db.unique/identity
     :db/cardinality  :db.cardinality/one
+    :db/doc          "Built-in ?DNA class."
     :db.install/_attribute :db.part/db
     :pace/identifies-class "DNA"}
 
@@ -124,6 +128,7 @@
     :db/ident        :dna/sequence
     :db/cardinality  :db.cardinality/one
     :db/valueType    :db.type/string
+    :db/doc          "The sequence of this DNA."
     :db.install/_attribute :db.part/db}
 
    {:db/id           (tempid :db.part/db)
@@ -131,6 +136,7 @@
     :db/valueType    :db.type/string
     :db/unique       :db.unique/identity
     :db/cardinality  :db.cardinality/one
+    :db/doc          "Built-in ?Peptide type."
     :db.install/_attribute :db.part/db
     :pace/identifies-class "Peptide"}
 
@@ -138,6 +144,7 @@
     :db/ident        :peptide/sequence
     :db/cardinality  :db.cardinality/one
     :db/valueType    :db.type/string
+    :db/doc          "The sequence of this protein/peptide."
     :db.install/_attribute :db.part/db}
    
    {:db/id           (tempid :db.part/db)
@@ -146,6 +153,7 @@
     :db/unique       :db.unique/identity
     :db/cardinality  :db.cardinality/one
     :db.install/_attribute :db.part/db
+    :db/doc          "Built-in ?Keyword type."
     :pace/identifies-class "Keyword"}
 
    ;;
@@ -166,6 +174,7 @@
     :db/ident        :importer/ts-name
     :db/doc          "Username from a legacy timestamp."
     :db.install/_attribute :db.part/db}
+   
    ;;
    ;; Special #Ordered virtual hash-model
    ;;
@@ -190,6 +199,7 @@
 
    ;;
    ;; Position_Matrix data
+   ;;
 
    {:db/id           (tempid :db.part/db)
     :db/ident        :position-matrix/background

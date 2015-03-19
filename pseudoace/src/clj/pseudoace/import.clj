@@ -9,11 +9,15 @@
 (defrecord Importer [db classes tags])
 
 (defn get-classes [db]
-   (->> (for [[class ci] (q '[:find ?class ?ci
-                              :where [?ci :pace/identifies-class ?class]]
-                            db)]
-          [class (touch (entity db ci))])
-        (into {})))
+  (->> (q '[:find ?class ?ci
+            :where [?ci :pace/identifies-class ?class]]
+          db)
+       (mapcat
+        (fn [[class ci]]
+          (let [e (touch (entity db ci))]
+            [[class         e]
+             [(:db/ident e) e]])))
+       (into {})))
 
 (defn importer [con]
   (let [db     (db con)]

@@ -144,7 +144,7 @@
              (conj schema
                    {:db/id          (tempid :db.part/db)
                     :pace/identifies-class (.substring cname 1)
-                    :pace/xref      {:db/id                (tempid :db.part/user)
+                    :pace/xref    {:db/id                (tempid :db.part/user)
                                      :pace.xref/tags       x
                                      :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                             :db/ident attribute}
@@ -271,23 +271,27 @@
 (defn model->schema [{:keys [name alt-name] :as model}]
   (let [mns (or alt-name
                 (datomize-name name))
-        sid (tempid :db.part/db)
-        is-hash? (.startsWith name "#")]
+        is-hash? (.startsWith name "#")
+        pid (if (not is-hash?)
+              (tempid :db.part/db))
+        sid (tempid :db.part/db)]
     (conj-if
      (mapcat (partial node->schema sid mns []) (:children model))
-     (if (not is-hash?)
-       {:db/id       (tempid :db.part/db)
+     (if pid
+       {:db/id       pid
         :db/ident    (keyword "wb.part" mns)
+        :pace/_prefer-part sid
         :db.install/_partition :db.part/db})
-     {:db/id          sid
+     (vmap
+      :db/id          sid
       :db/ident       (keyword mns "id")
       :db/valueType   :db.type/string
       :db/unique      :db.unique/identity
       :db/cardinality :db.cardinality/one
       :db.install/_attribute :db.part/db
       :pace/identifies-class (.substring name 1)
-      :pace/is-hash is-hash?})))
-
+      :pace/is-hash is-hash?))))
+      
 (defn conj-in-tagpath [root tagpath nodes]
   (if (empty? tagpath)
     (if (seq nodes)

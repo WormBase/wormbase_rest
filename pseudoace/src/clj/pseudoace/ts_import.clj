@@ -9,6 +9,18 @@
   (:import java.io.FileInputStream java.util.zip.GZIPInputStream
            java.io.FileOutputStream java.util.zip.GZIPOutputStream))
 
+;;
+;; Logs are sets of datoms keyed by ACeDB-style timestamps.
+;;
+;; The datoms can optionally contain lookup-refs or augmented lookup-refs.
+;; These behave as normal lookup-refs if their target already exists in the
+;; database.  If not, it should be asserted as part of the first transaction
+;; in which it appears.  Lookup refs can optionally contain a third part,
+;; which should be the ident of the preferred partition for that entity.  If
+;; the importer creates the entity, it will attempt to use this partition.
+;; Partition idents are ignored for entities which already exist.
+;;
+
 (declare log-nodes)
 
 (def timestamp-pattern #"(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2}:\d{2})(?:\.\d+)?_(.*)")
@@ -60,7 +72,7 @@
     :db.type/ref
       (if-let [objref (:pace/obj-ref ti)]
         (if (first val)
-          [objref (first val)])
+          [objref (first val) (or (get-in imp [:classes objref :pace/prefer-part]) :db.part/user)])
         (datomize-objval ti imp val))
     ;;default
       (except "Can't handle " (:db/valueType ti))))
@@ -73,7 +85,7 @@
   (with-meta (drop n seq)
     {:timestamps (drop n (:timestamps (meta seq)))}))
 
-(defn- log-components [this ti imp vals]
+(defn- log-components [[_ _ part :as this] ti imp vals]
   (let [concs    (sort-by
                   :pace/order
                   ((:tags imp)
@@ -85,7 +97,7 @@
     (reduce
      (fn [log [index lines]]
        (let [cvals (take-ts (count concs) (first lines))
-             compid [:importer/temp (d/squuid)]]
+             compid [:importer/temp (d/squuid) part]]
          (->
           (merge-logs
            ;; concretes
@@ -253,7 +265,7 @@
       :default
       (merge-logs
        (log-nodes
-        [(:db/ident ci) (:id obj)]
+        [(:db/ident ci) (:id obj) (or (:pace/prefer-part ci) :db.part/user)]
         (:lines obj)
         imp
         #{(namespace (:db/ident ci))})
@@ -276,19 +288,21 @@
 (defn- temp-datom [db datom temps index]
   (let [ref (datom index)]
     (if (vector? ref)
-      (if (entity db ref)
-        [datom temps]
-        (if-let [tid (temps ref)]
-          [(assoc datom index tid) temps]
-          (let [tid (d/tempid :db.part/user)]
-            [(assoc datom index tid)
-             (assoc temps ref tid)
-             [:db/add tid (first ref) (second ref)]])))
+      (let [[k v part] ref
+            lref       [k v]]
+        (if (entity db lref)
+          [(assoc datom index lref) temps]    ; turn 3-element refs into normal lookup-refs
+          (if-let [tid (temps ref)]
+            [(assoc datom index tid) temps]
+            (let [tid (d/tempid (or part :db.part/user))]
+              [(assoc datom index tid)
+               (assoc temps ref tid)
+               [:db/add tid k v]]))))
       [datom temps])))
 
 (defn fixup-datoms
   "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids,
-   and expand wildcare :db/retracts"
+   and expand wildcard :db/retracts"
   [db datoms]
   (->>
    (reduce
