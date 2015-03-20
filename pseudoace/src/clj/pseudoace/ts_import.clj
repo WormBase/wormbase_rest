@@ -188,22 +188,22 @@
 
 (defmulti log-custom :class)
 
-(defmethod log-custom "LongText" [{:keys [timestamp id text]}]
+(defmethod log-custom "LongText" [{:keys [timestamp id text]} _]
   {timestamp
    [[:db/add [:longtext/id id] :longtext/text (ace/unescape text)]]})
 
-(defmethod log-custom "DNA" [{:keys [timestamp id text]}]
+(defmethod log-custom "DNA" [{:keys [timestamp id text]} _]
   {timestamp
    [[:db/add [:dna/id id] :dna/sequence text]]})
 
-(defmethod log-custom "Peptide" [{:keys [timestamp id text]}]
+(defmethod log-custom "Peptide" [{:keys [timestamp id text]} _]
   {timestamp
    [[:db/add [:peptide/id id] :peptide/sequence text]]})
 
 (defn- pair-ts [s]
   (map vector s (:timestamps (meta s))))
 
-(defmethod log-custom "Position_Matrix" [{:keys [id timestamp] :as obj}]
+(defmethod log-custom "Position_Matrix" [{:keys [id timestamp] :as obj} _]
   (let [values (->> (select-ts obj ["Site_values"])
                     (map (juxt first (partial drop-ts 1)))
                     (into {}))
@@ -245,37 +245,75 @@
         (update log ts conjv datom))
       {}))))
            
-  
+(def ^:private s-child-types
+  {"Gene_child"     :gene/id
+   "CDS_child"      :cds/id
+   "Transcript"     :transcript/id
+   "Pseudogene"     :pseudogene/id
+   "Transposon"     :transposon/id
+   "Nongenomic"     :sequence/id
+   "PCR_product"    :pcr-product/id
+   "Operon"         :operon/id
+   "AGP_fragment"   :sequence/id
+   "Allele"         :variation/id
+   "Oligo_set"      :oligo-set/id
+   "Feature_object" :feature/id})
 
-(defmethod log-custom :default [obj]
-  nil)
+(defmethod log-custom :default [obj this]
+  ;;
+  ;; Is it worth creating a custom hierarchy so this only gets called for
+  ;; objects which might have S_children?
+  ;;
+  (if-let [sc (select-ts obj ["SMap" "S_child"])]
+    (reduce
+     (fn [log [[type link start end :as m] info-lines]]
+       (if-let [ident (s-child-types type)]
+         (let [child [ident link]
+               start (parse-int start)
+               end   (parse-int end)]
+           (update
+            log
+            (second (:timestamps (meta m)))
+            conj
+            [:db/add child :locatable/parent this]
+            [:db/add child :locatable/min (dec (min start end))]
+            [:db/add child :locatable/max (max start end)]
+            [:db/add child :locatable/strand (if (< start end)
+                                               :locatable.strand/negative
+                                               :locatable.strand/positive)]))
+         log))
+     {}
+     (group-by (partial take-ts 4) sc))))
 
 (defn obj->log [imp obj]
-  (merge-logs
-   (if-let [ci ((:classes imp) (:class obj))]
-     (cond
-      (:delete obj)
-      {nil
-       [[:db.fn/retractEntity [(:db/ident ci) (:id obj)]]]}
+  (let [ci ((:classes imp) (:class obj))
+        this (if ci
+               [(:db/ident ci) (:id obj) (or (:pace/prefer-part ci) :db.part/user)])]
+    (merge-logs
+     (if this
+       (cond
+        (:delete obj)
+        {nil
+         [[:db.fn/retractEntity this]]}
+        
+        (:rename obj)
+        {nil
+         [[:db/add this (:db/ident ci) (:rename obj)]]}
 
-      (:rename obj)
-      {nil
-       [[:db/add [(:db/ident ci) (:id obj)] (:db/ident ci) (:rename obj)]]}
-
-      :default
-      (merge-logs
-       (log-nodes
-        [(:db/ident ci) (:id obj) (or (:pace/prefer-part ci) :db.part/user)]
-        (:lines obj)
-        imp
-        #{(namespace (:db/ident ci))})
-       (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
-         (log-deletes
-          [(:db/ident ci) (:id obj)]
-          (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
+        :default
+        (merge-logs
+         (log-nodes
+          this
+          (:lines obj)
           imp
-          #{(namespace (:db/ident ci))})))))
-   (log-custom obj)))
+          #{(namespace (:db/ident ci))})
+         (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
+           (log-deletes
+            this
+            (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
+            imp
+            #{(namespace (:db/ident ci))})))))
+     (log-custom obj this))))
 
 (defn objs->log [imp objs]
   (reduce
