@@ -119,7 +119,7 @@
 //                Default_view UNIQUE ?View
 //                Minimal_view UNIQUE ?View // use this when >1 map displayed
 //                View ?View                // Columns to display
-        Inherits  From_map UNIQUE ?Map    // To locally edit
+        Inherits  From_map ^inherits-from-map UNIQUE ?Map    // To locally edit
                   Author Text             // login name of who created it
         Main_Marker Main_Locus ?Gene      // XREF Main_Marker removed to
                                           // allow tag2 system
@@ -327,7 +327,7 @@
 ?Locus  Evidence #Evidence
         Name    Other_name ?Text #Evidence // Gene_name -> text by tad
         Species UNIQUE ?Species // added by krb 15/02/02
-        Type Polymorphism    SNP Text        // Todd [171001 krb]
+        Type Polymorphism    SNP Text        // Todd [171001 krb]       // ENUM-TODO: can we do something here?
                              Status Text
                              SNP_assay ?PCR_product YESXREF SNP_locus ?Text
                              RFLP Text
@@ -382,7 +382,7 @@
                   Complementation_data Text
                   Strain ?Strain YESXREF Gene
                   In_cluster ?Gene_cluster NOXREF Contains_gene // linking to Clusters in locus class
-                  RNASeq_FPKM ?Life_stage ^stage Float ^fpkm #Evidence
+                  RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
                   GO_term ?GO_term YESXREF Gene ?GO_code #Evidence
                   GO_annotation ?GO_annotation NOXREF Gene
                   Contained_in_operon ?Operon NOXREF Contains_gene
@@ -400,8 +400,8 @@
                                          Biological_process ?Text #Evidence              // Carol [050202 dl]
                                          Molecular_function ?Text #Evidence              // Carol [050202 dl]
                                          Expression ?Text #Evidence                      // Carol [050202 dl]
-        Disease_info Experimental_model ?DO_term YESXREF Gene_by_biology ?Species #Evidence                    
-                     Potential_model ?DO_term YESXREF Gene_by_orthology ?Species #Evidence
+        Disease_info Experimental_model ^disease-experimental-model ?DO_term YESXREF Gene_by_biology ?Species #Evidence                    
+                     Potential_model ^disease-potential-model ?DO_term YESXREF Gene_by_orthology ?Species #Evidence
                      Disease_relevance ?Text ^note ?Species #Evidence
         Molecular_info Corresponding_CDS ?CDS YESXREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS YESXREF Gene_history       // to link to history CDSs
@@ -482,9 +482,9 @@
                             Imported Text // for the first set of Gene IDs created
                             Changed_class Text ^old Text ^new     // added to capture CDS->Pseudogene changes, two text fields should list old and new classes
                             Transposon_in_origin        // for CDSs that become Transposon CDSs
-                     Name_change CGC_name UNIQUE Text
-                                 Sequence_name UNIQUE Text
-                                 Other_name UNIQUE Text // Text field to store 'Other_name' of Gene
+                     Name_change CGC_name ^cgc-name-change UNIQUE Text
+                                 Sequence_name ^sequence-name-change UNIQUE Text
+                                 Other_name ^other-name-change UNIQUE Text // Text field to store 'Other_name' of Gene
 
 
 
@@ -564,46 +564,46 @@
                            Feature_interactor ?Feature YESXREF Associated_with_Interaction #Interactor_info
                            Variation_interactor ?Variation YESXREF Interactor #Interactor_info
                 Interaction_summary ?Text #Evidence
-                Detection_method Affinity_capture_luminescence           // A physical interaction detection technique
-                                 Affinity_capture_MS                     // A physical interaction detection technique
-                                 Affinity_capture_RNA                    // A physical interaction detection technique
-                                 Affinity_capture_Western                // A physical interaction detection technique
-                                 Chromatin_immunoprecipitation           // Chris WS244
-                                 Cofractionation                         // A physical interaction detection technique
-                                 Colocalization                          // A physical interaction detection technique
-                                 Construct
-                                 Copurification                          // A physical interaction detection technique
-                                 DNase_I_footprinting                    // 
-                                 Fluorescence_resonance_energy_transfer  // A physical interaction detection technique
-                                 Protein_fragment_complementation_assay  // A physical interaction detection technique
-                                 Yeast_two_hybrid                        // A physical interaction detection technique (Protein-protein)
-                                 Biochemical_activity                    // A physical interaction detection technique
-                                 Cocrystal_structure                     // A physical interaction detection technique
-                                 Far_western                             // A physical interaction detection technique
-                                 Protein_peptide                         // A physical interaction detection technique
-                                 Protein_RNA                             // A physical interaction detection technique
-                                 Reconstituted_complex                   // A physical interaction detection technique
-                                 Electrophoretic_mobility_shift_assay    // A physical interaction detection technique
-                                 Yeast_one_hybrid                        // A physical interaction detection technique (Protein-DNA)
-                                 Directed_yeast_one_hybrid               // A physical interaction detection technique (Protein-DNA)
-                                 Antibody                                // A regulatory interaction detection technique; Antibody name and details captured in Interactor_info hash
-                                 Reporter_gene ?Text                     // A regulatory interaction detection technique
-                                 Transgene                               // A regulatory interaction detection technique; Trasnsgene name and details captured in Interactor_info hash
-                                 In_situ Text                            // A regulatory interaction detection technique
-                                 Northern Text                           // A regulatory interaction detection technique
-                                 Western Text                            // A regulatory interaction detection technique
-                                 RT_PCR Text                             // A regulatory interaction detection technique
-                                 Other_method ?Text                      // A regulatory interaction detection technique
+                Detection_method ENUM Affinity_capture_luminescence           // A physical interaction detection technique
+                                      Affinity_capture_MS                     // A physical interaction detection technique
+                                      Affinity_capture_RNA                    // A physical interaction detection technique
+                                      Affinity_capture_Western                // A physical interaction detection technique
+                                      Chromatin_immunoprecipitation           // Chris WS244
+                                      Cofractionation                         // A physical interaction detection technique
+                                      Colocalization                          // A physical interaction detection technique
+                                      Construct
+                                      Copurification                          // A physical interaction detection technique
+                                      DNase_I_footprinting                    // 
+                                      Fluorescence_resonance_energy_transfer  // A physical interaction detection technique
+                                      Protein_fragment_complementation_assay  // A physical interaction detection technique
+                                      Yeast_two_hybrid                        // A physical interaction detection technique (Protein-protein)
+                                      Biochemical_activity                    // A physical interaction detection technique
+                                      Cocrystal_structure                     // A physical interaction detection technique
+                                      Far_western                             // A physical interaction detection technique
+                                      Protein_peptide                         // A physical interaction detection technique
+                                      Protein_RNA                             // A physical interaction detection technique
+                                      Reconstituted_complex                   // A physical interaction detection technique
+                                      Electrophoretic_mobility_shift_assay    // A physical interaction detection technique
+                                      Yeast_one_hybrid                        // A physical interaction detection technique (Protein-DNA)
+                                      Directed_yeast_one_hybrid               // A physical interaction detection technique (Protein-DNA)
+                                      Antibody                                // A regulatory interaction detection technique; Antibody name and details captured in Interactor_info hash
+                                      Reporter_gene Text                     // A regulatory interaction detection technique
+                                      Transgene                               // A regulatory interaction detection technique; Trasnsgene name and details captured in Interactor_info hash
+                                      In_situ Text                            // A regulatory interaction detection technique
+                                      Northern Text                           // A regulatory interaction detection technique
+                                      Western Text                            // A regulatory interaction detection technique
+                                      RT_PCR Text                             // A regulatory interaction detection technique
+                                      Other_method Text                      // A regulatory interaction detection technique
                 Library_info Library_screened Text ^library INT ^version                  // In the context of Y2H or YH screens, for example, the library may have been cDNA library or a pool of clones
                              Origin From_laboratory UNIQUE ?Laboratory   // A library generated at an academic laboratory
                                     From_company UNIQUE ?Text            // A library generated at a company
                 Regulation_level Transcriptional                         // Regulation occurs at the transcriptional level
                                  Post_transcriptional                    // Regulation occurs at the post-transcriptional level
                                  Post_translational                      // Regulation occurs at the post-translational level
-                Regulation_result Positive_regulate #GR_condition
-                                  Negative_regulate #GR_condition
-                                  Does_not_regulate #GR_condition        // added to capture negative data [040220 krb]
-                Confidence Description Text                              // Free text description of the confidence, e.g. "Core" vs "Noncore" (Vidal Interactome terms)
+                Regulation_result ENUM Positive_regulate #GR_condition
+                                       Negative_regulate #GR_condition
+                                       Does_not_regulate #GR_condition        // added to capture negative data [040220 krb]
+                Confidence Description ^confidence-description Text                              // Free text description of the confidence, e.g. "Core" vs "Noncore" (Vidal Interactome terms)
                            P_value UNIQUE Float                          // P-value confidence of interaction, if given
                            Log_likelihood_score UNIQUE Float             // Only used for Predicted interactions
                 Throughput UNIQUE High_throughput                        // See BioGRID curation criteria for discussion
@@ -660,18 +660,18 @@
 ?Rearrangement  Evidence #Evidence
                 Name    Other_name ?Text
                         Variation ?Variation YESXREF Rearrangement
-                Type    Deletion
-                        Duplication     Free_dup
-                        Translocation
-                        Compound    //    Text  --kill by tad
-                        Introgression
+                Type    ENUM Deletion
+                             Duplication     Free_dup
+                             Translocation
+                             Compound    //    Text  --kill by tad
+                             Introgression
                 Phenotype ?Phenotype YESXREF Rearrangement #Phenotype_info
                 Phenotype_not_observed ?Phenotype YESXREF Not_in_Rearrangement #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes
                 Balances ?Map #Balancer
                 Interactor ?Interaction NOXREF Rearrangement
-                Marked By_variation ?Variation YESXREF Marked_rearrangement
-                       By_transgene ?Transgene YESXREF Marked_rearrangement
-                       By_other ?Text
+                Marked By_variation ^marked-by-variation ?Variation YESXREF Marked_rearrangement
+                       By_transgene ^marked-by-transgene ?Transgene YESXREF Marked_rearrangement
+                       By_other ^marked-by-other ?Text
 //      possibility to refer to other Intervals to describe a complex rearrangement
 //      for the worm this is not too necessary, but important for fly and mouse
 //      or perhaps there should be another class Complex_Rear that refers to
@@ -735,9 +735,9 @@
          Remark ?Text #Evidence
          Reference ?Paper YESXREF Strain
          Species UNIQUE ?Species // added by krb [021021]
-         NCBITaxonomyID UNIQUE Int // Allows for finer grade attachment of NCBItaxon IDs
+         NCBITaxonomyID ^ncbi-taxonomy UNIQUE Int // Allows for finer grade attachment of NCBItaxon IDs
          Wild_isolate // to identify wild isolates - since genotype is free text
-         Isolation GPS UNIQUE Float ^latitude UNIQUE Float ^longitude #Position_confidence // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
+         Isolation GPS ^geolocation UNIQUE Float ^latitude UNIQUE Float ^longitude #Position_confidence // Latitude +/-DD.DDDDD Longitude +/-DD.DDDDD
                    Elevation UNIQUE Float #Position_confidence // Elevation above sea level.
                    Place UNIQUE ?Text 
                    Landscape UNIQUE Urban_garden
@@ -772,7 +772,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #Lab_Location   Freezer Text
-                LiquidN2 Text
+                LiquidN2 ^liquid-n2 Text
                 Minus70 Text
                 Remark ?Text #Evidence
 
@@ -792,8 +792,8 @@
 ?Clone  Evidence #Evidence
         Species UNIQUE ?Species
         Reference ?Paper YESXREF Clone
-        Produced_by Person ?Person              // Paul D. WS244
-                    Author ?Author              // Paul D. WS244
+        Produced_by Person ^produced-by-person ?Person              // Paul D. WS244
+                    Author ^produced-by-author ?Author              // Paul D. WS244
         Sequences Sequence ?Sequence NOXREF Clone
                   End_sequence ?Sequence NOXREF Clone_end_seq_read // New Tag for distinguishing between the full sequence and the end reads
         Remark  General_remark ?Text 
@@ -824,8 +824,8 @@
         Resistance_marker ?Text                         // Paul D. WS244
         Length  Seq_length UNIQUE Int                   // bp
                 Gel_length UNIQUE Float                 // Kb
-                Insert UNIQUE Int                       // bp Paul D. WS244
-                Backbone UNIQUE Int                     // bp Paul D. WS244
+                Insert ^insert-length UNIQUE Int                       // bp Paul D. WS244
+                Backbone ^backbone-length UNIQUE Int                     // bp Paul D. WS244
         Location ?Laboratory #Lab_Location
         URL Text                          // to link to MRC_geneservice website ar2
         Gridded ?Grid NOXREF Clone
@@ -856,12 +856,12 @@
                         Finished UNIQUE DateType FILL_DEFAULT
                         Accession_number UNIQUE ?Text
         DB_info  Database ?Database ^database ?Database_field ^field ?Text ^accession // added [031120 krb]
-        Type UNIQUE Cosmid            // 000824 Lincoln's additions to segregate clones
-                    Fosmid            // added 06/12/01 by krb for dl
-                    YAC
-                    cDNA
-                    Plasmid
-                    Other Text        // added to catch all clones 011017 dl
+        Type UNIQUE ENUM Cosmid            // 000824 Lincoln's additions to segregate clones
+                         Fosmid            // added 06/12/01 by krb for dl
+                         YAC
+                         cDNA
+                         Plasmid
+                         Other Text        // added to catch all clones 011017 dl
         Vector_type ?Text
         Derived_from ?Clone YESXREF Parent_of
         Parent_of ?Clone NOXREF Derived_from
@@ -935,7 +935,7 @@
 ?Species Short_name UNIQUE Text   // e.g. 'C. elegans'
          Other_name Text          // sp. 7 etc.
          G_species UNIQUE Text    // e.g. 'c_elegans' - used internally for file generation
-         NCBITaxonomyID UNIQUE Int 
+         NCBITaxonomyID ^ncbi-taxonomy UNIQUE Int 
          In_analysis ?Analysis NOXREF Species_in_analysis
          Assembly ?Sequence_collection //used for linking to the species assemblies
 
@@ -1143,10 +1143,10 @@
 ?GO_term Name ?Text
          Definition ?Text
          Term ?Text
-         Synonym Broad ?Text
-                 Exact ?Text
-                 Narrow ?Text
-                 Related ?Text
+         Synonym Broad ^broad-synonym ?Text
+                 Exact ^exact-synonym ?Text
+                 Narrow ^narrow-synonym ?Text
+                 Related ^related-synonym ?Text
          Status UNIQUE Valid
                        Obsolete
          Type UNIQUE Biological_process
@@ -1189,9 +1189,9 @@
 ////////////////////////////////////////////////////////////////
 
 
-?SO_term SO_name ?Text
-         SO_definition ?Text
-         SO_synonym ?Text
+?SO_term SO_name ^name ?Text
+         SO_definition ^definition ?Text
+         SO_synonym ^synonym ?Text
          SO_version ?Text
          Located_sequence_feature UNIQUE Junction
                                          Region
@@ -1237,10 +1237,10 @@
          Definition UNIQUE ?Text
 //         Worm_disease_model ?Text ?Species #Evidence  // Textual description of the worm disease model
          Comment Text
-         Synonym Broad ?Text
-                 Exact ?Text
-                 Narrow ?Text
-                 Related ?Text
+         Synonym Broad ^broad-synonym ?Text
+                 Exact ^exact-synonym ?Text
+                 Narrow ^narrow-synonym ?Text
+                 Related ^related-synonym ?Text
          Parent Is_a ?DO_term YESXREF Is
          Child Is ?DO_term NOXREF Is_a 
          DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession              
@@ -1647,7 +1647,7 @@
                 SAGE_tag ?SAGE_tag NOXREF Predicted_CDS #SAGE_mapping_info
                 //3d_data ?3d_data XREF CDS
                 //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
-                RNASeq_FPKM ?Life_stage ^stage Float ^fpkm #Evidence
+                RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
                 Remark ?Text #Evidence
         Associated_feature ?Feature NOXREF Associated_with_CDS #Evidence
         Method UNIQUE ?Method
@@ -1684,9 +1684,9 @@
                         Brief_identification UNIQUE ?Text
                         Confidential_remark ?Text
                         SAGE_tag ?SAGE_tag NOXREF Transcript #SAGE_mapping_info
-                        RNASeq_FPKM ?Life_stage ^stage Float ^fpkm #Evidence
+                        RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
                         Remark ?Text #Evidence
-                Properties Transcript UNIQUE  asRNA UNIQUE Text            // antisense long ncRNAs
+                Properties Transcript UNIQUE  asRNA UNIQUE Text            // antisense long ncRNAs     TODO: this is nearly enum-able, except for tRNA.  Anything we can do?
                                               lincRNA UNIQUE Text          // long intergenic/intervening ncRNAs 
                                               mRNA UNIQUE Processed_mRNA
                                                           Unprocessed_mRNA
@@ -1726,9 +1726,9 @@
                         Database ?Database ^database ?Database_field ^field UNIQUE ?Text ^version
                 Origin From_laboratory UNIQUE ?Laboratory
                        Species UNIQUE ?Species
-                Type UNIQUE Coding_pseudogene #Evidence //Pseudogene of a once coding loci 
-                            RNA_pseudogene #Evidence    //Pseudogene of a ncRNA loci
-                            Transposon_pseudogene #Evidence //Pseudogene of Transposon origins
+                Type UNIQUE ENUM ^type Coding_pseudogene #Evidence //Pseudogene of a once coding loci 
+                                       RNA_pseudogene #Evidence    //Pseudogene of a ncRNA loci
+                                       Transposon_pseudogene #Evidence //Pseudogene of Transposon origins
                 Attributes Transcribed #Evidence
                            Fragment #Evidence
                 Properties Isoform #Evidence
@@ -1747,7 +1747,7 @@
                         Concise_description ?Text #Evidence
                         SAGE_tag ?SAGE_tag NOXREF Pseudogene #SAGE_mapping_info
                         Microarray_results ?Microarray_results NOXREF Pseudogene  //added for Microarray_results
-                        RNASeq_FPKM ?Life_stage ^stage Float ^fpkm #Evidence
+                        RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
                         Remark ?Text #Evidence    
                 Associated_feature ?Feature NOXREF Associated_with_pseudogene #Evidence
                 Confidential_remark ?Text
@@ -1771,8 +1771,8 @@
                    From_laboratory UNIQUE ?Laboratory
                    Member_of ?Transposon_family YESXREF Family_members
                    Old_Name ?Text #Evidence        //to store old Transposon name
-                   Copy_status UNIQUE Full #Evidence    //track if the transposon is essentially complete or a fragment.
-                                      Partial #Evidence
+                   Copy_status UNIQUE ENUM ^status Full #Evidence    //track if the transposon is essentially complete or a fragment.
+                                                   Partial #Evidence
             Molecular_info Corresponding_CDS ?CDS YESXREF Corresponding_transposon #Evidence
                            Corresponding_pseudogene ?Pseudogene YESXREF Corresponding_transposon #Evidence 
                            Gene ?Gene NOXREF Corresponding_transposon #Evidence 
@@ -1830,7 +1830,7 @@
 ?Homology_group Evidence #Evidence
                 Title ?Text
                 DB_info Database ?Database ?Database_field ?Text
-                Group_type UNIQUE COG    COG_type #Homology_type
+                Group_type UNIQUE COG    COG_type #Homology_type     // TODO attribute should be :homology-group/cog
                                          COG_code #COG_codes
                                   eggNOG eggNOG_type #Homology_type
                                          eggNOG_code #COG_codes
@@ -1841,7 +1841,7 @@
                 Remark ?Text #Evidence
 
 
-#COG_codes       Code_J // Translation, ribosomal structure and biogenesis
+#COG_codes       Code_J // Translation, ribosomal structure and biogenesis           // TODO make this an enum.
                  Code_A // RNA processing and modification
                  Code_K // Transcription
                  Code_L // Replication, recombination and repair
@@ -1873,7 +1873,7 @@
 // R, S == Poorly characterized
 
 
-#Homology_type KOG
+#Homology_type KOG                   // TODO make this an enum.
                TWOG
                FOG
                LSE
@@ -1994,7 +1994,7 @@
                   Associated_feature ?Feature NOXREF Associated_with_Position_Matrix #Evidence
                   Sites_used UNIQUE Int
                   Derived_from_matrix ?Position_Matrix                  
-                  Bound_by_gene_product ?Gene YESXREF Product_binds_matrix #Evidence
+                  Bound_by_gene_product ?Gene YESXREF Product_binds_matrix #Evidence         // TODO something about Product_binds_matrix.
                   Transcription_factor ?Transcription_factor YESXREF Position_matrix #Evidence //gw3
                   Remark ?Text #Evidence
 
@@ -2333,16 +2333,16 @@
                     Location ?Laboratory
                     Clonality UNIQUE Polyclonal // Text   turned into an enum by tad
                                      Monoclonal // Text
-                    Antigen UNIQUE Peptide Text FILL_DEFAULT
-                                   Protein Text FILL_DEFAULT
-                                   Other_antigen Text FILL_DEFAULT
-                    Animal UNIQUE Rabbit
-                                  Mouse
-                                  Rat
-                                  Guinea_pig
-                                  Chicken
-                                  Goat
-                                  Other_animal Text FILL_DEFAULT
+                    Antigen UNIQUE ENUM Peptide Text FILL_DEFAULT
+                                        Protein Text FILL_DEFAULT
+                                        Other_antigen Text FILL_DEFAULT
+                    Animal UNIQUE ENUM Rabbit
+                                       Mouse
+                                       Rat
+                                       Guinea_pig
+                                       Chicken
+                                       Goat
+                                       Other_animal Text FILL_DEFAULT
           Historical_gene ?Gene #Evidence                       
           Possible_pseudonym ?Antibody NOXREF Possible_pseudonym_of
           Possible_pseudonym_of ?Antibody YESXREF Possible_pseudonym
@@ -2373,7 +2373,7 @@
                  WBProcess ?WBProcess YESXREF Picture
                  Gene ?Gene YESXREF Picture
                  Life_stage ?Life_stage YESXREF Picture
-         Acknowledgment Template UNIQUE Text
+         Acknowledgment Template ^acknowledgement-template UNIQUE Text
                         Publication_year UNIQUE Text
                         Article_URL UNIQUE ?Database ^database UNIQUE ?Database_field ^field UNIQUE ?Text ^accession
                         Journal_URL UNIQUE ?Database 
@@ -2801,18 +2801,18 @@
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
                 Temperature_sensitive Heat_sensitive Text #Evidence
                                       Cold_sensitive Text #Evidence
-                Maternal UNIQUE Strictly_maternal #Evidence
-                                With_maternal_effect #Evidence
+                Maternal UNIQUE ENUM Strictly_maternal #Evidence
+                                     With_maternal_effect #Evidence
                 Paternal #Evidence
                 Phenotype_assay Life_stage ?Life_stage #Evidence
                                 Strain ?Strain #Evidence
                                 Treatment ?Text #Evidence
                                 Temperature ?Text #Evidence
                                 Genotype ?Text #Evidence
-                Ease_of_scoring UNIQUE ES0_Impossible_to_score #Evidence
-                                       ES1_Very_hard_to_score #Evidence
-                                       ES2_Difficult_to_score #Evidence
-                                       ES3_Easy_to_score #Evidence
+                Ease_of_scoring UNIQUE ENUM ES0_Impossible_to_score #Evidence
+                                            ES1_Very_hard_to_score #Evidence
+                                            ES2_Difficult_to_score #Evidence
+                                            ES3_Easy_to_score #Evidence
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3304,30 +3304,30 @@
        Brief_citation UNIQUE Text
        Abstract ?LongText
        URL Text   //will be used for Worm Breeder's Gazette articles and other citations available online but not through PubMed
-       Type    Journal_article #Evidence
-               Review #Evidence
-               Comment #Evidence
-               News #Evidence
-               Letter #Evidence
-               Editorial #Evidence
-               Congresses #Evidence
-               Historical_article #Evidence
-               Biography #Evidence
-               Interview #Evidence
-               Lectures #Evidence
-               Interactive_tutorial #Evidence
-               Retracted_publication #Evidence
-               Technical_report #Evidence
+       Type    ENUM ^type Journal_article #Evidence
+                          Review #Evidence
+                          Comment #Evidence
+                          News #Evidence
+                          Letter #Evidence
+                          Editorial #Evidence
+                          Congresses #Evidence
+                          Historical_article #Evidence
+                          Biography #Evidence
+                          Interview #Evidence
+                          Lectures #Evidence
+                          Interactive_tutorial #Evidence
+                          Retracted_publication #Evidence
+                          Technical_report #Evidence
 //               Directory #Evidence
-               Monograph #Evidence
-               Published_erratum #Evidence
-               Meeting_abstract #Evidence
-               Gazette_article #Evidence
-               Book_chapter #Evidence
-               Book #Evidence
-               Email #Evidence
-               WormBook #Evidence
-               Other #Evidence
+                          Monograph #Evidence
+                          Published_erratum #Evidence
+                          Meeting_abstract #Evidence
+                          Gazette_article #Evidence
+                          Book_chapter #Evidence
+                          Book #Evidence
+                          Email #Evidence
+                          WormBook #Evidence
+                          Other #Evidence
        Refers_to Gene ?Gene NOXREF Reference   // #Evidence
                  Allele ?Variation NOXREF Reference #Evidence
                  Rearrangement ?Rearrangement NOXREF Reference #Evidence
@@ -3362,7 +3362,7 @@
 //                 DO_term ?DO_term NOXREF Reference #Evidence
                  GO_annotation ?GO_annotation NOXREF Reference
        Curation_pipeline Phenotype2GO
-       Keyword ?Keyword
+       Keyword ?Text           // tad removed "nameholder"
        Remark ?Text #Evidence
 
 
