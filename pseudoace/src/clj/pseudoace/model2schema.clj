@@ -68,19 +68,29 @@
   ([enum-ns nodes]
      (enum-keys enum-ns "" [] nodes))
   ([enum-ns datomic-prefix ace-prefix nodes]
-     (doall
+     (into (array-map)
       (mapcat
        (fn [{:keys [type name alt-name children]}]
          (if (= type :tag)
            (let [lname (str datomic-prefix (or alt-name (datomize-name name)))
                  path  (conj ace-prefix name)]
              (cons
-              (vmap
-               :db/id     (tempid :db.part/user)
-               :db/ident  (keyword enum-ns lname)
-               :pace/tags (str/join " " path))
+              [(vmap
+                :db/id     (tempid :db.part/user)
+                :db/ident  (keyword enum-ns lname)
+                :pace/tags (str/join " " path))
+               (let [non-tag-children (remove #(= (:type %) :tag) children)]
+                 (case (count non-tag-children)
+                   0    nil
+                   1    (cons (first non-tag-children) (flatten-children non-tag-children))
+                        (except "Multiple non-tag children at " name)))]
               (enum-keys enum-ns (str lname ":") path children)))))
        nodes))))
+
+(defn- prefix? [whole prefix]
+  "Test whether `prefix` is a prefix of `whole`."
+  (and (<= (count prefix) (count whole))
+       (= (vec (take (count prefix) whole)) (vec prefix))))
 
 (defn tag->schema [sid mns tagpath node]
   (let [attribute  (keyword mns (or (:alt-name node)
@@ -102,7 +112,7 @@
      (every? simple-tag? (:children node))
      (let      [vns       (str (namespace attribute) "." (name attribute))]
        (conj
-        (enum-keys vns (:children node))
+        (keys (enum-keys vns (:children node)))
         
         (vmap
          :db/id              (tempid :db.part/db)
@@ -154,19 +164,23 @@
              schema)))
 
        ;; "compound datum" case
-       (let [enum       (:enum node) 
-             fc         (->> (flatten-children
-                              (if enum
-                                (loop [n node]
-                                  (let [first-child (first (:children n))]
-                                    (if (= (:type first-child) :tag)
-                                      (recur first-child)
-                                      n)))
-                                node))
+       (let [cns        (str (namespace attribute) "." (name attribute))
+             enum       (:enum node)
+             enum-keys* (if enum
+                          (enum-keys (str cns "." (if (string? enum) enum "value")) (:children node)))
+             fc         (->> (if enum-keys*
+                               (let [longest (->> (vals enum-keys*)
+                                                  (sort-by count)
+                                                  (reverse)
+                                                  (first))]
+                                 (doseq [v (vals enum-keys*)]
+                                   (if-not (prefix? longest v)
+                                     (except "Bad enum: " v " is not a prefix of " longest)))
+                                 longest)
+                               (flatten-children node))
                              (take-while (complement :suppress-xref)))
              hashes     (filter #(= (:type %) :hash) fc)
-             concretes  (filter #(not= (:type %) :hash) fc)
-             cns        (str (namespace attribute) "." (name attribute))]
+             concretes  (filter #(not= (:type %) :hash) fc)]
          (cond
           (seq fc)
           (concat
@@ -187,7 +201,7 @@
 
             (if enum
               (conj
-               (enum-keys (str cns "." (if (string? enum) enum "value")) (:children node))
+               (keys enum-keys*)
                
                {:db/id           (tempid :db.part/db)
                 :db/ident        (keyword cns (if (string? enum) enum "value"))
@@ -236,7 +250,7 @@
           enum
           (let      [vns       (str (namespace attribute) "." (name attribute))]
             (conj
-             (enum-keys vns (:children node))
+             (keys (enum-keys vns (:children node)))
         
              (vmap
               :db/id              (tempid :db.part/db)

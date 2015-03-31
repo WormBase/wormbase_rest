@@ -1,4 +1,5 @@
-(ns pseudoace.utils)
+(ns pseudoace.utils
+  (:require [clojure.java.io :refer (writer)]))
 
 (defn vmap
   "Construct a map from alternating key-value pairs, discarding any keys
@@ -64,6 +65,13 @@
       (if (pred (nth col i))
         i
         (recur is)))))
+
+(defmacro with-outfile [f & body]
+  "Execute `body` with *out* bound to `(writer f)`."
+  (let [fh (gensym)]
+    `(with-open [~fh (writer ~f)]
+       (binding [*out* ~fh]
+         ~@body))))
 
 ;;
 ;; From Clojure 1.7
