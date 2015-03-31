@@ -1106,13 +1106,6 @@
 ///////////////////////////////////////////////////////
 
 
-?GO_annotation  Gene_rel UNIQUE ?Gene YESXREF GO_annotation UNIQUE ?GO_term YESXREF GO_annotation #Annotation_relation
-                Not_Gene_rel UNIQUE ?Gene YESXREF Not_GO_annotation UNIQUE ?GO_term YESXREF Not_GO_annotation #Annotation_relation
-                Gene ?Gene
-                Not_gene ?Gene
-                GO_term ?GO_term
-                Not_GO_term ?GO_term
-
 ?GO_annotation  Gene ?Gene YESXREF GO_annotation
                 GO_term ?GO_term YESXREF GO_annotation
                 GO_code ?GO_code
