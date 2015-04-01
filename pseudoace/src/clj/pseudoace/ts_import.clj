@@ -186,24 +186,24 @@
      {} lines)))
      
 
-(defmulti log-custom :class)
+(defmulti log-custom (fn [obj this imp] (:class obj)))
 
-(defmethod log-custom "LongText" [{:keys [timestamp id text]} _]
+(defmethod log-custom "LongText" [{:keys [timestamp id text]} _ _]
   {timestamp
    [[:db/add [:longtext/id id] :longtext/text (ace/unescape text)]]})
 
-(defmethod log-custom "DNA" [{:keys [timestamp id text]} _]
+(defmethod log-custom "DNA" [{:keys [timestamp id text]} _ _]
   {timestamp
    [[:db/add [:dna/id id] :dna/sequence text]]})
 
-(defmethod log-custom "Peptide" [{:keys [timestamp id text]} _]
+(defmethod log-custom "Peptide" [{:keys [timestamp id text]} _ _]
   {timestamp
    [[:db/add [:peptide/id id] :peptide/sequence text]]})
 
 (defn- pair-ts [s]
   (map vector s (:timestamps (meta s))))
 
-(defmethod log-custom "Position_Matrix" [{:keys [id timestamp] :as obj} _]
+(defmethod log-custom "Position_Matrix" [{:keys [id timestamp] :as obj} _ _]
   (let [values (->> (select-ts obj ["Site_values"])
                     (map (juxt first (partial drop-ts 1)))
                     (into {}))
@@ -246,20 +246,25 @@
       {}))))
            
 (def ^:private s-child-types
-  {"Gene_child"     :gene/id
-   "CDS_child"      :cds/id
-   "Transcript"     :transcript/id
-   "Pseudogene"     :pseudogene/id
-   "Transposon"     :transposon/id
-   "Nongenomic"     :sequence/id
-   "PCR_product"    :pcr-product/id
-   "Operon"         :operon/id
-   "AGP_fragment"   :sequence/id
-   "Allele"         :variation/id
-   "Oligo_set"      :oligo-set/id
-   "Feature_object" :feature/id})
+  {"Gene_child"            :gene/id
+   "CDS_child"             :cds/id
+   "Transcript"            :transcript/id
+   "Pseudogene"            :pseudogene/id
+   "Pseudogene_child"      :pseudogene/id
+   "Transposon"            :transposon/id
+   "Genomic_non_canonical" :sequence/id
+   "Nongenomic"            :sequence/id
+   "PCR_product"           :pcr-product/id
+   "Operon"                :operon/id
+   "AGP_fragment"          :sequence/id
+   "Allele"                :variation/id
+   "Oligo_set"             :oligo-set/id
+   "Feature_object"        :feature/id
+   "Feature_data"          :feature-data/id
+   "Homol_data"            :homol-data/id
+   "Expr_profile"          :expr-profile/id})
 
-(defmethod log-custom :default [obj this]
+(defmethod log-custom :default [obj this imp]
   ;;
   ;; Is it worth creating a custom hierarchy so this only gets called for
   ;; objects which might have S_children?
@@ -268,19 +273,26 @@
     (reduce
      (fn [log [[type link start end :as m] info-lines]]
        (if-let [ident (s-child-types type)]
-         (let [child [ident link]
+         (let [child [ident link (or (get-in imp [:classes ident :pace/prefer-part])
+                                     :db.part/user)]
                start (parse-int start)
                end   (parse-int end)]
-           (update
-            log
-            (second (:timestamps (meta m)))
-            conj
-            [:db/add child :locatable/parent this]
-            [:db/add child :locatable/min (dec (min start end))]
-            [:db/add child :locatable/max (max start end)]
-            [:db/add child :locatable/strand (if (< start end)
-                                               :locatable.strand/negative
-                                               :locatable.strand/positive)]))
+           (if (and start end)
+             (update
+              log
+              (second (:timestamps (meta m)))
+              conj
+              [:db/add child :locatable/parent this]
+              [:db/add child :locatable/min (dec (min start end))]
+              [:db/add child :locatable/max (max start end)]
+              [:db/add child :locatable/strand (if (< start end)
+                                                 :locatable.strand/positive
+                                                 :locatable.strand/negative)])
+             (update
+              log
+              (second (:timestamps (meta m)))
+              conj
+              [:db/add child :locatable/parent this])))
          log))
      {}
      (group-by (partial take-ts 4) sc))))
@@ -313,7 +325,7 @@
             (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
             imp
             #{(namespace (:db/ident ci))})))))
-     (log-custom obj this))))
+     (log-custom obj this imp))))
 
 (defn objs->log [imp objs]
   (reduce

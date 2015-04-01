@@ -354,7 +354,7 @@
                                                                                 
                                                                                 
 ?Gene   Evidence #Evidence
-        SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Gene_child
+//        SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Gene_child
         Identity Version UNIQUE Int
                  Name  CGC_name UNIQUE ?Text #Evidence    // tad killed gene class
                        Sequence_name UNIQUE ?Text // captures main CDS name without isoforms
@@ -1357,22 +1357,22 @@
 ?Sequence DNA UNIQUE ?DNA UNIQUE Int ^length            // Int is the length
                 // if you want to register a length without a DNA sequence, then use a dummy sequence object, e.g. "-"  
                 // This ensures that when a real sequence appears, its length dominates.
-          SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF Genomic_non_canonical 
-                               Genomic_parent UNIQUE ?Sequence NOXREF Nongenomic
-                               AGP_parent UNIQUE ?Sequence NOXREF AGP_fragment // added to hold briggsae data [krb 020726]
-               S_child Gene_child ?Gene YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // maximal extent of Gene objects
-                       CDS_child ?CDS YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // For ?CDS [031104 krb]
-                       Transcript ?Transcript YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // for ?Transcript [021126 krb]
-                       Pseudogene ?Pseudogene YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // For ?Pseudogene [030801 krb]
-                       Transposon ?Transposon YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // for transposons   [020128 dl]
-                       Genomic_non_canonical ?Sequence YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info
-                       Nongenomic ?Sequence YESXREF Genomic_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info       // for Lincoln RNAi  [010226 dl]
-                       PCR_product ?PCR_product YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info // for Lincoln RNAi  [010226 dl]
-                       Operon ?Operon YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info           // for Operon data   [dl]
-                       AGP_fragment ?Sequence YESXREF AGP_parent Int ^start UNIQUE Int ^end #SMap_info                // for Briggsae data [020726 krb]
-                       Allele ?Variation YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info                // SMapped Allele [021217 krb]
-                       Oligo_set ?Oligo_set YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info     //added for Oligo_set
-                       Feature_object ?Feature YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info          // dl feature play
+//          SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF Genomic_non_canonical 
+//                               Genomic_parent UNIQUE ?Sequence NOXREF Nongenomic
+//                               AGP_parent UNIQUE ?Sequence NOXREF AGP_fragment // added to hold briggsae data [krb 020726]
+//               S_child Gene_child ?Gene YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // maximal extent of Gene objects
+//                       CDS_child ?CDS YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // For ?CDS [031104 krb]
+//                       Transcript ?Transcript YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // for ?Transcript [021126 krb]
+//                       Pseudogene ?Pseudogene YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // For ?Pseudogene [030801 krb]
+//                       Transposon ?Transposon YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info  // for transposons   [020128 dl]
+//                       Genomic_non_canonical ?Sequence YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info
+//                       Nongenomic ?Sequence YESXREF Genomic_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info       // for Lincoln RNAi  [010226 dl]
+//                       PCR_product ?PCR_product YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info // for Lincoln RNAi  [010226 dl]
+//                       Operon ?Operon YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info           // for Operon data   [dl]
+//                       AGP_fragment ?Sequence YESXREF AGP_parent Int ^start UNIQUE Int ^end #SMap_info                // for Briggsae data [020726 krb]
+//                       Allele ?Variation YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info                // SMapped Allele [021217 krb]
+//                       Oligo_set ?Oligo_set YESXREF Canonical_parent UNIQUE Int ^start UNIQUE Int ^end #SMap_info     //added for Oligo_set
+//                       Feature_object ?Feature YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info          // dl feature play
 //                       Feature_data ?Feature_data YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info
 //                       Homol_data ?Homol_data YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info
           Structure From Source UNIQUE ?Sequence NOXREF Subsequence
@@ -1556,20 +1556,20 @@
 
 // SMap stuff
 
-#SMap_info Method UNIQUE ?Method    // methods used in child (optional)
-           Content Homol_only // useful for -nohomol gff option
-                   Feature_only // useful for -nofeature gff option
-           Mapping Align Int ^parent-pos UNIQUE Int ^child-pos UNIQUE Int ^length 
-                        // not needed if full alignment is ungapped
-                        // one row per ungapped alignment section
-                        // first int is position in parent, second in child
-                        // third int is length - only necessary when gaps in both sequences align
-                   Mismatch Int
-                        // Int give position(s) in parent of mismatches (technically in which they will
-                        // not create an error if they occur
-                        // if just the tag is set without values, then accept mismatches anywhere
-           Display Max_mag UNIQUE Float // don't show if more bases per line
-                   Min_mag UNIQUE Float // don't show if fewer bases per line
+// #SMap_info Method UNIQUE ?Method    // methods used in child (optional)
+//           Content Homol_only // useful for -nohomol gff option
+//                   Feature_only // useful for -nofeature gff option
+//           Mapping Align Int ^parent-pos UNIQUE Int ^child-pos UNIQUE Int ^length 
+//                        // not needed if full alignment is ungapped
+//                        // one row per ungapped alignment section
+//                        // first int is position in parent, second in child
+//                        // third int is length - only necessary when gaps in both sequences align
+//                   Mismatch Int
+//                        // Int give position(s) in parent of mismatches (technically in which they will
+//                        // not create an error if they occur
+//                        // if just the tag is set without values, then accept mismatches anywhere
+//           Display Max_mag UNIQUE Float // don't show if more bases per line
+//                   Min_mag UNIQUE Float // don't show if fewer bases per line
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1605,8 +1605,8 @@
 
 
 ?CDS    Evidence #Evidence
-        SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF CDS_child
-                             Transposon UNIQUE ?Transposon NOXREF CDS_child
+//        SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF CDS_child
+//                             Transposon UNIQUE ?Transposon NOXREF CDS_child
         Structure Source_exons Int ^start UNIQUE Int ^end
         DB_info Database ?Database ^database ?Database_field ^field UNIQUE ?Text ^accession
                 Protein_id ?Sequence UNIQUE Text ^accession UNIQUE Int ^version // DB_info tag added [011030 krb]
@@ -1661,7 +1661,7 @@
 ///////////////////////////////////////////////////////////////////
 
 ?Transcript     Evidence #Evidence
-                SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Transcript
+//                SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Transcript
                 Structure Source_exons Int ^min UNIQUE Int ^max
                 DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript Class krb
                         Database ?Database ^database ?Database_field ^field UNIQUE ?Text ^accession
@@ -1719,8 +1719,8 @@
 
 
 ?Pseudogene     Evidence #Evidence
-                SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Pseudogene
-                                     Transposon UNIQUE ?Transposon NOXREF Pseudogene_child    
+//                SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Pseudogene
+//                                     Transposon UNIQUE ?Transposon NOXREF Pseudogene_child    
                 Structure Source_exons Int ^start UNIQUE Int ^end
                 DB_info DB_remark ?Text #Evidence
                         Database ?Database ^database ?Database_field ^field UNIQUE ?Text ^version
@@ -1763,10 +1763,10 @@
 
 
 ?Transposon Evidence #Evidence
-            SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Transposon
-            Structure     S_child CDS_child ?CDS YESXREF Transposon UNIQUE Int ^start UNIQUE Int ^end #SMap_info // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05   
-                                  Pseudogene_child ?Pseudogene YESXREF Transposon UNIQUE Int ^start UNIQUE Int ^end #SMap_info
-                                  LTR_region Int ^start UNIQUE Int ^end
+//            SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Transposon
+//            Structure     S_child CDS_child ?CDS YESXREF Transposon UNIQUE Int ^start UNIQUE Int ^end #SMap_info // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05   
+//                                  Pseudogene_child ?Pseudogene YESXREF Transposon UNIQUE Int ^start UNIQUE Int ^end #SMap_info
+            Structure   S_child   LTR_region Int ^start UNIQUE Int ^end      // TODO not an actual feature...
             Origin Species UNIQUE ?Species
                    From_laboratory UNIQUE ?Laboratory
                    Member_of ?Transposon_family YESXREF Family_members
@@ -1884,6 +1884,10 @@
                nemNOG //eggNOG - nematode clusters
 
 
+// Minimal stub to capture parent and mapping.
+
+?Homol_data
+
 // ?Homol_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Homol_data
 //            Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 //                  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1903,9 +1907,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Feature_object
-         Name Public_name UNIQUE ?Text
+?Feature Name Public_name UNIQUE ?Text
               Other_name ?Text
+//         SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Feature_object
          Sequence_details Flanking_sequences UNIQUE Text ^five-prime UNIQUE Text ^three-prime
                           Mapping_target UNIQUE ?Sequence 
                           Source_location UNIQUE Int ^version UNIQUE ?Sequence ^sequence UNIQUE Int ^start UNIQUE Int ^end UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks)
@@ -1946,6 +1950,10 @@
 // ?Feature_data class
 //
 ///////////////////////////////////////////////////////////////////////////
+
+// Minimal stub to capture parent and mapping.
+
+?Feature_data
 
 //?Feature_data Species UNIQUE ?Species
 //              Strain UNIQUE ?Strain
@@ -2288,8 +2296,8 @@
 // ?SK_map class added at request of Raymond [010912 krb]
 // more tweaks added [010927 krb]
 
-?Expr_profile SMap S_parent UNIQUE PCR_product UNIQUE ?PCR_product NOXREF Expr_profile
-              Expr_map ?SK_map YESXREF Expr_profile
+?Expr_profile Expr_map ?SK_map YESXREF Expr_profile
+//              SMap S_parent UNIQUE PCR_product UNIQUE ?PCR_product NOXREF Expr_profile
               Reference ?Paper YESXREF Expr_profile
               RNAi_result ?RNAi YESXREF Expr_profile // Connection made by script during build [030106 krb]
               Species UNIQUE ?Species
@@ -2819,10 +2827,10 @@
 // ?PCR_product class - Lincoln [010226]
 ///////////////////////////////////////////////////////////////////////////////
 
-?PCR_product SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF PCR_product
-                  S_child Expr_profile ?Expr_profile YESXREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // added for Expr_profile Class [010912 krb]
-             Mapping_primers Left_mapping_primer UNIQUE Text
+?PCR_product Mapping_primers Left_mapping_primer UNIQUE Text
                              Right_mapping_primer UNIQUE Text
+//             SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF PCR_product
+//                  S_child Expr_profile ?Expr_profile YESXREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // added for Expr_profile Class [010912 krb]
              Species UNIQUE ?Species
              Overlaps_CDS ?CDS NOXREF Corresponding_PCR_product  // Dan PCR mappings [010419 dl]
              Overlaps_transcript ?Transcript NOXREF Corresponding_PCR_product  
@@ -2888,7 +2896,7 @@
 //////////////////////////////////////////////
 
 ?Operon Public_name UNIQUE ?Text //Used for storing a publically accepted name for an Operon, not populated by default.
-        SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF Operon
+//        SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF Operon
         Species UNIQUE ?Species
         Contains_gene ?Gene YESXREF Contained_in_operon #Trans_splice_leader
         Associated_feature ?Feature NOXREF Associated_with_operon #Evidence
@@ -3012,7 +3020,7 @@
 ////////////////////////////////
 
 ?Oligo_set      Species UNIQUE ?Species
-                SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF Oligo_set
+//                SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence NOXREF Oligo_set
                 Structure Target_exons Int ^start UNIQUE Int ^end
 //                Homol Homol_homol ?Homol_data XREF Oligo_set_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
                 Microarray_results ?Microarray_results NOXREF Oligo_set 
@@ -3421,8 +3429,8 @@
            Name Public_name UNIQUE ?Text         // ?Variation_name XREF Public_name_for
                 Other_name ?Text                 // ?Variation_name XREF Other_name_for #Evidence
                 Rearrangement ?Rearrangement NOXREF Variation // some alleles are really rearrangements           
-           Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Allele
-                            Flanking_sequences UNIQUE Text ^five-prime UNIQUE Text ^three-prime
+           Sequence_details Flanking_sequences UNIQUE Text ^five-prime UNIQUE Text ^three-prime
+//                            SMap S_parent UNIQUE Sequence UNIQUE ?Sequence NOXREF Allele
                             Mapping_target UNIQUE ?Sequence
                             Source_location UNIQUE Int ^version UNIQUE ?Sequence ^sequence UNIQUE Int ^start UNIQUE Int ^end UNIQUE #Evidence //source data, <WSversion> ?Sequence pos1 pos2 Evidence(Paper/person etc. remarks)
                             CGH_deleted_probes UNIQUE Text UNIQUE Text
