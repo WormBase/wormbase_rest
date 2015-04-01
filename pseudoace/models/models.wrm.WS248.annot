@@ -2333,16 +2333,16 @@
                     Location ?Laboratory
                     Clonality UNIQUE Polyclonal // Text   turned into an enum by tad
                                      Monoclonal // Text
-                    Antigen UNIQUE ENUM Peptide Text FILL_DEFAULT
-                                        Protein Text FILL_DEFAULT
-                                        Other_antigen Text FILL_DEFAULT
+                    Antigen UNIQUE ENUM Peptide Text
+                                        Protein Text
+                                        Other_antigen Text
                     Animal UNIQUE ENUM Rabbit
                                        Mouse
                                        Rat
                                        Guinea_pig
                                        Chicken
                                        Goat
-                                       Other_animal Text FILL_DEFAULT
+                                       Other_animal Text
           Historical_gene ?Gene #Evidence                       
           Possible_pseudonym ?Antibody NOXREF Possible_pseudonym_of
           Possible_pseudonym_of ?Antibody YESXREF Possible_pseudonym
@@ -3437,7 +3437,7 @@
                                              Sequenced
                                              Pending_curation
                             Deletion_verification Text #Evidence //[14-Mar-06 ar2] Mark Edgely of KO_alleles has developed test to confirm deletion (mt3)
-           Variation_type Engineered_allele  //construct model addition
+           Variation_type Engineered_allele  //construct model addition     TODO move RFLP stuff out and enum the rest?
                           Allele                
                           SNP            // replaces the old 'Status Text' part of ?Locus model 
                           Confirmed_SNP
@@ -3473,9 +3473,9 @@
                           Acquires_merge ?Variation NOXREF Merged_into
                           Split_from UNIQUE ?Variation NOXREF Split_into
                           Split_into ?Variation YESXREF Split_from
-                  Status UNIQUE Live #Evidence
-                                Suppressed #Evidence
-                                Dead #Evidence
+                  Status ENUM UNIQUE Live #Evidence
+                                     Suppressed #Evidence
+                                     Dead #Evidence
            Linked_to ?Variation YESXREF Linked_to  // for being able to specify paired substitutions which are part of the same allele
            Affects Gene ?Gene YESXREF Allele #Molecular_change      //#Molecular_change mh6 define precise changes [060217 ar2]
                    Predicted_CDS ?CDS YESXREF Variation #Molecular_change
@@ -3493,14 +3493,14 @@
                      Derivative ?Variation NOXREF Derived_from_variation
                      Derived_from_construct ?Construct YESXREF Engineered_variation
            Genetics Gene_class ?Gene_class YESXREF Variation
-                    Mating_efficiency  Male UNIQUE ME0_Mating_not_successful #Evidence
-                                                   ME1_Mating_rarely_successful #Evidence
-                                                   ME2_Mating_usually_successful #Evidence
-                                                   ME3_Mating_always_successful #Evidence
-                                       Hermaphrodite UNIQUE HME0_Mating_not_successful #Evidence
-                                                            HME1_Mating_rarely_successful #Evidence
-                                                            HME2_Mating_usually_successful #Evidence
-                                                            HME3_Mating_always_successful #Evidence
+                    Mating_efficiency  Male ^male-mating-efficiency ENUM UNIQUE ME0_Mating_not_successful #Evidence
+                                                                                ME1_Mating_rarely_successful #Evidence
+                                                                                ME2_Mating_usually_successful #Evidence
+                                                                                ME3_Mating_always_successful #Evidence
+                                       Hermaphrodite ^hermaphrodite-mating-efficiency ENUM UNIQUE HME0_Mating_not_successful #Evidence
+                                                                                                  HME1_Mating_rarely_successful #Evidence
+                                                                                                  HME2_Mating_usually_successful #Evidence
+                                                                                                  HME3_Mating_always_successful #Evidence
                     Map ?Map YESXREF Variation #Map_position
                     Interpolated_map_position UNIQUE ?Map ^map UNIQUE Float ^position
                     Mapping_data 2_point ^two-point ?2_point_data NOXREF xxxx
@@ -3515,13 +3515,13 @@
            Description Phenotype ?Phenotype YESXREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
                        Phenotype_not_observed ?Phenotype YESXREF Not_in_Variation #Phenotype_info  //added by Wen to separate Not phenotype from real phenotypes 
-                       Nonsense UNIQUE Amber_UAG Text #Evidence
-                                       Ochre_UAA Text #Evidence
-                                       Opal_UGA Text #Evidence
+                       Nonsense UNIQUE ENUM Amber_UAG Text #Evidence
+                                            Ochre_UAA Text #Evidence
+                                            Opal_UGA Text #Evidence
                        Missense Text #Evidence                          // text fields stored details of codon change
                        Silent Text #Evidence
-                       Splice_site Donor Text #Evidence
-                                   Acceptor Text #Evidence
+                       Splice_site ENUM Donor Text #Evidence
+                                        Acceptor Text #Evidence
                        Frameshift Text #Evidence  // added sdm
                        Readthrough Text #Evidence // klh WS228
            Reference ?Paper YESXREF Allele
@@ -3537,14 +3537,14 @@
 // hash to contain detailed changes caused by mutations [2006-02-17 ar2]
 #Molecular_change   Missense Int Text #Evidence
                     Silent Text #Evidence
-                    Nonsense UNIQUE Amber_UAG Text #Evidence
-                                    Ochre_UAA Text #Evidence
-                                    Opal_UGA Text #Evidence
-                                    Ochre_UAA_or_Opal_UGA Text #Evidence
-                                    Amber_UAG_or_Ochre_UAA Text #Evidence
-                                    Amber_UAG_or_Opal_UGA Text #Evidence 
-                    Splice_site UNIQUE  Donor Text #Evidence
-                                        Acceptor Text #Evidence
+                    Nonsense UNIQUE ENUM Amber_UAG Text #Evidence
+                                         Ochre_UAA Text #Evidence
+                                         Opal_UGA Text #Evidence
+                                         Ochre_UAA_or_Opal_UGA Text #Evidence
+                                         Amber_UAG_or_Ochre_UAA Text #Evidence
+                                         Amber_UAG_or_Opal_UGA Text #Evidence 
+                    Splice_site UNIQUE  ENUM Donor Text #Evidence
+                                             Acceptor Text #Evidence
                     Frameshift Text #Evidence
                     Readthrough Text #Evidence //klh WS228
                     Intron #Evidence
@@ -3728,13 +3728,13 @@
            DB_info Database ?Database ?Database_field ?Text
            Regulate_expr_cluster ?Expression_cluster NOXREF Regulated_by_molecule    // Wen WS228
            WBProcess ?WBProcess NOXREF Molecule
-           Affects_phenotype_of Variation ?Variation ?Phenotype #Evidence
-                                Strain ?Strain ?Phenotype #Evidence
-                                Transgene ?Transgene ?Phenotype #Evidence
-                                RNAi ?RNAi ?Phenotype #Evidence
-                                Rearrangement ?Rearrangement ?Phenotype #Evidence  // KY [110602 pad]
+           Affects_phenotype_of Variation ^affects-phenotype-of-variation ?Variation ?Phenotype #Evidence
+                                Strain ^affects-phenotype-of-strain ?Strain ?Phenotype #Evidence
+                                Transgene ^affects-phenotype-of-transgene ?Transgene ?Phenotype #Evidence
+                                RNAi ^affects-phenotype-of-rnai ?RNAi ?Phenotype #Evidence
+                                Rearrangement ^affects-phenotype-of-rearrangement ?Rearrangement ?Phenotype #Evidence  // KY [110602 pad]
            Interaction ?Interaction NOXREF Molecule_interactor                       // Chris WS244
-           Molecule_use ?Text #Evidence
+           Molecule_use ^use ?Text #Evidence
            Reference ?Paper YESXREF Molecule
            Remark ?Text #Evidence
 
@@ -3759,7 +3759,7 @@
                 Other_name ?Text
                 Related_topic Specialisation_of ?WBProcess YESXREF Generalisation_of
                               Generalisation_of ?WBProcess NOXREF Specialisation_of
-                Taxon   NCBITaxonomyID ?Text
+                Taxon   NCBITaxonomyID ^ncbi-taxonomy ?Text
                 Involved_entity Gene ?Gene YESXREF WBProcess #Evidence  
                                 Expression_cluster ?Expression_cluster YESXREF WBProcess #Evidence
                                 Interaction ?Interaction YESXREF WBProcess #Evidence
