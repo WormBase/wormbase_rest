@@ -23,6 +23,10 @@
            (:phenotype.primary-name/text))
       (:phenotype/id obj)))
 
+(defmethod obj-label "variation" [_ obj]
+  (or (:variation/public-name obj)
+      (:variation/id obj)))
+
 (defn- author-lastname [author-holder]
   (or
    (->> (:affiliation/person author-holder)
@@ -79,7 +83,13 @@
    "protein"
    
    (:feature/id obj)
-   "feature"))
+   "feature"
+
+   (:rearrangement/id obj)
+   "rearrangement"
+
+   (:variation/id obj)
+   "variation"))
 
 (defn pack-obj
   ([obj]
