@@ -414,20 +414,42 @@
     [(.substring l 0 i)
      (read-string (.substring l (inc i)))]))
 
+(defn partition-log
+  "Similar to partition-all but understands the log format, and will cut 
+   after `max-text` chars of string data have been seen."
+  [max-count max-text logs]
+  (if-let [logs (seq logs)]
+    (loop [logs     logs
+           accum    []
+           text     0]
+      (cond
+       (or (empty? logs)
+           (>= (count accum) max-count)
+           (>= text max-text))
+       (cons accum (lazy-seq (partition-log max-count max-text logs)))
+
+       :default
+       (let [[[_ [_ _ _ v] :as log] & rest] logs]
+         (recur rest
+                (conj accum log)
+                (if (string? v)
+                  (+ text (count v))
+                  text)))))))
+
 (defn play-logfile [con logfile]
   (with-open [r (reader logfile)]
-    (doseq [rblk (partition-all 1000 (logfile-seq r))]
+    (doseq [rblk (partition-log 1000 50000 (logfile-seq r))]
       (doseq [sblk (partition-by first rblk)
               :let [[_ ds ts name]
                     (re-matches timestamp-pattern (ffirst sblk))
                     time (read-instant-date (str ds "T" ts))]]
-        (doseq [blk (partition-all 1000 (map second sblk))]
-          (let [db      (db con)
-                fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
-                datoms  (fixup-datoms db fdatoms)]
-            @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
-                                           :db/txInstant time
-                                           :db/doc       name}))))))))
+        (let [blk (map second sblk)
+              db      (db con)
+              fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
+              datoms  (fixup-datoms db fdatoms)]
+          @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
+                                         :db/txInstant time
+                                         :db/doc       name})))))))
 
 
 
