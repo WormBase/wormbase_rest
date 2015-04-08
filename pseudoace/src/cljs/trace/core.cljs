@@ -301,7 +301,7 @@
                                            (time/unparse time-formatter))
                                  who (if-let [c (:wormbase/curator txn)]
                                        (second c)
-                                       (:db/doc txn))]]
+                                       (:importer/ts-name txn))]]
                        (if (= (count added) (count retracted) 1)
                          (dom/tr
                           (dom/td time)
@@ -327,7 +327,7 @@
             (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn-data)))
                  (if-let [c (:wormbase/curator txn-data)]
                    (str " (" (second c) ")")
-                   (if-let [d (:db/doc txn-data)]
+                   (if-let [d (:importer/ts-name txn-data)]
                      (str " (" d ")"))))
             (str txn))
           "NEW"))))))
