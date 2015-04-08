@@ -447,7 +447,7 @@
               db      (db con)
               fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
               datoms  (fixup-datoms db fdatoms)]
-          @(d/transact con (conj datoms {:db/id             (d/tempid :db.part/tx)
+          @(d/transact-async con (conj datoms {:db/id             (d/tempid :db.part/tx)
                                          :db/txInstant      time
                                          :importer/ts-name  name})))))))
 

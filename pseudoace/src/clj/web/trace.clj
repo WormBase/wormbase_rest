@@ -21,7 +21,7 @@
             [web.rest.gene :refer (gene-phenotype-rest)]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]))
 
-(def uri "datomic:free://localhost:4334/wb247-imp1")
+(def uri "datomic:free://localhost:4334/wb248-imp1")
 (def con (d/connect uri))
 
 (declare touch-link)
