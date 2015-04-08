@@ -1,5 +1,6 @@
 (ns web.rest.gene
-  (:use cheshire.core)
+  (:use cheshire.core
+        web.rest.object)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap]]))
@@ -190,3 +191,154 @@
   {:status 200
    :content-type "application/json"
    :body (generate-string (gene-phenotype db id) {:pretty false})})
+
+;; Needs better support for non-gene things.
+
+(defn gene-mapping-twopt
+  [db id]
+  (->> (q '[:find [?tp ...]
+            :in $ ?gene
+            :where (or-join [?gene ?tp]
+                     (and [?tpg1 :two-point-data.gene-1/gene ?gene]
+                          [?tp :two-point-data/gene-1 ?tpg1])
+                     (and [?tpg2 :two-point-data.gene-2/gene ?gene]
+                          [?tp :two-point-data/gene-2 ?tpg2]))]
+          db id)
+       (map (partial entity db))
+       (map
+        (fn [tp]
+          {:mapper     (pack-obj "author" (first (:two-point-data/mapper tp)))
+           :date       (:two-point-data/date tp)
+           :raw_data   (:two-point-data/results tp)
+           :genotype   (:two-point-data/genotype tp)
+           :comment    (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))
+           :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
+                                            (:two-point-data/calc-lower-conf tp)
+                                            (:two-point-data/calc-upper-conf tp))
+           :point_1    (let [p1 (:two-point-data/gene-1 tp)]
+                         [(pack-obj "gene" (:two-point-data.gene-1/gene p1))
+                          (pack-obj "variation" (:two-point-data.gene-1/variation p1))])
+           :point_2    (let [p2 (:two-point-data/gene-2 tp)]
+                         [(pack-obj "gene" (:two-point-data.gene-2/gene p2))
+                          (pack-obj "variation" (:two-point-data.gene-2/variation p2))])}
+          ))))
+
+(defn gene-mapping-posneg
+  [db id]
+  (->> (q '[:find [?pn ...]
+            :in $ ?gene
+            :where (or-join [?gene ?pn]
+                      (and [?png1 :pos-neg-data.gene-1/gene ?gene]
+                           [?pn :pos-neg-data/gene-1 ?png1])
+                      (and [?png2 :pos-neg-data.gene-2/gene ?gene]
+                           [?pn :pos-neg-data/gene-2 ?png2]))]
+          db id)
+       (map (partial entity db))
+       (map
+        (fn [pn]
+          (let [items (->> [(pack-obj ((some-fn (comp :pos-neg-data.gene-1/gene :pos-neg-data/gene-1)
+                                                (comp :pos-neg-data.locus-1/locus :pos-neg-data/locus-1)
+                                                :pos-neg-data/allele-1
+                                                :pos-neg-data/clone-1
+                                                :pos-neg-data/rearrangement-1)
+                                       pn))
+                            (pack-obj ((some-fn (comp :pos-neg-data.gene-2/gene :pos-neg-data/gene-2)
+                                                (comp :pos-neg-data.locus-2/locus :pos-neg-data/locus-2)
+                                                :pos-neg-data/allele-2
+                                                :pos-neg-data/clone-2
+                                                :pos-neg-data/rearrangement-2)
+                                       pn))]
+                           (map (juxt :label identity))
+                           (into {}))
+                result (str/split (:pos-neg-data/results pn) #"\s+")]
+          {:mapper    (pack-obj "author" (first (:pos-neg-data/mapper pn)))
+           :date      (:pos-neg-data/date pn)
+           :result    (map #(or (items (str/replace % #"\." ""))
+                                (str " " % " "))
+                           result)})
+           
+          ))))
+          
+(defn gene-mapping-multipt
+  [db id]
+  (->> (q '[:find [?mp ...]
+            :in $ % ?gene
+            :where (mc-obj ?mc ?gene)
+            (or
+             [?mp :multi-pt-data/a-non-b ?mc]
+             [?mp :multi-pt-data/b-non-a ?mc]
+             [?mp :multi-pt-data/combined ?mc])]
+          db
+          '[[(mc-obj ?mc ?gene) [?mcg :multi-counts.gene/gene ?gene]
+                                [?mc :multi-counts/gene ?mcg]]
+            [(mc-obj ?mc ?gene) (mc-obj ?mc2 ?gene)
+                                [?mc :multi-counts/gene ?mc2]]]
+          id)
+       (map (partial entity db))
+       (map
+        (fn [mp]
+          {:comment  (->> mp
+                          :multi-pt-data/remark
+                          first
+                          :multi-pt-data.remark/text)
+           :mapper   (pack-obj "author" (first (:multi-pt-data/mapper mp)))
+           :date     (:multi-pt-data/date mp)
+           :genotype (:multi-pt-data/genotype mp)
+           :result   (let [res (loop [node (first (:multi-pt-data/combined mp))
+                                      res  []]
+                                 (cond
+                                  (:multi-counts/gene node)
+                                  (let [obj (:multi-counts/gene node)]
+                                    (recur obj (conj res [(:multi-counts.gene/gene obj)
+                                                          (:multi-counts.gene/int obj)])))
+                                  
+                                  :default res))
+                           tot (->> (map second res)
+                                    (filter identity)
+                                    (reduce +))]
+                       (->>
+                        (mapcat
+                         (fn [[obj count]]
+                           [(pack-obj obj)
+                            (if count
+                              (str " (" count "/" tot ") "))])
+                         res)
+                        (filter identity)))}
+          
+
+          ))))
+                        
+    
+
+(defn gene-mapping-data
+  "Retrieve a map representing a mapping_data API response"
+  [db id]
+  (if-let [gid (q '[:find ?g .
+                    :in $ ?gid
+                    :where [?g :gene/id ?gid]]
+                  db id)]
+    {:name id
+     :class "gene"
+     :uri "whatevs"
+     :fields
+     {:name
+      {:data (pack-obj "gene" (entity db gid))
+       :description (format "The name and Wormbase internal ID of %s" id)}
+
+      :two_pt_data
+      {:data (seq (gene-mapping-twopt db gid))
+       :description "Two point mapping data for this gene"}
+
+      :pos_neg_data
+      {:data (seq (gene-mapping-posneg db gid))
+       :description "Positive/Negative mapping data for this gene"}
+
+      :multi_pt_data
+      {:data (seq (gene-mapping-multipt db gid))
+       :description "Multi point mapping data for this gene"}}}))
+ 
+
+(defn gene-mapping-data-rest [db id]
+  {:status 200
+   :content-type "application/json"
+   :body (generate-string (gene-mapping-data db id) {:pretty true})})
