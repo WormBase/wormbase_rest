@@ -20,7 +20,8 @@
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
             [web.rest.gene :refer (gene-phenotype-rest
-                                   gene-mapping-data-rest)]
+                                   gene-mapping-data-rest
+                                   gene-human-diseases-rest)]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]))
 
 (def uri "datomic:free://localhost:4334/wb248-imp1")
@@ -429,6 +430,8 @@
        (get-interaction-details "gene" (db con) (:id params)))
   (GET "/rest/widget/gene/:id/mapping_data" {params :params}
        (gene-mapping-data-rest (db con) (:id params)))
+  (GET "/rest/widget/gene/:id/human_diseases" {params :params}
+       (gene-human-diseases-rest (db con) (:id params)))
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))

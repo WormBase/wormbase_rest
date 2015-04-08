@@ -347,3 +347,60 @@
   {:status 200
    :content-type "application/json"
    :body (generate-string (gene-mapping-data db id) {:pretty true})})
+
+
+(defn gene-human-diseases
+  [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:name id
+     :class "gene"
+     :uri "whatevs"
+     :fields
+     {:name
+      {:data (pack-obj "gene" gene)
+       :description (format "The name and Wormbase internal ID of %s" id)}
+
+      :human_diseases
+      {:data
+       {:potential_model
+        (seq
+         (for [d (:gene/disease-potential-model gene)]
+           (assoc (pack-obj (:gene.disease-potential-model/do-term d))
+             :ev (get-evidence d))))
+
+        :experimental_model
+        (seq
+         (for [d (:gene/disease-experimental-model gene)]
+           (assoc (pack-obj (:gene.disease-experimental-model/do-term d))
+             :ev (get-evidence d))))
+        
+        :gene
+        (seq 
+         (q '[:find [?o ...]
+              :in $ ?gene
+              :where [?gene :gene/database ?dbent]
+                     [?omim :database/id "OMIM"]
+                     [?field :database-field/id "gene"]
+                     [?dbent :gene.database/database ?omim]
+                     [?dbent :gene.database/field ?field]
+                     [?dbent :gene.database/accession ?o]]
+            db (:db/id gene)))
+
+        :disease
+        (seq 
+         (q '[:find [?o ...]
+              :in $ ?gene
+              :where [?gene :gene/database ?dbent]
+                     [?omim :database/id "OMIM"]
+                     [?field :database-field/id "disease"]
+                     [?dbent :gene.database/database ?omim]
+                     [?dbent :gene.database/field ?field]
+                     [?dbent :gene.database/accession ?o]]
+            db (:db/id gene)))
+        }}}}))
+       
+
+(defn gene-human-diseases-rest [db id]
+  {:status 200
+   :content-type "application/json"
+   :body (generate-string (gene-human-diseases db id) {:pretty true})})

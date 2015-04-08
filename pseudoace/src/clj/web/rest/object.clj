@@ -1,4 +1,5 @@
 (ns web.rest.object
+  (:use pseudoace.utils)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]))
 
@@ -62,6 +63,12 @@
   (or (:anatomy-term.term/text (:anatomy-term/term term))
       (:anatomy-term/id term)))
 
+(defmethod obj-label "do-term" [_ term]
+  (:do-term/name term))
+
+(defmethod obj-label "person" [_ person]
+  (:person/standard-name person))
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
@@ -96,7 +103,11 @@
    "variation"
 
    (:anatomy-term/id obj)
-   "anatomy-term"))
+   "anatomy-term"
+
+   :default
+   (if-let [k (first (filter #(= (name %) "id") (keys obj)))]
+     (namespace k))))
 
 (defn pack-obj
   ([obj]
@@ -109,3 +120,26 @@
       :class    class
       :taxonomy "c_elegans"})))
   
+
+(defn get-evidence [holder]
+  (vmap
+   :Inferred_automatically
+   (seq
+    (:evidence/inferred-automatically holder))
+
+   :Curator_confirmed
+   (seq
+    (for [person (:evidence/curator-confirmed holder)]
+      (pack-obj "person" person)))
+   
+   :Paper_evidence
+   (seq
+    (for [paper (:evidence/paper-evidence holder)]
+      (pack-obj "paper" paper)))
+
+   :Date_last_updated
+   (:evidence/date-last-updated holder)
+   
+   :Remark
+   (seq
+    (:evidence/remark holder))))
