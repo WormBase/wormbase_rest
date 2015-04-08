@@ -33,7 +33,9 @@
    (:db/isComponent ke)  (touch-link v)
    (:pace/obj-ref ke)    [(:pace/obj-ref ke) ((:pace/obj-ref ke) v)]
    (:db/ident v)         (:db/ident v)
-   :default              v))
+   :default              (if-let [class (first (filter #(= (name %) "id") (keys v)))]
+                           [class (class v)]
+                           v)))
 
 (defn touch-link [ent]
   (let [db (d/entity-db ent)]
