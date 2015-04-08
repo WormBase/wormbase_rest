@@ -58,6 +58,10 @@
   (or (:feature/public-name feature)
       (:feature/id feature)))
 
+(defmethod obj-label "anatomy-term" [_ term]
+  (or (:anatomy-term.term/text (:anatomy-term/term term))
+      (:anatomy-term/id term)))
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
@@ -89,7 +93,10 @@
    "rearrangement"
 
    (:variation/id obj)
-   "variation"))
+   "variation"
+
+   (:anatomy-term/id obj)
+   "anatomy-term"))
 
 (defn pack-obj
   ([obj]

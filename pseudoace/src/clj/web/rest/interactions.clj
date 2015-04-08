@@ -36,11 +36,14 @@
 
 (defn- humanize-name [ident]
   (-> (name ident)
+      (str/split #":")
+      (last)
       (str/replace #"-" " ")
       (str/capitalize)))
 
 (defn- interaction-type [int]
-  (cond
+  (humanize-name (first (:interaction/type int)))
+  #_(cond
    (:interaction/physical int)
    "Physical"
 
@@ -57,7 +60,7 @@
    "Unknown"))
 
 (defn- interaction-info [int ref-obj nearby?]
-  (if (or (not (:interaction/predicted int))
+  (if (or (not ((:interaction/type int) :interaction.type/predicted))
           (> (or (:interaction/log-likelihood-score int) 1000) 1.5))
     (let [{effectors :effector
            affecteds :affected
@@ -108,7 +111,7 @@
     [(gene-neighbour ?gene ?neighbour) (gene-interaction ?gene ?ix)
                                        [?ix :interaction/interactor-overlapping-gene ?ih]
                                        (not 
-                                        [?ix :interaction/predicted _])
+                                        [?ix :interaction/type :interaction.type/predicted])
                                        [?ih :interaction.interactor-overlapping-gene/gene ?neighbour]
                                        [(not= ?gene ?neighbour)]]
 

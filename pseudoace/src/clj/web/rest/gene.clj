@@ -120,6 +120,11 @@
                     :label (:person/standard-name person)
                     :taxonomy "all"}))
 
+                :Anatomy_term
+                (seq
+                 (for [anatomy (:phenotype-info/anatomy-term holder)]
+                   (pack-obj "anatomy-term" (:phenotype-info.anatomy-term/anatomy-term anatomy))))
+
                 :Curator_confirmed
                 (seq
                  (for [person (:phenotype-info/curator-confirmed holder)]
