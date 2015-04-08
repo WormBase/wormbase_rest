@@ -386,15 +386,19 @@
            (om/build boolean-edit val-holder)
            (dom/span (str val)))
 
-         (= type :db.type/ref)
+         (and (= type :db.type/ref)
+              (keyword? val))
          (if edit-mode
            (om/build enum-edit val-holder {:opts {:tns (str (namespace key) "." (name key))}})
            (dom/span (str val)))
 
-         :default
+         (= type :db.type/string)
          (if edit-mode
            (om/build text-edit val-holder)
-           (dom/span (str val))))))))))
+           (dom/span (str val)))
+
+         :default
+         (dom/span (str val)))))))))
       
 
 (defn list-view [data owner {:keys [entid]}]
@@ -566,6 +570,11 @@
                         (dom/td nil (str (:key prop)))
                         (dom/td nil (om/build list-view prop {:opts {:entid (:id data)}})))))))))))
 
+(defn- pack-id [id]
+  (if (string? id)
+    [:db/id id]
+    id))
+
 (defn gather-txdata [id props]
   (reduce
     (fn [txlist prop]
@@ -575,7 +584,7 @@
            (if (:edit val)
              (let [t (tempid :db.part/user)]
                (concat txlist
-                       [[:db/add id (:key prop) t]]
+                       [[:db/add (pack-id id) (:key prop) t]]
                        (gather-txdata t (:edit val))))
              (concat txlist (gather-txdata (:id val) (:val val)))))
          txlist
@@ -588,9 +597,9 @@
               txlist
               (if (or (and is-edit val)
                       remove)
-                [:db/retract id (:key prop) val])
+                [:db/retract (pack-id id) (:key prop) val])
               (if (and is-edit (not remove))
-                [:db/add id (:key prop) edit]))))
+                [:db/add (pack-id id) (:key prop) edit]))))
          txlist
          (:values prop))))
     [] props))

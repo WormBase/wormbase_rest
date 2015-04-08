@@ -7,7 +7,8 @@
         ring.middleware.session
         ring.middleware.anti-forgery
         web.widgets
-        web.colonnade)
+        web.colonnade
+        clojure.walk)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
@@ -95,7 +96,7 @@
        (for [d datoms]
          {:txn (:tx d)
           :id (if (:db/isComponent attr)
-                (:v d))
+                (str (:v d)))
           :val (cond
                 (:db/isComponent attr)
                  (obj2 db (:v d) maxcount)
@@ -185,7 +186,7 @@
         {:status 200
          :headers {"Content-Type" "text/plain"}
          :body (pr-str {:props  props
-                        :id     entid
+                        :id     (str entid)
                         :txns   (if txns?
                                   (get-raw-txns ddb txids))})})
       {:status 404
@@ -338,7 +339,17 @@
   (try
     @(d/transact
       con
-      (conj (:tx (:edn-params req))
+      (conj (postwalk
+              (fn [x]
+                (if (and (coll? x)
+                         (= (count x) 2)
+                         (= (first x) :db/id))
+                   (let [v (second x)]
+                     (if (string? v)
+                       (Long/parseLong v)
+                       v))
+                   x))
+               (:tx (:edn-params req)))
             {:db/id (d/tempid :db.part/tx)
              :db/doc (str "Write test by " (:current (friend/identity req)))
              :wormbase/curator [:person/id (:wbperson (friend/current-authentication req))]}))
