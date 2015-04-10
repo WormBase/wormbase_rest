@@ -3,7 +3,7 @@
         web.rest.object)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
-            [pseudoace.utils :refer [vmap]]))
+            [pseudoace.utils :refer [vmap cond-let]]))
 
 (def q-gene-rnai-pheno
   '[:find ?pheno (distinct ?ph)
@@ -404,3 +404,141 @@
   {:status 200
    :content-type "application/json"
    :body (generate-string (gene-human-diseases db id) {:pretty true})})
+
+;;
+;; Reagents widget
+;;
+
+(defn- construct-labs [construct]
+  (seq (map #(pack-obj "laboratory" (:construct.laboratory/laboratory %))
+            (:construct/laboratory construct))))
+
+(defn- transgene-labs [tg]
+  (seq (map #(pack-obj "laboratory" (:transgene.laboratory/laboratory %))
+            (:transgene/laboratory tg))))
+  
+
+(defn- transgene-record [construct]
+  (let [base {:construct (pack-obj "construct" construct)
+              :used_in   (pack-obj "transgene" (first (:construct/transgene-construct construct)))
+              :use_summary (first (:construct/summary construct))}]
+    (cond-let [use]
+      (:construct/transgene-construct construct)
+      (for [t use]
+        (assoc base :used_in_type "Transgene construct"
+                    :use_summary (:transgene/summary t)
+                    :used_in     (pack-obj "transgene" t)
+                    :use_lab     (or (transgene-labs t)
+                                     (construct-labs construct))))
+
+      (:construct/transgene-coinjection construct)
+      (for [t use]
+        (assoc base :used_in_type "Transgene coinjection"
+                    :use_summary (:transgene/summary t)
+                    :used_in     (pack-obj "transgene" t)
+                    :use_lab     (or (transgene-labs t)
+                                     (construct-labs construct))))
+
+      (:construct/engineered-variation construct)
+      (for [v use]
+        (assoc base :used_in_type "Engineered variation"
+                    :used_in      (pack-obj "variation" v)
+                    :use_lab      (construct-labs construct))))))
+
+(defn- transgenes [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?cons ...]
+               :in $ ?gene
+               :where [?cbg :construct.driven-by-gene/gene ?gene]
+                      [?cons :construct/driven-by-gene ?cbg]]
+             db (:db/id gene))
+          (map (partial entity db))
+          (mapcat transgene-record))
+     :description "transgenes expressed by this gene"}))
+                      
+(defn- transgene-products [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?cons ...]
+               :in $ ?gene
+               :where [?cg :construct.gene/gene ?gene]
+                      [?cons :construct/gene ?cg]]
+             db (:db/id gene))
+          (map (partial entity db))
+          (mapcat transgene-record))
+     :description "transgenes that express this gene"}))
+
+(def ^:private probe-types
+  {:oligo-set.type/affymetrix-microarray-probe "Affymetrix"
+   :oligo-set.type/washu-gsc-microarray-probe  "GSC"
+   :oligo-set.type/agilent-microarray-probe    "Agilent"})
+
+(defn- microarray-probes [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?oligo ...]
+               :in $ ?gene [?type ...]
+               :where [?gene :gene/corresponding-cds ?gcds]
+                      [?gcds :gene.corresponding-cds/cds ?cds]
+                      [?ocds :oligo-set.overlaps-cds/cds ?cds]
+                      [?oligo :oligo-set/overlaps-cds ?ocds]
+                      [?oligo :oligo-set/type ?type]]
+             db (:db/id gene) (keys probe-types))
+          (map (fn [oid]
+                 (let [oligo (entity db oid)]
+                   (assoc (pack-obj "oligo-set" oligo)
+                     :label (format
+                             "%s [%s]"
+                             (:oligo-set/id oligo)
+                             (some probe-types (:oligo-set/type oligo))))))))
+     :description "microarray probes"}))
+
+(defn- matching-cdnas [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?cdna ...]
+               :in $ ?gene
+               :where [?gene :gene/corresponding-cds ?gcds]
+                      [?gcds :gene.corresponding-cds/cds ?cds]
+                      [?cds :cds/matching-cdna ?mcdna]
+                      [?mcdna :cds.matching-cdna/sequence ?cdna]]
+             db (:db/id gene))
+          (map #(pack-obj "sequence" (entity db %))))
+     :description "cDNAs matching this gene"}))
+             
+(defn- antibodies [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?ab ...]
+               :in $ ?gene
+               :where [?gab :antibody.gene/gene ?gene]
+                      [?ab :antibody/gene ?gab]]
+             db (:db/id gene))
+          (map
+           (fn [abid]
+             (let [ab (entity db abid)]
+               {:antibody (pack-obj "antibody" ab)
+                :summary (:antibody.summary/text (first (:antibody/summary ab)))
+                :laboratory (map (partial pack-obj "laboratory") (:antibody/location ab))}))))
+     :description "antibodies generated against protein products or gene fusions"}))
+                
+            
+(defn gene-reagents [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "application/json"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :transgenes         (transgenes gene)
+              :transgene_products (transgene-products gene)
+              :microarray_probes  (microarray-probes gene)
+              :matching_cdnas     (matching-cdnas gene)
+              :antibodies         (antibodies gene)}}
+            {:pretty true})}))
+
+                  

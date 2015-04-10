@@ -69,6 +69,14 @@
 (defmethod obj-label "person" [_ person]
   (:person/standard-name person))
 
+(defmethod obj-label "construct" [_ cons]
+  (or (first (:construct/public-name cons))
+      (:construct/id cons)))
+
+(defmethod obj-label "transgene" [_ tg]
+  (or (:transgene/public-name tg)
+      (:transgene/id tg)))
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
