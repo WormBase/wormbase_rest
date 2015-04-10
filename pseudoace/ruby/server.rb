@@ -26,8 +26,8 @@ get '/rest/widget/gene/:gid/history' do
   gene = $db.entity([':gene/id', params['gid']])
   json(
     {:name   => params['gid'],
-     :class  => "gene",
-     :uri    => "whatevs",
+     :class  => 'gene'',
+     :uri    => 'whatevs',
      :fields => {
        :name => {
           :data => pack_gene(gene),
@@ -40,54 +40,48 @@ get '/rest/widget/gene/:gid/history' do
                   :curator => pack_person(h.get(':gene.version-change/person')),
                   :remark  => nil,
                   :gene    => nil,
-                  :action  => "Unknown"}
+                  :action  => 'Unknown'}
 
              if h.get(':gene-history-action/created')
-               r['action'] = 'Created'
-             end
-
-             if h.get(':gene-history-action/killed')
-               r['action'] = 'Killed'
-             end
-
-             if h.get(':gene-history-action/suppressed')
-               r['action'] = 'Suppressed'
-             end
-
-             if h.get(':gene-history-action/resurrected')
-               r['action'] = 'Created'
+               r[:action] = 'Created'
+             elsif h.get(':gene-history-action/killed')
+               r[:action] = 'Killed'
+             elsif h.get(':gene-history-action/suppressed')
+               r[:action] = 'Suppressed'
+             elsif h.get(':gene-history-action/resurrected')
+               r[:action] = 'Created'
              end
 
              merged = h.get(':gene-history-action/merged-into')
              if merged
-               r['action'] = 'Merged_into'
-               r['gene'] = pack_gene(merged)
+               r[:action] = 'Merged_into'
+               r[:gene] = pack_gene(merged)
              end
 
              acquires = h.get(':gene-history-action/acquires-merge')
              if acquires
-               r['action'] = 'Acquires_merge'
-               r['gene'] = pack_gene(acquires)
+               r[:action] = 'Acquires_merge'
+               r[:gene] = pack_gene(acquires)
              end
 
              imported = h.get(':gene-history-action/imported')
              if imported
-                 r['action'] = 'Imported'
-                 r['remark'] = imported.iterator.next;
+                 r[:action] = 'Imported'
+                 r[:remark] = imported.iterator.next;
              end
 
              if h.get(':gene-history-action/changed-class')
-               r['action'] = 'Changed_class'
+               r[:action] = 'Changed_class'
                # What to do with old/new class?
              end
 
              if h.get(':gene-history-action/transposon-in-origin')
-               r['action'] = 'Transposon_in_origin'
+               r[:action] = 'Transposon_in_origin'
              end
                
              r
          },
-         :description => "the historical annotations of this gene"
+         :description => 'the historical annotations of this gene''
        }
     }})
 end
