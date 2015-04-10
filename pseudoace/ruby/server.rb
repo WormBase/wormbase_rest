@@ -26,7 +26,7 @@ get '/rest/widget/gene/:gid/history' do
   gene = $db.entity([':gene/id', params['gid']])
   json(
     {:name   => params['gid'],
-     :class  => 'gene'',
+     :class  => 'gene',
      :uri    => 'whatevs',
      :fields => {
        :name => {
@@ -81,7 +81,7 @@ get '/rest/widget/gene/:gid/history' do
                
              r
          },
-         :description => 'the historical annotations of this gene''
+         :description => 'the historical annotations of this gene'
        }
     }})
 end
