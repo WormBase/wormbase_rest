@@ -406,6 +406,24 @@
    :body (generate-string (gene-human-diseases db id) {:pretty true})})
 
 ;;
+;; Assembly-twiddling stuff (should be in own namespace?)
+;;
+
+(defn locatable-root-segment [loc]
+  (loop [parent (:locatable/parent loc)
+         min    (:locatable/min    loc)
+         max    (:locatable/max    loc)]
+    (if-let [ss (first (:sequence.subsequence/_sequence parent))]
+      (recur (:sequence/_subsequence ss)
+             (+ min (:sequence.subsequence/start ss) -1)
+             (+ max (:sequence.subsequence/start ss) -1))
+      {:sequence (:sequence/id parent)
+       :seq-id   (:db/id parent)
+       :min      min
+       :max      max})))
+      
+
+;;
 ;; Reagents widget
 ;;
 
@@ -454,7 +472,8 @@
                       [?cons :construct/driven-by-gene ?cbg]]
              db (:db/id gene))
           (map (partial entity db))
-          (mapcat transgene-record))
+          (mapcat transgene-record)
+          (seq))
      :description "transgenes expressed by this gene"}))
                       
 (defn- transgene-products [gene]
@@ -466,7 +485,8 @@
                       [?cons :construct/gene ?cg]]
              db (:db/id gene))
           (map (partial entity db))
-          (mapcat transgene-record))
+          (mapcat transgene-record)
+          (seq))
      :description "transgenes that express this gene"}))
 
 (def ^:private probe-types
@@ -488,10 +508,12 @@
           (map (fn [oid]
                  (let [oligo (entity db oid)]
                    (assoc (pack-obj "oligo-set" oligo)
+                     :class "pcr_oligo"
                      :label (format
                              "%s [%s]"
                              (:oligo-set/id oligo)
-                             (some probe-types (:oligo-set/type oligo))))))))
+                             (some probe-types (:oligo-set/type oligo)))))))
+          (seq))
      :description "microarray probes"}))
 
 (defn- matching-cdnas [gene]
@@ -504,7 +526,8 @@
                       [?cds :cds/matching-cdna ?mcdna]
                       [?mcdna :cds.matching-cdna/sequence ?cdna]]
              db (:db/id gene))
-          (map #(pack-obj "sequence" (entity db %))))
+          (map #(pack-obj "sequence" (entity db %)))
+          (seq))
      :description "cDNAs matching this gene"}))
              
 (defn- antibodies [gene]
@@ -520,10 +543,93 @@
              (let [ab (entity db abid)]
                {:antibody (pack-obj "antibody" ab)
                 :summary (:antibody.summary/text (first (:antibody/summary ab)))
-                :laboratory (map (partial pack-obj "laboratory") (:antibody/location ab))}))))
+                :laboratory (map (partial pack-obj "laboratory") (:antibody/location ab))})))
+          (seq))
      :description "antibodies generated against protein products or gene fusions"}))
                 
-            
+(defn- orfeome-primers [gene]
+  (let [db  (d/entity-db gene)
+        seg (locatable-root-segment gene)]
+    {:data
+     ;;
+     ;; Big assembly-navigation query should probably be factored out somewhere
+     ;; once we're a bit more solid about how this stuff should work.
+     ;;
+     (->> (q '[:find [?p ...] 
+               :in $ % ?seq ?min ?max 
+               :where [?method :method/id "Orfeome"] 
+                      (or-join [?seq ?min ?max ?method ?p]
+                        (and         
+                          [?seq :sequence/subsequence ?ss]
+                          [?ss :sequence.subsequence/start ?ss-min]
+                          [?ss :sequence.subsequence/end ?ss-max]
+                          [(<= ?ss-min ?max)]
+                          [(>= ?ss-max ?min)]
+                          [?ss :sequence.subsequence/sequence ?ss-seq]
+                          [(- ?min ?ss-min -1) ?rel-min]
+                          [(- ?max ?ss-min -1) ?rel-max]
+                          (child ?ss-seq ?rel-min ?rel-max ?method ?p))
+                        (child ?seq ?min ?max ?method ?p))]
+             db
+             '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
+                                                     [?c :pcr-product/method ?method]
+                                                     [?c :locatable/min ?cmin]
+                                                     [?c :locatable/max ?cmax]
+                                                     [(<= ?cmin ?max)]
+                                                     [(>= ?cmax ?min)]]]
+             (:seq-id seg) (:min seg) (:max seg))
+          (map
+           (fn [ppid]
+             (let [pp (entity db ppid)]
+               {:id    (:pcr-product/id pp)
+                :class "pcr_oligo"
+                :label (:pcr-product/id pp)})))
+          (seq))
+     :description "ORFeome Project primers and sequences"}))
+
+(defn- primer-pairs [gene]
+  (let [db  (d/entity-db gene)
+        seg (locatable-root-segment gene)]
+    {:data
+     (->> (q '[:find [?p ...] 
+               :in $ % ?seq ?min ?max 
+               :where [?method :method/id "GenePairs"] 
+                      (or-join [?seq ?min ?max ?method ?p]
+                        (and         
+                          [?seq :sequence/subsequence ?ss]
+                          [?ss :sequence.subsequence/start ?ss-min]
+                          [?ss :sequence.subsequence/end ?ss-max]
+                          [(<= ?ss-min ?max)]
+                          [(>= ?ss-max ?min)]
+                          [?ss :sequence.subsequence/sequence ?ss-seq]
+                          [(- ?min ?ss-min -1) ?rel-min]
+                          [(- ?max ?ss-min -1) ?rel-max]
+                          (child ?ss-seq ?rel-min ?rel-max ?method ?p))
+                        (child ?seq ?min ?max ?method ?p))]
+             db
+             '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
+                                                     [?c :pcr-product/method ?method]
+                                                     [?c :locatable/min ?cmin]
+                                                     [?c :locatable/max ?cmax]
+                                                     [(<= ?cmin ?max)]
+                                                     [(>= ?cmax ?min)]]]
+             (:seq-id seg) (:min seg) (:max seg))
+          (map
+           (fn [ppid]
+             (let [pp (entity db ppid)]
+               {:id    (:pcr-product/id pp)
+                :class "pcr_oligo"
+                :label (:pcr-product/id pp)})))
+          (seq))
+     :description "Primer pairs"}))
+
+(defn- sage-tags [gene]
+  {:data
+   (seq (map #(pack-obj "sage-tag" (:sage-tag/_gene %)) (:sage-tag.gene/_gene gene)))
+
+   :description
+   "SAGE tags identified"})
+
 (defn gene-reagents [db id]
   (if-let [gene (entity db [:gene/id id])]
     {:status 200
@@ -538,7 +644,7 @@
               :transgene_products (transgene-products gene)
               :microarray_probes  (microarray-probes gene)
               :matching_cdnas     (matching-cdnas gene)
-              :antibodies         (antibodies gene)}}
-            {:pretty true})}))
-
-                  
+              :antibodies         (antibodies gene)
+              :orfeome_primers    (orfeome-primers gene)
+              :primer_pairs       (primer-pairs gene)
+              :sage_tags          (sage-tags gene)}})}))   
