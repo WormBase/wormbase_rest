@@ -77,6 +77,9 @@
   (or (:transgene/public-name tg)
       (:transgene/id tg)))
 
+(defmethod obj-label "go-term" [_ go]
+  (first (:go-term/term go)))    ;; Not clear why multiples allowed here!
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
@@ -125,7 +128,9 @@
      {:id       ((keyword class "id") obj)
       :label    (or label
                   (obj-label class obj))
-      :class    class
+      :class    (case class
+                  "go-term" "go_term"
+                  class) ;; default
       :taxonomy "c_elegans"})))
   
 

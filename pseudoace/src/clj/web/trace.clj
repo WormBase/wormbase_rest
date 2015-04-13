@@ -22,7 +22,8 @@
             [web.rest.gene :refer (gene-phenotype-rest
                                    gene-mapping-data-rest
                                    gene-human-diseases-rest
-                                   gene-reagents)]
+                                   gene-reagents
+                                   gene-ontology)]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
             [web.rest.references :refer (get-references)]))
 
@@ -438,6 +439,8 @@
        (get-references "gene" (db con) (:id params)))
   (GET "/rest/widget/gene/:id/reagents" {params :params}
        (gene-reagents (db con) (:id params)))
+  (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
+       (gene-ontology (db con) (:id params)))
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))

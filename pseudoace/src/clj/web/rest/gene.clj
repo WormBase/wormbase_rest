@@ -3,7 +3,7 @@
         web.rest.object)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
-            [pseudoace.utils :refer [vmap cond-let]]))
+            [pseudoace.utils :refer [vmap vassoc cond-let update]]))
 
 (def q-gene-rnai-pheno
   '[:find ?pheno (distinct ?ph)
@@ -648,3 +648,96 @@
               :orfeome_primers    (orfeome-primers gene)
               :primer_pairs       (primer-pairs gene)
               :sage_tags          (sage-tags gene)}})}))   
+
+;;
+;; GO widget (using post-WS248 schema)
+;;
+
+(def ^:private division-names
+  {:go-term.type/molecular-function "Molecular function"
+   :go-term.type/cellular-component "Cellular component"
+   :go-term.type/biological-process "Biological process"})
+
+(defn- term-method [annos]
+  (cond
+   (some :go-annotation/reference annos)
+   "Curated"
+
+   (some :go-annotation/phenotype annos)
+   "Phenotype to GO mapping"
+
+   (some :go-annotation/motif annos)
+   "Interpro to GO Mapping"
+
+   ;; Should we still be doing something special for TMHMM?
+   
+   :default
+   "No Method"))
+   
+
+(defn- term-table [db annos]
+  (->>
+   (group-by (juxt :term :code) annos)
+   (map
+    (fn [[[term code] annos]]
+      {:evidence_code
+       {:text
+        (:go-code/id code)
+
+        :evidence
+        (reduce
+         (fn [m anno]
+           (cond-> m
+             (:go-annotation/date-last-updated anno)
+             (assoc :Date_last_updated (str (:go-annotation/date-last-updated anno)))
+
+             (:go-annotation/reference anno)
+             (update :Paper_evidence concat (map (partial pack-obj "paper") (:go-annotation/reference anno)))
+
+             ;; Reconstruct some "Inferred automatically" stuff?
+           ))
+         {:Description (first (:go-code/description code))}
+         (sort-by :go-annotation/date-last-updated (map :anno annos)))}
+       :method (term-method (map :anno annos))
+       :term (pack-obj "go-term" term)}))))
+
+(defn- gene-ontology-terms [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find ?div ?term ?code ?anno
+           :in $ ?gene
+           :where [?anno :go-annotation/gene ?gene]
+                  [?anno :go-annotation/go-term ?term]
+                  [?anno :go-annotation/go-code ?code]
+                  [?term :go-term/type ?tdiv]
+                  [?tdiv :db/ident ?div]]
+         db (:db/id gene))
+      (map
+       (fn [[div term code anno]]
+         {:division div
+          :term     (entity db term)
+          :code     (entity db code)
+          :anno     (entity db anno)}))
+      (group-by :division)
+      (map
+       (fn [[key annos]]
+         [(division-names key)
+          (term-table db annos)]))
+      (into {}))
+
+     :description
+     "gene ontology associations"}))
+
+(defn gene-ontology [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :gene_ontology (gene-ontology-terms gene)}}
+            {:pretty true})}))
