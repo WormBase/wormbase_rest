@@ -96,36 +96,41 @@
                    (entity (:db imp) (keyword ns "id")))]      ;; performance?
     (reduce
      (fn [log [index lines]]
-       (let [cvals (take-ts (count concs) (first lines))
-             compid [:importer/temp (d/squuid) part]]
-         (->
-          (merge-logs
-           ;; concretes
-           (reduce
-            (fn [log [conc val stamp]]
-              (if-let [lv (log-datomize-value conc imp [val])]
-                (update
-                 log
-                 stamp
-                 conj
-                 [:db/add compid (:db/ident conc) lv])
-                log))
-            log
-            (map vector concs cvals (:timestamps (meta cvals))))
-
-           ;; hashes
-           (log-nodes
-            compid
-            (map (partial drop-ts (count concs)) lines)
-            imp
-            nss))
-          (update (first (:timestamps (meta (first lines))))
-                  conj
-                  [:db/add this (:db/ident ti) compid])
-          (update (first (:timestamps (meta (first lines))))
-                  conj-if
-                  (if ordered?
-                    [:db/add compid :ordered/index index])))))
+       (if (and (> index 0)
+                (not= (:db/cardinality ti) :db.cardinality/many))
+         (do
+           (println "WARNING: can't pack into cardinality-one component: " this lines)
+           log)
+         (let [cvals (take-ts (count concs) (first lines))
+               compid [:importer/temp (d/squuid) part]]
+           (->
+            (merge-logs
+             ;; concretes
+             (reduce
+              (fn [log [conc val stamp]]
+                (if-let [lv (log-datomize-value conc imp [val])]
+                  (update
+                   log
+                   stamp
+                   conj
+                   [:db/add compid (:db/ident conc) lv])
+                  log))
+              log
+              (map vector concs cvals (:timestamps (meta cvals))))
+             
+             ;; hashes
+             (log-nodes
+              compid
+              (map (partial drop-ts (count concs)) lines)
+              imp
+              nss))
+            (update (first (:timestamps (meta (first lines))))
+                    conj
+                    [:db/add this (:db/ident ti) compid])
+            (update (first (:timestamps (meta (first lines))))
+                    conj-if
+                    (if ordered?
+                      [:db/add compid :ordered/index index]))))))
      {}
      (indexed (partition-by (partial take (count concs)) vals)))))
 
