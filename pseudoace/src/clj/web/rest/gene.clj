@@ -741,3 +741,135 @@
                      :description (format "The name and WormBase internal ID of %s" id)}
               :gene_ontology (gene-ontology-terms gene)}}
             {:pretty true})}))
+
+;;
+;; Expression widget
+;;
+
+(defn- anatomy-terms [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?at ...]
+               :in $ ?gene
+               :where [?epg :expr-pattern.gene/gene ?gene]
+                      [?ep :expr-pattern/gene ?epg]
+                      [?ep :expr-pattern/anatomy-term ?epa]
+                      [?epa :expr-pattern.anatomy-term/anatomy-term ?at]]
+             db (:db/id gene))
+          (map (fn [at-id]
+                 (pack-obj "anatomy-term" (entity db at-id)))))
+     :description "anatomy terms from expression patterns for the gene"}))
+
+(defn- expr-pattern-type [ep]
+  (some (set (keys ep)) [:expr-pattern/reporter-gene
+                         :expr-pattern/in-situ
+                         :expr-pattern/antibody
+                         :expr-pattern/northern
+                         :expr-pattern/western
+                         :expr-pattern/rt-pcr
+                         :expr-pattern/localizome
+                         :expr-pattern/microarray
+                         :expr-pattern/tiling-array
+                         :expr-pattern/epic
+                         :expr-pattern/cis-regulatory-element]))
+
+(defn- expression-patterns [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?ep ...]
+           :in $ ?gene
+           :where [?epg :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?epg]
+                  (not
+                    [?ep :expr-pattern/microarray _])
+                  (not
+                    [?ep :expr-pattern/tiling-array _])]
+         db (:db/id gene))
+      (map 
+       (fn [ep-id]
+         (let [ep (entity db ep-id)]
+           (vmap
+            :expression_pattern
+            (pack-obj "expr-pattern" ep)
+
+            :description
+            (if-let [desc (or (:expr-pattern/pattern ep)
+                              (:expr-pattern/subcellular-localization ep)
+                              (:expr-pattern.remark/text (:expr-pattern/remark ep)))]
+              {:text desc
+               :evidence (vmap
+                          :Reference (pack-obj "paper" (first (:expr-pattern/reference ep))))})
+
+            :type
+            (humanize-ident (expr-pattern-type ep))
+
+            :expresssed_in
+            (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
+                 (:expr-pattern/anatomy-term ep))
+
+            :life_stage
+            (map #(pack-obj "life-stage" (:expr-pattern.life-stage/life-stage %))
+                 (:expr-pattern/life-stage ep))
+
+            :go_term
+            (if-let [go (:expr-pattern/go-term ep)]
+              {:text (map #(pack-obj "go-term" (:expr-pattern.go-term/go-term %)) go)
+               :evidence {"Subcellular localization" (:expr-pattern/subcellular-localization ep)}})
+
+            :transgene
+            (if (:expr-pattern/transgene ep)
+              (map
+               (fn [tg]
+                 (let [packed (pack-obj "transgene" tg)
+                       cs     (:transgene/construction-summary tg)]
+                   (if cs
+                     {:text packed
+                      :evidence {:Construction_summary cs}}
+                     packed)))
+               (:expr-pattern/transgene ep))
+              (map
+               (fn [cons]
+                 (let [packed (pack-obj "construct" cons)
+                       cs     (:construct/construction-summary cons)]
+                   (if cs
+                     {:text packed
+                      :evidence {:Construction_summary cs}}
+                     packed)))
+               (:expr-pattern/construct ep)))))
+                   
+           )))
+     :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
+              
+
+(defn- expression-clusters [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?ec ...]
+           :in $ ?gene
+           :where [?ecg :expression-cluster.gene/gene ?gene]
+                  [?ec :expression-cluster/gene ?ecg]]
+         db (:db/id gene))
+      (map
+       (fn [ec-id]
+         (let [ec (entity db ec-id)]
+           {:expression_cluster (pack-obj "expression-cluster" ec)
+            :description        (:expression-cluster/description ec)}))))
+     :description
+     "expression cluster data"}))
+
+(defn gene-expression [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :anatomy_terms       (anatomy-terms gene)
+              :expression_patterns (expression-patterns gene)
+              :expression_cluster  (expression-clusters gene)}}
+            {:pretty true})}))

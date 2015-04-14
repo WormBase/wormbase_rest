@@ -80,6 +80,9 @@
 (defmethod obj-label "go-term" [_ go]
   (first (:go-term/term go)))    ;; Not clear why multiples allowed here!
 
+(defmethod obj-label "life-stage" [_ ls]
+  (:life-stage/public-name ls))
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
@@ -129,7 +132,8 @@
       :label    (or label
                   (obj-label class obj))
       :class    (case class
-                  "go-term" "go_term"
+                  "go-term"            "go_term"
+                  "expression-cluster" "expression_cluster"
                   class) ;; default
       :taxonomy "c_elegans"})))
   
@@ -156,3 +160,11 @@
    :Remark
    (seq
     (:evidence/remark holder))))
+
+(defn humanize-ident [ident]
+  (if ident
+    (-> (name ident)
+        (str/split #":")
+        (last)
+        (str/replace #"-" " ")
+        (str/capitalize))))
