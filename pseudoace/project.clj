@@ -1,7 +1,7 @@
 (defproject pseudoace "0.0.3-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojure-contrib "1.2.0"]
-                 [com.datomic/datomic-free "0.9.5130"]
+                 [com.datomic/datomic-free "0.9.5153"]
                  [datomic-schema "1.1.0"]
                  [org.clojure/tools.cli "0.3.1"]
                  [acetyl "0.0.7-SNAPSHOT"]
