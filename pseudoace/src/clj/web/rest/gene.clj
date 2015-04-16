@@ -873,3 +873,104 @@
               :expression_patterns (expression-patterns gene)
               :expression_cluster  (expression-clusters gene)}}
             {:pretty true})}))
+
+;;
+;; Homology widget
+;;
+
+(defn- pack-ortholog [db oid]
+  (let [ortho (entity db oid)]
+    {:ortholog (pack-obj "gene" (:gene.ortholog/gene ortho))
+     :species (if-let [[_ genus species] (re-matches #"^(\w)\w*\s+(.*)"
+                                                     (:species/id (:gene.ortholog/species ortho)))]
+                {:genus genus :species species})
+     :method (map (partial pack-obj) (:evidence/from-analysis ortho))}))
+
+(defn- homology-orthologs [gene species]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?ortho ...]
+           :in $ ?gene [?species-id ...]
+           :where [?gene :gene/ortholog ?ortho]
+                  [?ortho :gene.ortholog/species ?species]
+                  [?species :species/id ?species-id]]
+         db (:db/id gene) species)
+      (map (partial pack-ortholog db)))
+   :description
+   "precalculated ortholog assignments for this gene"}))
+
+(defn- homology-orthologs-not [gene species]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?ortho ...]    ;; Look into why this can't be done with Datomic "not"
+           :in $ ?gene ?not-species
+           :where [?gene :gene/ortholog ?ortho]
+                  [?ortho :gene.ortholog/species ?species]
+                  [?species :species/id ?species-id]
+                  [(get ?not-species ?species-id :dummy) ?smember]
+                  [(= ?smember :dummy)]]
+         db (:db/id gene) (set species))
+      (map (partial pack-ortholog db)))
+   :description
+     "precalculated ortholog assignments for this gene"}))
+
+(defn- homology-paralogs [gene]
+  {:data
+   (map
+    (fn [para]
+      {:ortholog (pack-obj "gene" (:gene.paralog/gene para))
+       :species (if-let [[_ genus species] (re-matches #"^(\w)\w*\s+(.*)"
+                                                       (:species/id (:gene.paralog/species para)))]
+                  {:genus genus :species species})
+       :method (map (partial pack-obj) (:evidence/from-analysis para))})
+    (:gene/paralog gene))
+   :description
+   "precalculated ortholog assignments for this gene"})
+
+(def nematode-species
+  ["Ancylostoma ceylanicum"
+   "Ascaris suum"
+   "Brugia malayi"
+   "Bursaphelenchus xylophilus"
+   "Caenorhabditis angaria"
+   "Caenorhabditis brenneri"
+   "Caenorhabditis briggsae"
+   "Caenorhabditis elegans"
+   "Caenorhabditis japonica"
+   "Caenorhabditis remanei"
+   "Caenorhabditis sp. 5"
+   "Caenorhabditis tropicalis"
+   "Dirofilaria immitis"
+   "Haemonchus contortus"
+   "Heterorhabditis bacteriophora"
+   "Loa loa"
+   "Meloidogyne hapla"
+   "Meloidogyne incognita"
+   "Necator americanus"
+   "Onchocerca volvulus"
+   "Panagrellus redivivus"
+   "Pristionchus exspectatus"
+   "Pristionchus pacificus"
+   "Strongyloides ratti"
+   "Trichinella spiralis"
+   "Trichuris suis"])
+
+(defn gene-homology [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :nematode_orthologs (homology-orthologs gene nematode-species)
+              :human_orthologs    (homology-orthologs gene ["Homo sapiens"])
+              :other_orthologs    (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
+              :paralogs           (homology-paralogs gene)
+              ;; blastp matches and protein domains will need a full Homol import.
+              }}
+            {:pretty true})}))
