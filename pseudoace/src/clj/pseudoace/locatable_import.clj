@@ -8,6 +8,12 @@
                                          drop-ts
                                          logs-to-dir]]))
 
+;;
+;; TODO:
+;;   - Homol_data
+;;   - Reinstate strand and missing-parent checks once acedb is fixed.
+;;
+
 (defn- log-features [fd feature-lines]
   (when (= (:locatable/strand fd) :locatable.strand/negative)
     (except "Don't support negative-strand ?Feature_data"))

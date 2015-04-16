@@ -378,6 +378,18 @@
      datoms))
    :done))
 
+
+(def ^:dynamic
+  ^{:doc "Don't force :db/txInstant attributes during log replays"}
+  *suppress-timestamps* false)
+
+(defn- txmeta [time name]
+  (vmap
+   :db/id             (d/tempid :db.part/tx)
+   :importer/ts-name  name
+   :db/txInstant      (if-not *suppress-timestamps*
+                        time)))
+
 (defn play-log [con log]
   (doseq [[stamp datoms] (sort-by first log)
           :let [[_ ds ts name]
@@ -385,9 +397,7 @@
                 time (read-instant-date (str ds "T" ts))]]
     (let [db (db con)
           datoms (fixup-datoms db datoms)]
-      @(d/transact con (conj datoms {:db/id        (d/tempid :db.part/tx)
-                                     :db/txInstant time
-                                     :importer/ts-name name})))))
+      @(d/transact con (conj datoms (txmeta time name))))))
 
 
 (def log-fixups
@@ -456,9 +466,7 @@
               db      (db con)
               fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
               datoms  (fixup-datoms db fdatoms)]
-          @(d/transact-async con (conj datoms {:db/id             (d/tempid :db.part/tx)
-                                         :db/txInstant      time
-                                         :importer/ts-name  name})))))))
+          @(d/transact-async con (conj datoms (txmeta time name))))))))
 
 
 
