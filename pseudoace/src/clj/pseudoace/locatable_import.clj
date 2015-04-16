@@ -105,12 +105,15 @@
 
 (defmethod log-locatables "Feature_data" [db obj]
   (if-let [fd (entity db [:feature-data/id (:id obj)])]
-    (merge-logs
-     (log-features fd (select-ts obj ["Feature"]))
-     (log-splice-confirmations fd (select-ts obj ["Splices" "Confirmed_intron"]))
-     ;; Predicted_5 and Predicted_3 don't seem to be used
-     )
-    (except "Couldn't find ?Feature_data " (:id obj))))
+    (if (= (:locatable/strand fd)
+           :locatable.strand/negative)
+      (println "Skipping" (:id fd) "because negative strand")
+      (merge-logs
+       (log-features fd (select-ts obj ["Feature"]))
+       (log-splice-confirmations fd (select-ts obj ["Splices" "Confirmed_intron"]))
+       ;; Predicted_5 and Predicted_3 don't seem to be used
+       ))
+    (println "Couldn't find ?Feature_data " (:id obj))))
 
 (defmethod log-locatables :default [_ _]
   nil)
