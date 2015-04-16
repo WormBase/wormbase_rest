@@ -36,6 +36,19 @@
       (nthrest l (count path))
       {:timestamps (nthrest (:timestamps (meta l)) (count path))})))
 
+(defn take-ts
+  "`take` for sequences with :timestamps metadata."
+  [n seq]
+  (with-meta (take n seq)
+    {:timestamps (take n (:timestamps (meta seq)))}))
+
+(defn drop-ts
+  "`drop` for sequences with :timestamps metadata."
+  [n seq]
+  (with-meta (drop n seq)
+    {:timestamps (drop n (:timestamps (meta seq)))}))
+
+
 (defn merge-logs [l1 l2]
   (cond
    (nil? l2)
@@ -77,13 +90,6 @@
     ;;default
       (except "Can't handle " (:db/valueType ti))))
 
-(defn- take-ts [n seq]
-  (with-meta (take n seq)
-    {:timestamps (take n (:timestamps (meta seq)))}))
-
-(defn- drop-ts [n seq]
-  (with-meta (drop n seq)
-    {:timestamps (drop n (:timestamps (meta seq)))}))
 
 (defn- log-components [[_ _ part :as this] ti imp vals]
   (let [concs    (sort-by
@@ -134,12 +140,7 @@
      {}
      (indexed (partition-by (partial take (count concs)) vals)))))
 
-(defn conjv
-  "Like `conj` but creates a single-element vector if `coll` is nil."
-  [coll x]
-  (if (nil? coll)
-    [x]
-    (conj coll x)))
+
 
 (defn log-nodes [this lines imp nss]
   (let [tags (get-tags imp nss)]
@@ -398,11 +399,9 @@
          [(or (log-fixups k) k) v])
        (into {})))
 
-
-(defn split-logs-to-dir
-  "Convert `objs` to log entries then spread them into .edn files split by date."
-  [imp objs dir]
-  (doseq [[stamp logs] (clean-log-keys (objs->log imp objs))
+(defn logs-to-dir
+  [logs dir]
+  (doseq [[stamp logs] (clean-log-keys logs)
           :let  [[_ date time name]
                  (re-matches timestamp-pattern stamp)]]
     (with-open [w (-> (file dir (str date ".edn.gz"))
@@ -412,6 +411,11 @@
       (binding [*out* w]
         (doseq [l logs]
           (println stamp (pr-str l)))))))
+
+(defn split-logs-to-dir
+  "Convert `objs` to log entries then spread them into .edn files split by date."
+  [imp objs dir]
+  (logs-to-dir (objs->log imp objs) dir))
 
 (defn logfile-seq [r]
   (for [l (line-seq r)

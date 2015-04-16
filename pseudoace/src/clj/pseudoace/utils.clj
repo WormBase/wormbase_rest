@@ -32,11 +32,26 @@
 
 (defn conj-if
   ([col x]
-     (if x
-       (conj col x)
-       col))
+     (cond
+      (nil? x)
+      col
+
+      (nil? col)
+      [x]
+
+      :default
+      (conj col x)))
   ([col x & xs]
      (reduce conj-if (conj-if col x) xs)))
+
+(defn conjv
+  "Like `conj` but creates a single-element vector if `coll` is nil."
+  ([coll x]
+     (if (nil? coll)
+       [x]
+       (conj coll x)))
+  ([coll x & xs]
+     (reduce conj (conjv coll x) xs)))
 
 (defmacro except
   "Concatenate args as if with `str` then throw an exception"
