@@ -9,6 +9,17 @@
                  :when (not (nil? v))] 
              [k v])))
 
+(defn vmap-if
+  "Construct a map from alternating key-value pairs, discarding any keys
+  associated with nil values.  Return nil if all values are empty"
+  [& args]
+  (reduce
+   (fn [m [k v]]
+     (if (nil? v)
+       m
+       (assoc m k v)))
+   nil (partition 2 args)))
+
 (defn vassoc
   "Associate `value`s with `key`s in m, ignoring any keys associated with
   nil values."

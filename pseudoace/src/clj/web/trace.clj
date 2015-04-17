@@ -19,7 +19,8 @@
             [cemerick.friend :as friend]
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
-            [web.rest.gene :refer (gene-phenotype-rest
+            [web.rest.gene :refer (gene-overview
+                                   gene-phenotype-rest
                                    gene-mapping-data-rest
                                    gene-human-diseases-rest
                                    gene-reagents
@@ -426,7 +427,9 @@
        (gene-phenotypes-widget (db con) (:id params)))
   (GET "/gene-genetics/:id" {params :params}
        (gene-genetics-widget (db con) (:id params)))
-  
+
+  (GET "/rest/widget/gene/:id/overview" {params :params}
+       (gene-overview (db con) (:id params)))
   (GET "/rest/widget/gene/:id/phenotype" {params :params}
        (gene-phenotype-rest (db con) (:id params)))
   (GET "/rest/widget/gene/:id/interactions" {params :params}
@@ -445,7 +448,7 @@
        (gene-ontology (db con) (:id params)))
   (GET "/rest/widget/gene/:id/expression" {params :params}
        (gene-expression (db con) (:id params)))
-    (GET "/rest/widget/gene/:id/homology" {params :params}
+  (GET "/rest/widget/gene/:id/homology" {params :params}
        (gene-homology (db con) (:id params)))
   
   (GET "/prefix-search" {params :params}

@@ -131,15 +131,11 @@
      {:id       ((keyword class "id") obj)
       :label    (or label
                   (obj-label class obj))
-      :class    (case class
-                  "go-term"            "go_term"
-                  "expression-cluster" "expression_cluster"
-                  class) ;; default
+      :class    (str/replace class "-" "_")
       :taxonomy "c_elegans"})))
-  
 
 (defn get-evidence [holder]
-  (vmap
+  (vmap-if
    :Inferred_automatically
    (seq
     (:evidence/inferred-automatically holder))
@@ -147,6 +143,11 @@
    :Curator_confirmed
    (seq
     (for [person (:evidence/curator-confirmed holder)]
+      (pack-obj "person" person)))
+
+   :Person_evidence
+   (seq
+    (for [person (:evidence/person-evidence holder)]
       (pack-obj "person" person)))
    
    :Paper_evidence

@@ -5,6 +5,179 @@
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vassoc cond-let update]]))
 
+;;
+;; Overview widget
+;;
+
+(defn- gene-class [gene]
+  {:data
+   (if-let [class (:gene/gene-class gene)]
+     {:tag (pack-obj "gene-class" class)
+      :description (str "Datomic: " (first (:gene-class/description class)))})
+   :description "The gene class for this gene"})
+
+(defn- gene-operon [gene]
+  {:data
+   (if-let [operon (->> (:operon.contains-gene/_gene gene)
+                        (first)
+                        (:operon/_contains_gene))]
+     (pack-obj "operon" operon))
+   :description "Operon the gene is contained in"})
+
+(defn- concise-description [gene]
+  {:data
+   (if-let [desc (or (first (:gene/concise-description gene))
+                     (first (:gene/automated-description gene))
+                     (->> (:gene/corresponding-cds gene)
+                          (first)
+                          (:cds/brief-identification))
+                     (->> (:gene/corresponding-transcript gene)
+                          (first)
+                          (:transcript/brief-identification)))]
+     {:text (some (fn [[k v]] (if (= (name k) "text") v)) desc)
+      :evidence (or (get-evidence desc)
+                    (get-evidence (first (:gene/provisional-description gene))))})
+   :description "A manually curated description of the gene's function"})
+
+(defn- curatorial-remarks [gene]
+  {:data
+   (->> (:gene/remark gene)
+        (map (fn [rem]
+               {:text (:gene.remark/text rem)
+                :evidence (get-evidence rem)}))
+        (seq))
+   :description "curatorial remarks for the Gene"})
+
+(defn- legacy-info [gene]
+  {:data
+   (seq (map :gene.legacy-information/text (:gene/legacy-information gene)))
+   :description
+   "legacy information from the CSHL Press C. elegans I/II books"})
+
+(defn- named-by [gene]
+  {:data
+   (->> (:gene/cgc-name gene)
+        (get-evidence)
+        (mapcat val))
+   :description
+   "the source where the approved name was first described"})
+
+(defn- parent-sequence [gene]
+  {:data
+   (pack-obj (:locatable/parent gene))
+   :description
+   "parent sequence of this gene"})
+
+(defn- parent-clone [gene]
+  {:data
+   (pack-obj (first (:clone/_positive-gene gene)))
+   :description
+   "parent clone of this gene"})
+
+(defn- cloned-by [gene]
+  {:data
+   (if-let [ev (get-evidence (first (:gene/cloned-by gene)))]
+     {:cloned_by (key (first ev))
+      :tag       (key (first ev))
+      :source    (first (val (first ev)))})
+   :description
+   "the person or laboratory who cloned this gene"})
+
+(defn- transposon [gene]
+  {:data
+   (pack-obj (first (:gene/corresponding-transposon gene)))
+   :description
+   "Corresponding transposon for this gene"})
+
+(defn- sequence-name [gene]
+  {:data
+   (or (:gene/sequence-name gene)
+       "unknown")
+   :description
+   "the primary corresponding sequence name of the gene, if known"})
+
+(defn- locus-name [gene]
+  {:data
+   (if-let [cgc (:gene/cgc-name gene)]
+     (pack-obj "gene" gene :label (:gene.cgc-name/text cgc))
+     "not assigned")
+   :description "the locus name (also known as the CGC name) of the gene"})
+
+(defn- disease-relevance [gene]
+  {:data
+   (->> (:gene/disease-relevance gene)
+        (map (fn [rel]
+               {:text (:gene.disease-relevance/note rel)
+                :evidence (get-evidence rel)}))
+        (seq))
+   :description
+   "curated description of human disease relevance"})
+
+(defn- version [gene]
+  {:data
+   (str (:gene/version gene))
+   :description "the current WormBase version of the gene"})
+
+(defn- also-refers-to [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?other-gene ...]
+           :in $ ?gene
+           :where [?gene :gene/cgc-name ?cgc]
+                  [?cgc :gene.cgc-name/text ?cgc-name]
+                  [?other-name :gene.other-name/text ?cgc-name]
+                  [?other-gene :gene/other-name ?other-name]]
+         db (:db/id gene))
+      (map #(pack-obj "gene" (entity db %)))
+      (seq))
+     :description
+     "other genes that this locus name may refer to"}))
+
+(defn- merged-into [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find ?merge-partner .
+               :in $ ?gene
+               :where [?gene :gene/version-change ?vc]
+                      [?vc :gene-history-action/merged-into ?merge-partner]]
+             db (:db/id gene))
+          (entity db)
+          (pack-obj "gene"))
+     :description "the gene this one has merged into"}))
+
+(defn gene-overview [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :version (version gene)
+              :also_refers_to (also-refers-to gene)
+              :merged_into (merged-into gene)
+              :gene_class (gene-class gene)
+              :concise_description (concise-description gene)
+              :remarks (curatorial-remarks gene)
+              :operon (gene-operon gene)
+              :legacy_information (legacy-info gene)
+              :named_by (named-by gene)
+              :parent_sequence (parent-sequence gene)
+              :clone (parent-clone gene)
+              :cloned_by (cloned-by gene)
+              :transposon (transposon gene)
+              :sequence_name (sequence-name gene)
+              :locus_name (locus-name gene)
+              :human_disease_relevance (disease-relevance gene)
+              }}
+            {:pretty true})}))
+
+;;
+;; Phenotypes widget
+;;
 (def q-gene-rnai-pheno
   '[:find ?pheno (distinct ?ph)
     :in $ ?gid
@@ -360,6 +533,9 @@
       {:data (pack-obj "gene" gene)
        :description (format "The name and Wormbase internal ID of %s" id)}
 
+      :human_disease_relevance
+      (disease-relevance gene)
+      
       :human_diseases
       {:data
        {:potential_model
@@ -413,14 +589,15 @@
   (loop [parent (:locatable/parent loc)
          min    (:locatable/min    loc)
          max    (:locatable/max    loc)]
-    (if-let [ss (first (:sequence.subsequence/_sequence parent))]
-      (recur (:sequence/_subsequence ss)
-             (+ min (:sequence.subsequence/start ss) -1)
-             (+ max (:sequence.subsequence/start ss) -1))
-      {:sequence (:sequence/id parent)
-       :seq-id   (:db/id parent)
-       :min      min
-       :max      max})))
+    (if parent
+      (if-let [ss (first (:sequence.subsequence/_sequence parent))]
+        (recur (:sequence/_subsequence ss)
+               (+ min (:sequence.subsequence/start ss) -1)
+               (+ max (:sequence.subsequence/start ss) -1))
+        {:sequence (:sequence/id parent)
+         :seq-id   (:db/id parent)
+         :min      min
+         :max      max}))))
       
 
 ;;
@@ -555,72 +732,74 @@
      ;; Big assembly-navigation query should probably be factored out somewhere
      ;; once we're a bit more solid about how this stuff should work.
      ;;
-     (->> (q '[:find [?p ...] 
-               :in $ % ?seq ?min ?max 
-               :where [?method :method/id "Orfeome"] 
-                      (or-join [?seq ?min ?max ?method ?p]
-                        (and         
-                          [?seq :sequence/subsequence ?ss]
-                          [?ss :sequence.subsequence/start ?ss-min]
-                          [?ss :sequence.subsequence/end ?ss-max]
-                          [(<= ?ss-min ?max)]
-                          [(>= ?ss-max ?min)]
-                          [?ss :sequence.subsequence/sequence ?ss-seq]
-                          [(- ?min ?ss-min -1) ?rel-min]
-                          [(- ?max ?ss-min -1) ?rel-max]
-                          (child ?ss-seq ?rel-min ?rel-max ?method ?p))
-                        (child ?seq ?min ?max ?method ?p))]
-             db
-             '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
-                                                     [?c :pcr-product/method ?method]
-                                                     [?c :locatable/min ?cmin]
-                                                     [?c :locatable/max ?cmax]
-                                                     [(<= ?cmin ?max)]
-                                                     [(>= ?cmax ?min)]]]
-             (:seq-id seg) (:min seg) (:max seg))
-          (map
-           (fn [ppid]
-             (let [pp (entity db ppid)]
-               {:id    (:pcr-product/id pp)
+     (if seg
+       (->> (q '[:find [?p ...] 
+                 :in $ % ?seq ?min ?max 
+                 :where [?method :method/id "Orfeome"] 
+                        (or-join [?seq ?min ?max ?method ?p]
+                          (and         
+                           [?seq :sequence/subsequence ?ss]
+                           [?ss :sequence.subsequence/start ?ss-min]
+                           [?ss :sequence.subsequence/end ?ss-max]
+                           [(<= ?ss-min ?max)]
+                           [(>= ?ss-max ?min)]
+                           [?ss :sequence.subsequence/sequence ?ss-seq]
+                           [(- ?min ?ss-min -1) ?rel-min]
+                           [(- ?max ?ss-min -1) ?rel-max]
+                           (child ?ss-seq ?rel-min ?rel-max ?method ?p))
+                          (child ?seq ?min ?max ?method ?p))]
+               db
+               '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
+                                                       [?c :pcr-product/method ?method]
+                                                       [?c :locatable/min ?cmin]
+                                                       [?c :locatable/max ?cmax]
+                                                       [(<= ?cmin ?max)]
+                                                       [(>= ?cmax ?min)]]]
+               (:seq-id seg) (:min seg) (:max seg))
+            (map
+             (fn [ppid]
+               (let [pp (entity db ppid)]
+                 {:id    (:pcr-product/id pp)
                 :class "pcr_oligo"
-                :label (:pcr-product/id pp)})))
-          (seq))
+                  :label (:pcr-product/id pp)})))
+            (seq)))
      :description "ORFeome Project primers and sequences"}))
 
 (defn- primer-pairs [gene]
   (let [db  (d/entity-db gene)
         seg (locatable-root-segment gene)]
     {:data
-     (->> (q '[:find [?p ...] 
-               :in $ % ?seq ?min ?max 
-               :where [?method :method/id "GenePairs"] 
-                      (or-join [?seq ?min ?max ?method ?p]
-                        (and         
-                          [?seq :sequence/subsequence ?ss]
-                          [?ss :sequence.subsequence/start ?ss-min]
-                          [?ss :sequence.subsequence/end ?ss-max]
-                          [(<= ?ss-min ?max)]
-                          [(>= ?ss-max ?min)]
-                          [?ss :sequence.subsequence/sequence ?ss-seq]
-                          [(- ?min ?ss-min -1) ?rel-min]
-                          [(- ?max ?ss-min -1) ?rel-max]
-                          (child ?ss-seq ?rel-min ?rel-max ?method ?p))
-                        (child ?seq ?min ?max ?method ?p))]
-             db
-             '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
-                                                     [?c :pcr-product/method ?method]
-                                                     [?c :locatable/min ?cmin]
-                                                     [?c :locatable/max ?cmax]
-                                                     [(<= ?cmin ?max)]
-                                                     [(>= ?cmax ?min)]]]
-             (:seq-id seg) (:min seg) (:max seg))
-          (map
-           (fn [ppid]
-             (let [pp (entity db ppid)]
-               {:id    (:pcr-product/id pp)
-                :class "pcr_oligo"
-                :label (:pcr-product/id pp)})))
-          (seq))
+     (if seg
+       (->> (q '[:find [?p ...] 
+                 :in $ % ?seq ?min ?max 
+                 :where [?method :method/id "GenePairs"] 
+                        (or-join [?seq ?min ?max ?method ?p]
+                          (and         
+                            [?seq :sequence/subsequence ?ss]
+                            [?ss :sequence.subsequence/start ?ss-min]
+                            [?ss :sequence.subsequence/end ?ss-max]
+                            [(<= ?ss-min ?max)]
+                            [(>= ?ss-max ?min)]
+                            [?ss :sequence.subsequence/sequence ?ss-seq]
+                            [(- ?min ?ss-min -1) ?rel-min]
+                            [(- ?max ?ss-min -1) ?rel-max]
+                            (child ?ss-seq ?rel-min ?rel-max ?method ?p))
+                          (child ?seq ?min ?max ?method ?p))]
+               db
+               '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
+                                                       [?c :pcr-product/method ?method]
+                                                       [?c :locatable/min ?cmin]
+                                                       [?c :locatable/max ?cmax]
+                                                       [(<= ?cmin ?max)]
+                                                       [(>= ?cmax ?min)]]]
+               (:seq-id seg) (:min seg) (:max seg))
+            (map
+             (fn [ppid]
+               (let [pp (entity db ppid)]
+                 {:id    (:pcr-product/id pp)
+                  :class "pcr_oligo"
+                  :label (:pcr-product/id pp)})))
+            (seq)))
      :description "Primer pairs"}))
 
 (defn- sage-tags [gene]
