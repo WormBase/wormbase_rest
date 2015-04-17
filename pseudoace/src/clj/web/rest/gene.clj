@@ -1153,3 +1153,67 @@
               ;; blastp matches and protein domains will need a full Homol import.
               }}
             {:pretty true})}))
+
+;;
+;; History widget
+;;
+
+(defn- history-events [gene]
+  {:data
+   (->>
+    (:gene/version-change gene)
+    (map
+     (fn [h]
+       (let [result {:version (:gene.version-change/version h)
+                     :data    (:gene.version-change/date h)
+                     :curator (pack-obj "person" (:gene.version-change/person h))
+                     :remark  nil
+                     :gene    nil
+                     :action  "Unknown"}]
+         (cond-let [info]
+           (:gene-history-action/created h)
+           (assoc result :action "Created")
+
+           (:gene-history-action/killed h)
+           (assoc result :action "Killed")
+
+           (:gene-history-action/suppressed h)
+           (assoc result :action "Suppressed")
+
+           (:gene-history-action/resurrected h)
+           (assoc result :action "Resurrected")
+
+           (:gene-history-action/transposon-in-origin h)
+           (assoc result :action "Transposon_in_origin")
+
+           (:gene-history-action/changed-class h)
+           (assoc result :action "Changed_class")
+
+           (:gene-history-action/merged-into h)
+           (assoc result :action "Merged_into"
+                         :gene (pack-obj "gene" info))
+           
+           (:gene-history-action/acquires-merge h)
+           (assoc result :action "Acquires_merge"
+                         :gene (pack-obj "gene" info))
+
+           (:gene-history-action/imported h)
+           (assoc result :action "Imported"
+                  :remark (first info)))))))
+   :description
+   "the historical annotations of this gene"})
+           
+
+(defn gene-history [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :history (history-events gene)
+              }}
+            {:pretty true})}))

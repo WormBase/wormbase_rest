@@ -20,6 +20,7 @@
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
             [web.rest.gene :refer (gene-overview
+                                   gene-history
                                    gene-phenotype-rest
                                    gene-mapping-data-rest
                                    gene-human-diseases-rest
@@ -430,6 +431,8 @@
 
   (GET "/rest/widget/gene/:id/overview" {params :params}
        (gene-overview (db con) (:id params)))
+  (GET "/rest/widget/gene/:id/history" {params :params}
+       (gene-history (db con) (:id params)))
   (GET "/rest/widget/gene/:id/phenotype" {params :params}
        (gene-phenotype-rest (db con) (:id params)))
   (GET "/rest/widget/gene/:id/interactions" {params :params}
