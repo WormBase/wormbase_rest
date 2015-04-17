@@ -3,11 +3,91 @@
         web.rest.object)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vassoc cond-let update]]))
+            [pseudoace.utils :refer [vmap vassoc cond-let update those]]))
 
 ;;
 ;; Overview widget
 ;;
+
+(def ^:private transcript-types
+  {:transcript/asrna             "asRNA"
+   :transcript/lincrna           "lincRNA"
+   :transcript/processed-mrna    "mRNA"
+   :transcript/unprocessed-mrna  "mRNA"
+   :transcript/mirna             "miRNA"
+   :transcript/ncrna             "ncRNA"
+   :transcript/pirna             "piRNA"
+   :transcript/rrna              "rRNA"
+   :transcript/scrna             "scRNA"
+   :transcript/snorna            "snoRNA"
+   :transcript/snrna             "snRNA"
+   :transcript/snlRNA            "snlRNA"
+   :transcript/stRNA             "stRNA"
+   :transcript/tRNA              "tRNA"})
+
+(defn- transcript-type [transcript]
+  (some transcript-types (keys transcript)))
+
+(defn- gene-classification [gene]
+  {:data
+   (let [db   (d/entity-db gene)
+         cds  (:gene/corresponding-cds gene)
+         data {:defined_by_mutation (not (empty? (:variation.gene/_gene gene)))
+               :type (cond
+                      ;; This is pretty-much the reverse order of the Perl code
+                      ;; because we never over-write anything
+                      (q '[:find ?trans .
+                           :in $ ?gene
+                           :where [?gene :gene/version-change ?hist]
+                                  [?hist :gene-history-action/transposon-in-origin ?trans]]
+                         db (:db/id gene))
+                      "Transposon in origin"
+                         
+                      (:gene/corresponding-pseudogene gene)
+                      "pseudogene"
+
+                      cds
+                      "protein coding"
+
+                      :default
+                      (some #(transcript-type (:gene.corresponding-transcript/transcript %))
+                            (:gene/corresponding-transcript gene)))
+               :associated_sequence (not (empty? cds))
+               :confirmed (if (q '[:find ?conf-gene .
+                                   :in $ ?conf-gene
+                                   :where [?conf-gene :gene/corresponding-cds ?gc]
+                                          [?gc :gene.corresponding-cds/cds ?cds]
+                                          [?cds :cds/prediction-status :cds.prediction-status/confirmed]]
+                                 db (:db/id gene))
+                            "Confirmed")}]
+     (assoc data
+       :prose
+       (str/join " "
+         (those
+          ;; Currently confused about where "locus" is meant to come from in Perl code...
+
+          (cond
+           (and (:locus data) (:associated_sequence data))
+           "This gene has been defined mutationally and associated with a sequence."
+
+           (:associated_sequence data)
+           "This gene is known only by sequence."
+
+           (:locus data)
+           "This gene is known only by mutation.")
+
+          ;; CGC-name bit doesn't work because both "locus" and "approved name" are missing.
+
+          (cond
+           (= (:confirmed data) "Confirmed")
+           "Gene structures have been confirmed by a curator."
+
+           (:gene/matching-cdna gene)
+           "Gene structures have been confirmed by matching cDNA."
+
+           :default
+           "Gene structures have not been confirmed.")))))
+   :description "gene type and status"})
 
 (defn- gene-class [gene]
   {:data
@@ -157,6 +237,7 @@
              {:name {:data        (pack-obj "gene" gene)
                      :description (format "The name and WormBase internal ID of %s" id)}
               :version (version gene)
+              :classification (gene-classification gene)
               :also_refers_to (also-refers-to gene)
               :merged_into (merged-into gene)
               :gene_class (gene-class gene)
