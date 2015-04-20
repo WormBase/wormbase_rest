@@ -1,6 +1,7 @@
 (ns web.rest.gene
   (:use cheshire.core
-        web.rest.object)
+        web.rest.object
+        pseudoace.binning)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vassoc cond-let update those]]))
@@ -852,7 +853,17 @@
                 :laboratory (map (partial pack-obj "laboratory") (:antibody/location ab))})))
           (seq))
      :description "antibodies generated against protein products or gene fusions"}))
-                
+
+(def ^:private child-rule  '[[(child ?parent ?min ?max ?method ?c) [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
+                                                                   [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
+                                                                   [?c :locatable/xbin ?xbin]
+                                                                   [?c :locatable/parent ?parent]
+                                                                   [?c :pcr-product/method ?method]
+                                                                   [?c :locatable/min ?cmin]
+                                                                   [?c :locatable/max ?cmax]
+                                                                   [(<= ?cmin ?max)]
+                                                                   [(>= ?cmax ?min)]]])
+
 (defn- orfeome-primers [gene]
   (let [db  (d/entity-db gene)
         seg (locatable-root-segment gene)]
@@ -878,12 +889,7 @@
                            (child ?ss-seq ?rel-min ?rel-max ?method ?p))
                           (child ?seq ?min ?max ?method ?p))]
                db
-               '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
-                                                       [?c :pcr-product/method ?method]
-                                                       [?c :locatable/min ?cmin]
-                                                       [?c :locatable/max ?cmax]
-                                                       [(<= ?cmin ?max)]
-                                                       [(>= ?cmax ?min)]]]
+               child-rule
                (:seq-id seg) (:min seg) (:max seg))
             (map
              (fn [ppid]
@@ -915,12 +921,7 @@
                             (child ?ss-seq ?rel-min ?rel-max ?method ?p))
                           (child ?seq ?min ?max ?method ?p))]
                db
-               '[[(child ?parent ?min ?max ?method ?c) [?c :locatable/parent ?parent]
-                                                       [?c :pcr-product/method ?method]
-                                                       [?c :locatable/min ?cmin]
-                                                       [?c :locatable/max ?cmax]
-                                                       [(<= ?cmin ?max)]
-                                                       [(>= ?cmax ?min)]]]
+               child-rule
                (:seq-id seg) (:min seg) (:max seg))
             (map
              (fn [ppid]
