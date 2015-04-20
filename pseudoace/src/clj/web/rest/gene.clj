@@ -226,6 +226,53 @@
           (pack-obj "gene"))
      :description "the gene this one has merged into"}))
 
+(defn- get-sd [gene type]
+  (let [key     (keyword "gene" type)
+        txt-key (keyword (str "gene." type) "text")]
+    (->> (key gene)
+         (map (fn [data]
+                {:text     (txt-key data)
+                 :evidence (get-evidence data)}))
+         (seq))))
+
+(defn- structured-description [gene]
+  {:data
+   (vmap
+    :Provisional_description
+    (let [cds (->> (:gene/concise-description gene)
+                   (map :gene.concise-description/text)
+                   (set))]
+      (seq
+       (for [p (:gene/provisional-description gene)
+             :let [txt (:gene.provisional-description/text p)]
+             :when (not (cds txt))]
+         {:text txt
+          :evidence (get-evidence p)})))
+
+    :Other_description
+    (get-sd gene "other-description")
+
+    :Sequence_features
+    (get-sd gene "sequence-features")
+
+    :Functional_pathway
+    (get-sd gene "functional-pathway")
+
+    :Functional_physical_interaction
+    (get-sd gene "functional-physical-interaction")
+
+    :Molecular_function
+    (get-sd gene "molecular-function")
+
+    :Biological_process
+    (get-sd gene "biological-process")
+
+    :Expression
+    (get-sd gene "expression"))
+
+   :description
+   "structured descriptions of gene function"})
+
 (defn gene-overview [db id]
   (if-let [gene (entity db [:gene/id id])]
     {:status 200
@@ -236,23 +283,24 @@
              :fields
              {:name {:data        (pack-obj "gene" gene)
                      :description (format "The name and WormBase internal ID of %s" id)}
-              :version (version gene)
-              :classification (gene-classification gene)
-              :also_refers_to (also-refers-to gene)
-              :merged_into (merged-into gene)
-              :gene_class (gene-class gene)
-              :concise_description (concise-description gene)
-              :remarks (curatorial-remarks gene)
-              :operon (gene-operon gene)
-              :legacy_information (legacy-info gene)
-              :named_by (named-by gene)
-              :parent_sequence (parent-sequence gene)
-              :clone (parent-clone gene)
-              :cloned_by (cloned-by gene)
-              :transposon (transposon gene)
-              :sequence_name (sequence-name gene)
-              :locus_name (locus-name gene)
-              :human_disease_relevance (disease-relevance gene)
+              :version                  (version gene)
+              :classification           (gene-classification gene)
+              :also_refers_to           (also-refers-to gene)
+              :merged_into              (merged-into gene)
+              :gene_class               (gene-class gene)
+              :concise_description      (concise-description gene)
+              :remarks                  (curatorial-remarks gene)
+              :operon                   (gene-operon gene)
+              :legacy_information       (legacy-info gene)
+              :named_by                 (named-by gene)
+              :parent_sequence          (parent-sequence gene)
+              :clone                    (parent-clone gene)
+              :cloned_by                (cloned-by gene)
+              :transposon               (transposon gene)
+              :sequence_name            (sequence-name gene)
+              :locus_name               (locus-name gene)
+              :human_disease_relevance  (disease-relevance gene)
+              :structured_description   (structured-description gene)
               }}
             {:pretty true})}))
 
