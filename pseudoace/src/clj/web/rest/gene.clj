@@ -4,7 +4,7 @@
         pseudoace.binning)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vassoc cond-let update those]]))
+            [pseudoace.utils :refer [vmap vassoc cond-let update those conjv]]))
 
 ;;
 ;; Overview widget
@@ -1345,5 +1345,133 @@
              {:name {:data        (pack-obj "gene" gene)
                      :description (format "The name and WormBase internal ID of %s" id)}
               :history (history-events gene)
+              }}
+            {:pretty true})}))
+
+
+;;
+;; Sequence widget
+;;
+
+(defn- gene-models [gene]      ;; Probably needs more testing for non-coding/pseudogene/etc. cases.
+  (let [db      (d/entity-db gene)
+        coding? (:gene/corresponding-cds gene)
+        seqs (q '[:find [?seq ...]
+                  :in $ % ?gene
+                  :where (or
+                          (gene-transcript ?gene ?seq)
+                          (gene-cdst-or-cds ?gene ?seq)
+                          (gene-pseudogene ?gene ?seq))]
+                db
+                '[[(gene-transcript ?gene ?seq) [?gene :gene/corresponding-transcript ?ct]
+                                                [?ct :gene.corresponding-transcript/transcript ?seq]]
+                  ;; Per Perl code, take transcripts if any exist, otherwise take the CDS itself.
+                  [(gene-cdst-or-cds ?gene ?seq) [?gene :gene/corresponding-cds ?cc]
+                                                 [?cc :gene.corresponding-cds/cds ?cds]
+                                                 [?ct :transcript.corresponding-cds/cds ?cds]
+                                                 [?seq :transcript/corresponding-cds ?ct]]
+                  [(gene-cdst-or-cds ?gene ?seq) [?gene :gene/corresponding-cds ?cc]
+                                                 [?cc :gene.corresponding-cds/cds ?seq]
+                                                 [(web.trace/imissing? $ ?seq :transcript.corresponding-cds/cds)]]
+                  [(gene-pseudogene ?gene ?seq) [?gene :gene/corresponding-pseudogene ?cp]
+                                                [?cp :gene.corresponding-pseudogene/pseudogene ?seq]]]
+                (:db/id gene))]
+    {:data
+      (->>
+       (map (partial entity db) seqs)
+       (sort-by (some-fn :cds/id :transcript/id :pseudogene/id))
+       (reduce
+        (fn [{:keys [table remark-map]} sequence]
+          (let [cds (or
+                     (and (:cds/id sequence) sequence)
+                     (:transcript.corresponding-cds/cds (:transcript/corresponding-cds sequence))
+                     (:pseudogene.corresponding-cds/cds (:psuedogene/corresponding-cds sequence)))
+                protein (:cds.corresponding-protein/protein (:cds/corresponding-protein cds))
+                seqs (or (seq (map :transcript.corresponding-cds/_cds (:transcript/_corresponding-cds cds)))
+                         [sequence])
+                status (str (humanize-ident (:cds/prediction-status cds))
+                            (if (:cds/matching-cdna cds)
+                              " by cDNA(s)"))
+                {:keys [remark-map footnotes]}
+                (reduce (fn [{:keys [remark-map footnotes]} r]
+                          (let [pr (if-let [ev (get-evidence r)]
+                                     {:text     (:cds.remark/text r)
+                                      :evidence ev}
+                                     (:cds.remark/text r))]
+                            (if-let [n (get remark-map pr)]
+                              {:remark-map remark-map
+                               :footnotes  (conjv footnotes n)}
+                              (let [n (inc (count remark-map))]
+                                {:remark-map (assoc remark-map pr n)
+                                 :footnotes  (conjv footnotes n)}))))
+                        {:remark-map remark-map}
+                        (:cds/remark cds))]
+            {:remark-map
+             remark-map
+             :table
+             (conjv table
+              (vmap
+               :model
+               (map pack-obj seqs)
+               
+               :protein
+               (pack-obj "protein" protein)
+                
+               :cds
+               (vmap
+                :text (vassoc (pack-obj "cds" cds) :footnotes footnotes)
+                :evidence (if (not (empty? status))
+                            {:status status}))
+               
+               :length_spliced
+               (if coding?
+                 (if-let [exons (seq (:cds/source-exons cds))]
+                   (->> (map (fn [ex]
+                               (- (:cds.source-exons/end ex)
+                                  (:cds.source-exons/start ex)
+                                  -1))
+                             exons)
+                        (reduce +))))
+
+               :length_unspliced
+               (str/join
+                "<br>"
+                (for [s seqs]
+                  (- (:locatable/max s) (:locatable/min s))))
+               
+               :length_protein
+               (:protein.peptide/length (:protein/peptide protein))
+             
+               :type (if seqs
+                       (if-let [mid (:method/id
+                                     (or (:transcript/method sequence)
+                                         (:pseudogene/method sequence)
+                                         (:cds/method sequence)))]
+                         (str/replace mid #"_" " ")))))}))
+        {})
+       ((fn [{:keys [table remark-map]}]
+         (vmap
+          :table table
+          :remarks (if-not (empty? remark-map)
+                     (into (sorted-map)
+                           (for [[r n] remark-map]
+                             [n r])))))))
+                       
+                        
+           
+     :description
+     "gene models for this gene"}))
+
+(defn gene-sequences [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :gene_models (gene-models gene)
               }}
             {:pretty true})}))

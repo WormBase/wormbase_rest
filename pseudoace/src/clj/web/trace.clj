@@ -27,7 +27,8 @@
                                    gene-reagents
                                    gene-ontology
                                    gene-expression
-                                   gene-homology)]
+                                   gene-homology
+                                   gene-sequences)]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
             [web.rest.references :refer (get-references)]))
 
@@ -453,6 +454,8 @@
        (gene-expression (db con) (:id params)))
   (GET "/rest/widget/gene/:id/homology" {params :params}
        (gene-homology (db con) (:id params)))
+  (GET "/rest/widget/gene/:id/sequences" {params :params}
+       (gene-sequences (db con) (:id params)))
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))

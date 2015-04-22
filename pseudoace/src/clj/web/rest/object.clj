@@ -83,6 +83,10 @@
 (defmethod obj-label "life-stage" [_ ls]
   (:life-stage/public-name ls))
 
+(defmethod obj-label "protein" [_ prot]
+  (or (first (:protein/gene-name prot))
+      (:protein/id prot)))
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
