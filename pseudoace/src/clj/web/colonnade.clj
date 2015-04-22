@@ -31,14 +31,15 @@
       "goog.require('trace.colonnade');"]]]))
 
 
-(defn post-query [db params]
-  (let [results (if (seq (:rules params))
-                  (q (:query params) db (:rules params))
-                  (q (:query params) db))]
+(defn post-query [db {:keys [query rules args max-rows]}]
+  (let [args (if (seq rules)
+               (cons rules args)
+               args)
+        results (apply q query db args)]
     {:status 200
      :headers {"Content-Type" "text/plain"}
-     :body (pr-str {:query (:query params)
-                    :results (take (:max-rows params) (sort-by first results))
+     :body (pr-str {:query query
+                    :results (take max-rows (sort-by first results))
                     :count (count results)})}))
 
 (defn colonnade [db]
