@@ -1332,7 +1332,24 @@
                   :remark (first info)))))))
    :description
    "the historical annotations of this gene"})
-           
+
+
+(defn- old-annot [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?historic ...]
+               :in $ ?gene
+               :where (or
+                       [?gene :gene/corresponding-cds-history ?historic]
+                       [?gene :gene/corresponding-pseudogene-history ?historic]
+                       [?gene :gene/corresponding-transcript-history ?historic])]
+             db (:db/id gene))
+          (map (fn [hid]
+                 (let [hobj (pack-obj (entity db hid))]
+                   {:class (:class hobj)
+                    :name hobj})))
+          (seq))
+     :description "the historical annotations of this gene"}))
 
 (defn gene-history [db id]
   (if-let [gene (entity db [:gene/id id])]
@@ -1344,7 +1361,8 @@
              :fields
              {:name {:data        (pack-obj "gene" gene)
                      :description (format "The name and WormBase internal ID of %s" id)}
-              :history (history-events gene)
+              :history   (history-events gene)
+              :old_annot (old-annot gene)
               }}
             {:pretty true})}))
 
@@ -1473,5 +1491,65 @@
              {:name {:data        (pack-obj "gene" gene)
                      :description (format "The name and WormBase internal ID of %s" id)}
               :gene_models (gene-models gene)
+              }}
+            {:pretty true})}))
+
+;;
+;; Sequence Features widget
+;;
+
+(defn- associated-features [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?f ...]
+           :in $ ?gene
+           :where [?fg :feature.associated-with-gene/gene ?gene]
+                  [?f :feature/associated-with-gene ?fg]]
+         db (:db/id gene))
+      (map
+       (fn [fid]
+         (let [feature (entity db fid)]
+           (vmap
+            :name (pack-obj "feature" feature)
+            :description (first (:feature/description feature))
+            :method (-> (:feature/method feature)
+                        (:method/id))
+            :interaction (->> (:interaction.feature-interactor/_feature feature)
+                              (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
+                              (seq))
+            :expr_pattern (->>
+                           (q '[:find [?e ...]
+                                :in $ ?f
+                                :where [?ef :expr-pattern.associated-feature/feature ?f]
+                                       [?e :expr-pattern/associated-feature ?ef]
+                                       [?e :expr-pattern/anatomy-term _]]
+                              db fid)
+                           (map
+                            (fn [eid]
+                              (let [expr (entity db eid)]
+                                {:text (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
+                                            (:expr-pattern/anatomy-term expr))
+                                 :evidence {:by (pack-obj "expr-pattern" expr)}})))
+                           (seq))
+            :bound_by (->> (:feature/bound-by-product-of feature)
+                           (map #(pack-obj "gene" (:feature.bound-by-product-of/gene %)))
+                           (seq))
+            :tf  (pack-obj "transcription-factor" (:feature/transcription-factor feature))))))
+      (seq))
+     :description
+     "Features associated with this Gene"}))
+
+(defn gene-features [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :features (associated-features gene)
               }}
             {:pretty true})}))
