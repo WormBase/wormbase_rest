@@ -3,6 +3,8 @@
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]))
 
+(declare pack-obj)
+
 (defn obj-get [class db id]
   (entity db [(keyword class "id") id]))
 
