@@ -1283,6 +1283,31 @@
    :description
    "precalculated ortholog assignments for this gene"})
 
+(defn- protein-domains [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?motif ...]
+           :in $ ?gene
+           :where [?gene :gene/corresponding-cds ?gcds]
+                  [?gcds :gene.corresponding-cds/cds ?cds]
+                  [?cds :cds/corresponding-protein ?cprot]
+                  [?cprot :cds.corresponding-protein/protein ?prot]
+                  [?homol :locatable/parent ?prot]
+                  [?homol :homology/motif ?motif]
+                  [?motif :motif/id ?mid]
+                  [(.startsWith ^String ?mid "INTERPRO:")]]
+         db (:db/id gene))
+      (map
+       (fn [motif-id]
+         (let [motif (entity db motif-id)]
+           [(first (:motif/title motif))
+            (pack-obj "motif" motif)])))
+      (into {}))
+     :description
+     "protein domains of the gene"}))
+           
+
 (def nematode-species
   ["Ancylostoma ceylanicum"
    "Ascaris suum"
@@ -1325,7 +1350,8 @@
               :human_orthologs    (homology-orthologs gene ["Homo sapiens"])
               :other_orthologs    (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
               :paralogs           (homology-paralogs gene)
-              ;; blastp matches and protein domains will need a full Homol import.
+              ; :best_blastp_matches (homology-blastp gene)
+              :protein_domains    (protein-domains gene)
               }}
             {:pretty true})}))
 
