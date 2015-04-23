@@ -29,7 +29,8 @@
                                    gene-expression
                                    gene-homology
                                    gene-sequences
-                                   gene-features)]
+                                   gene-features
+                                   gene-genetics)]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
             [web.rest.references :refer (get-references)]))
 
@@ -459,6 +460,8 @@
        (gene-sequences (db con) (:id params)))
   (GET "/rest/widget/gene/:id/feature" {params :params}
        (gene-features (db con) (:id params)))
+  (GET "/rest/widget/gene/:id/genetics" {params :params}
+       (gene-genetics (db con) (:id params)))
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))

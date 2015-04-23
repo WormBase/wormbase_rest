@@ -4,7 +4,7 @@
         pseudoace.binning)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vassoc cond-let update those conjv]]))
+            [pseudoace.utils :refer [vmap vmap-if vassoc cond-let update those conjv]]))
 
 ;;
 ;; Overview widget
@@ -1596,5 +1596,223 @@
              {:name {:data        (pack-obj "gene" gene)
                      :description (format "The name and WormBase internal ID of %s" id)}
               :features (associated-features gene)
+              }}
+            {:pretty true})}))
+
+;;
+;; Genetics widget
+;;
+
+(defn- reference-allele [gene]
+  {:data
+   (->> (:gene/reference-allele gene)
+        (map :gene.reference-allele/variation)
+        (map (partial pack-obj "variation")))
+   :description "the reference allele of the gene"})
+
+(defn- is-cgc? [strain]
+  (some #(= (->> (:strain.location/laboratory %)
+                 (:laboratory/id))
+            "CGC")
+        (:strain/location strain)))
+
+(defn- strain-list [strains]
+  (seq
+   (map (fn [strain]
+          (vassoc
+           (pack-obj "strain" strain)
+           :genotype (first (:strain/genotype strain))
+           :transgenes (pack-obj "transgene" (first (:transgene/_strain strain)))))
+        strains)))
+
+(defn- strains [gene]
+  (let [strains (:gene/strain gene)]
+    {:data
+     (vmap
+      :carrying_gene_alone_and_cgc
+      (strain-list (filter #(and (not (seq (:transgene/_strain %)))
+                                 (= (count (:gene/_strain %)) 1)
+                                 (is-cgc? %))
+                           strains))
+      
+      :carrying_gene_alone
+      (strain-list (filter #(and (not (seq (:transgene/_strain %)))
+                                 (= (count (:gene/_strain %)) 1)
+                                 (not (is-cgc? %)))
+                           strains))
+      
+      :available_from_cgc
+      (strain-list (filter #(and (or (seq (:transgene/_strain %))
+                                     (not= (count (:gene/_strain %)) 1))
+                                 (is-cgc? %))
+                           strains))
+
+      :others
+      (strain-list (filter #(and (or (seq (:transgene/_strain %))
+                                     (not= (count (:gene/_strain %)) 1))
+                                 (not (is-cgc? %)))
+                           strains)))
+
+     :description
+     "strains carrying this gene"}))
+
+(defn- nonsense [change]
+  (or (seq (:molecular-change/amber-uag change))
+      (seq (:molecular-change/ochre-uaa change))
+      (seq (:molecular-change/opal-uga change))
+      (seq (:molecular-change/ochre-uaa-or-opal-uga change))
+      (seq (:molecular-change/amber-uag-or-ochre-uaa change))
+      (seq (:molecular-change/amber-uag-or-opal-uga change))))
+
+(defn- process-variation [var]
+ (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
+       trans-changes (seq (take 20 (:variation/transcript var)))]
+  (vmap
+   :variation
+   (pack-obj "variation" var)
+
+   :type
+   (if (:variation/transposon-insertion var)
+     "transposon insertion"
+     (str/join ", "
+      (or 
+       (those
+        (if (:variation/engineered-allele var)
+          "Engineered allele")
+        (if (:variation/allele var)
+          "Allele")
+        (if (:variation/snp var)
+          "SNP")
+        (if (:variation/confirmed-snp var)
+          "Confirmed SNP")
+        (if (:variation/predicted-snp var)
+          "Predicted SNP")
+        (if (:variation/reference-strain-digest var)
+          "RFLP"))
+       ["unknown"])))
+
+   :method_name
+   (if-let [method (:variation/method var)]
+     (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
+             (or (:method.remark/text (first (:method/remark methods))) "")
+             (str/replace (:method/id method) #"_" " ")))
+
+   :gene
+   nil ;; don't populate since we're coming from gene...
+
+   :molecular_change
+   (cond
+    (:variation/substitution var)
+    "Substitution"
+    
+    (:variation/insertion var)
+    "Insertion"
+
+    (:variation/deletion var)
+    "Deletion"
+
+    (:variation/inversion var)
+    "Inversion"
+
+    (:variation/tandem-duplication var)
+    "Tandem_duplication"
+
+    :default
+    "Not curated")
+
+   :locations
+   (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
+     (str/join ", " (filter
+                     identity
+                     (map {:molecular-change/intron "Intron"
+                           :molecular-change/coding-exon "Coding exon"
+                           :molecular-change/utr-5 "5' UTR"
+                           :molecular-change/utr-3 "3' UTR"}
+                          changes))))
+
+   :effects
+   (let [changes (set (mapcat keys cds-changes))]
+     (str/join ", " (set (filter
+                          identity
+                          (map {:molecular-change/missense "Missense"
+                                :molecular-change/amber-uag "Nonsense"
+                                :molecular-change/ochre-uaa "Nonsense"
+                                :molecular-change/opal-uga "Nonsense"
+                                :molecular-change/ochre-uaa-or-opal-uga "Nonsense"
+                                :molecular-change/amber-uag-or-ochre-uaa "Nonsense"
+                                :molecular-change/amber-uag-or-opal-uga "Nonsense"
+                                :molecular-change/frameshift "Frameshift"
+                                :molecular-change/silent "Silent"}
+                               changes)))))
+
+   :aa_change
+   (str/join "<br>"
+     (filter identity
+       (for [cc cds-changes]
+         (cond-let [n]
+            (first (:molecular-change/missense cc))
+            (:molecular-change.missense/text n)
+
+            (first (nonsense cc))
+            ((first (filter #(= (name %) "text") (keys n))) n)))))
+
+   :aa_position
+   (str/join "<br>"
+     (filter identity
+       (for [cc cds-changes]
+         (if-let [n (first (:molecular-change/missense cc))]
+           (:molecular-change.missense/int n)))))
+
+   :isoform
+   (seq
+    (for [cc cds-changes
+          :when (or (:molecular-change/missense cc)
+                    (nonsense cc))]
+      (pack-obj "cds" (:variation.predicted-cds/cds cc))))
+          
+   :phen_count
+   (count (:variation/phenotype var))
+
+   :strain
+   (map #(pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var)))))
+
+(defn- alleles [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?var ...]
+               :in $ ?gene
+               :where [?vh :variation.gene/gene ?gene]
+                      [?var :variation/gene ?vh]
+                      [?var :variation/allele _]]
+             db (:db/id gene))
+          (map #(process-variation (entity db %))))
+     :description "alleles contained in the strain"}))
+
+(defn- polymorphisms [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?var ...]
+               :in $ ?gene
+               :where [?vh :variation.gene/gene ?gene]
+                      [?var :variation/gene ?vh]
+                      (not [?var :variation/allele _])]
+             db (:db/id gene))
+          (map #(process-variation (entity db %))))
+     :description "polymorphisms and natural variations contained in the strain"}))
+
+(defn gene-genetics [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :reference_allele (reference-allele gene)
+              :strains          (strains gene)
+              :alleles          (alleles gene)
+              :polymorphisms    (polymorphisms gene)
               }}
             {:pretty true})}))
