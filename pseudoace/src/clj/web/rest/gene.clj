@@ -308,6 +308,7 @@
 ;;
 ;; Phenotypes widget
 ;;
+
 (def q-gene-rnai-pheno
   '[:find ?pheno (distinct ?ph)
     :in $ ?gid
@@ -471,6 +472,47 @@
      (into {}))))
       
 
+(defn- phenotype-by-interaction [db gid]
+  (let [table (q '[:find ?pheno (distinct ?int) ?int-type
+                    :in $ ?gene
+                    :where [?ig :interaction.interactor-overlapping-gene/gene ?gene]
+                           [?int :interaction/interactor-overlapping-gene ?ig]
+                           [?int :interaction/interaction-phenotype ?pheno]
+                           [?int :interaction/type ?type-id]
+                           [?type-id :db/ident ?int-type]]
+                 db gid)
+        phenos (->> (map first table)
+                    (set)
+                    (map (fn [pid]
+                           [pid (pack-obj "phenotype" (entity db pid))]))
+                    (into {}))
+        ints (->> (mapcat second table)
+                  (set)
+                  (map (fn [iid]
+                         (let [int (entity db iid)]
+                           [iid
+                            {:interaction (pack-obj "interaction" int)
+                             :citations (map (partial pack-obj "paper") (:interaction/paper int))}])))
+                  (into {}))]
+  {:data
+   (map (fn [[pheno pints int-type]]
+          {:interaction_type
+           (humanize-ident int-type)
+           
+           :phenotype
+           (phenos pheno)
+
+           :interactions
+           (map #(:interaction (ints %)) pints)
+
+           :citations
+           (map #(:citations (ints %)) pints)})
+        table)
+   :description
+   "phenotype based on interaction"}))
+        
+   
+         
 (defn- gene-phenotype [db id]
   (let [gids (q '[:find ?g :in $ ?gid :where [?g :gene/id ?gid]] db id)]
     (if-let [[gid] (first gids)]
@@ -492,13 +534,16 @@
          {:Phenotype              (phenotype-table db id false)
           :Phenotype_not_observed (phenotype-table db id true)}
          :description
-         "The phenotype summary of the gene"}}})))
+         "The phenotype summary of the gene"}
+        
+        :phenotype_by_interaction
+        (phenotype-by-interaction db gid)}})))
          
         
 (defn gene-phenotype-rest [db id]
   {:status 200
    :content-type "application/json"
-   :body (generate-string (gene-phenotype db id) {:pretty false})})
+   :body (generate-string (gene-phenotype db id) {:pretty true})})
 
 ;; Needs better support for non-gene things.
 

@@ -90,55 +90,60 @@
       (:protein/id prot)))
 
 (defmethod obj-label "interaction" [_ int]
+  ;; Note that only certain types of interactor are considered when computing the display name.
   (let [db (d/entity-db int)]
-    (->>
-     (q '[:find [?interactor ...]
-          :in $ ?int
-          :where (or-join [?int ?interactor]
-                   (and
-                    [?int :interaction/pcr-interactor ?pi]
-                    [?pi :interaction.pcr-interactor/pcr-product ?interactor])
-                   (and
-                    [?int :interaction/sequence-interactor ?si]
-                    [?si :interaction.sequence-interactor/sequence ?interactor])
-                   (and
-                    [?int :interaction/interactor-overlapping-cds ?ci]
-                    [?ci :interaction.interactor-overlapping-cds/cds ?interactor])
-                   (and
-                    [?int :interaction/interactor-overlapping-gene ?gi]
-                    [?gi :interaction.interactor-overlapping-gene/gene ?interactor])
-                   (and
-                    [?int :interaction/interactor-overlapping-protein ?pi]
-                    [?pi :interaction.interactor-overlapping-protein/protein ?interactor])
-                   (and
-                    [?int :interaction/molecule-interactor ?mi]
-                    [?mi :interaction.molecule-interactor/molecule ?interactor])
-                   (and
-                    [?int :interaction/other-regulator ?ortor]
-                    [?ortor :interaction.other-regulator/text ?interactor])
-                   (and
-                    [?int :interaction/other-regulated ?orted]
-                    [?orted :interaction.other-regulated/text ?interactor])
-                   (and
-                    [?int :interaction/rearrangement ?ri]
-                    [?ri :interaction.rearrangement/rearrangement ?interactor])
-                   (and
-                    [?int :interaction/feature-interactor ?fi]
-                    [?fi :interaction.feature-interactor/feature ?interactor])
-                   (and
-                    [?int :interaction/variation-interactor ?vi]
-                    [?vi :interaction.variation-interactor/variation ?interactor]))]
-        db (:db/id int))
-     (map
-      (fn [interactor]
-        (cond
-         (string? interactor)
-         interactor
-
-         :default
-         (:label (pack-obj (entity db interactor))))))
-     (sort)
-     (str/join " : "))))
+    (if-let [il (seq
+                  (q '[:find [?interactor ...]
+                       :in $ ?int
+                       :where (or-join [?int ?interactor]
+                                ;; (and
+                                ;;   [?int :interaction/pcr-interactor ?pi]
+                                ;;   [?pi :interaction.pcr-interactor/pcr-product ?interactor])
+                                ;; (and
+                                ;;   [?int :interaction/sequence-interactor ?si]
+                                ;;   [?si :interaction.sequence-interactor/sequence ?interactor])
+                                ;; (and
+                                ;;   [?int :interaction/interactor-overlapping-cds ?ci]
+                                ;;   [?ci :interaction.interactor-overlapping-cds/cds ?interactor])
+                                   (and
+                                    [?int :interaction/interactor-overlapping-gene ?gi]
+                                    [?gi :interaction.interactor-overlapping-gene/gene ?interactor])
+                                ;; (and
+                                ;;  [?int :interaction/interactor-overlapping-protein ?pi]
+                                ;;  [?pi :interaction.interactor-overlapping-protein/protein ?interactor])
+                                   (and
+                                    [?int :interaction/molecule-interactor ?mi]
+                                    [?mi :interaction.molecule-interactor/molecule ?interactor])
+                                   (and
+                                    [?int :interaction/other-regulator ?ortor]
+                                    [?ortor :interaction.other-regulator/text ?interactor])
+                                   (and
+                                    [?int :interaction/other-regulated ?orted]
+                                    [?orted :interaction.other-regulated/text ?interactor])
+                                   (and
+                                    [?int :interaction/rearrangement ?ri]
+                                    [?ri :interaction.rearrangement/rearrangement ?interactor])
+                                   (and
+                                    [?int :interaction/feature-interactor ?fi]
+                                    [?fi :interaction.feature-interactor/feature ?interactor])
+                                ;; (and
+                                ;;  [?int :interaction/variation-interactor ?vi]
+                                ;;  [?vi :interaction.variation-interactor/variation ?interactor])
+                                   )]
+                     db (:db/id int)))]
+      (->>
+       (map
+        (fn [interactor]
+          (cond
+           (string? interactor)
+           interactor
+           
+           :default
+           (:label (pack-obj (entity db interactor)))))
+        il)
+       (sort)
+       (str/join " : "))
+      (:interaction/id int))))
                   
                   
         
