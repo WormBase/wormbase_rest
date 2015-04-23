@@ -1363,7 +1363,7 @@
   {:data
    (->>
     (:gene/version-change gene)
-    (map
+    (mapcat
      (fn [h]
        (let [result {:version (:gene.version-change/version h)
                      :data    (:gene.version-change/date h)
@@ -1371,36 +1371,45 @@
                      :remark  nil
                      :gene    nil
                      :action  "Unknown"}]
-         (cond-let [info]
-           (:gene-history-action/created h)
-           (assoc result :action "Created")
+         (those
+           (if (:gene-history-action/created h)
+             (assoc result :action "Created"))
 
-           (:gene-history-action/killed h)
-           (assoc result :action "Killed")
+           (if (:gene-history-action/killed h)
+             (assoc result :action "Killed"))
 
-           (:gene-history-action/suppressed h)
-           (assoc result :action "Suppressed")
+           (if (:gene-history-action/suppressed h)
+             (assoc result :action "Suppressed"))
 
-           (:gene-history-action/resurrected h)
-           (assoc result :action "Resurrected")
+           (if (:gene-history-action/resurrected h)
+             (assoc result :action "Resurrected"))
 
-           (:gene-history-action/transposon-in-origin h)
-           (assoc result :action "Transposon_in_origin")
+           (if (:gene-history-action/transposon-in-origin h)
+             (assoc result :action "Transposon_in_origin"))
 
-           (:gene-history-action/changed-class h)
-           (assoc result :action "Changed_class")
+           (if (:gene-history-action/changed-class h)
+             (assoc result :action "Changed_class"))
 
-           (:gene-history-action/merged-into h)
-           (assoc result :action "Merged_into"
-                         :gene (pack-obj "gene" info))
+           (if-let [info (:gene-history-action/merged-into h)]
+             (assoc result :action "Merged_into"
+                    :gene (pack-obj "gene" info)))
            
-           (:gene-history-action/acquires-merge h)
-           (assoc result :action "Acquires_merge"
-                         :gene (pack-obj "gene" info))
+           (if-let [info (:gene-history-action/acquires-merge h)]
+             (assoc result :action "Acquires_merge"
+                    :gene (pack-obj "gene" info)))
 
-           (:gene-history-action/imported h)
-           (assoc result :action "Imported"
-                  :remark (first info)))))))
+           (if-let [info (:gene-history-action/imported h)]
+             (assoc result :action "Imported"
+                    :remark (first info)))
+
+           (if-let [name (:gene-history-action/cgc-name-change h)]
+             (assoc result :action "CGC_name" :remark name))
+
+           (if-let [name (:gene-history-action/other-name-change h)]
+             (assoc result :action "Other_name" :remark name))
+
+           (if-let [name (:gene-history-action/sequence-name-change h)]
+             (assoc result :action "Sequence_name" :remark name)))))))
    :description
    "the historical annotations of this gene"})
 
