@@ -128,6 +128,7 @@
            (into (or old [])
             (let [base (those
                          [:db/add tid :locatable/parent parent]
+                         (and method [:db/add tid :locatable/method method])
                          (and min [:db/add tid :locatable/min min])
                          (and max [:db/add tid :locatable/max max])
                          ;; ignore strand while we concentrate on protein stuff...
@@ -137,7 +138,8 @@
                          (and bin [:db/add tid :locatable/bin bin])
                          (and bin [:db/add tid :locatable/xbin (xbin parent bin)])
                          (and target-start-s [:db/add tid :homology/min (dec (parse-int target-start-s))])
-                         (and target-end-s [:db/add tid :homology/max      (parse-int target-end-s)   ]))]
+                         (and target-end-s [:db/add tid :homology/max      (parse-int target-end-s)   ])
+                         (and score-s [:db/add tid :locatable/score (parse-double score-s)]))]
                (case type
                  "DNA_homol"
                  (except "Don't support protein->DNA homols")
