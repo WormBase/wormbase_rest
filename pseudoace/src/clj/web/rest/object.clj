@@ -146,7 +146,9 @@
       (:interaction/id int))))
                   
                   
-        
+(defmethod obj-label "motif" [_ motif]
+  (or (first (:motif/title motif))
+      (:motif/id motif)))        
 
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
