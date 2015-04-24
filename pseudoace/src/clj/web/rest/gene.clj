@@ -1535,7 +1535,9 @@
                (str/join
                 "<br>"
                 (for [s seqs]
-                  (- (:locatable/max s) (:locatable/min s))))
+                  (if (and (:locatable/max s) (:locatable/min s))
+                    (- (:locatable/max s) (:locatable/min s))
+                    "-")))
                
                :length_protein
                (:protein.peptide/length (:protein/peptide protein))
