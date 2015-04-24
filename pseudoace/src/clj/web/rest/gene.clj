@@ -1853,3 +1853,39 @@
               :polymorphisms    (polymorphisms gene)
               }}
             {:pretty true})}))
+
+;;
+;; external_links widget
+;;
+
+(defn- xrefs [gene]
+  {:data
+   (reduce
+    (fn [refs db]
+      (update-in refs
+                 [(:database/id (:gene.database/database db))
+                  (:database-field/id (:gene.database/field db))
+                  :ids]
+                 conjv
+                 (let [acc (:gene.database/accession db)]
+                   (if-let [[_ rest] (re-matches #"(?:OMIM:|GI:)(.*)" acc)]
+                     rest
+                     acc))))
+    {}
+    (:gene/database gene))
+   :description
+   "external databases and IDs containing additional information on the object"})
+
+(defn gene-external-links [db id]
+  (if-let [gene (entity db [:gene/id id])]
+    {:status 200
+     :content-type "text/plain"
+     :body (generate-string
+            {:class "gene"
+             :name  id
+             :fields
+             {:name {:data        (pack-obj "gene" gene)
+                     :description (format "The name and WormBase internal ID of %s" id)}
+              :xrefs (xrefs gene)
+              }}
+            {:pretty true})}))

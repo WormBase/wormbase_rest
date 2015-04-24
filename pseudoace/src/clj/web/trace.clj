@@ -13,7 +13,7 @@
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
-            [compojure.core :refer (defroutes GET POST context)]
+            [compojure.core :refer (defroutes GET POST context wrap-routes)]
             [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.util.response :refer [file-response]]
@@ -32,7 +32,8 @@
                                    gene-homology
                                    gene-sequences
                                    gene-features
-                                   gene-genetics)]
+                                   gene-genetics
+                                   gene-external-links)]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
             [web.rest.references :refer (get-references)]))
 
@@ -395,6 +396,7 @@
     (Integer/parseInt s)))
         
 
+
 (defroutes routes
   (GET "/raw/:class/:id" {params :params}
        (get-raw-obj (:class params) (:id params)))
@@ -464,8 +466,9 @@
        (gene-features (db con) (:id params)))
   (GET "/rest/widget/gene/:id/genetics" {params :params}
        (gene-genetics (db con) (:id params)))
-
-  (POST "/api/query" {params :params} (post-query-restful con params))
+  (GET "/rest/widget/gene/:id/external_links" {params :params}
+       (gene-external-links (db con) (:id params)))
+  
                                 
   
   (GET "/prefix-search" {params :params}
@@ -477,11 +480,14 @@
                                              (friend/identity req))))
   (POST "/transact" req
         (friend/authorize #{::user}
-          (wrap-anti-forgery (transact req))))
+          (transact req)))
   (context "/colonnade" req (friend/authorize #{::user}
-                              (wrap-anti-forgery (colonnade (db con)))))
+                              (colonnade (db con))))
                                        
   (route/files "/" {:root "resources/public"}))
+
+(defroutes api-routes
+  (POST "/api/query" {params :params} (post-query-restful con params)))
 
 (defn users [username]
   (if-let [u (entity (db con) [:user/name username])]
@@ -493,8 +499,9 @@
 
 
 (def secure-app
-  (-> routes
-      #_wrap-anti-forgery
+  (-> (compojure.core/routes
+       (wrap-routes routes wrap-anti-forgery)
+       api-routes)
       (friend/authenticate {:allow-anon? true
                             :unauthenticated-handler #(workflows/http-basic-deny "Demo" %)
                             :workflows [(workflows/http-basic
