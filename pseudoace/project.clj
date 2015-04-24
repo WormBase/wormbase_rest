@@ -11,7 +11,7 @@
                  [ring "1.3.2"]
                  [fogus/ring-edn "0.2.0"]
                  [compojure "1.3.3"]
-                 [clj-http "0.9.2"]
+                 [clj-http "1.1.1"]
                  [com.ninjudd/ring-async "0.3.1"]
                  [com.ninjudd/eventual "0.4.1"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
@@ -23,13 +23,14 @@
                  [ring/ring-anti-forgery "1.0.0"]
                  [prismatic/om-tools "0.3.10"]
                  [com.andrewmcveigh/cljs-time "0.3.0"]
-                 [lein-environ "1.0.0"]]
+                 [environ "1.0.0"]]
   :description "ACeDB emulator and migration tools"
   :source-paths ["src/clj" "src/cljs"]
   :java-source-paths ["src/java"]
   :resource-paths ["resources"]
 
-  :plugins [[lein-cljsbuild "1.0.4"]]
+  :plugins [[lein-cljsbuild "1.0.4"]
+            [lein-environ "1.0.0"]]
 
   :cljsbuild {
     :builds [{:id "dev"

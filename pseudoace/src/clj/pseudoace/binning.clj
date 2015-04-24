@@ -1,6 +1,6 @@
 (ns pseudoace.binning
   (:use datomic-schema.schema)
-  (:require [datomic.api :as d :refer (tempid)]))
+  (:require [datomic.api :as d]))
 
 ;; 
 ;; highly experimental!
@@ -12,7 +12,7 @@
 
 (def locatable-bin-schema
   (concat
-   (generate-schema tempid [
+   (generate-schema [
      (schema locatable
        (fields
         [bin :long :indexed "UCSC/BAM-style bin number"]

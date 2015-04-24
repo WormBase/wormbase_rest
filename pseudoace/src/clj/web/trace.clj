@@ -8,6 +8,7 @@
         ring.middleware.anti-forgery
         web.widgets
         web.colonnade
+        web.query
         clojure.walk)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
@@ -19,6 +20,7 @@
             [cemerick.friend :as friend]
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
+            [environ.core :refer (env)]
             [web.rest.gene :refer (gene-overview
                                    gene-history
                                    gene-phenotype-rest
@@ -462,6 +464,9 @@
        (gene-features (db con) (:id params)))
   (GET "/rest/widget/gene/:id/genetics" {params :params}
        (gene-genetics (db con) (:id params)))
+
+  (POST "/api/query" {params :params} (post-query-restful con params))
+                                
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))
@@ -472,9 +477,9 @@
                                              (friend/identity req))))
   (POST "/transact" req
         (friend/authorize #{::user}
-          (transact req)))
+          (wrap-anti-forgery (transact req))))
   (context "/colonnade" req (friend/authorize #{::user}
-                              (colonnade (db con))))                               
+                              (wrap-anti-forgery (colonnade (db con)))))
                                        
   (route/files "/" {:root "resources/public"}))
 
@@ -489,7 +494,7 @@
 
 (def secure-app
   (-> routes
-      wrap-anti-forgery
+      #_wrap-anti-forgery
       (friend/authenticate {:allow-anon? true
                             :unauthenticated-handler #(workflows/http-basic-deny "Demo" %)
                             :workflows [(workflows/http-basic

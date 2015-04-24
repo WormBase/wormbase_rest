@@ -1,10 +1,9 @@
 (ns pseudoace.locatable-schema
-  (:use datomic-schema.schema)
-  (:require [datomic.api :refer (tempid)]))
+  (:use datomic-schema.schema))
 
 (def locatable-schema
  (concat
-  (generate-schema tempid [
+  (generate-schema [
    (schema locatable
      (fields
 
