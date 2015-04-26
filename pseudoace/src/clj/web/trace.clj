@@ -487,7 +487,7 @@
   (route/files "/" {:root "resources/public"}))
 
 (defroutes api-routes
-  (POST "/api/query" {params :params} (post-query-restful con params)))
+  (POST "/api/query" {params :params} (if (env :trace-rest-queries) (post-query-restful con params))))
 
 (defn users [username]
   (if-let [u (entity (db con) [:user/name username])]

@@ -64,7 +64,7 @@
     (if (seq targets)
       (recur
        (:db-after
-        @(d/transact
+        @(d/transact-async
           con
           (->> (d/q '[:find ?l ?parent ?min ?max
                       :in $ [?l ...]

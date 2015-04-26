@@ -128,7 +128,7 @@
            (into (or old [])
             (let [base (those
                          [:db/add tid :locatable/parent parent]
-                         (and method [:db/add tid :locatable/method method])
+                         (and method [:db/add tid :locatable/method [:method/id method]])
                          (and min [:db/add tid :locatable/min min])
                          (and max [:db/add tid :locatable/max max])
                          ;; ignore strand while we concentrate on protein stuff...
