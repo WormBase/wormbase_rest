@@ -266,7 +266,7 @@
 
    :Expr_pattern_evidence
    (if-let [epe (:evidence/expr-pattern-evidence holder)]
-     (map (partial pack-obj "expr-pattern" epe)))
+     (map (partial pack-obj "expr-pattern") epe))
 
    :Microarray_results_evidence
    (if-let [e (:evidence/microarray-results-evidence holder)]
