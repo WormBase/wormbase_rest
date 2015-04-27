@@ -203,12 +203,15 @@
       :taxonomy (obj-tax class obj)})))
 
 (defn get-evidence [holder]
+  ;; Some of these need further checking to ensure that handling of multiple
+  ;; values matches Perl.
+  
   (vmap-if
    :Inferred_automatically
    (seq
     (:evidence/inferred-automatically holder))
 
-   :Curator_confirmed
+   :Curator
    (seq
     (for [person (:evidence/curator-confirmed holder)]
       (pack-obj "person" person)))
@@ -228,7 +231,78 @@
    
    :Remark
    (seq
-    (:evidence/remark holder))))
+    (:evidence/remark holder))
+
+   :Published_as
+   (seq
+    (for [pa (:evidence/published-as holder)]
+      {:evidence pa
+       :label    pa}))
+
+   :Author_evidence
+   (seq
+    (for [a (:evidence/author-evidence holder)]
+      {:evidence (pack-obj "author" (:evidence.author-evidence/author holder))}))    ;; Notes seem to be ignored here.
+
+   :Accession_evidence
+   (if-let [accs (:evidence/accession-evidence holder)]
+     (for [{acc :evidence.accession-evidence/accession
+            db  :evidence.accession-evidence/database} accs]
+       {:id acc
+        :label (format "%s:%s" (:database/id db) acc)
+        :class (:database/id acc)}))
+       
+
+   :Protein_id_evidence
+   (seq
+    (for [p (:evidence/protein-id-evidence holder)]
+      {:id    p
+       :label p
+       :class "Entrezp"}))
+
+   :GO_term_evidence
+   (seq
+    (map (partial pack-obj "go-term") (:evidence/go-term-evidence holder)))
+
+   :Expr_pattern_evidence
+   (if-let [epe (:evidence/expr-pattern-evidence holder)]
+     (map (partial pack-obj "expr-pattern" epe)))
+
+   :Microarray_results_evidence
+   (if-let [e (:evidence/microarray-results-evidence holder)]
+     (map (partial pack-obj "microarray-results") e))
+
+   :RNAi_evidence   ;; could be multiples?
+   (if-let [rnai (first (:evidence/rnai-evidence holder))]
+     {:id    (:rnai/id rnai)
+      :label (if-let [hn (:rnai/history-name rnai)]
+               (format "%s (%s)" (:rnai/id rnai) hn)
+               (:rnai/id rnai))})
+
+   :Feature_evidence
+   (if-let [features (:evidence/feature-evidence holder)]
+     (map (partial pack-obj "feature") features))
+
+   :Laboratory_evidence
+   (if-let [labs (:evidence/laboratory-evidence holder)]
+     (map (partial pack-obj "laboratory") labs))
+
+   :From_analysis
+   (if-let [anas (:evidence/from-analysis holder)]
+     (map (partial pack-obj "analysis") anas))
+
+   :Variation_evidence
+   (if-let [vars (:evidence/variation-evidence holder)]
+     (map (partial pack-obj "variation") vars))
+
+   :Mass_spec_evidence
+   (if-let [msps (:evidence/mass-spec-evidence holder)]
+     (map (partial pack-obj "mass-spec-peptide") msps))
+
+   :Sequence_evidence
+   (if-let [seqs (:evidence/sequence-evidence holder)]
+     (map (partial pack-obj "sequence" seqs)))))
+  
 
 (defn humanize-ident [ident]
   (if ident
