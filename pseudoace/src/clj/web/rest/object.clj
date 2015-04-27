@@ -11,10 +11,11 @@
 (defn obj-tax [class obj]
   (let [species-ident (keyword class "species")]
     (if-let [species (species-ident obj)]
-      (:species/id species)
+      (if-let [[_ g species] (re-matches #"(.).*[ _](.+)" (:species/id species))]
+        (.toLowerCase (str g "_" species))
+        "unknown")
       "all")))
           
-
 (defmulti obj-label (fn [class obj] class))
 
 (defmethod obj-label "gene" [_ obj]
@@ -199,7 +200,7 @@
       :label    (or label
                   (obj-label class obj))
       :class    (str/replace class "-" "_")
-      :taxonomy "c_elegans"})))
+      :taxonomy (obj-tax class obj)})))
 
 (defn get-evidence [holder]
   (vmap-if
