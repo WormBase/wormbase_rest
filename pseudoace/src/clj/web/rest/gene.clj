@@ -1366,7 +1366,7 @@
     (mapcat
      (fn [h]
        (let [result {:version (:gene.version-change/version h)
-                     :data    (:gene.version-change/date h)
+                     :date    (:gene.version-change/date h)
                      :curator (pack-obj "person" (:gene.version-change/person h))
                      :remark  nil
                      :gene    nil

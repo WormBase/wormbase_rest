@@ -13,7 +13,7 @@
     string-or-data))
 
 (defn post-query-restful [con {:keys [query args limit offset] :as params}]
-  (let [query  (or (params :query) (params "query"))
+  (let [query  (or (params :q) (params "q"))
         args   (or (params :args) (params "args"))
         limit  (parse-int (or (params :limit) (params "limit")))
         offset (parse-int (or (params :offset) (params "offset")))
