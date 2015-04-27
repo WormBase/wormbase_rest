@@ -21,6 +21,8 @@
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
             [environ.core :refer (env)]
+            wb.object     ;; Not actually used but we want it available
+                          ;; via the REST query mechanism.
             [web.rest.gene :refer (gene-overview
                                    gene-history
                                    gene-phenotype-rest
@@ -487,7 +489,7 @@
   (route/files "/" {:root "resources/public"}))
 
 (defroutes api-routes
-  (POST "/api/query" {params :params} (if (env :trace-rest-queries) (post-query-restful con params))))
+  (POST "/api/query" {params :params} (if (env :trace-accept-rest-query) (post-query-restful con params))))
 
 (defn users [username]
   (if-let [u (entity (db con) [:user/name username])]
