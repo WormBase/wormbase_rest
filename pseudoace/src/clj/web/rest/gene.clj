@@ -1306,8 +1306,70 @@
       (into {}))
      :description
      "protein domains of the gene"}))
-           
 
+(defn- best-blastp-matches [gene]
+  (let [db    (d/entity-db gene)]
+    (if-let [[prot length]
+             (->> (q '[:find ?prot ?pep-len
+                       :in $ ?gene
+                       :where [?gene :gene/corresponding-cds ?gcds]
+                              [?gcds :gene.corresponding-cds/cds ?cds]
+                              [?cds :cds/corresponding-protein ?cprot]
+                              [?cprot :cds.corresponding-protein/protein ?prot]
+                              [?prot :protein/peptide ?pep]
+                              [?pep :protein.peptide/length ?pep-len]]
+                     db (:db/id gene))
+                  (sort-by second)
+                  (last))]   ; longest protein
+      {:data
+       {:hits
+       (->>
+        (q '[:find ?prot ?score ?min ?max
+             :in $ ?ref
+             :where [?homol :locatable/parent ?ref]
+                    [?homol :homology/protein ?prot]
+                    [?homol :locatable/score ?score]
+                    [?homol :locatable/min ?min]
+                    [?homol :locatable/max ?max]]
+           db prot)
+        (group-by (partial take 2))   ; ?prot and ?score as groupers
+        (map
+         (fn [[[prot score] lines]]
+           (let [prot (entity db prot)]
+             {:protein prot
+              :species (:protein/species prot)
+              :score score
+              :coverage (reduce + (map (fn [[_ _ min max]] (- max min)) lines))})))
+        (remove #(.startsWith (:protein/id (:protein %)) "MSP"))
+        (group-by :species)
+        (map
+         (fn [[_ hits]]
+           (let [{:keys [protein species score coverage]}
+                 (->> (sort-by :score hits)
+                      (last))]
+             {:evalue (format "%7.3g" (Math/pow 10 (- score)))
+              :percent (format "%2.1f%%" (float (* 100 (/ coverage length))))
+              :taxonomy (if-let [[_ g spec] (re-matches #"(.).* +(.+)" (or (:species/id species) ""))]
+                          {:genus   g
+                           :species spec})
+              :hit (pack-obj protein)
+              :description
+              (or
+               (:protein/description protein)
+               (:protein/gene-name protein)
+               (->> (:cds.corresponding-protein/_protein protein)
+                    (first)
+                    (:cds/_corresponding-protein)
+                    (:cds/brief-identification)
+                    (:cds.brief-identification/text))
+               "unknown")}))))}
+       :description
+       "best BLASTP hits from selected species"}
+      {:data         nil
+       :description  "no proteins found, no best blastp hits to display"})))
+                          
+           
+                      
 (def nematode-species
   ["Ancylostoma ceylanicum"
    "Ascaris suum"
@@ -1350,7 +1412,7 @@
               :human_orthologs    (homology-orthologs gene ["Homo sapiens"])
               :other_orthologs    (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
               :paralogs           (homology-paralogs gene)
-              ; :best_blastp_matches (homology-blastp gene)
+              :best_blastp_matches (best-blastp-matches gene)
               :protein_domains    (protein-domains gene)
               }}
             {:pretty true})}))
