@@ -1835,6 +1835,3 @@
 (def-rest-widget external-links [gene]
   {:name  (name-field gene)
    :xrefs (xrefs gene)})
-
-(def-rest-widget gene-foo [gene]
-  {:name (name-field gene)})
