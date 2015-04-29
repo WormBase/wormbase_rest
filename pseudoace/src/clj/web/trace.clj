@@ -24,19 +24,7 @@
             [environ.core :refer (env)]
             wb.object     ;; Not actually used but we want it available
                           ;; via the REST query mechanism.
-            [web.rest.gene :refer (gene-overview
-                                   gene-history
-                                   gene-phenotype-rest
-                                   gene-mapping-data-rest
-                                   gene-human-diseases-rest
-                                   gene-reagents
-                                   gene-ontology
-                                   gene-expression
-                                   gene-homology
-                                   gene-sequences
-                                   gene-features
-                                   gene-genetics
-                                   gene-external-links)]
+            [web.rest.gene :as gene]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
             [web.rest.references :refer (get-references)]))
 
@@ -440,37 +428,37 @@
        (gene-genetics-widget (db con) (:id params)))
 
   (GET "/rest/widget/gene/:id/overview" {params :params}
-       (gene-overview (db con) (:id params)))
+       (gene/overview (db con) (:id params)))
   (GET "/rest/widget/gene/:id/history" {params :params}
-       (gene-history (db con) (:id params)))
+       (gene/history (db con) (:id params)))
   (GET "/rest/widget/gene/:id/phenotype" {params :params}
-       (gene-phenotype-rest (db con) (:id params)))
+       (gene/phenotypes (db con) (:id params)))
   (GET "/rest/widget/gene/:id/interactions" {params :params}
        (get-interactions "gene" (db con) (:id params)))
   (GET "/rest/widget/gene/:id/interaction_details" {params :params}
        (get-interaction-details "gene" (db con) (:id params)))
   (GET "/rest/widget/gene/:id/mapping_data" {params :params}
-       (gene-mapping-data-rest (db con) (:id params)))
+       (gene/mapping-data (db con) (:id params)))
   (GET "/rest/widget/gene/:id/human_diseases" {params :params}
-       (gene-human-diseases-rest (db con) (:id params)))
+       (gene/human-diseases (db con) (:id params)))
   (GET "/rest/widget/gene/:id/references" {params :params}
        (get-references "gene" (db con) (:id params)))
   (GET "/rest/widget/gene/:id/reagents" {params :params}
-       (gene-reagents (db con) (:id params)))
+       (gene/reagents (db con) (:id params)))
   (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
-       (gene-ontology (db con) (:id params)))
+       (gene/gene-ontology (db con) (:id params)))
   (GET "/rest/widget/gene/:id/expression" {params :params}
-       (gene-expression (db con) (:id params)))
+       (gene/expression (db con) (:id params)))
   (GET "/rest/widget/gene/:id/homology" {params :params}
-       (gene-homology (db con) (:id params)))
+       (gene/homology (db con) (:id params)))
   (GET "/rest/widget/gene/:id/sequences" {params :params}
-       (gene-sequences (db con) (:id params)))
+       (gene/sequences (db con) (:id params)))
   (GET "/rest/widget/gene/:id/feature" {params :params}
-       (gene-features (db con) (:id params)))
+       (gene/features (db con) (:id params)))
   (GET "/rest/widget/gene/:id/genetics" {params :params}
-       (gene-genetics (db con) (:id params)))
+       (gene/genetics (db con) (:id params)))
   (GET "/rest/widget/gene/:id/external_links" {params :params}
-       (gene-external-links (db con) (:id params)))
+       (gene/external-links (db con) (:id params)))
   
                                 
   
