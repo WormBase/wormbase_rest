@@ -3,20 +3,30 @@
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]))
 
+;;
+;; General purpose functions for working with Wormbase-ish entity-maps.
+;;
+
 (declare pack-obj)
 
 (defn obj-get [class db id]
+  "Retrieve an entity-map for object `id` of class `class` as of database-value `db`."
   (entity db [(keyword class "id") id]))
 
 (defn obj-tax [class obj]
+  "If entity-map `obj` has a species attribute, return the short name of the 
+   species, otherwise \"all\"."
   (let [species-ident (keyword class "species")]
     (if-let [species (species-ident obj)]
       (if-let [[_ g species] (re-matches #"(.).*[ _](.+)" (:species/id species))]
         (.toLowerCase (str g "_" species))
         "unknown")
       "all")))
-          
-(defmulti obj-label (fn [class obj] class))
+
+
+(defmulti obj-label
+  "Build a human-readable label for `obj`"
+  (fn [class obj] class))
 
 (defmethod obj-label "gene" [_ obj]
   (or (:gene/public-name obj)
@@ -31,6 +41,7 @@
   (or (:variation/public-name obj)
       (:variation/id obj)))
 
+;; Helpers for paper labels.
 (defn- author-lastname [author-holder]
   (or
    (->> (:affiliation/person author-holder)
@@ -154,6 +165,8 @@
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
+;; This should be obsolete now, use pack-obj instead.
+
 (defmulti obj-name (fn [class db id] class))
 
 (defmethod obj-name "gene" [class db id]
@@ -164,7 +177,9 @@
      :class "gene"
      :taxonomy (obj-tax class obj)}))
 
-(defn obj-class [obj]
+(defn obj-class
+  "Attempt to determine the class of a WormBase-ish entity-map."
+  [obj]
   (cond
    (:gene/id obj)
    "gene"
@@ -192,6 +207,7 @@
      (namespace k))))
 
 (defn pack-obj
+  "Retrieve a 'packed' (web-API) representation of entity-map `obj`."
   ([obj]
      (pack-obj (obj-class obj) obj))
   ([class obj & {:keys [label]}]
@@ -304,7 +320,9 @@
      (map (partial pack-obj "sequence" seqs)))))
   
 
-(defn humanize-ident [ident]
+(defn humanize-ident
+  "Reconstruct a more human-readable representation of a Datomic enum key."
+  [ident]
   (if ident
     (-> (name ident)
         (str/split #":")

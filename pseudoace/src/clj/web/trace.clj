@@ -9,7 +9,8 @@
         web.widgets
         web.colonnade
         web.query
-        clojure.walk)
+        clojure.walk
+        pseudoace.utils)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
@@ -516,5 +517,11 @@
       wrap-gzip))
       
 
-(defonce server (run-jetty #'secure-app {:port 8120
+(def trace-port (let [p (env :trace-port)]
+                  (cond
+                   (integer? p)  p
+                   (string? p)   (parse-int p)
+                   :default      8120)))
+
+(defonce server (run-jetty #'secure-app {:port trace-port
                                          :join? false}))
