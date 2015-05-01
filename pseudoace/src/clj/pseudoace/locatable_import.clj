@@ -10,8 +10,8 @@
 
 ;;
 ;; TODO:
-;;   - Homol_data
 ;;   - Reinstate strand and missing-parent checks once acedb is fixed.
+;;   - More alignment reconstruction?
 ;;
 
 (defn- log-features [fd feature-lines]
@@ -114,14 +114,15 @@
 ;; this probably needs revisiting if we use this code for things other than ?Protein homols
 ;;
 
-(defn- log-homols [homol-lines parent]
+(defn- log-homols [homol-lines parent offset protein?]
+ (let [offset (or offset 0)]
   (reduce
    (fn [log [[type target method score-s parent-start-s parent-end-s target-start-s target-end-s :as line] lines]]
      (let [tid   [:importer/temp (d/squuid)]
            start (parse-int parent-start-s)
            end   (parse-int parent-end-s)
-           min   (if start (dec start))
-           max   end
+           min   (if start (+ offset -1 start))
+           max   (if end (+ offset end))
            bin   (if (and min max) (reg2bin min max))]
        (update log (first (drop 3 (:timestamps (meta line))))
          (fn [old]
@@ -142,8 +143,10 @@
                          (and score-s [:db/add tid :locatable/score (parse-double score-s)]))]
                (case type
                  "DNA_homol"
-                 (except "Don't support protein->DNA homols")
-                 
+                 (if protein?
+                   (except "Don't support protein->DNA homols")
+                   (conj base [:db/add tid :homology/dna [:sequence/id target]]))
+
                  "Pep_homol"
                  (conj base [:db/add tid :homology/protein [:protein/id target]])
                  
@@ -153,13 +156,28 @@
                  "Motif_homol"
                  (conj base [:db/add tid :homology/motif [:motif/id target]])
 
+                 "RNAi_homol"
+                 (conj base [:db/add tid :homology/rnai [:rnai/id target]])
+
+                 "Oligo_set_homol"
+                 (conj base [:db/add tid :homology/oligo-set [:oligo-set/id target]])
+
+                 "Expr_homol"
+                 (conj base [:db/add tid :homology/expr [:expr-pattern/id target]])
+
+                 "MSPeptide_homol"
+                 (conj base [:db/add tid :homology/ms-peptide [:mass-spec-peptide/id target]])
+
+                 "SAGE_homol"
+                 (conj base [:db/add tid :homology/sage [:sage-tag/id target]])
+
                  "Homol_homol"   ;; silently ignore
                  nil
 
                  ;; default
                  (except "Don't understand homology type " type))))))))
    {}
-   (group-by (partial take-ts 8) homol-lines)))
+   (group-by (partial take-ts 8) homol-lines))))
               
 
 (defmulti log-locatables (fn [_ obj] (:class obj)))
@@ -168,7 +186,7 @@
   (if-let [fd (entity db [:feature-data/id (:id obj)])]
     (if (= (:locatable/strand fd)
            :locatable.strand/negative)
-      (println "Skipping" (:id fd) "because negative strand")
+      (println "Skipping" (:id obj) "because negative strand")
       (merge-logs
        (log-features fd (select-ts obj ["Feature"]))
        (log-splice-confirmations fd (select-ts obj ["Splices" "Confirmed_intron"]))
@@ -178,8 +196,18 @@
 
 (defmethod log-locatables "Protein" [db obj]
   (if-let [protein (entity db [:protein/id (:id obj)])]
-    (log-homols (select-ts obj ["Homol"]) (:db/id protein))))
-                
+    (log-homols (select-ts obj ["Homol"]) (:db/id protein) true)))
+
+(defmethod log-locatables "Homol_data" [db obj]
+  (if-let [homol (entity db [:homol-data/id (:id obj)])]
+    (if (= (:locatable/strand homol)
+           :locatable.strand/negative)
+      (println "Skipping" (:id obj) "because negative strand")      
+      (log-homols
+       (select-ts obj ["Homol"])
+       (:db/id (:locatable/parent homol))
+       (:locatable/min homol)
+       false))))
 
 (defmethod log-locatables :default [_ _]
   nil)
