@@ -26,7 +26,8 @@
                           ;; via the REST query mechanism.
             [web.rest.gene :as gene]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
-            [web.rest.references :refer (get-references)]))
+            [web.rest.references :refer (get-references)]
+            [web.locatable-api :refer (json-features)]))
 
 (def uri "datomic:free://localhost:4334/wb248-imp1")
 (def con (d/connect uri))
@@ -460,7 +461,8 @@
   (GET "/rest/widget/gene/:id/external_links" {params :params}
        (gene/external-links (db con) (:id params)))
   
-                                
+  (GET "/features/:id" {params :params}
+       (json-features (db con) params))
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))
