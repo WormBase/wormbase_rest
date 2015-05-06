@@ -461,7 +461,7 @@
   (GET "/rest/widget/gene/:id/external_links" {params :params}
        (gene/external-links (db con) (:id params)))
   
-  (GET "/features/:id" {params :params}
+  (GET "/features/:type/features/:id" {params :params}
        (json-features (db con) params))
   
   (GET "/prefix-search" {params :params}

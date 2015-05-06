@@ -5,12 +5,22 @@
             [datomic.api :as d :refer (q entity)]
             [cheshire.core :as json]))
 
-(defn root-segment [parent start end]
+;;
+;; Don't pay too much attention to the details here.  Binning scheme and method
+;; handling are likely to change in wb248-imp2
+;;
+
+(defn root-segment
+  ([entity]
+     (root-segment (:locatable/parent entity)
+                   (:locatable/min entity)
+                   (:locatable/max entity)))
+  ([parent start end]
   (if-let [ss (first (:sequence.subsequence/_sequence parent))]
     (recur (:sequence/_subsequence ss)
            (+ start (:sequence.subsequence/start ss) -1)
            (+ end (:sequence.subsequence/start ss) -1))
-    [parent start end]))
+    [parent start end])))
 
 (def ^:private child-rule  '[[(child ?parent ?min ?max ?c ?cmin ?cmax) [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
                                                                        [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
@@ -22,12 +32,14 @@
                                                                        [(>= ?cmax ?min)]]])
 
 
+(defmulti features (fn [_ type _ _ _] type))
 
-(defn features [db pid min max]
+(defmethod features "transcript"
+  [db type pid min max]
   (q '[:find ?f ?fmin ?fmax
        :in $ % ?seq ?min ?max 
        :where (or-join [?seq ?min ?max ?f ?fmin ?fmax]
-                          (and         
+                          (and
                            [?seq :sequence/subsequence ?ss]
                            [?ss :sequence.subsequence/start ?ss-min]
                            [?ss :sequence.subsequence/end ?ss-max]
@@ -39,10 +51,60 @@
                            (child ?ss-seq ?rel-min ?rel-max ?f ?rel-fmin ?rel-fmax)
                            [(+ ?rel-fmin ?ss-min -1) ?fmin]
                            [(+ ?rel-fmax ?ss-min -1) ?fmax])
-                          (child ?seq ?min ?max ?f ?fmin ?fmax))]
+                          (child ?seq ?min ?max ?f ?fmin ?fmax))
+              [?f :transcript/id _]]
      db
      child-rule
      pid min max))
+
+(defmethod features "variation"
+  [db type pid min max]
+  (q '[:find ?f ?fmin ?fmax
+       :in $ % ?seq ?min ?max 
+       :where (or-join [?seq ?min ?max ?f ?fmin ?fmax]
+                          (and
+                           [?seq :sequence/subsequence ?ss]
+                           [?ss :sequence.subsequence/start ?ss-min]
+                           [?ss :sequence.subsequence/end ?ss-max]
+                           [(<= ?ss-min ?max)]
+                           [(>= ?ss-max ?min)]
+                           [?ss :sequence.subsequence/sequence ?ss-seq]
+                           [(- ?min ?ss-min -1) ?rel-min]
+                           [(- ?max ?ss-min -1) ?rel-max]
+                           (child ?ss-seq ?rel-min ?rel-max ?f ?rel-fmin ?rel-fmax)
+                           [(+ ?rel-fmin ?ss-min -1) ?fmin]
+                           [(+ ?rel-fmax ?ss-min -1) ?fmax])
+                          (child ?seq ?min ?max ?f ?fmin ?fmax))
+              [?f :variation/id _]]
+     db
+     child-rule
+     pid min max))
+
+(defmethod features :default
+  [db type pid min max]
+  (q '[:find ?f ?fmin ?fmax
+       :in $ % ?seq ?min ?max ?meth-name
+       :where [?method :method/id ?meth-name]
+              (or-join [?seq ?min ?max ?f ?fmin ?fmax]
+                          (and
+                           [?seq :sequence/subsequence ?ss]
+                           [?ss :sequence.subsequence/start ?ss-min]
+                           [?ss :sequence.subsequence/end ?ss-max]
+                           [(<= ?ss-min ?max)]
+                           [(>= ?ss-max ?min)]
+                           [?ss :sequence.subsequence/sequence ?ss-seq]
+                           [(- ?min ?ss-min -1) ?rel-min]
+                           [(- ?max ?ss-min -1) ?rel-max]
+                           (child ?ss-seq ?rel-min ?rel-max ?f ?rel-fmin ?rel-fmax)
+                           [(+ ?rel-fmin ?ss-min -1) ?fmin]
+                           [(+ ?rel-fmax ?ss-min -1) ?fmax])
+                          (child ?seq ?min ?max ?f ?fmin ?fmax))
+              (or
+               [?f :locatable/method ?method]
+               [?f :feature/method ?method])]
+     db
+     child-rule
+     pid min max type))
   
 (defn seq-length [seq]
   (or
@@ -60,7 +122,7 @@
   (if-let [method-key (first (filter #(= (name %) "method") (keys f)))]
     (method-key f)))
 
-(defn- transcript-structure [t tmin tmax]
+(defn- noncoding-transcript-structure [t tmin tmax]
   (->> (:transcript/source-exons t)
        (map (fn [{min :transcript.source-exons/min
                   max :transcript.source-exons/max}]
@@ -71,12 +133,24 @@
                          :locatable.strand/positive 1
                          :locatable.strand/negative -1)}))
        (sort-by :start)))
+
+(defn- coding-transcript-structure [t tmin tmax c cmin cmax]
+  nil)
+
+(defn- transcript-structure [t tmin tmax]
+  (if-let [cds (:transcript.corresponding-cds/cds (:transcript/corresponding-cds t))]
+    (let [[_ cds-min cds-max] (root-segment cds)]
+      (coding-transcript-structure t tmin tmax cds cds-min cds-max))
+    (noncoding-transcript-structure t tmin tmax)))
+
+
+
   
 
-(defn get-features [db parent min max]
+(defn get-features [db type parent min max]
   {:features 
    (->> 
-    (features db (:db/id parent) min max)
+    (features db type (:db/id parent) min max)
     (map
      (fn [[fid min max]]
        (let [feature (entity db fid)]
@@ -94,7 +168,7 @@
           )))))})
         
 
-(defn json-features [db {:keys [id] :strs [start end type]}]
+(defn json-features [db {:keys [type id] :strs [start end]}]
   (if-let [parent (entity db [:sequence/id id])]
     (let [start            (parse-int start)
           end              (parse-int end)
@@ -105,7 +179,7 @@
        :content-type "text/plain"
        :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
        :body (json/generate-string
-              (get-features db parent min max)
+              (get-features db type parent min max)
               {:pretty true})})))
         
     
