@@ -122,6 +122,11 @@
   (if-let [method-key (first (filter #(= (name %) "method") (keys f)))]
     (method-key f)))
 
+(defn- feature-strand [f]
+  (case (:locatable/strand f)
+    :locatable.strand/positive 1
+    :locatable.strand/negative -1))
+
 (defn- noncoding-transcript-structure [t tmin tmax]
   (->> (:transcript/source-exons t)
        (map (fn [{min :transcript.source-exons/min
@@ -129,23 +134,47 @@
               {:type   "exon"
                :start  (+ tmin min -1)
                :end    (+ tmin max)
-               :strand (case (:locatable/strand t)
-                         :locatable.strand/positive 1
-                         :locatable.strand/negative -1)}))
+               :strand (feature-strand t)}))
        (sort-by :start)))
 
 (defn- coding-transcript-structure [t tmin tmax c cmin cmax]
-  nil)
+  (let [strand (feature-strand t)]
+    (->>
+     (:transcript/source-exons t)
+     (mapcat
+      (fn [{emin :transcript.source-exons/min
+            emax :transcript.source-exons/max}]
+        (let [emin (+ tmin emin -1)
+              emax (+ tmin emax)
+              coding-min (max emin cmin)
+              coding-max (min emax cmax)]
+          (those
+           (if (< coding-min coding-max)
+             {:type   "CDS"
+              :start  coding-min
+              :end    coding-max
+              :strand strand})
+           (if (< emin coding-min)
+             {:type   (case strand
+                        1  "five_prime_UTR"
+                        -1 "three_prime_UTR")
+              :start  emin
+              :end    coding-min
+              :strand strand})
+           (if (> emax coding-max)
+             {:type    (case strand
+                         1   "three_prime_UTR"
+                         -1  "five_prime_UTR")
+              :start   (max emin coding-max)
+              :end     emax
+              :strand  strand})))))
+     (sort-by :start))))
 
 (defn- transcript-structure [t tmin tmax]
   (if-let [cds (:transcript.corresponding-cds/cds (:transcript/corresponding-cds t))]
     (let [[_ cds-min cds-max] (root-segment cds)]
       (coding-transcript-structure t tmin tmax cds cds-min cds-max))
     (noncoding-transcript-structure t tmin tmax)))
-
-
-
-  
 
 (defn get-features [db type parent min max]
   {:features 
