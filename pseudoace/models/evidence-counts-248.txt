@@ -349,6 +349,8 @@
 :cds/matching-cdna (569649)
 :evidence/inferred-automatically 569533
 
+### Evidence for transcript
+
 :transcript/rnaseq (15013411)
 :evidence/from-analysis 15013411
 
@@ -395,6 +397,68 @@
 :evidence/remark 15
 
 :transcript/ignore (2)
+
+
+### Evidence for pseudogene
+
+:pseudogene/brief-identification (2413)
+:evidence/curator-confirmed 7
+
+:pseudogene/matching-cdna (164)
+
+:pseudogene/provisional-description (0)
+
+:pseudogene/rnaseq (325560)
+:evidence/from-analysis 325560
+
+:pseudogene/remark (6358)
+:evidence/accession-evidence 141
+:evidence/author-evidence 1
+:evidence/curator-confirmed 2052
+:evidence/feature-evidence 20
+:evidence/from-analysis 222
+:evidence/mass-spec-evidence 1
+:evidence/paper-evidence 17
+:evidence/person-evidence 187
+:evidence/protein-id-evidence 373
+:evidence/published-as 3
+:evidence/remark 2
+:evidence/sequence-evidence 3
+
+:pseudogene/detailed-description (0)
+
+:pseudogene/transcribed (324)
+:evidence/accession-evidence 2
+:evidence/curator-confirmed 5
+:evidence/from-analysis 1
+
+:pseudogene/fragment (360)
+:evidence/curator-confirmed 1
+:evidence/protein-id-evidence 5
+
+:pseudogene/concise-description (0)
+
+:pseudogene/isoform (60)
+:evidence/accession-evidence 15
+:evidence/curator-confirmed 24
+:evidence/feature-evidence 2
+:evidence/from-analysis 9
+:evidence/protein-id-evidence 1
+
+:pseudogene/type (4163)
+:evidence/accession-evidence 1
+:evidence/curator-confirmed 39
+:evidence/paper-evidence 4
+:evidence/person-evidence 3
+:evidence/protein-id-evidence 7
+
+:pseudogene/db-remark (4027)
+
+:pseudogene/evidence (1412)
+:evidence/accession-evidence 1
+:evidence/curator-confirmed 64
+:evidence/from-analysis 1347
+
 
 
 ### Evidence for transposon
@@ -715,6 +779,53 @@
 
 :microarray-experiment/remark (5546)
 
+### Evidence for microarray-results
+
+:microarray-results/transcript (661605)
+
+:microarray-results/gene (493862)
+
+:microarray-results/pseudogene (6759)
+
+:microarray-results/cds (571081)
+
+:microarray-results/remark (0)
+
+### Evidence for oligo-set
+
+:oligo-set/overlaps-cds (543368)
+
+:oligo-set/overlaps-pseudogene (5824)
+
+:oligo-set/remark (5092)
+
+:oligo-set/overlaps-transcript (628025)
+
+### Evidence for expression-cluster
+
+:expression-cluster/remark (441)
+
+:expression-cluster/microarray-results (440537)
+
+:expression-cluster/anatomy-term (174)
+
+:expression-cluster/gene (765733)
+
+:expression-cluster/expr-pattern (98)
+
+:expression-cluster/sage-tag (0)
+
+### Evidence for sage-tag
+
+:sage-tag/remark (0)
+
+:sage-tag/evidence (0)
+
+### Evidence for sage-experiment
+
+:sage-experiment/remark (0)
+
+
 ### Evidence for person
 
 nil
@@ -722,11 +833,6 @@ nil
 ### Evidence for author
 
 nil
-
-### Evidence for author
-
-nil
-user> (print-evidence-counts ddb "paper")
 
 ### Evidence for paper
 
@@ -747,6 +853,96 @@ user> (print-evidence-counts ddb "paper")
 :evidence/cgc-data-submission 4
 :evidence/curator-confirmed 2
 :evidence/person-evidence 1
+
+
+### Evidence for variation
+
+:variation/remark (309209)
+:evidence/author-evidence 3
+:evidence/cgc-data-submission 1
+:evidence/curator-confirmed 959
+:evidence/feature-evidence 6795
+:evidence/laboratory-evidence 1
+:evidence/paper-evidence 15791
+:evidence/person-evidence 820
+
+:variation/inversion (0)
+
+:variation/mutagen (13077)
+:evidence/paper-evidence 554
+:evidence/person-evidence 49
+
+:variation/phenotype-remark (0)
+
+:variation/substitution (1613589)
+:evidence/laboratory-evidence 1
+:evidence/paper-evidence 57364
+:evidence/person-evidence 112
+
+:variation/forward-genetics (50)
+:evidence/curator-confirmed 1
+:evidence/paper-evidence 10
+:evidence/person-evidence 13
+
+:variation/insertion (147084)
+:evidence/paper-evidence 16594
+:evidence/person-evidence 11
+
+:variation/deletion-verification (180)
+:evidence/laboratory-evidence 25
+:evidence/person-evidence 128
+
+:variation/male-mating-efficiency (0)
+
+:variation/frameshift (15)
+:evidence/paper-evidence 8
+
+:variation/deletion (173651)
+:evidence/paper-evidence 13518
+:evidence/person-evidence 9
+
+:variation/expr-pattern (0)
+
+:variation/tandem-duplication (4024)
+
+:variation/silent (0)
+
+:variation/status (1909007)
+:evidence/curator-confirmed 6266
+:evidence/feature-evidence 5711
+:evidence/paper-evidence 2
+:evidence/person-evidence 1
+:evidence/remark 67
+
+:variation/hermaphrodite-mating-efficiency (0)
+
+:variation/reverse-genetics (2)
+:evidence/person-evidence 1
+
+:variation/missense (0)
+
+:variation/possibly-affects (6)
+:evidence/paper-evidence 2
+
+:variation/strain (6750826)
+:evidence/from-analysis 5744194
+:evidence/laboratory-evidence 3
+:evidence/paper-evidence 1
+:evidence/person-evidence 1
+
+:variation/evidence (277655)
+:evidence/accession-evidence 3
+:evidence/author-evidence 12
+:evidence/cgc-data-submission 1
+:evidence/laboratory-evidence 1
+:evidence/paper-evidence 277420
+:evidence/person-evidence 264
+
+:variation/source-location (652066)
+:evidence/from-analysis 634770
+:evidence/inferred-automatically 1966
+
+:variation/readthrough (0)
 
 ### Evidence for structure-data
 
