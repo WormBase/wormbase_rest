@@ -1,5 +1,6 @@
 (ns wb.scripts.dump-vcf
-  (:require [web.locatable-api :as loc]
+  (:require [wb.locatables :as loc]
+            [wb.sequence :as seq]
             [clojure.string :as str]
             [datomic.api :as d :refer (q entity)]))
 
@@ -20,17 +21,40 @@
                                      max)
                        (sort-by second))
           :let [v (entity db v)]]
-    (when-let [sub (:variation/substitution v)]
-      (println
-       (str/join "\t"
-        [chr
-         (inc min)
-         (:variation/id v)
-         (:variation.substitution/ref sub)
-         (:variation.substitution/alt sub)
-         "."
-         "."
-         "."])))))
+    (cond 
+      (:variation/substitution v)
+      (let [sub (:variation/substitution v)]
+        (println
+         (str/join "\t"
+          [(str/replace chr #"CHROMOSOME_" "")
+           (inc min)
+           (or (:variation/public-name v)
+               (:variation/id v))
+           (:variation.substitution/ref sub)
+           (:variation.substitution/alt sub)
+           "."
+           "."
+           "."])))
+
+      (and (or (:variation/insertion v)
+               (:variation/deletion v))
+           (< (- max min) 2000))     ;; ignore big insertions.
+      (let [ref (seq/region-sequence db chr (inc min) max)
+            alt (if-let [ins (:variation/insertion v)]
+                  (:variation.insertion/text ins)
+                  (.substring ref (dec (count ref)) (count ref)))]
+        (println
+         (str/join "\t"
+           [(str/replace chr #"CHROMOSOME_" "")
+            (inc min)
+            (or (:variation/public-name v)
+                (:variation/id v))
+            ref
+            alt
+            "."
+            "."
+            "."]))))))
+        
        
        
     
