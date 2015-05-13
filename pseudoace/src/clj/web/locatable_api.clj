@@ -33,8 +33,14 @@
      (mapcat
       (fn [{emin :transcript.source-exons/min
             emax :transcript.source-exons/max}]
-        (let [emin (+ tmin emin -1)
-              emax (+ tmin emax)
+        (let [[emin emax] (case (:locatable/strand t)
+                            :locatable.strand/positive
+                            [(+ tmin emin -1)
+                             (+ tmin emax)]
+
+                            :locatable.strand/negative
+                            [(- tmax emax)
+                             (- tmax emin -1)])
               coding-min (max emin cmin)
               coding-max (min emax cmax)]
           (those
