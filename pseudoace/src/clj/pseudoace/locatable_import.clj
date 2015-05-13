@@ -45,11 +45,8 @@
      {}
      (group-by (partial take-ts 5) feature-lines))))
 
-(defn- log-splice-confirmations [fd splice-lines]
-  (when (= (:locatable/strand fd) :locatable.strand/negative)
-    (except "Don't support negative-strand ?Feature_data"))
-  (let [parent (:db/id (:locatable/parent fd))
-        offset (or (:locatable/min fd) 0)]
+(defn- log-splice-confirmations [splice-lines parent offset]
+  (let [offset (or offset 0)]
     (reduce
      (fn [log [start-s end-s confirm-type confirm confirm-x :as line]]
        (let [tid   [:importer/temp (d/squuid)]
@@ -189,14 +186,17 @@
       (println "Skipping" (:id obj) "because negative strand")
       (merge-logs
        (log-features fd (select-ts obj ["Feature"]))
-       (log-splice-confirmations fd (select-ts obj ["Splices" "Confirmed_intron"]))
+       (log-splice-confirmations
+        (select-ts obj ["Splices" "Confirmed_intron"])
+        (:db/id (:locatable/parent fd))
+        (:locatable/min fd))
        ;; Predicted_5 and Predicted_3 don't seem to be used
        ))
     (println "Couldn't find ?Feature_data " (:id obj))))
 
 (defmethod log-locatables "Protein" [db obj]
   (if-let [protein (entity db [:protein/id (:id obj)])]
-    (log-homols (select-ts obj ["Homol"]) (:db/id protein) true)))
+    (log-homols (select-ts obj ["Homol"]) (:db/id protein) nil true)))
 
 (defmethod log-locatables "Homol_data" [db obj]
   (if-let [homol (entity db [:homol-data/id (:id obj)])]
@@ -208,6 +208,12 @@
        (:db/id (:locatable/parent homol))
        (:locatable/min homol)
        false))))
+
+(defmethod log-locatables "Sequence" [db obj]
+  (if-let [sequence (entity db [:sequence/id (:id obj)])]
+    (log-splice-confirmations
+     (select-ts obj ["Splices" "Confirmed_intron"])
+     (:db/id sequence) nil)))
 
 (defmethod log-locatables :default [_ _]
   nil)

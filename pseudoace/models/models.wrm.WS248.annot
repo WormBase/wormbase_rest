@@ -1462,9 +1462,10 @@
                                 // exactly for what you would like a half-line summary to
                                 // contain, for making tables etc.
                      Link       // Enable gene curation of link genes [020805 krb]
-          Splices    Confirmed_intron Int Int #Splice_confirmation
-                     Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
-                     Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
+          // Should be lightweight features.
+          // Splices    Confirmed_intron Int Int #Splice_confirmation
+          //           Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
+          //           Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
           Cluster_information Contains_reads ?Sequence YESXREF Contained_in_cluster  // Links cluster contig and
                               Contained_in_cluster ?Sequence NOXREF Contains_reads        // individual reads
           Map ?Map YESXREF Sequence #Map_position          // use in particular for Genomic_canonical
