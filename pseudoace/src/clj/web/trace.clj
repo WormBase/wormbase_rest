@@ -27,7 +27,7 @@
             [web.rest.gene :as gene]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
             [web.rest.references :refer (get-references)]
-            [web.locatable-api :refer (json-features)]))
+            [web.locatable-api :refer (feature-api)]))
 
 (def uri "datomic:free://localhost:4334/wb248-imp1")
 (def con (d/connect uri))
@@ -460,9 +460,11 @@
        (gene/genetics (db con) (:id params)))
   (GET "/rest/widget/gene/:id/external_links" {params :params}
        (gene/external-links (db con) (:id params)))
+
+  (context "/features" [] (feature-api (db con)))
   
-  (GET "/features/:type/features/:id" {params :params}
-       (json-features (db con) params))
+  #_(GET "/features/:type/features/:id" {params :params}
+         (json-features (db con) params))
   
   (GET "/prefix-search" {params :params}
        (get-prefix-search (db con) (params "class") (params "prefix")))
