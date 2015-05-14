@@ -9,7 +9,8 @@
   (or
    (:sequence.dna/length (:sequence/dna seq))
 
-   (count (:dna/sequence (:sequence.dna/dna (:sequence/dna seq))))
+   (if-let [dna (:dna/sequence (:sequence.dna/dna (:sequence/dna seq)))]
+     (count dna))
 
    (q '[:find (max ?ss-end) .
         :in $ ?seq

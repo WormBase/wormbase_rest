@@ -15,10 +15,10 @@
                            "QUAL" "FILTER" "INFO"]))
   (doseq [[v min max] (->>
                        (loc/features db
-                                     "variation"
-                                     (:db/id (entity db [:sequence/id chr]))
-                                     min
-                                     max)
+                                      "variation"
+                                      (:db/id (entity db [:sequence/id chr]))
+                                      min
+                                      max)
                        (sort-by second))
           :let [v (entity db v)]]
     (cond 
