@@ -195,11 +195,10 @@
     (println "Couldn't find ?Feature_data " (:id obj)))))
 
 (defmethod log-locatables "Protein" [db obj]
-  (if-let [protein (entity db [:protein/id (:id obj)])]
-   (let [parent [:protein/id (:protein/id protein)]]
+  (let [parent [:protein/id (:id obj)]]
     (merge-logs
      (log-features (select-ts obj ["Feature"]) parent nil)
-     (log-homols   (select-ts obj ["Homol"])   parent nil true)))))
+     (log-homols   (select-ts obj ["Homol"])   parent nil true))))
 
 (defmethod log-locatables "Homol_data" [db obj]
   (if-let [homol (entity db [:homol-data/id (:id obj)])]
