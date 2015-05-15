@@ -2075,7 +2075,7 @@
 //                Structure_homol ?Structure_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 //                Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 //                Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-          Feature ?Method Int ^start Int ^end UNIQUE Float ^score  // display according to method
+//          Feature ?Method Int ^start Int ^end UNIQUE Float ^score  // Handled in Locatables import.
           Contains_peptide ?Mass_spec_peptide NOXREF Protein
           Remark ?Text #Evidence
 

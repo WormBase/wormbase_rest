@@ -14,11 +14,8 @@
 ;;   - More alignment reconstruction?
 ;;
 
-(defn- log-features [fd feature-lines]
-  (when (= (:locatable/strand fd) :locatable.strand/negative)
-    (except "Don't support negative-strand ?Feature_data"))
-  (let [parent (:locatable/parent fd)
-        offset (or (:locatable/min fd) 0)]
+(defn- log-features [feature-lines parent offset]
+  (let [offset (or offset 0)]
     (reduce
      (fn [log [[method start-s end-s score note :as core] [lines]]]
        (let [tid   [:importer/temp (d/squuid)]
@@ -29,7 +26,7 @@
              bin   (reg2bin min max)]
          (update log (second (:timestamps (meta core)))
             conj-if
-            [:db/add tid :locatable/parent (:db/id parent)]
+            [:db/add tid :locatable/parent parent]
             [:db/add tid :locatable/min min]
             [:db/add tid :locatable/max max]
             [:db/add tid :locatable/strand (if (> start end)
@@ -41,7 +38,7 @@
             (if note
               [:db/add tid :locatable/note note])
             [:db/add tid :locatable/bin bin]
-            [:db/add tid :locatable/xbin (xbin (:db/id parent) bin)])))
+            [:db/add tid :locatable/xbin (xbin parent bin)])))
      {}
      (group-by (partial take-ts 5) feature-lines))))
 
@@ -185,7 +182,10 @@
            :locatable.strand/negative)
       (println "Skipping" (:id obj) "because negative strand")
       (merge-logs
-       (log-features fd (select-ts obj ["Feature"]))
+       (log-features
+        (select-ts obj ["Feature"])
+        (:db/id (:locatable/parent fd))
+        (:locatable/min fd))
        (log-splice-confirmations
         (select-ts obj ["Splices" "Confirmed_intron"])
         (:db/id (:locatable/parent fd))
@@ -196,7 +196,9 @@
 
 (defmethod log-locatables "Protein" [db obj]
   (if-let [protein (entity db [:protein/id (:id obj)])]
-    (log-homols (select-ts obj ["Homol"]) (:db/id protein) nil true)))
+    (merge-logs
+     (log-features (select-ts obj ["Feature"]) (:db/id protein) nil)
+     (log-homols   (select-ts obj ["Homol"]) (:db/id protein) nil true))))
 
 (defmethod log-locatables "Homol_data" [db obj]
   (if-let [homol (entity db [:homol-data/id (:id obj)])]
