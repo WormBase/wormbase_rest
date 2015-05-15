@@ -50,19 +50,22 @@
     {:timestamps (drop n (:timestamps (meta seq)))}))
 
 
-(defn merge-logs [l1 l2]
-  (cond
-   (nil? l2)
-   l1
-
-   (nil? l1)
-   l2
-
-   :default
-   (reduce
-    (fn [m [key vals]]
-      (assoc m key (into (get m key []) vals)))
-    l1 l2)))
+(defn merge-logs
+  ([l1 l2]
+     (cond
+      (nil? l2)
+      l1
+      
+      (nil? l1)
+      l2
+      
+      :default
+      (reduce
+       (fn [m [key vals]]
+         (assoc m key (into (get m key []) vals)))
+       l1 l2)))
+  ([l1 l2 & ls]
+     (reduce merge-logs (merge-logs l1 l2) ls)))
 
 (defn- log-datomize-value [ti imp val]
   (case (:db/valueType ti)
@@ -251,7 +254,29 @@
       (fn [log [ts datom]]
         (update log ts conjv datom))
       {}))))
-           
+
+(defmethod log-custom "Sequence" [obj this imp]
+  (if-let [subseqs (select-ts obj ["Structure" "Subsequence"])]
+    (reduce
+     (fn [log [subseq start end :as m]]
+      (if (and subseq start end)    ;; WS248 contains ~30 clones with empty Subsequence tags.
+       (let [child [:sequence/id subseq :wb.part/sequence]
+             start (parse-int start)
+             end   (parse-int end)]
+         (update
+          log
+          (first (:timestamps (meta m)))
+          conj-if
+          [:db/add child :locatable/assembly-parent this]
+          [:db/add child :locatable/min (dec start)]
+          [:db/add child :locatable/max end]
+          [:db/add child :locatable/murmur-bin (bin (second this) (dec start) end)]))))
+     {}
+     subseqs)))
+       
+
+(defmethod log-custom :default [_ _ _] nil)
+
 (def ^:private s-child-types
   {"Gene_child"            :gene/id
    "CDS_child"             :cds/id
@@ -312,7 +337,7 @@
    log
    (group-by (partial take-ts 4) sc)))
 
-(defmethod log-custom :default [obj this imp]
+(defn log-coreprops [obj this imp]
   ;; This should possibly run on ALL objects, rather than via log-custom.
 
   (let [children (select-ts obj ["SMap" "S_child"])
@@ -355,6 +380,7 @@
             (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
             imp
             #{(namespace (:db/ident ci))})))))
+     (log-coreprops obj this imp)
      (log-custom obj this imp))))
 
 (defn objs->log [imp objs]

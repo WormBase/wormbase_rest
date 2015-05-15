@@ -37,7 +37,15 @@
 
        [murmur-bin :long :indexed
           "Bottom 20 bits contain a UCSC/BAM-style bin number.  High bits contain a Murmur3 hash code
-           for the parent sequence.  Only used for locatables attached to a parent with a :sequence/id."]))
+           for the parent sequence.  Only used for locatables attached to a parent with a :sequence/id."]
+
+       ;;
+       ;; Assembly support
+       ;;
+
+       [assembly-parent :ref
+          "The parent sequence in a genome assembly."]
+       ))
 
    (schema splice-confirm
     (fields

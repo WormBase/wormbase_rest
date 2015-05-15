@@ -1377,7 +1377,7 @@
 //                       Homol_data ?Homol_data YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info
           Structure From Source UNIQUE ?Sequence NOXREF Subsequence
                          Source_exons Int ^start UNIQUE Int ^end // start at 1 // WARNING: is this still needed when ?CDS Class is present???
-                    Subsequence ?Sequence YESXREF Source UNIQUE Int ^start UNIQUE Int ^end
+//                    Subsequence ?Sequence YESXREF Source UNIQUE Int ^start UNIQUE Int ^end      // :locatable/assembly-parent
                     Overlap_right UNIQUE ?Sequence YESXREF Overlap_left UNIQUE Int // potentially use Overlap_right integer for auto-linking
                     Overlap_left UNIQUE ?Sequence YESXREF Overlap_right               // tad leave this bidirectional for now.
                     Gap_right UNIQUE Int ^size Text            // 000909 dl added to track gap sizes
