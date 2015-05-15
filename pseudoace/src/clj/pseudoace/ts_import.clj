@@ -277,11 +277,20 @@
        (let [child [ident link (or (get-in imp [:classes ident :pace/prefer-part])
                                    :db.part/user)]
              start (parse-int start)
-             end   (parse-int end)]
+             end   (parse-int end)
+             timestamp (case type
+                         "Feature_data"
+                         "helper"
+                         
+                         "Homol_data"
+                         "helper"
+
+                         ;; default
+                         (second (:timestamps (meta m))))]
          (if (and start end)
            (update
             log
-            (second (:timestamps (meta m)))
+            timestamp
             conj
             [:db/add child :locatable/parent this]
             [:db/add child :locatable/min (dec (min start end))]
@@ -291,7 +300,7 @@
                                                :locatable.strand/negative)])
            (update
             log
-            (second (:timestamps (meta m)))
+            timestamp
             conj
             [:db/add child :locatable/parent this])))
        log))
@@ -393,22 +402,20 @@
   ^{:doc "Don't force :db/txInstant attributes during log replays"}
   *suppress-timestamps* false)
 
-(defn- txmeta [time name]
-  (vmap
-   :db/id             (d/tempid :db.part/tx)
-   :importer/ts-name  name
-   :db/txInstant      (if-not *suppress-timestamps*
-                        time)))
+(defn- txmeta [stamp]
+  (let [[_ ds ts name]  (re-matches timestamp-pattern stamp)
+        time           (if ds (read-instant-date (str ds "T" ts)))]
+    (vmap
+     :db/id             (d/tempid :db.part/tx)
+     :importer/ts-name  name
+     :db/txInstant      (if-not *suppress-timestamps*
+                          time))))
 
 (defn play-log [con log]
-  (doseq [[stamp datoms] (sort-by first log)
-          :let [[_ ds ts name]
-                (re-matches timestamp-pattern stamp)
-                time (read-instant-date (str ds "T" ts))]]
+  (doseq [[stamp datoms] (sort-by first log)]
     (let [db (db con)
           datoms (fixup-datoms db datoms)]
-      @(d/transact con (conj datoms (txmeta time name))))))
-
+      @(d/transact con (conj datoms (txmeta stamp))))))
 
 (def log-fixups
   {nil        "1977-01-01_01:01:01_nil"
@@ -424,7 +431,7 @@
   (doseq [[stamp logs] (clean-log-keys logs)
           :let  [[_ date time name]
                  (re-matches timestamp-pattern stamp)]]
-    (with-open [w (-> (file dir (str date ".edn.gz"))
+    (with-open [w (-> (file dir (str (or date stamp) ".edn.gz"))
                       (FileOutputStream. true)
                       (GZIPOutputStream.)
                       (writer))]
@@ -469,14 +476,12 @@
   (with-open [r (reader logfile)]
     (doseq [rblk (partition-log 1000 50000 (logfile-seq r))]
       (doseq [sblk (partition-by first rblk)
-              :let [[_ ds ts name]
-                    (re-matches timestamp-pattern (ffirst sblk))
-                    time (read-instant-date (str ds "T" ts))]]
+              :let [stamp (ffirst sblk)]]
         (let [blk (map second sblk)
               db      (db con)
               fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
               datoms  (fixup-datoms db fdatoms)]
-          @(d/transact-async con (conj datoms (txmeta time name))))))))
+          @(d/transact-async con (conj datoms (txmeta stamp))))))))
 
 
 
