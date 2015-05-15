@@ -270,38 +270,48 @@
    "Homol_data"            :homol-data/id
    "Expr_profile"          :expr-profile/id})
 
+(defn- log-children [log sc this imp]
+  (reduce
+   (fn [log [[type link start end :as m] info-lines]]
+     (if-let [ident (s-child-types type)]
+       (let [child [ident link (or (get-in imp [:classes ident :pace/prefer-part])
+                                   :db.part/user)]
+             start (parse-int start)
+             end   (parse-int end)]
+         (if (and start end)
+           (update
+            log
+            (second (:timestamps (meta m)))
+            conj
+            [:db/add child :locatable/parent this]
+            [:db/add child :locatable/min (dec (min start end))]
+            [:db/add child :locatable/max (max start end)]
+            [:db/add child :locatable/strand (if (< start end)
+                                               :locatable.strand/positive
+                                               :locatable.strand/negative)])
+           (update
+            log
+            (second (:timestamps (meta m)))
+            conj
+            [:db/add child :locatable/parent this])))
+       log))
+   log
+   (group-by (partial take-ts 4) sc)))
+
 (defmethod log-custom :default [obj this imp]
-  ;;
-  ;; Is it worth creating a custom hierarchy so this only gets called for
-  ;; objects which might have S_children?
-  ;;
-  (if-let [sc (select-ts obj ["SMap" "S_child"])]
-    (reduce
-     (fn [log [[type link start end :as m] info-lines]]
-       (if-let [ident (s-child-types type)]
-         (let [child [ident link (or (get-in imp [:classes ident :pace/prefer-part])
-                                     :db.part/user)]
-               start (parse-int start)
-               end   (parse-int end)]
-           (if (and start end)
-             (update
-              log
-              (second (:timestamps (meta m)))
-              conj
-              [:db/add child :locatable/parent this]
-              [:db/add child :locatable/min (dec (min start end))]
-              [:db/add child :locatable/max (max start end)]
-              [:db/add child :locatable/strand (if (< start end)
-                                                 :locatable.strand/positive
-                                                 :locatable.strand/negative)])
-             (update
-              log
-              (second (:timestamps (meta m)))
-              conj
-              [:db/add child :locatable/parent this])))
-         log))
-     {}
-     (group-by (partial take-ts 4) sc))))
+  ;; This should possibly run on ALL objects, rather than via log-custom.
+
+  (let [children (select-ts obj ["SMap" "S_child"])
+        method   (first (select-ts obj ["Method"]))]
+    (cond-> nil
+      children
+      (log-children children this imp)
+
+      method
+      (update
+       (first (:timestamps (meta method)))
+       conj
+       [:db/add this :locatable/method [:method/id (first method)]]))))
 
 (defn obj->log [imp obj]
   (let [ci ((:classes imp) (:class obj))

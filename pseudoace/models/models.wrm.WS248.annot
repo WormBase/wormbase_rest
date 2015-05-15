@@ -447,7 +447,7 @@
         Reference ?Paper YESXREF Gene // #Evidence  -- de-evidenced by tad
         Picture ?Picture NOXREF Gene
         Remark ?Text #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 ////////////////////////////
@@ -1480,7 +1480,7 @@
                         // We will generate a column for each distinct ?Method.  So for
                         // distinct Worm_EST and Worm_genomic columns, use ?Method objects
                         // Worm_EST_Blastn and Worm_genomic_Blastn.
-          Method UNIQUE ?Method
+//          Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 
@@ -1651,7 +1651,7 @@
                 RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
                 Remark ?Text #Evidence
         Associated_feature ?Feature NOXREF Associated_with_CDS #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method   Becomes :locatable/method
 
 
 
@@ -1707,7 +1707,7 @@
                            Start_not_found                                 // [020306 kj]
                            End_not_found                                   // [020306 kj]
                 Associated_feature ?Feature NOXREF Associated_with_transcript #Evidence
-                Method UNIQUE ?Method                  
+//                Method UNIQUE ?Method                // Becomes :locatable/method
 
 
 
@@ -1752,7 +1752,7 @@
                         Remark ?Text #Evidence    
                 Associated_feature ?Feature NOXREF Associated_with_pseudogene #Evidence
                 Confidential_remark ?Text
-                Method UNIQUE ?Method
+//                Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 
@@ -1779,7 +1779,7 @@
                            Gene ?Gene NOXREF Corresponding_transposon #Evidence 
             Visible Remark ?Text #Evidence
             Associated_feature ?Feature NOXREF Associated_with_transposon #Evidence
-            Method UNIQUE ?Method
+//             Method UNIQUE ?Method   // Becomes :locatable/method
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -1944,7 +1944,7 @@
          Transcription_factor UNIQUE ?Transcription_factor YESXREF Binding_site 
          Confidential_remark ?Text //pad
          Remark ?Text #Evidence
-         Method UNIQUE ?Method
+//         Method UNIQUE ?Method    // Becomes :locatable/method
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -2303,7 +2303,7 @@
               RNAi_result ?RNAi YESXREF Expr_profile // Connection made by script during build [030106 krb]
               Species UNIQUE ?Species
               Remark ?Text #Evidence
-              Method UNIQUE ?Method
+//              Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 ?SK_map       X_coord UNIQUE Float
@@ -2767,7 +2767,7 @@
         Phenotype_not_observed ?Phenotype YESXREF Not_in_RNAi #Phenotype_info //added by Wen to separate Not phenotype from real phenotypes
         Expr_profile ?Expr_profile NOXREF RNAi_result // connection added during build [030106 krb]
         Remark ?Text #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method     // Becomes :locatable/method
 
 
 
@@ -2847,7 +2847,7 @@
              Interaction ?Interaction NOXREF PCR_interactor
              RNAi ?RNAi NOXREF PCR_product
              Remark ?Text #Evidence
-             Method UNIQUE ?Method
+//             Method UNIQUE ?Method       // Becomes :locatable/method
 
 
 ///////////////////////////////////////////////
@@ -2903,7 +2903,7 @@
         Associated_feature ?Feature NOXREF Associated_with_operon #Evidence
         Reference ?Paper YESXREF Operon
         Description UNIQUE ?Text #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method        // Becomes :locatable/method
         History Merged_into UNIQUE ?Operon YESXREF Acquires_merge #Evidence
                 Acquires_merge ?Operon NOXREF Merged_into #Evidence
                 Split_from UNIQUE ?Operon NOXREF Split_into #Evidence
@@ -3034,7 +3034,7 @@
                         WashU_GSC_microarray_probe
                         Agilent_microarray_probe
                         Affymetrix_tiling_array_probe
-                Method UNIQUE ?Method
+//                 Method UNIQUE ?Method      // Becomes :locatable/method
 
 
 //////////////////////////////////
@@ -3086,7 +3086,7 @@
                                 Pseudogene ?Pseudogene YESXREF SAGE_tag #SAGE_mapping_info
                 Results ?SAGE_experiment UNIQUE #SAGE_data              //contains SAGE data for all experiments using the tag
                 Remark ?Text #Evidence
-                Method UNIQUE ?Method
+//                Method UNIQUE ?Method      // Becomes :locatable/method
 
 #SAGE_mapping_info Transcript_source UNIQUE ?Text   //Coding RNA, Mitochondrial, Other...
                    Position UNIQUE Int              //the number of the SAGE anchoring enzyme restriction site from the 3' end of the cDNA molecule
@@ -3535,7 +3535,7 @@
                        Readthrough Text #Evidence // klh WS228
            Reference ?Paper YESXREF Allele
            Remark ?Text #Evidence
-           Method UNIQUE ?Method
+//           Method UNIQUE ?Method       // Becomes :locatable/method
            Supporting_data Movie ?Movie NOXREF Variation #Evidence  //Carol [060421 ar2] 
 
 
