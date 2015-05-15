@@ -1,5 +1,6 @@
 (ns pseudoace.ts-import
   (:use pseudoace.utils
+        wb.binning
         clojure.instant)
   (:require [pseudoace.import :refer [get-tags datomize-objval]]
             [datomic.api :as d :refer (db q entity touch tempid)]
@@ -291,13 +292,17 @@
            (update
             log
             timestamp
-            conj
+            conj-if
             [:db/add child :locatable/parent this]
             [:db/add child :locatable/min (dec (min start end))]
             [:db/add child :locatable/max (max start end)]
             [:db/add child :locatable/strand (if (< start end)
                                                :locatable.strand/positive
-                                               :locatable.strand/negative)])
+                                               :locatable.strand/negative)]
+            (if (= (first this) :sequence/id)
+              [:db/add child :locatable/murmur-bin (bin (second this)
+                                                        (dec (min start end))
+                                                        (max start end))]))
            (update
             log
             timestamp
@@ -482,6 +487,3 @@
               fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
               datoms  (fixup-datoms db fdatoms)]
           @(d/transact-async con (conj datoms (txmeta stamp))))))))
-
-
-

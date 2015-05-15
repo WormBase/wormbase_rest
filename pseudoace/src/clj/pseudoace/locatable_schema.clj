@@ -29,7 +29,15 @@
        [score :float
           "Feature score, as used in ?Feature_data."]
        [note :string :many
-          "Human-readable note associated with a lightweight feature."]))
+          "Human-readable note associated with a lightweight feature."]
+
+       ;;
+       ;; Binning system
+       ;;
+
+       [murmur-bin :long :indexed
+          "Bottom 20 bits contain a UCSC/BAM-style bin number.  High bits contain a Murmur3 hash code
+           for the parent sequence.  Only used for locatables attached to a parent with a :sequence/id."]))
 
    (schema splice-confirm
     (fields

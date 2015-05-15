@@ -3,11 +3,7 @@
   (:require [datomic.api :as d]))
 
 ;; 
-;; highly experimental!
-;;
-;; TODO
-;;   - Benchmarks. Is "bin" or "xbin" more useful?
-;;   - Transaction function for managing these things.
+;; This is mostly obsolete, for wb248-imp2 onwards use wb.binning instead.
 ;;
 
 (def locatable-bin-schema

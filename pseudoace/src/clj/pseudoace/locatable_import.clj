@@ -1,6 +1,6 @@
 (ns pseudoace.locatable-import
   (:use pseudoace.utils
-        pseudoace.binning)
+        wb.binning)
   (:require [datomic.api :as d :refer (q entity touch tempid)]
             [pseudoace.ts-import :refer [merge-logs
                                          select-ts
@@ -14,6 +14,10 @@
 ;;   - More alignment reconstruction?
 ;;
 
+(defn- bin-me-maybe [this [attr id] min max]
+  (if (= attr :sequence/id)
+    [:db/add this :locatable/murmur-bin (bin id min max)]))
+
 (defn- log-features [feature-lines parent offset]
   (let [offset (or offset 0)]
     (reduce
@@ -22,8 +26,7 @@
              start (parse-int start-s)
              end   (parse-int end-s)
              min   (+ offset -1 (min start end))
-             max   (+ offset (max start end))
-             bin   (reg2bin min max)]
+             max   (+ offset (max start end))]
          (update log (second (:timestamps (meta core)))
             conj-if
             [:db/add tid :locatable/parent parent]
@@ -37,8 +40,7 @@
               [:db/add tid :locatable/score (parse-double score)])
             (if note
               [:db/add tid :locatable/note note])
-            [:db/add tid :locatable/bin bin]
-            [:db/add tid :locatable/xbin (xbin parent bin)])))
+            (bin-me-maybe tid parent min max))))
      {}
      (group-by (partial take-ts 5) feature-lines))))
 
@@ -50,22 +52,21 @@
              start (parse-int start-s)
              end   (parse-int end-s)
              min   (+ offset -1 (min start end))
-             max   (+ offset (max start end))
-             bin   (reg2bin min max)]
+             max   (+ offset (max start end))]
          (update log (first (drop 2 (:timestamps (meta line))))
            (fn [old]
              (into (or old [])
                (concat
-                 [[:db/add tid :locatable/parent parent]
+                (those
+                  [:db/add tid :locatable/parent parent]
                   [:db/add tid :locatable/min min]
                   [:db/add tid :locatable/max max]
                   [:db/add tid :locatable/strand (if (> start end)
                                                    :locatable.strand/negative
                                                    :locatable.strand/positive)]
-                  [:db/add tid :locatable/bin bin]
-                  [:db/add tid :locatable/xbin (xbin parent bin)]]
+                  (bin-me-maybe tid parent min max))
                  
-                 (case confirm-type
+                (case confirm-type
                    "cDNA"
                    [[:db/add tid :splice-confirm/cdna [:sequence/id confirm]]]
 
@@ -116,8 +117,7 @@
            start (parse-int parent-start-s)
            end   (parse-int parent-end-s)
            min   (if start (+ offset -1 start))
-           max   (if end (+ offset end))
-           bin   (if (and min max) (reg2bin min max))]
+           max   (if end (+ offset end))]
        (update log (first (drop 3 (:timestamps (meta line))))
          (fn [old]
            (into (or old [])
@@ -126,12 +126,11 @@
                          (and method [:db/add tid :locatable/method [:method/id method]])
                          (and min [:db/add tid :locatable/min min])
                          (and max [:db/add tid :locatable/max max])
-                         ;; ignore strand while we concentrate on protein stuff...
-                         #_[:db/add tid :locatable/strand (if (> start end)
+                         (if-not protein?
+                           [:db/add tid :locatable/strand (if (> start end)
                                                             :locatable.strand/negative
-                                                            :locatable.strand/positive)]
-                         (and bin [:db/add tid :locatable/bin bin])
-                         (and bin [:db/add tid :locatable/xbin (xbin parent bin)])
+                                                            :locatable.strand/positive)])
+                         (bin-me-maybe tid parent min max)
                          (and target-start-s [:db/add tid :homology/min (dec (parse-int target-start-s))])
                          (and target-end-s [:db/add tid :homology/max      (parse-int target-end-s)   ])
                          (and score-s [:db/add tid :locatable/score (parse-double score-s)]))]
@@ -178,44 +177,48 @@
 
 (defmethod log-locatables "Feature_data" [db obj]
   (if-let [fd (entity db [:feature-data/id (:id obj)])]
+   (let [parent [:sequence/id (:sequence/id (:locatable/parent fd))]]
     (if (= (:locatable/strand fd)
            :locatable.strand/negative)
       (println "Skipping" (:id obj) "because negative strand")
       (merge-logs
        (log-features
         (select-ts obj ["Feature"])
-        (:db/id (:locatable/parent fd))
+        parent
         (:locatable/min fd))
        (log-splice-confirmations
         (select-ts obj ["Splices" "Confirmed_intron"])
-        (:db/id (:locatable/parent fd))
+        parent
         (:locatable/min fd))
        ;; Predicted_5 and Predicted_3 don't seem to be used
        ))
-    (println "Couldn't find ?Feature_data " (:id obj))))
+    (println "Couldn't find ?Feature_data " (:id obj)))))
 
 (defmethod log-locatables "Protein" [db obj]
   (if-let [protein (entity db [:protein/id (:id obj)])]
+   (let [parent [:protein/id (:protein/id protein)]]
     (merge-logs
-     (log-features (select-ts obj ["Feature"]) (:db/id protein) nil)
-     (log-homols   (select-ts obj ["Homol"]) (:db/id protein) nil true))))
+     (log-features (select-ts obj ["Feature"]) parent nil)
+     (log-homols   (select-ts obj ["Homol"])   parent nil true)))))
 
 (defmethod log-locatables "Homol_data" [db obj]
   (if-let [homol (entity db [:homol-data/id (:id obj)])]
+   (let [parent [:sequence/id (:sequence/id (:locatable/parent homol))]]
     (if (= (:locatable/strand homol)
            :locatable.strand/negative)
       (println "Skipping" (:id obj) "because negative strand")      
       (log-homols
        (select-ts obj ["Homol"])
-       (:db/id (:locatable/parent homol))
+       parent
        (:locatable/min homol)
-       false))))
+       false)))))
 
 (defmethod log-locatables "Sequence" [db obj]
-  (if-let [sequence (entity db [:sequence/id (:id obj)])]
+  (let [parent [:sequence/id (:id obj)]]
     (log-splice-confirmations
      (select-ts obj ["Splices" "Confirmed_intron"])
-     (:db/id sequence) nil)))
+     parent
+     nil)))
 
 (defmethod log-locatables :default [_ _]
   nil)
