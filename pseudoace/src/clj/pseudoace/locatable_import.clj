@@ -191,8 +191,8 @@
         parent
         (:locatable/min fd))
        ;; Predicted_5 and Predicted_3 don't seem to be used
-       ))
-    (println "Couldn't find ?Feature_data " (:id obj)))))
+       )))
+    (println "Couldn't find ?Feature_data " (:id obj))))
 
 (defmethod log-locatables "Protein" [db obj]
   (let [parent [:protein/id (:id obj)]]
