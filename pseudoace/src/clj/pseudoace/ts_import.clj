@@ -396,14 +396,16 @@
     (if (vector? ref)
       (let [[k v part] ref
             lref       [k v]]
-        (if (entity db lref)
-          [(assoc datom index lref) temps]    ; turn 3-element refs into normal lookup-refs
-          (if-let [tid (temps ref)]
-            [(assoc datom index tid) temps]
-            (let [tid (d/tempid (or part :db.part/user))]
-              [(assoc datom index tid)
-               (assoc temps ref tid)
-               [:db/add tid k v]]))))
+        (if v
+          (if (entity db lref)
+            [(assoc datom index lref) temps]    ; turn 3-element refs into normal lookup-refs
+            (if-let [tid (temps ref)]
+              [(assoc datom index tid) temps]
+              (let [tid (d/tempid (or part :db.part/user))]
+                [(assoc datom index tid)
+                 (assoc temps ref tid)
+                 [:db/add tid k v]])))
+          (println "Nil in " datom)))
       [datom temps])))
 
 (defn fixup-datoms
@@ -412,11 +414,13 @@
   [db datoms]
   (->>
    (reduce
-    (fn [{:keys [done temps]} datom]
-      (let [[datom temps ex1] (temp-datom db datom temps 1)
-            [datom temps ex2] (temp-datom db datom temps 3)]
-        {:done  (conj-if done datom ex1 ex2)
-         :temps temps}))
+    (fn [{:keys [done temps] :as last} datom]
+      (if-let [[datom temps ex1] (temp-datom db datom temps 1)]
+        (if-let [[datom temps ex2] (temp-datom db datom temps 3)]
+          {:done  (conj-if done datom ex1 ex2)
+           :temps temps}
+          last)
+        last))
     {:done [] :temps {}}
     (mapcat
      (fn [[op e a v :as datom]]
