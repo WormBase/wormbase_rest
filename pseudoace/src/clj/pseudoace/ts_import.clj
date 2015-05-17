@@ -406,7 +406,9 @@
                  (assoc temps ref tid)
                  [:db/add tid k v]])))
           (println "Nil in " datom)))
-      [datom temps])))
+      (if ref
+        [datom temps]
+        (println "Nil in " datom)))))
 
 (defn fixup-datoms
   "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids,
