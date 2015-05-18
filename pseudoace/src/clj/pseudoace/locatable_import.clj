@@ -48,57 +48,59 @@
   (let [offset (or offset 0)]
     (reduce
      (fn [log [start-s end-s confirm-type confirm confirm-x :as line]]
-       (let [tid   [:importer/temp (d/squuid)]
-             start (parse-int start-s)
-             end   (parse-int end-s)
-             min   (+ offset -1 (min start end))
-             max   (+ offset (max start end))]
-         (update log (first (drop 2 (:timestamps (meta line))))
-           (fn [old]
-             (into (or old [])
-               (concat
-                (those
-                  [:db/add tid :locatable/parent parent]
-                  [:db/add tid :locatable/min min]
-                  [:db/add tid :locatable/max max]
-                  [:db/add tid :locatable/strand (if (> start end)
-                                                   :locatable.strand/negative
+       (if confirm
+         (let [tid   [:importer/temp (d/squuid)]
+               start (parse-int start-s)
+               end   (parse-int end-s)
+               min   (+ offset -1 (min start end))
+               max   (+ offset (max start end))]
+           (update log (first (drop 2 (:timestamps (meta line))))
+             (fn [old]
+               (into (or old [])
+                     (concat
+                      (those
+                       [:db/add tid :locatable/parent parent]
+                       [:db/add tid :locatable/min min]
+                       [:db/add tid :locatable/max max]
+                       [:db/add tid :locatable/strand (if (> start end)
+                                                        :locatable.strand/negative
                                                    :locatable.strand/positive)]
-                  (bin-me-maybe tid parent min max))
-                 
-                (case confirm-type
-                   "cDNA"
-                   [[:db/add tid :splice-confirm/cdna [:sequence/id confirm]]]
+                       (bin-me-maybe tid parent min max))
+                      
+                      (case confirm-type
+                        "cDNA"
+                        [[:db/add tid :splice-confirm/cdna [:sequence/id confirm]]]
+                        
+                        "EST"
+                        [[:db/add tid :splice-confirm/est [:sequence/id confirm]]]
+                        
+                        "OST"
+                        [[:db/add tid :splice-confirm/ost [:sequence/id confirm]]]
+                        
+                        "RST"
+                        [[:db/add tid :splice-confirm/rst [:sequence/id confirm]]]
+                        
+                        "RNASeq"
+                        (let [rtid [:importer/temp (d/squuid)]]
+                          [[:db/add tid :splice-confirm/rnaseq rtid]
+                           [:db/add rtid :splice-confirm.rnaseq/analysis [:analysis/id confirm]]
+                           [:db/add rtid :splice-confirm.rnaseq/count (parse-int confirm-x)]])
+                        
+                        "Mass_spec"
+                        [[:db/add tid :splice-confirm/mass-spec [:mass-spec-peptide/id confirm]]]
 
-                   "EST"
-                   [[:db/add tid :splice-confirm/est [:sequence/id confirm]]]
+                        "Homology"
+                        [[:db/add tid :splice-confirm/homology confirm]]
 
-                   "OST"
-                   [[:db/add tid :splice-confirm/ost [:sequence/id confirm]]]
+                        "UTR"
+                        [[:db/add tid :splice-confirm/utr [:sequence/id confirm]]]
 
-                   "RST"
-                   [[:db/add tid :splice-confirm/rst [:sequence/id confirm]]]
+                        "False"
+                        [[:db/add tid :splice-confirm/false-splice [:sequence/id confirm]]]
 
-                   "RNASeq"
-                   (let [rtid [:importer/temp (d/squuid)]]
-                     [[:db/add tid :splice-confirm/rnaseq rtid]
-                      [:db/add rtid :splice-confirm.rnaseq/analysis [:analysis/id confirm]]
-                      [:db/add rtid :splice-confirm.rnaseq/count (parse-int confirm-x)]])
-
-                   "Mass_spec"
-                   [[:db/add tid :splice-confirm/mass-spec [:mass-spec-peptide/id confirm]]]
-
-                   "Homology"
-                   [[:db/add tid :splice-confirm/homology confirm]]
-
-                   "UTR"
-                   [[:db/add tid :splice-confirm/utr [:sequence/id confirm]]]
-
-                   "False"
-                   [[:db/add tid :splice-confirm/false-splice [:sequence/id confirm]]]
-
-                   "Inconsistent"
-                   [[:db/add tid :splice-confirm/inconsistent [:sequence/id confirm]]])))))))
+                        "Inconsistent"
+                        [[:db/add tid :splice-confirm/inconsistent [:sequence/id confirm]]]))))))
+         log))   ;; There are a certain number of these with missing data, which we'll skip.
      {}
      splice-lines)))
 
