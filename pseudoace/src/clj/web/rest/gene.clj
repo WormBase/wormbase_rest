@@ -2,9 +2,36 @@
   (:use cheshire.core
         web.rest.object
         pseudoace.binning)
-  (:require [datomic.api :as d :refer (db history q touch entity)]
+  (:require [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let update those conjv]]))
+
+;; Currently gene-specific, make more general in the future?
+
+(defmacro def-rest-widget
+  "Define a handler for a rest widget endpoint.  `body` is executed with `gene-binding` 
+   will bound to the gene's entity-map, and should return a map of field values."
+  [name [gene-binding] & body]
+  `(defn ~name [db# id#]
+     (if-let [~gene-binding (entity db# [:gene/id id#])]
+       {:status 200
+        :content-type "text/plain"
+        :body (generate-string
+               {:class "gene"
+                :name id#
+                :fields (do ~@body)}
+               {:pretty true})}
+       {:status 404
+        :content-type "text/plain"
+        :body (format "Can't find gene %s" id#)})))
+
+;;
+;; "name" field, included on all widgets.
+;;
+
+(defn- name-field [gene]
+  {:data (pack-obj "gene" gene)
+   :description (format "The name and WormBase internal ID of %s" (:gene/id gene))})
 
 ;;
 ;; Overview widget
@@ -274,36 +301,26 @@
    :description
    "structured descriptions of gene function"})
 
-(defn gene-overview [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :version                  (version gene)
-              :classification           (gene-classification gene)
-              :also_refers_to           (also-refers-to gene)
-              :merged_into              (merged-into gene)
-              :gene_class               (gene-class gene)
-              :concise_description      (concise-description gene)
-              :remarks                  (curatorial-remarks gene)
-              :operon                   (gene-operon gene)
-              :legacy_information       (legacy-info gene)
-              :named_by                 (named-by gene)
-              :parent_sequence          (parent-sequence gene)
-              :clone                    (parent-clone gene)
-              :cloned_by                (cloned-by gene)
-              :transposon               (transposon gene)
-              :sequence_name            (sequence-name gene)
-              :locus_name               (locus-name gene)
-              :human_disease_relevance  (disease-relevance gene)
-              :structured_description   (structured-description gene)
-              }}
-            {:pretty true})}))
+(def-rest-widget overview [gene]
+  {:name                     (name-field gene)
+   :version                  (version gene)
+   :classification           (gene-classification gene)
+   :also_refers_to           (also-refers-to gene)
+   :merged_into              (merged-into gene)
+   :gene_class               (gene-class gene)
+   :concise_description      (concise-description gene)
+   :remarks                  (curatorial-remarks gene)
+   :operon                   (gene-operon gene)
+   :legacy_information       (legacy-info gene)
+   :named_by                 (named-by gene)
+   :parent_sequence          (parent-sequence gene)
+   :clone                    (parent-clone gene)
+   :cloned_by                (cloned-by gene)
+   :transposon               (transposon gene)
+   :sequence_name            (sequence-name gene)
+   :locus_name               (locus-name gene)
+   :human_disease_relevance  (disease-relevance gene)
+   :structured_description   (structured-description gene)})
 
 ;;
 ;; Phenotypes widget
@@ -311,39 +328,35 @@
 
 (def q-gene-rnai-pheno
   '[:find ?pheno (distinct ?ph)
-    :in $ ?gid
-    :where [?g :gene/id ?gid]
-           [?gh :rnai.gene/gene ?g]
+    :in $ ?g
+    :where [?gh :rnai.gene/gene ?g]
            [?rnai :rnai/gene ?gh]
            [?rnai :rnai/phenotype ?ph]
            [?ph :rnai.phenotype/phenotype ?pheno]])
 
 (def q-gene-rnai-not-pheno
   '[:find ?pheno (distinct ?ph)
-    :in $ ?gid
-    :where [?g :gene/id ?gid]
-           [?gh :rnai.gene/gene ?g]
+    :in $ ?g
+    :where [?gh :rnai.gene/gene ?g]
            [?rnai :rnai/gene ?gh]
            [?rnai :rnai/phenotype-not-observed ?ph]
     [?ph :rnai.phenotype-not-observed/phenotype ?pheno]])
 
 (def q-gene-var-pheno
    '[:find ?pheno (distinct ?ph)
-     :in $ ?gid
-     :where [?g :gene/id ?gid]
-            [?gh :variation.gene/gene ?g]
+     :in $ ?g
+     :where [?gh :variation.gene/gene ?g]
             [?var :variation/gene ?gh]
             [?var :variation/phenotype ?ph]
             [?ph :variation.phenotype/phenotype ?pheno]])
  
 (def q-gene-var-not-pheno
    '[:find ?pheno (distinct ?ph)
-     :in $ ?gid
-     :where [?g :gene/id ?gid]
-            [?gh :variation.gene/gene ?g]
+     :in $ ?g
+     :where [?gh :variation.gene/gene ?g]
             [?var :variation/gene ?gh]
             [?var :variation/phenotype-not-observed ?ph]
-     [?ph :variation.phenotype-not-observed/phenotype ?pheno]])
+            [?ph :variation.phenotype-not-observed/phenotype ?pheno]])
 
 (defn- author-lastname [author-holder]
   (or
@@ -376,15 +389,15 @@
    :taxonomy "all"
    :label (str (author-list paper) ", " (:paper/publication-date paper))})
 
-(defn- phenotype-table [db id not?]
+(defn- phenotype-table [db gene not?]
   (let [var-phenos (into {} (q (if not?
                                  q-gene-var-not-pheno
                                  q-gene-var-pheno)
-                               db id))
+                               db gene))
         rnai-phenos (into {} (q (if not?
                                   q-gene-rnai-not-pheno
                                   q-gene-rnai-pheno)
-                                db id))
+                                db gene))
         phenos (set (concat (keys var-phenos)
                             (keys rnai-phenos)))]
     (->>
@@ -513,37 +526,23 @@
         
    
          
-(defn- gene-phenotype [db id]
-  (let [gids (q '[:find ?g :in $ ?gid :where [?g :gene/id ?gid]] db id)]
-    (if-let [[gid] (first gids)]
-      {:name id
-       :class "gene"
-       :uri "whatevs"
-       :fields
-       {
-        :name
-        {:data 
-         {:id id
-          :label (:gene/public-name (entity db gid))
-          :class "gene"
-          :taxonomy "c_elegans"}
-         :description (format "The name and WormBase internal ID of %s" id)}
+(def-rest-widget phenotypes [gene]
+  {
+   :name      (name-field gene)
 
-        :phenotype
-        {:data
-         {:Phenotype              (phenotype-table db id false)
-          :Phenotype_not_observed (phenotype-table db id true)}
-         :description
-         "The phenotype summary of the gene"}
+   :phenotype
+   {:data
+    {:Phenotype              (phenotype-table (d/entity-db gene) (:db/id gene) false)
+     :Phenotype_not_observed (phenotype-table (d/entity-db gene) (:db/id gene) true)}
+    :description
+    "The phenotype summary of the gene"}
         
-        :phenotype_by_interaction
-        (phenotype-by-interaction db gid)}})))
+   :phenotype_by_interaction
+   (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
          
-        
-(defn gene-phenotype-rest [db id]
-  {:status 200
-   :content-type "application/json"
-   :body (generate-string (gene-phenotype db id) {:pretty true})})
+;;
+;; Mapping data widget
+;;
 
 ;; Needs better support for non-gene things.
 
@@ -660,101 +659,71 @@
           
 
           ))))
-                        
     
 
-(defn gene-mapping-data
-  "Retrieve a map representing a mapping_data API response"
-  [db id]
-  (if-let [gid (q '[:find ?g .
-                    :in $ ?gid
-                    :where [?g :gene/id ?gid]]
-                  db id)]
-    {:name id
-     :class "gene"
-     :uri "whatevs"
-     :fields
-     {:name
-      {:data (pack-obj "gene" (entity db gid))
-       :description (format "The name and Wormbase internal ID of %s" id)}
+(def-rest-widget mapping-data [gene]
+  {:name      (name-field gene)
 
-      :two_pt_data
-      {:data (seq (gene-mapping-twopt db gid))
-       :description "Two point mapping data for this gene"}
+   :two_pt_data
+   {:data (seq (gene-mapping-twopt (d/entity-db gene) (:db/id gene)))
+    :description "Two point mapping data for this gene"}
 
-      :pos_neg_data
-      {:data (seq (gene-mapping-posneg db gid))
-       :description "Positive/Negative mapping data for this gene"}
+   :pos_neg_data
+   {:data (seq (gene-mapping-posneg (d/entity-db gene) (:db/id gene)))
+    :description "Positive/Negative mapping data for this gene"}
 
-      :multi_pt_data
-      {:data (seq (gene-mapping-multipt db gid))
-       :description "Multi point mapping data for this gene"}}}))
- 
-
-(defn gene-mapping-data-rest [db id]
-  {:status 200
-   :content-type "application/json"
-   :body (generate-string (gene-mapping-data db id) {:pretty true})})
+   :multi_pt_data
+   {:data (seq (gene-mapping-multipt (d/entity-db gene) (:db/id gene)))
+    :description "Multi point mapping data for this gene"}})
 
 
-(defn gene-human-diseases
-  [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:name id
-     :class "gene"
-     :uri "whatevs"
-     :fields
-     {:name
-      {:data (pack-obj "gene" gene)
-       :description (format "The name and Wormbase internal ID of %s" id)}
+;;
+;; Human diseases widget
+;;
 
-      :human_disease_relevance
-      (disease-relevance gene)
-      
-      :human_diseases
-      {:data
-       {:potential_model
-        (seq
-         (for [d (:gene/disease-potential-model gene)]
-           (assoc (pack-obj (:gene.disease-potential-model/do-term d))
-             :ev (get-evidence d))))
+(defn- disease-models [gene]
+  {:data
+   {:potential_model
+    (seq
+     (for [d (:gene/disease-potential-model gene)]
+       (assoc (pack-obj (:gene.disease-potential-model/do-term d))
+         :ev (get-evidence d))))
 
-        :experimental_model
-        (seq
-         (for [d (:gene/disease-experimental-model gene)]
-           (assoc (pack-obj (:gene.disease-experimental-model/do-term d))
-             :ev (get-evidence d))))
+    :experimental_model
+    (seq
+     (for [d (:gene/disease-experimental-model gene)]
+       (assoc (pack-obj (:gene.disease-experimental-model/do-term d))
+         :ev (get-evidence d))))
         
-        :gene
-        (seq 
-         (q '[:find [?o ...]
-              :in $ ?gene
-              :where [?gene :gene/database ?dbent]
-                     [?omim :database/id "OMIM"]
-                     [?field :database-field/id "gene"]
-                     [?dbent :gene.database/database ?omim]
-                     [?dbent :gene.database/field ?field]
-                     [?dbent :gene.database/accession ?o]]
-            db (:db/id gene)))
+    :gene
+    (seq 
+     (q '[:find [?o ...]
+          :in $ ?gene
+          :where [?gene :gene/database ?dbent]
+                 [?omim :database/id "OMIM"]
+                 [?field :database-field/id "gene"]
+                 [?dbent :gene.database/database ?omim]
+                 [?dbent :gene.database/field ?field]
+                 [?dbent :gene.database/accession ?o]]
+        db (:db/id gene)))
 
-        :disease
-        (seq 
-         (q '[:find [?o ...]
-              :in $ ?gene
-              :where [?gene :gene/database ?dbent]
-                     [?omim :database/id "OMIM"]
-                     [?field :database-field/id "disease"]
-                     [?dbent :gene.database/database ?omim]
-                     [?dbent :gene.database/field ?field]
-                     [?dbent :gene.database/accession ?o]]
-            db (:db/id gene)))
-        }}}}))
+    :disease
+    (seq 
+     (q '[:find [?o ...]
+          :in $ ?gene
+          :where [?gene :gene/database ?dbent]
+                 [?omim :database/id "OMIM"]
+                 [?field :database-field/id "disease"]
+                 [?dbent :gene.database/database ?omim]
+                 [?dbent :gene.database/field ?field]
+                 [?dbent :gene.database/accession ?o]]
+        db (:db/id gene)))}})
        
 
-(defn gene-human-diseases-rest [db id]
-  {:status 200
-   :content-type "application/json"
-   :body (generate-string (gene-human-diseases db id) {:pretty true})})
+(def-rest-widget human-diseases [gene]
+  {:name                    (name-field gene)
+   :human_disease_relevance (disease-relevance gene)
+   :human_diseases          (disease-models gene)})
 
 ;;
 ;; Assembly-twiddling stuff (should be in own namespace?)
@@ -984,78 +953,86 @@
    :description
    "SAGE tags identified"})
 
-(defn gene-reagents [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "application/json"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :transgenes         (transgenes gene)
-              :transgene_products (transgene-products gene)
-              :microarray_probes  (microarray-probes gene)
-              :matching_cdnas     (matching-cdnas gene)
-              :antibodies         (antibodies gene)
-              :orfeome_primers    (orfeome-primers gene)
-              :primer_pairs       (primer-pairs gene)
-              :sage_tags          (sage-tags gene)}})}))   
+(def-rest-widget reagents [gene]
+  {:name               (name-field gene)
+   :transgenes         (transgenes gene)
+   :transgene_products (transgene-products gene)
+   :microarray_probes  (microarray-probes gene)
+   :matching_cdnas     (matching-cdnas gene)
+   :antibodies         (antibodies gene)
+   :orfeome_primers    (orfeome-primers gene)
+   :primer_pairs       (primer-pairs gene)
+   :sage_tags          (sage-tags gene)})
 
 ;;
-;; GO widget (using post-WS248 schema)
+;; New style GO widget
 ;;
 
 (def ^:private division-names
-  {:go-term.type/molecular-function "Molecular function"
-   :go-term.type/cellular-component "Cellular component"
-   :go-term.type/biological-process "Biological process"})
+  {:go-term.type/molecular-function "Molecular_function"
+   :go-term.type/cellular-component "Cellular_component"
+   :go-term.type/biological-process "Biological_process"})
 
-(defn- term-method [annos]
-  (cond
-   (some :go-annotation/reference annos)
-   "Curated"
+(defn- term-table-full [db annos]
+  (map
+   (fn [{:keys [term code anno]}]
+     {:anno_id
+      (:go-annotation/id anno)
 
-   (some :go-annotation/phenotype annos)
-   "Phenotype to GO mapping"
+      :extensions
+      (->>
+       (concat
+        (for [{rel :go-annotation.molecule-relation/text
+               mol :go-annotation.molecule-relation/molecule}
+              (:go-annotation/molecule-relation anno)]
+          [rel (pack-obj "molecule" mol)]))
+       (reduce
+        (fn [m [rel obj]]
+          (assoc m rel obj))
+        nil))
 
-   (some :go-annotation/motif annos)
-   "Interpro to GO Mapping"
+      :with
+      (seq
+       (concat
+        (map (partial pack-obj "gene")      (:go-annotation/interaction-gene anno))
+        (map (partial pack-obj "go-term")   (:go-annotation/inferred-from-go-term anno))
+        (map (partial pack-obj "motif")     (:go-annotation/motif anno))
+        (map (partial pack-obj "rnai")      (:go-annotation/rnai-result anno))
+        (map (partial pack-obj "variation") (:go-annotation/variation anno))
+        (map (partial pack-obj "phenotype") (:go-annotation/phenotype anno))
+        ;; Also DB fields...
+        ))
+        
+      
+      :evidence_code
+      {:text
+       (:go-code/id code)
+       
+       :evidence
+       (vmap
+        :Date_last_updated
+        (if-let [d (:go-annotation/date-last-updated anno)]
+          (str d))
 
-   ;; Should we still be doing something special for TMHMM?
-   
-   :default
-   "No Method"))
-   
+        :Contributed_by
+        (seq (map (partial pack-obj "analysis")
+                  (:go-annotation/contributed-by anno)))
+        
+        :Reference
+        (seq (map (partial pack-obj "paper")
+                  (:go-annotation/reference anno))))}
 
-(defn- term-table [db annos]
-  (->>
-   (group-by (juxt :term :code) annos)
-   (map
-    (fn [[[term code] annos]]
-      {:evidence_code
-       {:text
-        (:go-code/id code)
+      :term
+      nil  ;; WTF?
 
-        :evidence
-        (reduce
-         (fn [m anno]
-           (cond-> m
-             (:go-annotation/date-last-updated anno)
-             (assoc :Date_last_updated (str (:go-annotation/date-last-updated anno)))
+      :term_id
+      (pack-obj "go-term" term :label (:go-term/id term))
 
-             (:go-annotation/reference anno)
-             (update :Paper_evidence concat (map (partial pack-obj "paper") (:go-annotation/reference anno)))
+      :term_description
+      (pack-obj "go-term" term)})
+   annos))
 
-             ;; Reconstruct some "Inferred automatically" stuff?
-           ))
-         {:Description (first (:go-code/description code))}
-         (sort-by :go-annotation/date-last-updated (map :anno annos)))}
-       :method (term-method (map :anno annos))
-       :term (pack-obj "go-term" term)}))))
-
-(defn- gene-ontology-terms [gene]
+(defn- gene-ontology-full [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1077,24 +1054,55 @@
       (map
        (fn [[key annos]]
          [(division-names key)
-          (term-table db annos)]))
+          (term-table-full db annos)]))
       (into {}))
 
      :description
      "gene ontology associations"}))
 
-(defn gene-ontology [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :gene_ontology (gene-ontology-terms gene)}}
-            {:pretty true})}))
+(defn- term-summary-table [db annos]
+  (->>
+   (group-by :term annos)
+   (map
+    (fn [[term annos]]
+      {:extensions       nil
+
+       :term_id
+       (pack-obj "go-term" term :label (:go-term/id term))
+       
+       :term_description
+       (pack-obj "go-term" term)}))))
+
+(defn- gene-ontology-summary [gene]
+ (let [db (d/entity-db gene)]
+  {:data
+   (->>
+    (q '[:find ?div ?term ?anno
+         :in $ ?gene
+         :where [?anno :go-annotation/gene ?gene]
+                [?anno :go-annotation/go-term ?term]
+                [?term :go-term/type ?tdiv]
+                [?tdiv :db/ident ?div]]
+       db (:db/id gene))
+    (map
+     (fn [[div term code anno]]
+       {:division div
+        :term     (entity db term)
+        :anno     (entity db anno)}))
+    (group-by :division)
+    (map
+     (fn [[key annos]]
+       [(division-names key)
+        (term-summary-table db annos)]))
+    (into {}))
+   
+   :description
+   "gene ontology associations"}))
+
+(def-rest-widget gene-ontology [gene]
+  {:name                   (name-field gene)
+   :gene_ontology_summary  (gene-ontology-summary gene)
+   :gene_ontology          (gene-ontology-full gene)})
 
 ;;
 ;; Expression widget
@@ -1213,20 +1221,11 @@
      :description
      "expression cluster data"}))
 
-(defn gene-expression [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :anatomy_terms       (anatomy-terms gene)
-              :expression_patterns (expression-patterns gene)
-              :expression_cluster  (expression-clusters gene)}}
-            {:pretty true})}))
+(def-rest-widget expression [gene]
+  {:name                (name-field gene)
+   :anatomy_terms       (anatomy-terms gene)
+   :expression_patterns (expression-patterns gene)
+   :expression_cluster  (expression-clusters gene)})
 
 ;;
 ;; Homology widget
@@ -1398,25 +1397,15 @@
    "Trichinella spiralis"
    "Trichuris suis"])
 
-(defn gene-homology [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :nematode_orthologs (homology-orthologs gene nematode-species)
-              :human_orthologs    (homology-orthologs gene ["Homo sapiens"])
-              :other_orthologs    (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
-              :paralogs           (homology-paralogs gene)
-              :best_blastp_matches (best-blastp-matches gene)
-              :protein_domains    (protein-domains gene)
-              }}
-            {:pretty true})}))
-
+(def-rest-widget homology [gene]
+  {:name                (name-field gene)
+   :nematode_orthologs  (homology-orthologs gene nematode-species)
+   :human_orthologs     (homology-orthologs gene ["Homo sapiens"])
+   :other_orthologs     (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
+   :paralogs            (homology-paralogs gene)
+   :best_blastp_matches (best-blastp-matches gene)
+   :protein_domains     (protein-domains gene)})
+   
 ;;
 ;; History widget
 ;;
@@ -1493,20 +1482,10 @@
           (seq))
      :description "the historical annotations of this gene"}))
 
-(defn gene-history [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :history   (history-events gene)
-              :old_annot (old-annot gene)
-              }}
-            {:pretty true})}))
+(def-rest-widget history [gene]
+  {:name      (name-field gene)
+   :history   (history-events gene)
+   :old_annot (old-annot gene)})
 
 
 ;;
@@ -1624,19 +1603,9 @@
      :description
      "gene models for this gene"}))
 
-(defn gene-sequences [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :gene_models (gene-models gene)
-              }}
-            {:pretty true})}))
+(def-rest-widget sequences [gene]
+  {:name         (name-field gene)
+   :gene_models  (gene-models gene)})
 
 ;;
 ;; Sequence Features widget
@@ -1684,19 +1653,9 @@
      :description
      "Features associated with this Gene"}))
 
-(defn gene-features [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :features (associated-features gene)
-              }}
-            {:pretty true})}))
+(def-rest-widget features [gene]
+  {:name       (name-field gene)
+   :features   (associated-features gene)})
 
 ;;
 ;; Genetics widget
@@ -1899,22 +1858,12 @@
           (map #(process-variation (entity db %))))
      :description "polymorphisms and natural variations contained in the strain"}))
 
-(defn gene-genetics [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :reference_allele (reference-allele gene)
-              :strains          (strains gene)
-              :alleles          (alleles gene)
-              :polymorphisms    (polymorphisms gene)
-              }}
-            {:pretty true})}))
+(def-rest-widget genetics [gene]
+  {:name             (name-field gene)
+   :reference_allele (reference-allele gene)
+   :strains          (strains gene)
+   :alleles          (alleles gene)
+   :polymorphisms    (polymorphisms gene)})
 
 ;;
 ;; external_links widget
@@ -1938,16 +1887,6 @@
    :description
    "external databases and IDs containing additional information on the object"})
 
-(defn gene-external-links [db id]
-  (if-let [gene (entity db [:gene/id id])]
-    {:status 200
-     :content-type "text/plain"
-     :body (generate-string
-            {:class "gene"
-             :name  id
-             :fields
-             {:name {:data        (pack-obj "gene" gene)
-                     :description (format "The name and WormBase internal ID of %s" id)}
-              :xrefs (xrefs gene)
-              }}
-            {:pretty true})}))
+(def-rest-widget external-links [gene]
+  {:name  (name-field gene)
+   :xrefs (xrefs gene)})

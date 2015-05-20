@@ -1,7 +1,7 @@
 (ns pseudoace.schema-datomic
   (:require [datomic.api :as d :refer (q entity)]))
 
-(defn those
+(defn thosev
   "Return a vector consisting (only) of the true arguments,
    or `nil` if no arguments are true"
   [& args]
@@ -26,7 +26,7 @@
                    (enum-keys
                     (d/entity-db attr)
                     (str (namespace ident) "." (name ident))))]
-    (those
+    (thosev
      (symbol (name ident))
 
      (if enums

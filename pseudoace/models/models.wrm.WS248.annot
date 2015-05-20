@@ -447,7 +447,7 @@
         Reference ?Paper YESXREF Gene // #Evidence  -- de-evidenced by tad
         Picture ?Picture NOXREF Gene
         Remark ?Text #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 ////////////////////////////
@@ -1143,10 +1143,10 @@
 ?GO_term Name ?Text
          Definition ?Text
          Term ?Text
-         Synonym Broad ^broad-synonym ?Text
-                 Exact ^exact-synonym ?Text
-                 Narrow ^narrow-synonym ?Text
-                 Related ^related-synonym ?Text
+         Synonym ENUM ^scope Broad ?Text
+                             Exact ?Text
+                             Narrow ?Text
+                             Related ?Text
          Status UNIQUE Valid
                        Obsolete
          Type UNIQUE Biological_process
@@ -1237,10 +1237,10 @@
          Definition UNIQUE ?Text
 //         Worm_disease_model ?Text ?Species #Evidence  // Textual description of the worm disease model
          Comment Text
-         Synonym Broad ^broad-synonym ?Text
-                 Exact ^exact-synonym ?Text
-                 Narrow ^narrow-synonym ?Text
-                 Related ^related-synonym ?Text
+         Synonym ENUM ^scope Broad ?Text
+                             Exact ?Text
+                             Narrow ?Text
+                             Related ?Text
          Parent Is_a ?DO_term YESXREF Is
          Child Is ?DO_term NOXREF Is_a 
          DB_info Database ?Database ^database ?Database_field ^field ?Text ^accession              
@@ -1377,7 +1377,7 @@
 //                       Homol_data ?Homol_data YESXREF Sequence UNIQUE Int ^start UNIQUE Int ^end #SMap_info
           Structure From Source UNIQUE ?Sequence NOXREF Subsequence
                          Source_exons Int ^start UNIQUE Int ^end // start at 1 // WARNING: is this still needed when ?CDS Class is present???
-                    Subsequence ?Sequence YESXREF Source UNIQUE Int ^start UNIQUE Int ^end
+//                    Subsequence ?Sequence YESXREF Source UNIQUE Int ^start UNIQUE Int ^end      // :locatable/assembly-parent
                     Overlap_right UNIQUE ?Sequence YESXREF Overlap_left UNIQUE Int // potentially use Overlap_right integer for auto-linking
                     Overlap_left UNIQUE ?Sequence YESXREF Overlap_right               // tad leave this bidirectional for now.
                     Gap_right UNIQUE Int ^size Text            // 000909 dl added to track gap sizes
@@ -1462,9 +1462,10 @@
                                 // exactly for what you would like a half-line summary to
                                 // contain, for making tables etc.
                      Link       // Enable gene curation of link genes [020805 krb]
-          Splices    Confirmed_intron Int Int #Splice_confirmation
-                     Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
-                     Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
+          // Should be lightweight features.
+          // Splices    Confirmed_intron Int Int #Splice_confirmation
+          //           Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
+          //           Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
           Cluster_information Contains_reads ?Sequence YESXREF Contained_in_cluster  // Links cluster contig and
                               Contained_in_cluster ?Sequence NOXREF Contains_reads        // individual reads
           Map ?Map YESXREF Sequence #Map_position          // use in particular for Genomic_canonical
@@ -1479,7 +1480,7 @@
                         // We will generate a column for each distinct ?Method.  So for
                         // distinct Worm_EST and Worm_genomic columns, use ?Method objects
                         // Worm_EST_Blastn and Worm_genomic_Blastn.
-          Method UNIQUE ?Method
+//          Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 
@@ -1590,9 +1591,9 @@
                              Supercedes UNIQUE ?Sequence_collection YESXREF Superceded_by
                              Superceded_by UNIQUE ?Sequence_collection NOXREF Supercedes
                      Remark ?Text
-                     Status UNIQUE Live #Evidence
-                                   Suppressed #Evidence
-                                   Dead #Evidence   
+                     Status UNIQUE ENUM ^status Live #Evidence
+                                                Suppressed #Evidence
+                                                Dead #Evidence   
                      Sequences ?Sequence
 
 
@@ -1650,7 +1651,7 @@
                 RNASeq_FPKM ^rnaseq ?Life_stage ^stage Float ^fpkm #Evidence
                 Remark ?Text #Evidence
         Associated_feature ?Feature NOXREF Associated_with_CDS #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method   Becomes :locatable/method
 
 
 
@@ -1706,7 +1707,7 @@
                            Start_not_found                                 // [020306 kj]
                            End_not_found                                   // [020306 kj]
                 Associated_feature ?Feature NOXREF Associated_with_transcript #Evidence
-                Method UNIQUE ?Method                  
+//                Method UNIQUE ?Method                // Becomes :locatable/method
 
 
 
@@ -1726,9 +1727,9 @@
                         Database ?Database ^database ?Database_field ^field UNIQUE ?Text ^version
                 Origin From_laboratory UNIQUE ?Laboratory
                        Species UNIQUE ?Species
-                Type UNIQUE ENUM ^type Coding_pseudogene #Evidence //Pseudogene of a once coding loci 
-                                       RNA_pseudogene #Evidence    //Pseudogene of a ncRNA loci
-                                       Transposon_pseudogene #Evidence //Pseudogene of Transposon origins
+                Type UNIQUE ENUM ^type Coding_pseudogene ^coding #Evidence //Pseudogene of a once coding loci 
+                                       RNA_pseudogene ^rna #Evidence    //Pseudogene of a ncRNA loci
+                                       Transposon_pseudogene ^transposon #Evidence //Pseudogene of Transposon origins
                 Attributes Transcribed #Evidence
                            Fragment #Evidence
                 Properties Isoform #Evidence
@@ -1751,7 +1752,7 @@
                         Remark ?Text #Evidence    
                 Associated_feature ?Feature NOXREF Associated_with_pseudogene #Evidence
                 Confidential_remark ?Text
-                Method UNIQUE ?Method
+//                Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 
@@ -1778,7 +1779,7 @@
                            Gene ?Gene NOXREF Corresponding_transposon #Evidence 
             Visible Remark ?Text #Evidence
             Associated_feature ?Feature NOXREF Associated_with_transposon #Evidence
-            Method UNIQUE ?Method
+//             Method UNIQUE ?Method   // Becomes :locatable/method
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -1943,7 +1944,7 @@
          Transcription_factor UNIQUE ?Transcription_factor YESXREF Binding_site 
          Confidential_remark ?Text //pad
          Remark ?Text #Evidence
-         Method UNIQUE ?Method
+//         Method UNIQUE ?Method    // Becomes :locatable/method
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -2074,7 +2075,7 @@
 //                Structure_homol ?Structure_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 //                Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 //                Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-          Feature ?Method Int ^start Int ^end UNIQUE Float ^score  // display according to method
+//          Feature ?Method Int ^start Int ^end UNIQUE Float ^score  // Handled in Locatables import.
           Contains_peptide ?Mass_spec_peptide NOXREF Protein
           Remark ?Text #Evidence
 
@@ -2302,7 +2303,7 @@
               RNAi_result ?RNAi YESXREF Expr_profile // Connection made by script during build [030106 krb]
               Species UNIQUE ?Species
               Remark ?Text #Evidence
-              Method UNIQUE ?Method
+//              Method UNIQUE ?Method    // Becomes :locatable/method
 
 
 ?SK_map       X_coord UNIQUE Float
@@ -2766,7 +2767,7 @@
         Phenotype_not_observed ?Phenotype YESXREF Not_in_RNAi #Phenotype_info //added by Wen to separate Not phenotype from real phenotypes
         Expr_profile ?Expr_profile NOXREF RNAi_result // connection added during build [030106 krb]
         Remark ?Text #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method     // Becomes :locatable/method
 
 
 
@@ -2796,16 +2797,16 @@
                 Caused_by ?Gene #Evidence
                 Caused_by_other ?Text #Evidence
                 Rescued_by_transgene ?Transgene
-                Loss_of_function UNIQUE Hypomorph #Evidence
-                                        Amorph #Evidence
-                                        Uncharacterised_loss_of_function #Evidence
-                Gain_of_function UNIQUE Dominant_negative #Evidence
-                                        Hypermorph #Evidence
-                                        Neomorph #Evidence
-                                        Uncharacterised_gain_of_function #Evidence
-                Other_allele_type UNIQUE Wild_type #Evidence
-                                         Isoallele #Evidence  
-                                         Mixed #Evidence       
+                Loss_of_function UNIQUE ENUM Hypomorph #Evidence
+                                             Amorph #Evidence
+                                             Uncharacterised_loss_of_function #Evidence
+                Gain_of_function UNIQUE ENUM Dominant_negative #Evidence
+                                             Hypermorph #Evidence
+                                             Neomorph #Evidence
+                                             Uncharacterised_gain_of_function #Evidence
+                Other_allele_type UNIQUE ENUM Wild_type #Evidence
+                                              Isoallele #Evidence  
+                                              Mixed #Evidence       
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
                 Temperature_sensitive Heat_sensitive Text #Evidence
                                       Cold_sensitive Text #Evidence
@@ -2846,7 +2847,7 @@
              Interaction ?Interaction NOXREF PCR_interactor
              RNAi ?RNAi NOXREF PCR_product
              Remark ?Text #Evidence
-             Method UNIQUE ?Method
+//             Method UNIQUE ?Method       // Becomes :locatable/method
 
 
 ///////////////////////////////////////////////
@@ -2902,7 +2903,7 @@
         Associated_feature ?Feature NOXREF Associated_with_operon #Evidence
         Reference ?Paper YESXREF Operon
         Description UNIQUE ?Text #Evidence
-        Method UNIQUE ?Method
+//        Method UNIQUE ?Method        // Becomes :locatable/method
         History Merged_into UNIQUE ?Operon YESXREF Acquires_merge #Evidence
                 Acquires_merge ?Operon NOXREF Merged_into #Evidence
                 Split_from UNIQUE ?Operon NOXREF Split_into #Evidence
@@ -3033,7 +3034,7 @@
                         WashU_GSC_microarray_probe
                         Agilent_microarray_probe
                         Affymetrix_tiling_array_probe
-                Method UNIQUE ?Method
+//                 Method UNIQUE ?Method      // Becomes :locatable/method
 
 
 //////////////////////////////////
@@ -3085,7 +3086,7 @@
                                 Pseudogene ?Pseudogene YESXREF SAGE_tag #SAGE_mapping_info
                 Results ?SAGE_experiment UNIQUE #SAGE_data              //contains SAGE data for all experiments using the tag
                 Remark ?Text #Evidence
-                Method UNIQUE ?Method
+//                Method UNIQUE ?Method      // Becomes :locatable/method
 
 #SAGE_mapping_info Transcript_source UNIQUE ?Text   //Coding RNA, Mitochondrial, Other...
                    Position UNIQUE Int              //the number of the SAGE anchoring enzyme restriction site from the 3' end of the cDNA molecule
@@ -3534,7 +3535,7 @@
                        Readthrough Text #Evidence // klh WS228
            Reference ?Paper YESXREF Allele
            Remark ?Text #Evidence
-           Method UNIQUE ?Method
+//           Method UNIQUE ?Method       // Becomes :locatable/method
            Supporting_data Movie ?Movie NOXREF Variation #Evidence  //Carol [060421 ar2] 
 
 

@@ -188,8 +188,10 @@
                     :db/id           (tempid :db.part/db)
                     :db/ident        attribute
                     :db/valueType    :db.type/ref
-                    :db/cardinality  (if (and (:unique? node)
-                                              (every? :unique? (butlast concretes)))
+                    :db/cardinality  (if (or (and (not enum)
+                                                  (empty? concretes))
+                                             (and (:unique? node)
+                                                  (every? :unique? (butlast concretes))))
                                        :db.cardinality/one
                                        :db.cardinality/many)
                     :db/isComponent  true

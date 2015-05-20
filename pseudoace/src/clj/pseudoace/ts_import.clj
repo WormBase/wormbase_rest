@@ -1,5 +1,6 @@
 (ns pseudoace.ts-import
   (:use pseudoace.utils
+        wb.binning
         clojure.instant)
   (:require [pseudoace.import :refer [get-tags datomize-objval]]
             [datomic.api :as d :refer (db q entity touch tempid)]
@@ -49,19 +50,22 @@
     {:timestamps (drop n (:timestamps (meta seq)))}))
 
 
-(defn merge-logs [l1 l2]
-  (cond
-   (nil? l2)
-   l1
-
-   (nil? l1)
-   l2
-
-   :default
-   (reduce
-    (fn [m [key vals]]
-      (assoc m key (into (get m key []) vals)))
-    l1 l2)))
+(defn merge-logs
+  ([l1 l2]
+     (cond
+      (nil? l2)
+      l1
+      
+      (nil? l1)
+      l2
+      
+      :default
+      (reduce
+       (fn [m [key vals]]
+         (assoc m key (into (get m key []) vals)))
+       l1 l2)))
+  ([l1 l2 & ls]
+     (reduce merge-logs (merge-logs l1 l2) ls)))
 
 (defn- log-datomize-value [ti imp val]
   (case (:db/valueType ti)
@@ -250,7 +254,29 @@
       (fn [log [ts datom]]
         (update log ts conjv datom))
       {}))))
-           
+
+(defmethod log-custom "Sequence" [obj this imp]
+  (if-let [subseqs (select-ts obj ["Structure" "Subsequence"])]
+    (reduce
+     (fn [log [subseq start end :as m]]
+      (if (and subseq start end)    ;; WS248 contains ~30 clones with empty Subsequence tags.
+       (let [child [:sequence/id subseq :wb.part/sequence]
+             start (parse-int start)
+             end   (parse-int end)]
+         (update
+          log
+          (first (:timestamps (meta m)))
+          conj-if
+          [:db/add child :locatable/assembly-parent this]
+          [:db/add child :locatable/min (dec start)]
+          [:db/add child :locatable/max end]
+          [:db/add child :locatable/murmur-bin (bin (second this) (dec start) end)]))))
+     {}
+     subseqs)))
+       
+
+(defmethod log-custom :default [_ _ _] nil)
+
 (def ^:private s-child-types
   {"Gene_child"            :gene/id
    "CDS_child"             :cds/id
@@ -270,38 +296,61 @@
    "Homol_data"            :homol-data/id
    "Expr_profile"          :expr-profile/id})
 
-(defmethod log-custom :default [obj this imp]
-  ;;
-  ;; Is it worth creating a custom hierarchy so this only gets called for
-  ;; objects which might have S_children?
-  ;;
-  (if-let [sc (select-ts obj ["SMap" "S_child"])]
-    (reduce
-     (fn [log [[type link start end :as m] info-lines]]
-       (if-let [ident (s-child-types type)]
-         (let [child [ident link (or (get-in imp [:classes ident :pace/prefer-part])
-                                     :db.part/user)]
-               start (parse-int start)
-               end   (parse-int end)]
-           (if (and start end)
-             (update
-              log
-              (second (:timestamps (meta m)))
-              conj
-              [:db/add child :locatable/parent this]
-              [:db/add child :locatable/min (dec (min start end))]
-              [:db/add child :locatable/max (max start end)]
-              [:db/add child :locatable/strand (if (< start end)
-                                                 :locatable.strand/positive
-                                                 :locatable.strand/negative)])
-             (update
-              log
-              (second (:timestamps (meta m)))
-              conj
-              [:db/add child :locatable/parent this])))
-         log))
-     {}
-     (group-by (partial take-ts 4) sc))))
+(defn- log-children [log sc this imp]
+  (reduce
+   (fn [log [[type link start end :as m] info-lines]]
+     (if-let [ident (s-child-types type)]
+       (let [child [ident link (or (get-in imp [:classes ident :pace/prefer-part])
+                                   :db.part/user)]
+             start (parse-int start)
+             end   (parse-int end)
+             timestamp (case type
+                         "Feature_data"
+                         "helper"
+                         
+                         "Homol_data"
+                         "helper"
+
+                         ;; default
+                         (second (:timestamps (meta m))))]
+         (if (and start end)
+           (update
+            log
+            timestamp
+            conj-if
+            [:db/add child :locatable/parent this]
+            [:db/add child :locatable/min (dec (min start end))]
+            [:db/add child :locatable/max (max start end)]
+            [:db/add child :locatable/strand (if (< start end)
+                                               :locatable.strand/positive
+                                               :locatable.strand/negative)]
+            (if (= (first this) :sequence/id)
+              [:db/add child :locatable/murmur-bin (bin (second this)
+                                                        (dec (min start end))
+                                                        (max start end))]))
+           (update
+            log
+            timestamp
+            conj
+            [:db/add child :locatable/parent this])))
+       log))
+   log
+   (group-by (partial take-ts 4) sc)))
+
+(defn log-coreprops [obj this imp]
+  ;; This should possibly run on ALL objects, rather than via log-custom.
+
+  (let [children (select-ts obj ["SMap" "S_child"])
+        method   (first (select-ts obj ["Method"]))]
+    (cond-> nil
+      children
+      (log-children children this imp)
+
+      method
+      (update
+       (first (:timestamps (meta method)))
+       conj
+       [:db/add this :locatable/method [:method/id (first method)]]))))
 
 (defn obj->log [imp obj]
   (let [ci ((:classes imp) (:class obj))
@@ -331,6 +380,7 @@
             (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
             imp
             #{(namespace (:db/ident ci))})))))
+     (log-coreprops obj this imp)
      (log-custom obj this imp))))
 
 (defn objs->log [imp objs]
@@ -346,15 +396,19 @@
     (if (vector? ref)
       (let [[k v part] ref
             lref       [k v]]
-        (if (entity db lref)
-          [(assoc datom index lref) temps]    ; turn 3-element refs into normal lookup-refs
-          (if-let [tid (temps ref)]
-            [(assoc datom index tid) temps]
-            (let [tid (d/tempid (or part :db.part/user))]
-              [(assoc datom index tid)
-               (assoc temps ref tid)
-               [:db/add tid k v]]))))
-      [datom temps])))
+        (if v
+          (if (entity db lref)
+            [(assoc datom index lref) temps]    ; turn 3-element refs into normal lookup-refs
+            (if-let [tid (temps ref)]
+              [(assoc datom index tid) temps]
+              (let [tid (d/tempid (or part :db.part/user))]
+                [(assoc datom index tid)
+                 (assoc temps ref tid)
+                 [:db/add tid k v]])))
+          (println "Nil in " datom)))
+      (if ref
+        [datom temps]
+        (println "Nil in " datom)))))
 
 (defn fixup-datoms
   "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids,
@@ -362,11 +416,13 @@
   [db datoms]
   (->>
    (reduce
-    (fn [{:keys [done temps]} datom]
-      (let [[datom temps ex1] (temp-datom db datom temps 1)
-            [datom temps ex2] (temp-datom db datom temps 3)]
-        {:done  (conj-if done datom ex1 ex2)
-         :temps temps}))
+    (fn [{:keys [done temps] :as last} datom]
+      (if-let [[datom temps ex1] (temp-datom db datom temps 1)]
+        (if-let [[datom temps ex2] (temp-datom db datom temps 3)]
+          {:done  (conj-if done datom ex1 ex2)
+           :temps temps}
+          last)
+        last))
     {:done [] :temps {}}
     (mapcat
      (fn [[op e a v :as datom]]
@@ -383,22 +439,20 @@
   ^{:doc "Don't force :db/txInstant attributes during log replays"}
   *suppress-timestamps* false)
 
-(defn- txmeta [time name]
-  (vmap
-   :db/id             (d/tempid :db.part/tx)
-   :importer/ts-name  name
-   :db/txInstant      (if-not *suppress-timestamps*
-                        time)))
+(defn- txmeta [stamp]
+  (let [[_ ds ts name]  (re-matches timestamp-pattern stamp)
+        time           (if ds (read-instant-date (str ds "T" ts)))]
+    (vmap
+     :db/id             (d/tempid :db.part/tx)
+     :importer/ts-name  name
+     :db/txInstant      (if-not *suppress-timestamps*
+                          time))))
 
 (defn play-log [con log]
-  (doseq [[stamp datoms] (sort-by first log)
-          :let [[_ ds ts name]
-                (re-matches timestamp-pattern stamp)
-                time (read-instant-date (str ds "T" ts))]]
+  (doseq [[stamp datoms] (sort-by first log)]
     (let [db (db con)
           datoms (fixup-datoms db datoms)]
-      @(d/transact con (conj datoms (txmeta time name))))))
-
+      @(d/transact con (conj datoms (txmeta stamp))))))
 
 (def log-fixups
   {nil        "1977-01-01_01:01:01_nil"
@@ -414,7 +468,7 @@
   (doseq [[stamp logs] (clean-log-keys logs)
           :let  [[_ date time name]
                  (re-matches timestamp-pattern stamp)]]
-    (with-open [w (-> (file dir (str date ".edn.gz"))
+    (with-open [w (-> (file dir (str (or date stamp) ".edn.gz"))
                       (FileOutputStream. true)
                       (GZIPOutputStream.)
                       (writer))]
@@ -459,14 +513,9 @@
   (with-open [r (reader logfile)]
     (doseq [rblk (partition-log 1000 50000 (logfile-seq r))]
       (doseq [sblk (partition-by first rblk)
-              :let [[_ ds ts name]
-                    (re-matches timestamp-pattern (ffirst sblk))
-                    time (read-instant-date (str ds "T" ts))]]
+              :let [stamp (ffirst sblk)]]
         (let [blk (map second sblk)
               db      (db con)
               fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
               datoms  (fixup-datoms db fdatoms)]
-          @(d/transact-async con (conj datoms (txmeta time name))))))))
-
-
-
+          @(d/transact-async con (conj datoms (txmeta stamp))))))))

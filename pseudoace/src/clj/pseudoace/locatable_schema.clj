@@ -29,7 +29,23 @@
        [score :float
           "Feature score, as used in ?Feature_data."]
        [note :string :many
-          "Human-readable note associated with a lightweight feature."]))
+          "Human-readable note associated with a lightweight feature."]
+
+       ;;
+       ;; Binning system
+       ;;
+
+       [murmur-bin :long :indexed
+          "Bottom 20 bits contain a UCSC/BAM-style bin number.  High bits contain a Murmur3 hash code
+           for the parent sequence.  Only used for locatables attached to a parent with a :sequence/id."]
+
+       ;;
+       ;; Assembly support
+       ;;
+
+       [assembly-parent :ref
+          "The parent sequence in a genome assembly."]
+       ))
 
    (schema splice-confirm
     (fields
@@ -126,6 +142,27 @@
 
     ])
 
+  ;;
+  ;; Fake pseudoace metadata for locatable-model enums so that
+  ;; they are visible in TrACeView and Colonnade
+  ;;
+  
+  [{:db/id          #db/id[:db.part/user]
+    :db/ident       :locatable.strand/positive
+    :pace/tags      "Positive"}
+
+   {:db/id          #db/id[:db.part/user]
+    :db/ident       :locatable.strand/negative
+    :pace/tags      "Negative"}
+
+   {:db/id          #db/id[:db.part/user]
+    :db/ident       :homology.strand/positive
+    :pace/tags      "Positive"}
+
+   {:db/id          #db/id[:db.part/user]
+    :db/ident       :homology.strand/negative
+    :pace/tags      "Negative"}]
+  
   [{:db/id          #db/id[:db.part/tx]
     :db/txInstant   #inst "1970-01-01T00:00:01"}]))
 
