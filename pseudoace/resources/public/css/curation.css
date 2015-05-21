@@ -1,0 +1,107 @@
+body {
+    font-family: Verdana, Arial, helvetica, sans-serif;
+    font-size: 12px;
+    margin: 0px;
+}
+
+div.header {
+    display: flex;
+    justify-content: space-between;
+    background: black;
+    padding: 8px;
+}
+
+div.header h1 {
+    margin: 0px;
+    color: #ccdddd;
+}
+
+div.ident {
+    color: white;
+}
+
+table {
+    font-size: 12px;
+}
+
+table.history tbody tr:nth-child(even) {
+    background-color: #bbc8dd;
+}
+
+div.block {
+    background: #eeeeee;
+    padding: 15px;
+    padding-left: 30px;
+    padding-right: 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+div.container {
+    display: flex;
+    margin: 8px;
+}
+
+div.content {
+    flex: 1 1;
+}
+
+div.menu {
+    flex: 0 0 220px;
+    margin-left: 20px;
+    background: lightgray;
+    border-radius: 10px;
+}
+
+div.menu-header {
+    padding: 15px;
+    padding-bottom: 2px;
+}
+
+div.menu-content {
+    background: #eeeeee;
+    padding: 15px;
+    padding-top: 2px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+div.menu-content p {
+    margin-bottom: 4px;
+    margin-top: 2px;
+}
+
+table.info {
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+table.info th {
+    color: #4444aa;
+    text-align: right;
+    padding-right: 20px;
+}
+
+table.history th {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+table.history td {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+p.err {
+    color: red
+}
+
+span.clear-button {
+    background: red;
+    margin-left: 3px;
+    padding-left: 3px;
+    padding-right: 3px;
+    height: 12px;
+    color: black;
+    cursor: default;
+}

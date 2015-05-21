@@ -11,7 +11,8 @@
         web.query
         clojure.walk
         pseudoace.utils
-        web.trace)
+        web.trace
+        web.curate)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
@@ -156,6 +157,10 @@
           (transact req)))
   (context "/colonnade" req (friend/authorize #{::user}
                               (colonnade (db con))))
+
+  (context "/curate" req (friend/authorize #{::user}
+                            curation-forms))
+                                           
                                        
   (route/files "/" {:root "resources/public"}))
 
