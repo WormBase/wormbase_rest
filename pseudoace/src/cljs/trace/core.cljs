@@ -116,6 +116,7 @@
                    val)
          (dom/input
           {:style (display editing)
+           :class "text-editable"
            :value val
            :on-change (fn [e]
                         (om/update! vh :edit (.. e -target -value)))
@@ -340,7 +341,7 @@
            txnData   (:txnData mode)
            edit-mode (:editing mode)]
       (dom/div 
-       nil
+       {:class "trace-item"}
        
        (if (and edit-mode (not comp?))
          (dom/button
@@ -351,7 +352,8 @@
          (om/build txn-view val-holder {:opts {:key key :entid entid}}))
        
        (dom/span
-        {:style (if remove
+        {:class "trace-item-content"
+         :style (if remove
                   {:text-decoration "line-through"
                    :text-decoration-color "red"})}
         (cond
@@ -622,15 +624,17 @@
         (edn-xhr 
          (str "/raw2/" c "/" i "?max-in=5&max-out=10&txns=false")
          (fn [resp]
-           (om/update! app {:mode {:loading false
-                                   :editing false
-                                   :txnData false}
-                            :props   (props->state (:props resp))
-                            :txns    (->> (for [t (:txns resp)]
-                                            [(:db/id t) t])
-                                          (into {}))
-                            :id      (:id resp)
-                            :ident [(keyword c "id") i]}))))
+           (om/transact! app (fn [app]
+                               (assoc app 
+                                      :mode {:loading false
+                                             :editing false
+                                             :txnData false}
+                                      :props   (props->state (:props resp))
+                                      :txns    (->> (for [t (:txns resp)]
+                                                      [(:db/id t) t])
+                                                    (into {}))
+                                      :id      (:id resp)
+                                      :ident [(keyword c "id") i]))))))
       (secretary/dispatch! (.-pathname js/window.location))
       (.addEventListener js/window
                          "popstate"

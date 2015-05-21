@@ -104,3 +104,15 @@ table.history-table {
 table.history-table td {
     padding: 3px;
 }
+
+div.trace-item {
+    display: flex;
+}
+
+.trace-item-content {
+    width: 100%;
+}
+
+.text-editable {
+    width: 100%;
+}
