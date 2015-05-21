@@ -29,7 +29,7 @@
             [web.rest.references :refer (get-references)]
             [web.locatable-api :refer (feature-api)]))
 
-(def uri "datomic:free://localhost:4334/wb248-imp1")
+(def uri (or (env :trace-db) "datomic:free://localhost:4334/wb248-imp1"))
 (def con (d/connect uri))
 
 (declare touch-link)
