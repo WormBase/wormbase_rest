@@ -108,8 +108,6 @@
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))]
         (dom/span
-         (dom/i {:style (display (:edit vh))
-                 :class "fa fa-pencil"})
          (dom/span {:style (display (not editing))
                     :on-double-click #(when js/trace_logged_in
                                         (om/set-state! owner :editing true))}
@@ -136,8 +134,6 @@
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))]   ;; works because 0 is truthy here.
        (dom/span
-        (dom/i {:style (display (:edit vh))
-                :class "fa fa-pencil"})
         (dom/span {:style (display (not editing))
                    :on-double-click #(when js/trace_logged_in
                                        (om/set-state! owner :editing true))}
@@ -166,8 +162,6 @@
                   (:val vh)
                   (:edit vh))]
         (dom/span
-         (dom/i {:style (display (not (nil? (:edit vh))))
-                 :class "fa fa-pencil"})
          (dom/span {:style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
                    (str val))
@@ -192,8 +186,6 @@
             schema (om/observe owner (schema))
             enum-values ((:attrs schema) tns)]
         (dom/span
-         (dom/i {:style (display (:edit vh))
-                 :class "fa fa-pencil"})
          (dom/span {:style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
                    (str val))
@@ -228,8 +220,6 @@
                        (om/set-state! owner :ncand ncnt)
                        (om/set-state! owner :candidates names)))))]
         (dom/span
-         (dom/i {:style (display (:edit vh))
-                 :class "fa fa-pencil"})
          (dom/span {:style (display (not editing))
                     :on-double-click (fn [_]
                                        (update-cands (second val))
@@ -341,7 +331,9 @@
            txnData   (:txnData mode)
            edit-mode (:editing mode)]
       (dom/div 
-       {:class "trace-item"}
+       {:class (if edit 
+                  "trace-item edited"
+                  "trace-item")}
        
        (if (and edit-mode (not comp?))
          (dom/button

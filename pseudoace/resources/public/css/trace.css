@@ -17,17 +17,22 @@ div.trace-body {
 }
 
 .values-holder {
+    display: -webkit-flex;
     display: flex;
 }
 
 .collapse-button {
+    -webkit-flex: none;
     flex: none;
+    -webkit-flex-basis: 24px;
     flex-basis: 24px;
+    -webkit-align-self: flex-start;
     align-self: flex-start;
     margin-right: 5px;
 }
 
 div.column-holder {
+    display: -webkit-flex;
     display: flex;
     background-color: #eeeeee;
     border-radius: 5px;
@@ -106,6 +111,7 @@ table.history-table td {
 }
 
 div.trace-item {
+    display: -webkit-flex;
     display: flex;
 }
 
@@ -115,4 +121,9 @@ div.trace-item {
 
 .text-editable {
     width: 100%;
+    background: none;
+}
+
+.edited {
+    background: #ddaaff;
 }
