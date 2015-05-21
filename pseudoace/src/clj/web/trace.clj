@@ -202,19 +202,21 @@
                 (assoc ent :pace/xref
                   (for [x (:pace/xref ent)
                         :let [x (touch x)]     
-                        :when (re-matches cljs-symbol (str (:pace.xref/attribute x)))]
-                    x)))))
-       (filter (fn [attr]
-                 (re-matches cljs-symbol (str (:db/ident attr)))))))
+                        :when true #_(re-matches cljs-symbol (str (:pace.xref/attribute x)))]
+                    x)))))))
+
+
+;;       (filter (fn [attr]
+;;                 (re-matches cljs-symbol (str (:db/ident attr)))))))
 
 (defn get-schema-attributes [db]
   (->> (q '[:find ?attr
             :where [?attr :pace/tags _]]
           db)
        (map (fn [[attr]]
-              (touch (entity db attr))))
-       (filter (fn [attr]
-                 (re-matches cljs-symbol (str (:db/ident attr)))))))
+              (touch (entity db attr))))))
+       ;;(filter (fn [attr]
+         ;;        (re-matches cljs-symbol (str (:db/ident attr)))))))
 
 (defn get-schema [ddb]
   {:status 200

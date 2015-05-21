@@ -64,7 +64,7 @@
                          (om/update! col :attribute (reader/read-string (.. e -target -value))))}
            (dom/option nil)
            (concat
-            (for [type [:db.type/string :db.type/long :db.type/instant :db.type/ref :db.type/float :db.type/double :db.type/boolean]]
+            #_(for [type [:db.type/string :db.type/long :db.type/instant :db.type/ref :db.type/float :db.type/double :db.type/boolean]]
               (dom/option #js {:value type} (str type)))
             (for [ci (:classes schema) :when (not (:pace/is-hash ci))]
               (dom/option #js {:value (:db/ident ci)} (:pace/identifies-class ci))))))))))
