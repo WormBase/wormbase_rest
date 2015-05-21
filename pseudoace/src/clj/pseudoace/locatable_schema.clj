@@ -142,6 +142,27 @@
 
     ])
 
+  ;;
+  ;; Fake pseudoace metadata for locatable-model enums so that
+  ;; they are visible in TrACeView and Colonnade
+  ;;
+  
+  [{:db/id          #db/id[:db.part/user]
+    :db/ident       :locatable.strand/positive
+    :pace/tags      "Positive"}
+
+   {:db/id          #db/id[:db.part/user]
+    :db/ident       :locatable.strand/negative
+    :pace/tags      "Negative"}
+
+   {:db/id          #db/id[:db.part/user]
+    :db/ident       :homology.strand/positive
+    :pace/tags      "Positive"}
+
+   {:db/id          #db/id[:db.part/user]
+    :db/ident       :homology.strand/negative
+    :pace/tags      "Negative"}]
+  
   [{:db/id          #db/id[:db.part/tx]
     :db/txInstant   #inst "1970-01-01T00:00:01"}]))
 

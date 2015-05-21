@@ -461,7 +461,7 @@
   (GET "/rest/widget/gene/:id/external_links" {params :params}
        (gene/external-links (db con) (:id params)))
 
-  (context "/features" [] (feature-api (db con)))
+  (context "/features" [] feature-api)
   
   #_(GET "/features/:type/features/:id" {params :params}
          (json-features (db con) params))
@@ -478,7 +478,9 @@
           (transact req)))
   (context "/colonnade" req (friend/authorize #{::user}
                               (colonnade (db con))))
-                                       
+
+  (GET "/test" req (str (keys req)))
+  
   (route/files "/" {:root "resources/public"}))
 
 (defroutes api-routes
@@ -493,6 +495,10 @@
      :roles    #{::user}}))
 
 
+(defn wrap-db [handler]
+  (fn [request]
+    (handler (assoc request :con con :db (db con)))))
+
 (def secure-app
   (-> (compojure.core/routes
        (wrap-routes routes wrap-anti-forgery)
@@ -502,6 +508,7 @@
                             :workflows [(workflows/http-basic
                                          :credential-fn (partial creds/bcrypt-credential-fn users)
                                          :realm "Demo")]})
+      wrap-db
       wrap-edn-params-2
       wrap-params
       wrap-stacktrace

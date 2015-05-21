@@ -171,13 +171,13 @@
                        :basesPerBin bin-size}}
               {:pretty true})})))
           
-(defn feature-api [db]
+(def feature-api 
   (routes
-   (GET "/:type/features/:id" {params :params}
+   (GET "/:type/features/:id" {params :params db :db}
         (json-features db params))
-   (GET "/:type/stats/global" {params :params}
+   (GET "/:type/stats/global" {params :params db :db}
         (json-stats-global db params))
-   (GET "/:type/stats/region/:id" {params :params}
+   (GET "/:type/stats/region/:id" {params :params db :db}
         (json-stats-region db params))
-   (GET "/:type/stats/regionFeatureDensities/:id" {params :params}
+   (GET "/:type/stats/regionFeatureDensities/:id" {params :params db :db}
         (json-densities db params))))

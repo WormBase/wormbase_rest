@@ -965,59 +965,74 @@
    :sage_tags          (sage-tags gene)})
 
 ;;
-;; GO widget (using post-WS248 schema)
+;; New style GO widget
 ;;
 
 (def ^:private division-names
-  {:go-term.type/molecular-function "Molecular function"
-   :go-term.type/cellular-component "Cellular component"
-   :go-term.type/biological-process "Biological process"})
+  {:go-term.type/molecular-function "Molecular_function"
+   :go-term.type/cellular-component "Cellular_component"
+   :go-term.type/biological-process "Biological_process"})
 
-(defn- term-method
-  "Helper to determine the 'method' column of the GO tables."
-  [annos]
-  (cond
-   (some :go-annotation/reference annos)
-   "Curated"
+(defn- term-table-full [db annos]
+  (map
+   (fn [{:keys [term code anno]}]
+     {:anno_id
+      (:go-annotation/id anno)
 
-   (some :go-annotation/phenotype annos)
-   "Phenotype to GO mapping"
+      :extensions
+      (->>
+       (concat
+        (for [{rel :go-annotation.molecule-relation/text
+               mol :go-annotation.molecule-relation/molecule}
+              (:go-annotation/molecule-relation anno)]
+          [rel (pack-obj "molecule" mol)]))
+       (reduce
+        (fn [m [rel obj]]
+          (assoc m rel obj))
+        nil))
 
-   (some :go-annotation/motif annos)
-   "Interpro to GO Mapping"
+      :with
+      (seq
+       (concat
+        (map (partial pack-obj "gene")      (:go-annotation/interaction-gene anno))
+        (map (partial pack-obj "go-term")   (:go-annotation/inferred-from-go-term anno))
+        (map (partial pack-obj "motif")     (:go-annotation/motif anno))
+        (map (partial pack-obj "rnai")      (:go-annotation/rnai-result anno))
+        (map (partial pack-obj "variation") (:go-annotation/variation anno))
+        (map (partial pack-obj "phenotype") (:go-annotation/phenotype anno))
+        ;; Also DB fields...
+        ))
+        
+      
+      :evidence_code
+      {:text
+       (:go-code/id code)
+       
+       :evidence
+       (vmap
+        :Date_last_updated
+        (if-let [d (:go-annotation/date-last-updated anno)]
+          (str d))
 
-   ;; Should we still be doing something special for TMHMM?
-   
-   :default
-   "No Method"))
-   
-(defn- term-table [db annos]
-  (->>
-   (group-by (juxt :term :code) annos)
-   (map
-    (fn [[[term code] annos]]
-      {:evidence_code
-       {:text
-        (:go-code/id code)
+        :Contributed_by
+        (seq (map (partial pack-obj "analysis")
+                  (:go-annotation/contributed-by anno)))
+        
+        :Reference
+        (seq (map (partial pack-obj "paper")
+                  (:go-annotation/reference anno))))}
 
-        :evidence
-        (reduce
-         (fn [m anno]
-           (cond-> m
-             (:go-annotation/date-last-updated anno)
-             (assoc :Date_last_updated (str (:go-annotation/date-last-updated anno)))
+      :term
+      nil  ;; WTF?
 
-             (:go-annotation/reference anno)
-             (update :Paper_evidence concat (map (partial pack-obj "paper") (:go-annotation/reference anno)))
+      :term_id
+      (pack-obj "go-term" term :label (:go-term/id term))
 
-             ;; Reconstruct some "Inferred automatically" stuff?
-           ))
-         {:Description (first (:go-code/description code))}
-         (sort-by :go-annotation/date-last-updated (map :anno annos)))}
-       :method (term-method (map :anno annos))
-       :term (pack-obj "go-term" term)}))))
+      :term_description
+      (pack-obj "go-term" term)})
+   annos))
 
-(defn- gene-ontology-terms [gene]
+(defn- gene-ontology-full [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1039,15 +1054,55 @@
       (map
        (fn [[key annos]]
          [(division-names key)
-          (term-table db annos)]))
+          (term-table-full db annos)]))
       (into {}))
 
      :description
      "gene ontology associations"}))
 
+(defn- term-summary-table [db annos]
+  (->>
+   (group-by :term annos)
+   (map
+    (fn [[term annos]]
+      {:extensions       nil
+
+       :term_id
+       (pack-obj "go-term" term :label (:go-term/id term))
+       
+       :term_description
+       (pack-obj "go-term" term)}))))
+
+(defn- gene-ontology-summary [gene]
+ (let [db (d/entity-db gene)]
+  {:data
+   (->>
+    (q '[:find ?div ?term ?anno
+         :in $ ?gene
+         :where [?anno :go-annotation/gene ?gene]
+                [?anno :go-annotation/go-term ?term]
+                [?term :go-term/type ?tdiv]
+                [?tdiv :db/ident ?div]]
+       db (:db/id gene))
+    (map
+     (fn [[div term code anno]]
+       {:division div
+        :term     (entity db term)
+        :anno     (entity db anno)}))
+    (group-by :division)
+    (map
+     (fn [[key annos]]
+       [(division-names key)
+        (term-summary-table db annos)]))
+    (into {}))
+   
+   :description
+   "gene ontology associations"}))
+
 (def-rest-widget gene-ontology [gene]
-  {:name          (name-field gene)
-   :gene_ontology (gene-ontology-terms gene)})
+  {:name                   (name-field gene)
+   :gene_ontology_summary  (gene-ontology-summary gene)
+   :gene_ontology          (gene-ontology-full gene)})
 
 ;;
 ;; Expression widget
