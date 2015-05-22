@@ -1,7 +1,7 @@
 (ns wb.locatables
-  (:use pseudoace.utils)
-  (:require pseudoace.binning
-            [datomic.api :as d :refer (q entity)]))
+  (:use pseudoace.utils
+        wb.binning)
+  (:require [datomic.api :as d :refer (q entity)]))
 
 ;;
 ;; Don't pay too much attention to the details here.  Binning scheme and method
@@ -14,16 +14,16 @@
                    (:locatable/min entity)
                    (:locatable/max entity)))
   ([parent start end]
-  (if-let [ss (first (:sequence.subsequence/_sequence parent))]
-    (recur (:sequence/_subsequence ss)
-           (+ start (:sequence.subsequence/start ss) -1)
-           (+ end (:sequence.subsequence/start ss) -1))
+  (if-let [ss (:locatable/assembly-parent parent)]
+    (recur ss
+           (+ start (:locatable/min parent))
+           (+ end   (:locatable/min parent)))
     [parent start end])))
 
 (def ^:private child-rule  
-  '[[(child ?parent ?min ?max ?c ?cmin ?cmax) [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
-                                              [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
-                                              [?c :locatable/xbin ?xbin]
+  '[[(child ?parent ?min ?max ?c ?cmin ?cmax) [?parent :sequence/id ?seq-name]
+                                              [(wb.binning/bins ?seq-name ?min ?max) [?bin ...]]
+                                              [?c :locatable/murmur-bin ?bin]
                                               [?c :locatable/parent ?parent]
                                               [?c :locatable/min ?cmin]
                                               [?c :locatable/max ?cmax]
@@ -39,17 +39,16 @@
        :in $ % ?seq ?min ?max 
        :where (or-join [?seq ?min ?max ?f ?fmin ?fmax]
                           (and
-                           [?seq :sequence/subsequence ?ss]
-                           [?ss :sequence.subsequence/start ?ss-min]
-                           [?ss :sequence.subsequence/end ?ss-max]
+                           [?ss-seq :locatable/assembly-parent ?seq]
+                           [?ss-seq :locatable/min ?ss-min]
+                           [?ss-seq :locatable/max ?ss-max]
                            [(<= ?ss-min ?max)]
                            [(>= ?ss-max ?min)]
-                           [?ss :sequence.subsequence/sequence ?ss-seq]
-                           [(- ?min ?ss-min -1) ?rel-min]
-                           [(- ?max ?ss-min -1) ?rel-max]
+                           [(- ?min ?ss-min) ?rel-min]
+                           [(- ?max ?ss-min) ?rel-max]
                            (child ?ss-seq ?rel-min ?rel-max ?f ?rel-fmin ?rel-fmax)
-                           [(+ ?rel-fmin ?ss-min -1) ?fmin]
-                           [(+ ?rel-fmax ?ss-min -1) ?fmax])
+                           [(+ ?rel-fmin ?ss-min) ?fmin]
+                           [(+ ?rel-fmax ?ss-min) ?fmax])
                           (child ?seq ?min ?max ?f ?fmin ?fmax))
               [?f :transcript/id _]]
      db
@@ -62,17 +61,16 @@
        :in $ % ?seq ?min ?max 
        :where (or-join [?seq ?min ?max ?f ?fmin ?fmax]
                           (and
-                           [?seq :sequence/subsequence ?ss]
-                           [?ss :sequence.subsequence/start ?ss-min]
-                           [?ss :sequence.subsequence/end ?ss-max]
+                           [?ss-seq :locatable/assembly-parent ?seq]
+                           [?ss-seq :locatable/min ?ss-min]
+                           [?ss-seq :locatable/max ?ss-max]
                            [(<= ?ss-min ?max)]
                            [(>= ?ss-max ?min)]
-                           [?ss :sequence.subsequence/sequence ?ss-seq]
-                           [(- ?min ?ss-min -1) ?rel-min]
-                           [(- ?max ?ss-min -1) ?rel-max]
+                           [(- ?min ?ss-min) ?rel-min]
+                           [(- ?max ?ss-min) ?rel-max]
                            (child ?ss-seq ?rel-min ?rel-max ?f ?rel-fmin ?rel-fmax)
-                           [(+ ?rel-fmin ?ss-min -1) ?fmin]
-                           [(+ ?rel-fmax ?ss-min -1) ?fmax])
+                           [(+ ?rel-fmin ?ss-min) ?fmin]
+                           [(+ ?rel-fmax ?ss-min) ?fmax])
                           (child ?seq ?min ?max ?f ?fmin ?fmax))
               [?f :variation/id _]]
      db
@@ -86,21 +84,18 @@
        :where [?method :method/id ?meth-name]
               (or-join [?seq ?min ?max ?f ?fmin ?fmax]
                           (and
-                           [?seq :sequence/subsequence ?ss]
-                           [?ss :sequence.subsequence/start ?ss-min]
-                           [?ss :sequence.subsequence/end ?ss-max]
+                           [?ss-seq :locatable/assembly-parent ?seq]
+                           [?ss-seq :locatable/min ?ss-min]
+                           [?ss-seq :locatable/max ?ss-max]
                            [(<= ?ss-min ?max)]
                            [(>= ?ss-max ?min)]
-                           [?ss :sequence.subsequence/sequence ?ss-seq]
-                           [(- ?min ?ss-min -1) ?rel-min]
-                           [(- ?max ?ss-min -1) ?rel-max]
+                           [(- ?min ?ss-min) ?rel-min]
+                           [(- ?max ?ss-min) ?rel-max]
                            (child ?ss-seq ?rel-min ?rel-max ?f ?rel-fmin ?rel-fmax)
-                           [(+ ?rel-fmin ?ss-min -1) ?fmin]
-                           [(+ ?rel-fmax ?ss-min -1) ?fmax])
+                           [(+ ?rel-fmin ?ss-min) ?fmin]
+                           [(+ ?rel-fmax ?ss-min) ?fmax])
                           (child ?seq ?min ?max ?f ?fmin ?fmax))
-              (or
-               [?f :locatable/method ?method]
-               [?f :feature/method ?method])]
+               [?f :locatable/method ?method]]
      db
      child-rule
      pid min max type))
