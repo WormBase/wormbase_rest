@@ -60,7 +60,8 @@
 (defn- props->state [props]
   (vec (for [p props :let [v (:values p)]]
          (assoc p
-           :collapsed (> (count v 1))
+           :collapsed (> (or (:count p)
+                             (count v)) 1)
            :values (vec
                     (for [{:keys [txn val id]} v]
                       {:txn txn
@@ -108,7 +109,8 @@
     
     om/IRenderState
     (render-state [_ {:keys [editing]}]
-      (let [val (or (:edit vh) (:val vh))]
+      (let [val (or (:edit vh) (:val vh))
+            val (if (= val :empty) "New value..." val)]
         (dom/span
          (dom/span {:style (display (not editing))
                     :on-double-click #(when js/trace_logged_in
@@ -134,7 +136,8 @@
 
     om/IRenderState 
     (render-state [_ {:keys [editing]}]
-      (let [val (or (:edit vh) (:val vh))]   ;; works because 0 is truthy here.
+      (let [val (or (:edit vh) (:val vh))   ;; works because 0 is truthy here.
+            val (if (= val :empty) "New value..." val)]
        (dom/span
         (dom/span {:style (display (not editing))
                    :on-double-click #(when js/trace_logged_in
@@ -162,7 +165,8 @@
     (render-state [_ {:keys [editing]}]
       (let [val (if (nil? (:edit vh))
                   (:val vh)
-                  (:edit vh))]
+                  (:edit vh))
+            val (if (= val :empty) "New value..." val)]
         (dom/span
          (dom/span {:style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
@@ -185,6 +189,7 @@
     om/IRenderState
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))
+            val (if (= val :empty) "New value..." val)
             schema (om/observe owner (schema))
             enum-values ((:attrs schema) tns)]
         (dom/span
@@ -212,7 +217,10 @@
 
     om/IRenderState
     (render-state [_ {:keys [editing ncand candidates checked]}]
-      (let [val (or (:edit vh) (:val vh))]
+      (let [val (or (:edit vh) (:val vh))
+            val (if (= val :empty)
+                  [class "New reference..."]
+                  val)]
         (letfn [(update-cands [prefix]
                   (when (not= checked prefix)
                     (edn-xhr
@@ -226,7 +234,9 @@
                     :on-double-click (fn [_]
                                        (update-cands (second val))
                                        (om/set-state! owner :editing true))}
-                   (str (second val)))
+                   (str (if (= val :empty)
+                          "New reference..."
+                          (second val))))
          (dom/input
           {:style (display editing)
            :value (second val)
@@ -327,7 +337,7 @@
 
 (defn item-view [{:keys [val edit txn remove added] :as val-holder} 
                  owner 
-                 {:keys [key type entid comp?]}]
+                 {:keys [key type entid class comp?]}]
   (reify
     om/IDidMount
     (did-mount [_]
@@ -362,10 +372,11 @@
          (om/build tree-view val-holder)
          
          (or (sequential? val)
-             (sequential? edit))
+             (sequential? edit)
+             class)
          (if edit-mode
            (om/build ref-edit val-holder
-                     {:opts {:class (:pace/obj-ref ((:attrs-by-ident (schema)) key))}})
+                     {:opts {:class class}})
            (let [id (second val)
                  uri (str "/view/" (namespace (first val)) "/" (second val))]
              (dom/a {:href uri
@@ -411,7 +422,6 @@
       (let [mode (om/observe owner (mode))
             vcnt (or (:count data)
                      (count (:values data)))]
-        (if (> vcnt 1)
           (dom/span {:className "values-holder"}
                     (dom/button 
                      {:onClick (fn [_]
@@ -439,7 +449,8 @@
                                                      (:val v))))))
                                         (if (:txnData @mode)
                                           (fetch-missing-txns (om/root-cursor app-state))))))))
-                      :className "collapse-button"}
+                      :className "collapse-button"
+                      :style (display (> vcnt 1))}
                      (if (:collapsed data)
                        "+"
                        "-"))
@@ -456,54 +467,41 @@
                                 (om/build item-view v
                                   {:opts {:key   (:key data)
                                           :type  (:type data)
+                                          :class (:class data)
                                           :comp? (:comp data)
-                                          :entid entid}})))))
-          (let [[v] (:values data)]
-            (om/build item-view v 
-              {:opts {:key     (:key data)
-                      :type    (:type data)
-                      :comp?   (:comp data)
-                      :entid   entid}})))))))
+                                          :entid entid}})))))))))
 
-(defn dummy-item [item]
-  (case (:db/valueType item)
-    :db.type/string
-    "foo"
+(defn- dummy-item* [item]
+  (if (:db/isComponent item)
+    (let [ident (:db/ident item)
+          cns   (str (namespace ident) "." (name ident))
+          attrs (->> (get-in @app-state [:schema :attrs cns])
+                     (mapv (fn [item]
+                             {:key (:db/ident item)
+                              :type (:db/valueType item)
+                              :collapsed false
+                              :comp (:db/isComponent item)
+                              :class (:pace/obj-ref item)
+                              :values [(dummy-item* item)]})))]
+      {:key     (:db/ident item)
+       :edit    attrs})
+     {:key   (:db/ident item)
+      :edit  :empty}))
 
-    :db.type/long
-    1234
-
-    :db.type/float
-    12.34
-
-    :db.type/double
-    12.34
-
-    :db.type/boolean
-    true
-
-    :db.type/instant
-    #inst "1977-10-29"
-    
-    :db.type/ref
-    (cond
-     (:db/isComponent item)
-     []    ;; empty prop-list
-
-     (:pace/obj-ref item)
-     [(:pace/obj-ref item) "dummy"]
-
-     :default
-     :something.sensible/for-enum?)))
+(defn- dummy-item [item]
+  (let [dummy (dummy-item* item)
+        added (swap! added-id inc)]
+    (if (and (vector? (:edit dummy))
+             (seq (:edit dummy)))
+      (assoc-in dummy [:edit 0 :values 0 :added] added)
+      (assoc dummy :added added))))
 
 (defn add-item [data item]
   (om/transact! (or (:props data)
                     (:edit data)
                     (:val data))
                 (fn [props]
-                  (let [dummy          {:key   (:db/ident item)
-                                        :added (swap! added-id inc)
-                                        :edit  (dummy-item item)}
+                  (let [dummy          (dummy-item item)
                         attrs          (get-in @app-state [:schema :attrs-by-ident])
                         [[idx holder]] (keep-indexed #(if (= (:key %2) (:db/ident item)) [%1 %2]) props)]
                     (if holder
@@ -514,10 +512,14 @@
                                         :type (:db/valueType item)
                                         :collapsed false
                                         :comp (:db/isComponent item)
+                                        :class (:pace/obj-ref item)
                                         :values [dummy]})
                            (sort-by 
                             (fn [{:keys [key]}]
-                              (:db/id (attrs key))))))))))
+                              (if (= (.charAt (name key) 0) "_") 
+                                1000000000000           ;; Keep inbound XREFs at end.  They should remain stable.
+                                (:db/id (attrs key)))))
+                           (vec)))))))
                                          
 
 (defn add-button [data owner]
@@ -594,9 +596,11 @@
          (fn [txlist val]
            (if (:edit val)
              (let [t (tempid :db.part/user)]
-               (concat txlist
-                       [[:db/add (pack-id id) (:key prop) t]]
-                       (gather-txdata t (:edit val))))
+               (if-let [comp-tx (seq (gather-txdata t (:edit val)))]
+                 (concat txlist
+                         [[:db/add (pack-id id) (:key prop) t]]
+                         comp-tx)
+                 txlist))  ;; Don't add component-link datom if children are empty.
              (concat txlist (gather-txdata (:id val) (:val val)))))
          txlist
          (:values prop))
@@ -609,7 +613,7 @@
               (if (or (and is-edit val)
                       remove)
                 [:db/retract (pack-id id) (:key prop) val])
-              (if (and is-edit (not remove))
+              (if (and is-edit (not remove) (not= edit :empty))
                 [:db/add (pack-id id) (:key prop) edit]))))
          txlist
          (:values prop))))
@@ -687,6 +691,11 @@
                                                       (om/update! app [:mode :fetching-schema] false)
                                                       (om/update! app [:mode :editing] true))))))}
                                    "Edit"))
+
+                      (when (and js/trace_logged_in
+                                 (:editing mode))
+                        (dom/button {:on-click #(println (gather-txdata (:id @app-state) (:props @app-state)))}
+                                    "Preview"))
 
                       (when (and js/trace_logged_in
                                  (:editing mode))

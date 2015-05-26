@@ -44,6 +44,7 @@
   (let [attr (entity db (:a (first datoms)))]
     {:key   (:db/ident attr)
      :type  (:db/valueType attr)
+     :class (:pace/obj-ref attr)
      :comp  (or (:db/isComponent attr) false)
      :count (count datoms)
      :values
