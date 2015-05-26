@@ -628,6 +628,14 @@
        (secretary/dispatch! (.-pathname js/window.location))
        (om/update! app :err responseText)))))
 
+(defn trace-title [app owner]
+  (reify
+    om/IRender
+    (render [_]
+      (dom/span
+       (str (or (om/value (:ident app))
+                                   "TrACeView"))))))
+
 (defn trace-view [app owner]
   (reify
     om/IWillMount
@@ -655,16 +663,20 @@
                            (secretary/dispatch! (.-pathname js/window.location)))))
     om/IRender
     (render [_]
+      (dom/div {:class "trace-body"}
+               (if (:loading mode)
+                 (dom/img {:src "/img/spinner_192.gif"})
+                 (om/build tree-view app))))))
+                           
+
+(defn trace-tools [app owner]
+  (reify
+    om/IRender
+    (render [_]
       (let [mode (:mode app)]
         (dom/div
          nil
-         (dom/div {:class "trace-header"}
-                  (dom/h1 nil
-                          (str (or (om/value (:ident app))
-                                   "TrACeView"))
-                          (if-let [uid js/trace_logged_in]
-                            (str " - " uid)))
-                  
+         (dom/div {}
                   (dom/label "Timestamps")
                   (dom/input {:type "checkbox"
                               :checked (:txnData (:mode app))
@@ -708,12 +720,8 @@
                         (dom/button {:on-click #(secretary/dispatch! (.-pathname js/window.location))}
                                     "Cancel"))])
 
-                  (dom/span {:style {:color "red"}} (:err app)))
+                  (dom/span {:style {:color "red"}} (:err app))))))))
 
-         (dom/div {:class "trace-body"}
-                  (if (:loading mode)
-                    (dom/img {:src "/img/spinner_192.gif"})
-                    (om/build tree-view app))))))))
-                           
-
-(om/root trace-view app-state {:target (gdom/getElement "tree")})
+(om/root trace-view    app-state {:target (gdom/getElement "tree")})
+(om/root trace-title   app-state {:target (gdom/getElement "page-title")})
+(om/root trace-tools   app-state {:target (gdom/getElement "header-content")})

@@ -1,3 +1,25 @@
+div.root {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+}
+
+div.header {
+    -webkit-flex: none;
+    flex: none;
+}
+
+div.container-fluid {
+    overflow-y: scroll;
+    width: 100%;
+}
+
 table.trace-tree {
     font-size: 95%;
 }
@@ -14,10 +36,6 @@ div.trace-header {
     background: #eeeeee;
     padding: 5px;
     border-bottom: 1px solid gray;
-}
-
-div.trace-body {
-    padding-top: 120px;
 }
 
 .values-holder {

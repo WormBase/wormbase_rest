@@ -231,10 +231,7 @@
 (defn viewer-page [req]
   (html
    [:html
-    [:head]
-    [:body
-     [:div.container-fluid
-      [:div#tree]]
+    [:head
      [:link {:rel "stylesheet"
              :href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css"}]
      [:link {:rel "stylesheet"
@@ -243,19 +240,30 @@
              :href "//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"}]
      [:link {:rel "stylesheet"
              :href "/css/trace.css"}]
-     [:script {:src "/js/out/goog/base.js"
-               :type "text/javascript"}]
-     [:script {:src "/js/main.js"
-               :type "text/javascript"}]
-     [:script {:type "text/javascript"}
-      (str "/* " (friend/current-authentication req) " */")
-      (if-let [id (friend/identity req)]
-        (if (:wbperson (friend/current-authentication req))
-          (str "trace_logged_in = '" (:current id) "';")
-          "trace_logged_in = null;")
-        "trace_logged_in = null;")
-      (str "trace_token = '" *anti-forgery-token* "';")
-      "goog.require('trace.core');"]]]))
+     [:link {:rel "stylesheet"
+             :href "/css/curation.css"}]]
+    [:body
+     [:div.root
+      [:div.header
+       [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
+       [:h1#page-title "TrACeView"]
+       [:div#header-content]]
+      [:div.container-fluid
+       [:div#tree]]
+
+      [:script {:src "/js/out/goog/base.js"
+                :type "text/javascript"}]
+      [:script {:src "/js/main.js"
+                :type "text/javascript"}]
+      [:script {:type "text/javascript"}
+       (str "/* " (friend/current-authentication req) " */")
+       (if-let [id (friend/identity req)]
+         (if (:wbperson (friend/current-authentication req))
+           (str "trace_logged_in = '" (:current id) "';")
+           "trace_logged_in = null;")
+         "trace_logged_in = null;")
+       (str "trace_token = '" *anti-forgery-token* "';")
+       "goog.require('trace.core');"]]]]))
   
 
 (defn transact [{:keys [edn-params con] :as req}]
