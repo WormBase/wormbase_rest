@@ -33,6 +33,8 @@
   []
   (om/ref-cursor (:txns (om/root-cursor app-state))))
 
+(def added-id (atom 0))
+
 (defn- fetch-missing-txns [app]
   (let [txns (or (:txns @app) {})]
     (letfn [(scan-missing [missing {:keys [txn val]}]
@@ -323,8 +325,15 @@
             (str txn))
           "NEW"))))))
 
-(defn item-view [{:keys [val edit txn remove] :as val-holder} owner {:keys [key type entid comp?]}]
+(defn item-view [{:keys [val edit txn remove added] :as val-holder} 
+                 owner 
+                 {:keys [key type entid comp?]}]
   (reify
+    om/IDidMount
+    (did-mount [_]
+      (if (= added @added-id)
+        (.scrollIntoView (om/get-node owner))))
+
     om/IRender
     (render [_]
      (let [mode      (om/observe owner (mode))
@@ -334,7 +343,7 @@
        {:class (if edit 
                   "trace-item edited"
                   "trace-item")}
-       
+
        (if (and edit-mode (not comp?))
          (dom/button
           {:on-click #(om/transact! val-holder :remove not)}
@@ -492,18 +501,24 @@
                     (:edit data)
                     (:val data))
                 (fn [props]
-                  (let [dummy          {:key (:db/ident item)
-                                        :edit (dummy-item item)}
+                  (let [dummy          {:key   (:db/ident item)
+                                        :added (swap! added-id inc)
+                                        :edit  (dummy-item item)}
+                        attrs          (get-in @app-state [:schema :attrs-by-ident])
                         [[idx holder]] (keep-indexed #(if (= (:key %2) (:db/ident item)) [%1 %2]) props)]
                     (if holder
                       (assoc props idx (assoc holder
                                          :values (conj (:values holder) dummy)
                                          :collapsed false))
-                      (conj props {:key (:db/ident item)
-                                   :type (:db/valueType item)
-                                   :collapsed false
-                                   :comp (:db/isComponent item)
-                                   :values [dummy]}))))))
+                      (->> (conj props {:key (:db/ident item)
+                                        :type (:db/valueType item)
+                                        :collapsed false
+                                        :comp (:db/isComponent item)
+                                        :values [dummy]})
+                           (sort-by 
+                            (fn [{:keys [key]}]
+                              (:db/id (attrs key))))))))))
+                                         
 
 (defn add-button [data owner]
   (reify
@@ -555,14 +570,16 @@
          (when (:editing mode) 
            (om/build add-button data))
          (dom/table {:border "1"
-                     :className "table table-striped"}
+                     :className "trace-tree table table-striped table-condensed"}
             (dom/tbody nil
                 (for [prop (or (:props data)
                                (:edit data)
                                (:val data))]
                 (dom/tr nil 
                         (dom/td nil (str (:key prop)))
-                        (dom/td nil (om/build list-view prop {:opts {:entid (:id data)}})))))))))))
+                        (dom/td nil (om/build list-view prop 
+                                              {:opts 
+                                               {:entid (:id data)}})))))))))))
 
 (defn- pack-id [id]
   (if (string? id)
