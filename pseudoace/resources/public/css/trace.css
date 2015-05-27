@@ -1,8 +1,16 @@
 div.header {
     position: fixed;
     width: 100%;
-    background: #eeeeee;
+    background: #111111;
+    color: #ccdddd;
     height: 100px;
+    padding: 8px;
+    z-index: 10000000;
+}
+
+div.header > h1 {
+    padding-left: 20px;
+    display: inline;
 }
 
 div.container-fluid {
@@ -76,18 +84,24 @@ div.candidate-list {
 div.candidate-item {
 }
 
+span.add-button-holder {
+    position: relative;
+}
+
 div.add-list {
-    position: absolute;
     background: white;
-    border: solid grey 2px;
-    padding: 4px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    width: 250px;
 }
 
 div.add-item {
+    padding-left: 6px;
+    padding-right: 6px;
 }
 
 div.add-item:hover {
-    background: yellow;
+    background: #bbbbbb;
 }
 
 div.add-item-disabled {

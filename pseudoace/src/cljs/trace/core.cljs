@@ -545,6 +545,7 @@
                             (map :key)
                             (set))]
         (dom/span
+         {:class "add-button-holder"}
          (dom/button
           {:on-click #(om/set-state! owner :open (not open))
            :on-blur (fn [_]   ;; delay hiding menu so we don't prevent item clicks.
@@ -552,7 +553,8 @@
           "Add")
          (when open
            (dom/div
-            {:class "add-list"}
+            {:class "add-list dropdown-menu"
+             :style {:display "block"}}
             (for [a attrs]
               (dom/div
                {:class (if (and (= (:db/cardinality a) :db.cardinality/one)
