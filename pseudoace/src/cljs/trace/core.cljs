@@ -217,11 +217,11 @@
 
     om/IRenderState
     (render-state [_ {:keys [editing ncand candidates checked]}]
-      (let [val (or (:edit vh) (:val vh))
-            val (if (= val :empty)
-                  [class "New reference..."]
-                  val)]
-        (letfn [(update-cands [prefix]
+      (let [val   (or (:edit vh) (:val vh))
+            vname (if (not= val :empty)
+                    (second val))
+            create? (and (sequential? val) (= (last val) :create))]
+       (letfn [(update-cands [prefix]
                   (when (not= checked prefix)
                     (edn-xhr
                      (str "/prefix-search?class=" (namespace class) "&prefix=" prefix)
@@ -230,36 +230,53 @@
                        (om/set-state! owner :ncand ncnt)
                        (om/set-state! owner :candidates names)))))]
         (dom/span
+         (dom/i {:class "fa fa-plus-circle"
+                 :style (display create?)})
          (dom/span {:style (display (not editing))
                     :on-double-click (fn [_]
-                                       (update-cands (second val))
+                                       (update-cands vname)
                                        (om/set-state! owner :editing true))}
-                   (str (if (= val :empty)
-                          "New reference..."
-                          (second val))))
+                   (or vname "New reference..."))
          (dom/input
           {:style (display editing)
-           :value (second val)
+           :value vname
+           :placeholder (str class " id")
            :on-change (fn [e]
                         (let [p (.. e -target -value)]
                           (update-cands p)
                           (om/update! vh :edit [class p])))
-           :on-blur #(om/set-state! owner :editing false)
+           :on-blur (fn [_]
+                      (js/setTimeout #(om/set-state! owner :editing false) 200))
            :on-key-press (fn [e]
                            (when (== (.-charCode e) 13)
                              (om/set-state! owner :editing false)))})
 
          (dom/span
-          {:style (assoc (display (and (= checked (second val))
-                                       (not= (first candidates) (second val))))
-                    :color "red")}
-          " Doesn't exist (TBD: add option to create)")
+          {:style {:visibility (if (and (not create?)
+                                        (= checked vname)
+                                        (not= (first candidates) vname))
+                                 "visible"
+                                 "hidden")}}
+          (dom/span
+           {:style {:color "red"}}
+           " Doesn't exist ")
+          (dom/button
+           {:on-click (fn [_]
+                        (om/update! vh :edit [class vname :create])
+                        (om/set-state! owner :editing false))}
+           "Create"))
          
          (dom/div
           {:style (display editing)
            :class "candidate-list"}
           (for [c candidates]
-            (dom/div {:class "candidate-item"} c))
+            (dom/div
+             {:class "candidate-item"
+              :on-click (fn [_]
+                          (update-cands c)
+                          (om/update! vh :edit [class c])
+                          (om/set-state! owner :editing false))}
+             c))
           (if (> ncand (count candidates))
             (dom/div (dom/em (str "And " (- ncand (count candidates)) " more")))))))))))
       
@@ -610,13 +627,19 @@
         (reduce
          (fn [txlist {:keys [edit val remove]}]
            (let [is-edit (not (nil? edit))]
-             (conj-if
+             (concat
               txlist
               (if (or (and is-edit val)
                       remove)
-                [:db/retract (pack-id id) (:key prop) val])
+                [[:db/retract (pack-id id) (:key prop) val]])
               (if (and is-edit (not remove) (not= edit :empty))
-                [:db/add (pack-id id) (:key prop) edit]))))
+                (if (and (sequential? edit)
+                         (= (last edit) :create))
+                  (let [[class new-id] edit
+                        t              (tempid :db.part/user)]
+                    [[:db/add t class new-id]
+                     [:db/add (pack-id id) (:key prop) t]])
+                  [[:db/add (pack-id id) (:key prop) edit]])))))
          txlist
          (:values prop))))
     [] props))
@@ -706,7 +729,7 @@
                                                       (om/update! app [:mode :editing] true))))))}
                                    "Edit"))
 
-                      (when (and js/trace_logged_in
+                      #_(when (and js/trace_logged_in
                                  (:editing mode))
                         (dom/button {:on-click #(println (gather-txdata (:id @app-state) (:props @app-state)))}
                                     "Preview"))
