@@ -159,9 +159,10 @@
                               (colonnade (db con))))
 
   (context "/curate" req (friend/authorize #{::user}
-                            curation-forms))
-                                           
-                                       
+                          (if (env :trace-enable-curation-forms)
+                            curation-forms
+                            (GET "/*" [] "Curation disabled on this server"))))
+
   (route/files "/" {:root "resources/public"}))
 
 (defroutes api-routes
