@@ -82,8 +82,13 @@
   (if-let [err (validate-name new-name type species)]
     {:err [err]}
     (let [tid (d/tempid :db.part/user)
-          tx  [[:wb/new-obj "Gene" [tid]]
-               [:wb/add-name tid "Gene" type new-name]
+          tx  [[:wb/mint-identifier :gene/id [tid]]
+               {:db/id tid 
+                :gene/sequence-name new-name
+                :gene/version       1
+                :gene/version-change {
+                    :gene.version-change/version 1
+                    :gene-history-action/created true}}
                (txn-meta)]]
       (try
         (let [txr @(d/transact con (concat
@@ -95,7 +100,7 @@
               gc  (if (= type "CGC")
                     (or (second (re-matches #"(\w{3,4})(?:[(]|-\d+)" new-name))
                         "-"))]
-          {:done (:object/name ent)})
+          {:done (:gene/id ent)})
         (catch Exception e {:err [(.getMessage e)]})))))
 
 (defn new-gene [{db :db con :con 

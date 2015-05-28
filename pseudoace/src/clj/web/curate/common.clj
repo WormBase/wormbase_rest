@@ -108,7 +108,7 @@
   "Return a transaction metadata entity for the current request"
   []
   {:db/id (d/tempid :db.part/tx)
-   :nametxn/user (:wbperson (friend/current-authentication))})
+   :wormbase/curator [:person/id (:wbperson (friend/current-authentication))]})
 
 (defmulti link (fn [domain _] domain))
 

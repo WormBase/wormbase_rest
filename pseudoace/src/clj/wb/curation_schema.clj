@@ -13,8 +13,17 @@
       [last-id    :long :nohistory]))
     ])
 
-    ;; Timestamp
+    
    [
+    ;; Bootstrap ID generators for the curation interface
+
+    {:db/id                     #db/id[:db.part/user]
+     :id-generator/identifier   :gene/id
+     :id-generator/template     "WBGene%08d"
+     :id-generator/last-id      300000}
+
+
+    ;; Timestamp
     {:db/id          #db/id[:db.part/tx]
      :db/txInstant   #inst "1970-01-01T00:00:01"}
    ]))
