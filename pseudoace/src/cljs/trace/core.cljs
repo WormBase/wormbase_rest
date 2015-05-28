@@ -35,6 +35,26 @@
 
 (def added-id (atom 0))
 
+(def ^:private top-bar-height 100) ;; px
+
+(defn scroll-into-view 
+  "Attempt to make `element` visible.  Takes into account the height of the
+   non-scrolling toolbar (which breaks Element.prototype.scrollIntoView)."
+  [element]
+  (set! js/test element)
+  (let [body        (.-body js/document)
+        scroll-top  (.-scrollTop body)
+        scroll-bot  (+ (.-scrollTop body) (.-clientHeight body))
+        rect        (.getBoundingClientRect element)
+        element-top (.-top rect)
+        element-bot (.-bottom rect)]
+    (cond 
+      (< element-top top-bar-height)
+      (set! (.-scrollTop body) (max 0 (+ scroll-top (- element-top top-bar-height))))
+
+      (> element-bot scroll-bot)
+      (set! (.-scrollTop body) (max 0 (+ scroll-top (- element-bot scroll-bot)))))))
+
 (defn- fetch-missing-txns [app]
   (let [txns (or (:txns @app) {})]
     (letfn [(scan-missing [missing {:keys [txn val]}]
@@ -359,7 +379,7 @@
     om/IDidMount
     (did-mount [_]
       (if (= added @added-id)
-        (.scrollIntoView (om/get-node owner))))
+        (scroll-into-view (om/get-node owner))))
 
     om/IRender
     (render [_]
@@ -593,13 +613,17 @@
          (dom/table {:border "1"
                      :className "trace-tree table table-striped table-condensed"}
             (dom/tbody nil
-                (for [prop (or (:props data)
-                               (:edit data)
-                               (:val data))]
+              (for [prop (or (:props data)
+                             (:edit data)
+                             (:val data))]
                 (dom/tr nil 
                         (dom/td nil (str (:key prop)))
                         (dom/td nil (om/build list-view prop 
-                                              {:opts 
+                                              {:key :key      ;; Need to explicitly provide a react key
+                                                              ;; here other wise some very silly element
+                                                              ;; recycling can occur when a new property
+                                                              ;; gets inserted.
+                                               :opts 
                                                {:entid (:id data)}})))))))))))
 
 (defn- pack-id [id]
