@@ -41,7 +41,6 @@
   "Attempt to make `element` visible.  Takes into account the height of the
    non-scrolling toolbar (which breaks Element.prototype.scrollIntoView)."
   [element]
-  (set! js/test element)
   (let [body        (.-body js/document)
         scroll-top  (.-scrollTop body)
         scroll-bot  (+ (.-scrollTop body) (.-clientHeight body))
