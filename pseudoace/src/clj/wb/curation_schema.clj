@@ -13,8 +13,16 @@
       [last-id    :long :nohistory]))
     ])
 
-    
+   ;; Timestamp
    [
+    {:db/id          #db/id[:db.part/tx]
+     :db/txInstant   #inst "1970-01-01T00:00:01"}
+   ]))
+   
+
+
+(def curation-init
+  [
     ;; Bootstrap ID generators for the curation interface
 
     {:db/id                     #db/id[:db.part/user]
@@ -26,7 +34,7 @@
     ;; Timestamp
     {:db/id          #db/id[:db.part/tx]
      :db/txInstant   #inst "1970-01-01T00:00:01"}
-   ]))
+   ])
 
 (def curation-fns
   [{:db/id       #db/id[:db.part/user]
