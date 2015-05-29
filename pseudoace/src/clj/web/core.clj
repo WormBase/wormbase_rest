@@ -184,7 +184,7 @@
   (-> (compojure.core/routes
        (wrap-routes routes wrap-anti-forgery)
        api-routes)
-      (friend/authenticate {:allow-anon? true
+      (friend/authenticate {:allow-anon? (not (env :trace-require-login))
                             :unauthenticated-handler #(workflows/http-basic-deny "Demo" %)
                             :workflows [(workflows/http-basic
                                          :credential-fn (partial creds/bcrypt-credential-fn users)

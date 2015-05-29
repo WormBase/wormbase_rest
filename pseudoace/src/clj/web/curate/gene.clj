@@ -1,11 +1,31 @@
 (ns web.curate.gene
   (:use hiccup.core
+        pseudoace.utils
         web.curate.common)
+  (:import java.util.Date)
   (:require [datomic.api :as d :refer (q db history touch entity)]
             [clojure.string :as str]
             [cemerick.friend :as friend :refer [authorized?]]
             [ring.util.anti-forgery :refer [anti-forgery-field]]))
 
+(defmethod lookup "Gene"
+  [_ db id]
+  (q '[:find [?gid ...]
+       :in $ ?name
+       :where (or-join [?g ?name]
+               [?g :gene/id ?name]
+               [?g :gene/sequence-name ?name]
+               [?g :gene/molecular-name ?name]
+               [?g :gene/public-name ?name]
+               (and
+                [?cgc :gene.cgc-name/text ?name]
+                [?g :gene/cgc-name ?cgc])
+               (and
+                [?alt :gene.other-name/text ?name]
+                [?g :gene/other-name ?alt]))
+              [?g :gene/id ?gid]]
+     db id))
+     
 (def species-longnames
   {"elegans"        "Caenorhabditis elegans"
    "briggsae"       "Caenorhabditis briggsae"
@@ -88,7 +108,12 @@
                 :gene/version       1
                 :gene/version-change {
                     :gene.version-change/version 1
-                    :gene-history-action/created true}}
+                    :gene.version-change/person  [:person/id (:wbperson (friend/current-authentication))]
+                    :gene.version-change/date    (Date.)   ;; Now.  May be a few seconds different from
+                                                           ;; the :db/txInstant :-(.                  
+                    :gene-history-action/created true}
+                :gene/status {
+                    :gene.status/status :gene.status.status/live}}
                (txn-meta)]]
       (try
         (let [txr @(d/transact con (concat
@@ -106,7 +131,7 @@
 (defn new-gene [{db :db con :con 
                  {:keys [remark species new_name type]} :params}]
   (let [type (if (= type "CGC")
-               (if (authorized? #{:user.role/cgc} friend/*identity*)
+               (if true #_(authorized? #{:user.role/cgc} friend/*identity*)
                  "CGC" "Sequence")
                type)
         result (if new_name
@@ -130,7 +155,7 @@
            [:th "Name type"]
            [:td
             [:select {:name "type"}
-             (if (authorized? #{:user.role/cgc} friend/*identity*)
+             (if true #_(authorized? #{:user.role/cgc} friend/*identity*)
                [:option {:selected (if (= type "CGC") "yes")} "CGC"])
              [:option {:selected (if (= type "Sequence") "yes")} "Sequence"]]]]
           [:tr
@@ -156,3 +181,83 @@
          [:input {:type "submit"}]]]))))
 
 
+;;
+;; Kill gene
+;;
+
+(defn do-kill-gene [con id reason]
+  (let
+      [db      (db con)
+       cid     (first (lookup "Gene" db id))
+       gene    (and cid (entity db [:gene/id cid]))
+       errs    (->> [(if-not cid
+                       (str id " does not exist"))
+
+                     (if (= (:gene.status/status (:gene/status gene))
+                            :gene.status.status/dead)
+                       "What is dead may never die.")]
+                    (filter identity)
+                    (seq))]
+    (if errs
+      {:err errs}
+      (let [version (or (:gene/version gene) 1)
+            txn [;; CAS-ing the version should catch any race conditions.
+                 [:db.fn/cas [:gene/id cid] :gene/version version (inc version)]
+                 
+                 (vmap
+                  :db/id [:gene/id cid]
+                  :gene/status {
+                      :gene.status/status :gene.status.status/dead
+                  }
+                  
+                  :gene/version-change {
+                    :gene.version-change/version (inc version)
+                    :gene.version-change/person  [:person/id (:wbperson (friend/current-authentication))]
+                    :gene.version-change/date    (Date.)   ;; Now.  May be a few seconds different from
+                                                           ;; the :db/txInstant :-(.                  
+                    :gene-history-action/killed true
+                  }
+
+                  :gene/remark
+                  (if (and reason (not (empty? reason)))
+                    {
+                     :gene.remark/text reason
+                     })
+                  )
+                 
+                 (txn-meta)]]
+        (try
+          (let [txr @(d/transact con txn)]
+            {:done true
+             :canonical cid})
+          (catch Exception e {:err [(.getMessage (.getCause e))]}))))))
+
+(defn kill-object [domain
+                   {con :con
+                    {:keys [id reason]} :params}]
+  (page
+   (let [result (if id
+                  (do-kill-gene con id reason))]
+     (if (:done result)
+       [:div.block
+        [:h3 "Kill " (lc domain)]
+        [:p (link domain (:canonical result)) " has been killed."]]
+       [:div.block
+        [:form {:method "POST"}
+         (anti-forgery-field)
+         [:h3 "Kill " (lc domain)]
+         (for [err (:err result)]
+           [:p.err err])
+         [:table.info
+          [:tr
+           [:th "Enter ID to kill"]
+           [:td (ac-field "id" domain id)]]
+          [:tr
+           [:th "Reason for removal"]
+           [:td
+            [:input {:type "text"
+                     :name "reason"
+                     :size 40
+                     :maxlength 200
+                     :value (or reason "")}]]]]
+         [:input {:type "submit"}]]]))))

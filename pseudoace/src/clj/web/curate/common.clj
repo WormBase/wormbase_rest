@@ -5,6 +5,37 @@
             [cemerick.friend :as friend :refer [authorized?]]
             [ring.util.anti-forgery :refer [anti-forgery-field]]))
 
+(defmulti lookup (fn [class db id] class))
+
+(defmethod lookup :default [_ db id]
+  [])
+
+(defn lc
+  "Convert `str` to all-lower-case."
+  [^String str]
+  (.toLowerCase str))
+
+(def name-placeholders
+  {"Gene"       "WBGene... or name"
+   "Variation"  "WBVar... or name"
+   "Feature"    "WBsf..."})
+
+(defn ac-field
+  "Return hiccup data corresponding to a namedb autocomplete field for
+   names of domain `domain`."
+  ([name domain]
+     (ac-field domain ""))
+  ([name domain value]
+     [:input {:type "text"
+              :name name
+              :class "autocomplete"
+              :data-domain domain
+              :size 20
+              :maxlength 20
+              :autocomplete "off"
+              :value (or value "")
+              :placeholder (name-placeholders domain)}]))
+
 (defn menu []
  (let [id friend/*identity*]
    (list 
@@ -14,7 +45,7 @@
     [:div.menu-content
      [:h4 "Gene"]
      
-     [:p [:a {:href "/query-gene"} "Find gene"]]
+     [:p [:a {:href "/curate/gene/query"} "Find gene"]]
      
      (if (authorized? #{:user.role/edit} id)
        [:p [:a {:href "/add-gene-name"} "Add name"]])
@@ -22,11 +53,11 @@
      (if (authorized? #{:user.role/edit} id)
        [:p [:a {:href "/remove-gene-name"} "Remove name"]])    
     
-     (if (authorized? #{:user.role/edit} id)
-       [:p [:a {:href "/new-gene"} "New gene"]])
+     (if true #_(authorized? #{:user.role/edit} id)
+       [:p [:a {:href "/curate/gene/new"} "New gene"]])
 
-     (if (authorized? #{:user.role/edit} id)
-       [:p [:a {:href "/kill-gene"} "Kill gene"]])
+     (if true #_(authorized? #{:user.role/edit} id)
+       [:p [:a {:href "/curate/gene/kill"} "Kill gene"]])
 
      (if (authorized? #{:user.role/edit} id)
        [:p [:a {:href "/merge-gene"} "Merge gene"]])
@@ -114,7 +145,7 @@
 
 (defmethod link "Gene" [_ id]
   [:span id
-   [:a {:href (str "/curate/gene/query?lookup=" id)}
+   [:a {:href (str "/view/gene/" id)}
     [:i {:class "fa fa-external-link"}]]])
 
 (defmethod link "Variation" [_ id]
