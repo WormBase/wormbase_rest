@@ -120,11 +120,16 @@
     {}
     {:display "none"}))
 
-(defn text-edit [vh owner]
+(defn text-edit [{:keys [added] :as vh} owner]
   (reify
+    om/IDidMount
+    (did-mount [_]
+      (if (= added @added-id)
+        (.focus (om/get-node owner "input"))))
+    
     om/IInitState
     (init-state [_]
-      {:editing false})
+      {:editing (= added @added-id)})
     
     om/IRenderState
     (render-state [_ {:keys [editing]}]
@@ -136,7 +141,8 @@
                                         (om/set-state! owner :editing true))}
                    val)
          (dom/input
-          {:style (display editing)
+          {:ref "input"
+           :style (display editing)
            :class "text-editable"
            :value val
            :on-change (fn [e]
