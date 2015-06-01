@@ -11,17 +11,24 @@
 (defn- page []
   (html
    [:html
-    [:head]
-    [:body
-     [:div.container-fluid
-      [:div#table-maker]]
+    [:head
      [:link {:rel "stylesheet"
              :href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css"}]
      [:link {:rel "stylesheet"
              :href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap-theme.min.css"}]
      [:link {:rel "stylesheet"
-             :href "/css/trace.css"}]
-     [:script {:src "http://fb.me/react-0.12.2.js"}]
+             :href "//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"}]
+     [:link {:rel "stylesheet"
+             :href "/css/trace.css"}]]
+    [:body
+     [:div.root
+      [:div.header
+       [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
+       [:h1#page-title "Colonnade"]
+       [:img.banner {:src "/img/kazannevsky.jpg" :width 130 :style "float: right"}]
+       [:div#header-content]]
+     [:div.container-fluid
+      [:div#table-maker]]]
      [:script {:src "/js/out/goog/base.js"
                :type "text/javascript"}]
      [:script {:src "/js/main.js"

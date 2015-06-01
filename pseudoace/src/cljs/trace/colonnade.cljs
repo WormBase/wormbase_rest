@@ -139,6 +139,40 @@
                                  (str i))))))))
                  
 
+(defn enum-constraint [{:keys [via] :as col} owner]
+  (reify
+    om/IRender
+    (render [_]
+      (let [schema      (om/observe owner (schema))
+            tns         (str (namespace via) "." (name via))
+            enum-values ((:attrs schema) tns)]
+        (dom/select
+         {:value (str (:constrain col))
+          :class "form-control"
+          :on-change (fn [e]
+                       (om/update! col :constrain (reader/read-string (.. e -target -value))))}
+         (dom/option nil)
+         (for [ev enum-values
+               :let [id (:db/ident ev)]]
+           (dom/option {:value (str id)}
+                       (str id))))))))
+
+(defn constraint-editor [{:keys [attribute] :as col}]
+  (cond
+   (nil? attribute)
+   nil
+
+   (= attribute :db.type/string)
+   (om/build input-text col {:opts {:key :constrain}})
+   
+   (= (name attribute) "id")
+   (om/build input-text col {:opts {:key :constrain}})
+
+   (= attribute :enum)
+   (om/build enum-constraint col)
+
+   ))
+
 (defn column-def-view [col owner]
   (reify
     om/IRender
@@ -181,7 +215,7 @@
 
          (dom/div {:class "form-group"}
            (dom/label "Constrain: ")
-           (om/build input-text col {:opts {:key :constrain}})))))))
+           (constraint-editor col)))))))
 
 (defn get-query [columns schema]
   (reduce
@@ -267,6 +301,8 @@
                        (symbol (str "?" k "-ident"))]]))
 
                  (if-let [con (:constrain col)]
+                  (cond
+                   (string? con) 
                    (if (not (empty? con))                     
                      (let [cleaned-con (str/replace con                 ;; escape all regex-special characters
                                                     #"[\[\].*+?{}()]"   ;; except *, which becomes ".*".
@@ -284,7 +320,11 @@
                          [[(list 'ground con)
                            (if (= (name attr) "id")
                              (symbol (str "?" k "-id"))
-                             (symbol (str "?" k)))]])))))
+                             (symbol (str "?" k)))]])))
+
+                   (keyword? con)
+                   [[(symbol (str "?" k)) :db/ident con]])))
+                  
                         
 
         :rules
@@ -382,7 +422,6 @@
     (render [_]
       (dom/div
         nil
-        (dom/h1 nil (dom/img #js {:src "/img/kazannevsky.jpg" :width 150}) " Colonnade")
         (if (not (:schema app))
           (dom/h2 nil "Loading schema...")
           (dom/div nil
