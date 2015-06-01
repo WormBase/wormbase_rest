@@ -779,3 +779,14 @@
 (om/root trace-view    app-state {:target (gdom/getElement "tree")})
 (om/root trace-title   app-state {:target (gdom/getElement "page-title")})
 (om/root trace-tools   app-state {:target (gdom/getElement "header-content")})
+
+;; Non-OM code, needs to explicitly deref the app-state atom to
+;; see if we're currently editing.
+
+(.addEventListener
+ js/window
+ "beforeunload"
+ (fn [e]
+   (if (:editing (:mode @app-state))
+     (set! (.-returnValue e) "Currently editing this entity")
+     "Currently editing this entity")))
