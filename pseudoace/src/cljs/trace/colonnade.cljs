@@ -37,7 +37,32 @@
         :class "form-control"
         :value (key data)
         :on-change (fn [e]
-                    (om/update! data key (.. e -target -value)))}))))
+                     (om/update! data key (.. e -target -value)))}))))
+
+(defn input-int [data owner {:keys [key]}]
+  (reify
+    om/IShouldUpdate
+    (should-update [_ _ _]
+      true)
+    
+    om/IRender
+    (render [_]
+      (dom/input
+       {:type "text"
+        :class "form-control"
+        :value (if-let [v (key data)]
+                 (str v))
+        :on-change (fn [e]
+                     (let [s (.. e -target -value)
+                           v (cond
+                              (empty? s)
+                                 nil
+                              (re-matches #"\d+" s)
+                                (js/parseInt s)
+
+                              :default
+                                (key @data))]
+                       (om/update! data key v)))}))))
 
 (defn input-checkbox [data owner {:keys [key]}]
   (reify
@@ -415,6 +440,7 @@
       (edn-xhr "/schema"
         (fn [resp]
           (om/update! app {:schema (process-schema resp)
+                           :timeout 5000
                            :columns (array-map
                                      "col1" (assoc column-template :root true))}))))
     
@@ -451,6 +477,7 @@
                              "/colonnade/query"
                              {:query (query-list q)
                               :rules (vec (:rules q))
+                              :timeout (:timeout @app)
                               :max-rows 100}
                              (fn [resp]
                                (om/update! app
@@ -460,6 +487,11 @@
                                                       (assoc r :columns cols)))))))}
              
              "Run query")
+
+            (dom/form {:class "form-inline"}
+              (dom/div {:class "form-group"}
+                       (dom/label "Timeout (ms): ")
+                       (om/build input-int app {:opts {:key :timeout}})))
                                                          
             (dom/h2 nil "Query")
             (om/build query-view app)

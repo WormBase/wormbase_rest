@@ -38,15 +38,20 @@
       "goog.require('trace.colonnade');"]]]))
 
 
-(defn post-query [db {:keys [query rules args max-rows]}]
+(defn post-query [db {:keys [query rules args drop-rows max-rows timeout]}]
   (let [args (if (seq rules)
                (cons rules args)
                args)
-        results (apply q query db args)]
+        results (d/query
+                 {:query query
+                  :args (cons db args)
+                  :timeout (or timeout 5000)})]
     {:status 200
      :headers {"Content-Type" "text/plain"}
      :body (pr-str {:query query
-                    :results (take max-rows (sort-by first results))
+                    :results (cond->> (sort-by first results)
+                                      drop-rows    (drop drop-rows)
+                                      max-rows     (take max-rows))
                     :count (count results)})}))
 
 (defn colonnade [db]
