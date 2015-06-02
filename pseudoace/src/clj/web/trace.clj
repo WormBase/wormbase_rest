@@ -206,27 +206,18 @@
                         :when true #_(re-matches cljs-symbol (str (:pace.xref/attribute x)))]
                     x)))))))
 
-
-;;       (filter (fn [attr]
-;;                 (re-matches cljs-symbol (str (:db/ident attr)))))))
-
 (defn get-schema-attributes [db]
   (->> (q '[:find ?attr
             :where [?attr :pace/tags _]]
           db)
        (map (fn [[attr]]
               (touch (entity db attr))))))
-       ;;(filter (fn [attr]
-         ;;        (re-matches cljs-symbol (str (:db/ident attr)))))))
 
 (defn get-schema [ddb]
   {:status 200
    :headers {"Content-Type" "text/plain"}
    :body (pr-str {:classes    (get-schema-classes ddb)
                   :attributes (get-schema-attributes ddb)})})
-
-(defn imissing? [db ent attr]
-  (empty? (d/datoms db :vaet ent attr)))
 
 (defn viewer-page [req]
   (html

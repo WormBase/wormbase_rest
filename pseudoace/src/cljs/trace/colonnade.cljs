@@ -338,7 +338,7 @@
                      [[(list rule ?a ?b)
                        [?a via ?b]]
                       [(list rule ?a ?b)
-                       [(list 'missing? '$ ?a via)]
+                       (list 'not [?a via '_])
                        [(list 'ground (if (= (:db/valueType vs) :db.type/ref) -1 :none)) ?b]]])
 
                    via-xref
@@ -352,7 +352,7 @@
                          [?h via-xref ?a]
                          [?b (keyword x y) ?h]]
                         [(list rule ?a ?b)
-                         [(list 'web.trace/imissing? '$ ?a via-xref)]
+                         (list 'not ['_ via-xref ?a])
                          [(list 'ground -1) ?b]]])
                            
                      (let [rule (symbol (str "maybe-" k))
@@ -361,7 +361,7 @@
                        [[(list rule ?a ?b)
                          [?b via-xref ?a]]
                         [(list rule ?a ?b)
-                         [(list 'web.trace/imissing? '$ ?a via-xref)]
+                         (list 'not ['_ via-xref ?a])
                          [(list 'ground -1) ?b]]])))))}))
                    
    {:find [] :where [] :rules []}
