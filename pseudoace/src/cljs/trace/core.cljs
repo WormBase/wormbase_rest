@@ -105,7 +105,6 @@
     (-write writer (str id))
     (-write writer "]")))
       
-
 (def tempid
   "Client-side analog of the Datomic tempid function.  Each call returns a unique 
    object which prints as a #db/id tagged literal."
@@ -115,7 +114,8 @@
 
 (declare tree-view)
 
-(defn display [show]
+(defn display
+  [show]
   (if show
     {}
     {:display "none"}))
@@ -135,10 +135,14 @@
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))
             val (if (= val :empty) "New value..." val)]
-        (dom/span
-         (dom/span {:style (display (not editing))
-                    :on-double-click #(when js/trace_logged_in
-                                        (om/set-state! owner :editing true))}
+        (dom/span {:class "edit-root"}
+         (dom/span {:class "edit-inactive"
+                    :style (display (not editing))
+                    :on-double-click (fn [event]
+                                       (when js/trace_logged_in
+                                         (.preventDefault event)
+                                         (.stopPropagation event)
+                                         (om/set-state! owner :editing true)))}
                    val)
          (dom/input
           {:ref "input"
@@ -150,26 +154,45 @@
            :on-blur #(om/set-state! owner :editing false)
            :on-key-press (fn [e]
                            (when (== (.-charCode e) 13)
-                             (om/set-state! owner :editing false)))}))))))
+                             (om/set-state! owner :editing false)))}))))
+
+    om/IDidUpdate
+    (did-update [_ _ {:keys [editing]}]
+      (if (and (not editing)
+               (om/get-state owner :editing))
+        (.focus (om/get-node owner "input"))))))
+      
 
 
-(defn int-edit [vh owner]
+(defn int-edit [{:keys [added] :as vh} owner]
   (reify
+
+    om/IDidMount
+    (did-mount [_]
+      (if (= added @added-id)
+        (.focus (om/get-node owner "input"))))
+    
     om/IInitState
     (init-state [_]
-      {:editing false})
+      {:editing (= added @added-id)})
 
     om/IRenderState 
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))   ;; works because 0 is truthy here.
             val (if (= val :empty) "New value..." val)]
-       (dom/span
-        (dom/span {:style (display (not editing))
-                   :on-double-click #(when js/trace_logged_in
-                                       (om/set-state! owner :editing true))}
+       (dom/span {:class "edit-root"}
+        (dom/span {:class "edit-inactive"
+                   :style (display (not editing))
+                   :on-double-click (fn [event]
+                                       (when js/trace_logged_in
+                                         (.preventDefault event)
+                                         (.stopPropagation event)
+                                         (om/set-state! owner :editing true)))}
                   val)
         (dom/input
-         {:style (display editing)
+         {:ref "input"
+          :style (display editing)
+          :class "text-editable"
           :value val
           :on-change (fn [e]
                        (let [ns (.. e -target -value)]
@@ -178,7 +201,13 @@
           :on-blur #(om/set-state! owner :editing false)
           :on-key-press (fn [e]
                           (when (== (.-charCode e) 13)
-                            (om/set-state! owner :editing false)))}))))))
+                            (om/set-state! owner :editing false)))}))))
+
+    om/IDidUpdate
+    (did-update [_ _ {:keys [editing]}]
+      (if (and (not editing)
+               (om/get-state owner :editing))
+        (.focus (om/get-node owner "input"))))))
 
 (defn boolean-edit [vh owner]
   (reify
@@ -192,8 +221,9 @@
                   (:val vh)
                   (:edit vh))
             val (if (= val :empty) "New value..." val)]
-        (dom/span
-         (dom/span {:style (display (not editing))
+        (dom/span {:class "edit-root"}
+         (dom/span {:class "edit-inactive"
+                    :style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
                    (str val))
          (dom/select
@@ -232,13 +262,24 @@
             (dom/option {:value (str (namespace id) "/" (name id))}
                         (str id)))))))))
 
-(defn ref-edit [vh owner {:keys [class]}]
+(defn ref-edit [{:keys [added] :as vh} owner {:keys [class]}]
   (reify
     om/IInitState
     (init-state [_]
-      {:editing false
+      {:editing (= added @added-id)
        :ncand -1
        :candidates nil})
+
+    om/IDidMount
+    (did-mount [_]
+      (if (= added @added-id)
+        (.focus (om/get-node owner "input"))))
+
+    om/IDidUpdate
+    (did-update [_ _ {:keys [editing]}]
+      (if (and (not editing)
+               (om/get-state owner :editing))
+        (.focus (om/get-node owner "input"))))
 
     om/IRenderState
     (render-state [_ {:keys [editing ncand candidates checked]}]
@@ -254,18 +295,37 @@
                        (om/set-state! owner :checked prefix)
                        (om/set-state! owner :ncand ncnt)
                        (om/set-state! owner :candidates names)))))]
-        (dom/span
+        (dom/span {:class "edit-root"}
          (dom/i {:class "fa fa-plus-circle"
                  :style (display create?)})
-         (dom/span {:style (display (not editing))
-                    :on-double-click (fn [_]
+         (dom/span {:class "edit-inactive"
+                    :style (display (not editing))
+                    :on-double-click (fn [event]
                                        (update-cands vname)
+                                       (.preventDefault event)
+                                       (.stopPropagation event)
                                        (om/set-state! owner :editing true))}
                    (or vname "New reference..."))
-         (dom/input
+         
+         (dom/div
           {:style (display editing)
+           :class "candidate-list"}
+          (for [c candidates]
+            (dom/div
+             {:class "candidate-item"
+              :on-click (fn [_]
+                          (update-cands c)
+                          (om/update! vh :edit [class c])
+                          (om/set-state! owner :editing false))}
+             c))
+          (if (> ncand (count candidates))
+            (dom/div (dom/em (str "And " (- ncand (count candidates)) " more")))))
+         
+         (dom/input
+          {:ref "input"
+           :style (display editing)
            :value vname
-           :placeholder (str class " id")
+           :placeholder (str class " id...")
            :on-change (fn [e]
                         (let [p (.. e -target -value)]
                           (update-cands p)
@@ -275,6 +335,8 @@
            :on-key-press (fn [e]
                            (when (== (.-charCode e) 13)
                              (om/set-state! owner :editing false)))})
+
+
 
          (dom/span
           {:style {:visibility (if (and (not create?)
@@ -291,19 +353,7 @@
                         (om/set-state! owner :editing false))}
            "Create"))
          
-         (dom/div
-          {:style (display editing)
-           :class "candidate-list"}
-          (for [c candidates]
-            (dom/div
-             {:class "candidate-item"
-              :on-click (fn [_]
-                          (update-cands c)
-                          (om/update! vh :edit [class c])
-                          (om/set-state! owner :editing false))}
-             c))
-          (if (> ncand (count candidates))
-            (dom/div (dom/em (str "And " (- ncand (count candidates)) " more")))))))))))
+            ))))))
       
 (defn txn-view [{:keys [txn] :as val-holder} owner {:keys [entid key]}]
   (reify
@@ -504,7 +554,7 @@
                      (dom/img {:src "/img/spinner_24.gif"})
                      
                      :default
-                     (dom/div nil
+                     (dom/div {:class "values-list"}
                               (for [v (:values data)]
                                 (om/build item-view v
                                   {:opts {:key   (:key data)

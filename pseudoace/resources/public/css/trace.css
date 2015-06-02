@@ -41,6 +41,22 @@ div.trace-header {
     display: flex;
 }
 
+.values-list {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+}
+
+.edit-root {
+    display: -webkit-flex;
+    display: flex;
+    width: 100%;
+    position: relative;
+}
+
+.edit-inactive {
+    flex-grow: 1;
+}
+
 .collapse-button {
     -webkit-flex: none;
     flex: none;
@@ -76,9 +92,12 @@ div.form-group {
 
 div.candidate-list {
     position: absolute;
+    top: 25px;
     background: white;
     border: solid grey 2px;
     padding: 4px;
+    z-index: 5000;
+    opacity: 0.9;
 }
 
 div.candidate-item {
