@@ -40,12 +40,13 @@
   "Build hiccup for a species menu"
   ([name] (species-menu nil))
   ([name sel]
+    (let [sel (or sel "elegans")]
      [:select {:name name}
-      (for [s (keys species-longnames)]
+      (for [s (keys (sort-by val species-longnames))]
         [:option {:value s
                   :selected (if (= sel s)
                               "yes")}
-         (species-longnames s)])]))
+         (species-longnames s)])])))
                       
 (def name-checks
   {"elegans"    {"CGC"         #"^[a-z21]{3,4}-[1-9]\d*(\.\d+)?$"	
