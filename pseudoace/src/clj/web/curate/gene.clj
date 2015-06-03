@@ -114,7 +114,9 @@
                                                            ;; the :db/txInstant :-(.                  
                     :gene-history-action/created true}
                 :gene/status {
-                    :gene.status/status :gene.status.status/live}}
+                    :gene.status/status :gene.status.status/live}
+                :locatable/method [:method/id "Gene"]
+                :gene/species [:species/id (species-longnames species)]}
                (txn-meta)]]
       (try
         (let [txr @(d/transact con (concat
