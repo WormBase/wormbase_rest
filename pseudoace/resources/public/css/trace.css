@@ -6,11 +6,27 @@ div.header {
     height: 100px;
     padding: 8px;
     z-index: 10000000;
+    display: -webkit-flex;
+    display: flex;
 }
 
-div.header > h1 {
+div.header-identity {
+}
+
+div.header-main {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
     padding-left: 20px;
-    display: inline;
+}
+
+h1#page-title {
+    display: inline-block;
+    margin-top: 0px;
+}
+
+div.container {
+    padding-top: 120px;
+    width: 100%;
 }
 
 div.container-fluid {

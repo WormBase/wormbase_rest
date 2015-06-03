@@ -219,7 +219,7 @@
    :body (pr-str {:classes    (get-schema-classes ddb)
                   :attributes (get-schema-attributes ddb)})})
 
-(defn viewer-page [req]
+(defn viewer-page [{:keys [db] :as req}]
   (html
    [:html
     [:head
@@ -234,9 +234,14 @@
     [:body
      [:div.root
       [:div.header
-       [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
-       [:h1#page-title "TrACeView"]
-       [:div#header-content]]
+       [:div.header-identity
+        [:div {:style "display: inline-block"}
+         [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
+         (if-let [name (:wormbase/system-name (entity db :wormbase/system))]
+           [:div.system-name name])]]
+       [:div.header-main
+        [:h1#page-title "TrACeView"]
+        [:div#header-content]]]
       [:div.container-fluid
        [:div#tree]]
 

@@ -116,24 +116,32 @@
 
      )))
 
-(defn page [& content]
+(defn page [db & content]
   (html
    [:head
     [:title "Wormbase Curation System"]
     [:script {:language "javascript"
               :src "/js/nameserver.js"}]
     [:link {:rel "stylesheet"
+            :href "/css/trace.css"}]
+    [:link {:rel "stylesheet"
             :href "/css/curation.css"}]
     [:link {:rel "stylesheet"
             :href "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"}]]
    [:body
-    [:div.header
-     [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
-     [:h1 "Curation"]
-     [:div.ident (:wbperson (friend/current-authentication))]]
-    [:div.container
-     (vec (cons :div.content content))
-     [:div.menu (menu)]]]))
+    [:div.root
+     [:div.header
+      [:div.header-identity
+       [:div {:style "display: inline-block"}
+        [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
+        (if-let [name (:wormbase/system-name (entity db :wormbase/system))]
+          [:div.system-name name])]]
+      [:div.header-main
+       [:h1#page-title "Curation"]
+       [:div.ident (:wbperson (friend/current-authentication))]]]
+     [:div.container
+      (vec (cons :div.content content))
+      [:div.menu (menu)]]]]))
 
 (defn txn-meta
   "Return a transaction metadata entity for the current request"

@@ -11,10 +11,18 @@
       [identifier :ref :unique-identity]
       [template   :string]
       [last-id    :long :nohistory]))
+
+    (schema wormbase
+     (fields
+      [system-name    :string]))        
     ])
 
    ;; Timestamp
    [
+
+    {:db/id          #db/id[:db.part/user]
+     :db/ident       :wormbase/system}
+    
     {:db/id          #db/id[:db.part/tx]
      :db/txInstant   #inst "1970-01-01T00:00:01"}
    ]))

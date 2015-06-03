@@ -137,7 +137,7 @@
         result (if new_name
                  (do-new-gene con remark species new_name type))]
         
-    (page
+    (page db
      (if (:done result)
        [:div.block
         [:h3 "ID generated"]
@@ -235,7 +235,7 @@
 (defn kill-object [domain
                    {con :con
                     {:keys [id reason]} :params}]
-  (page
+  (page db
    (let [result (if id
                   (do-kill-gene con id reason))]
      (if (:done result)

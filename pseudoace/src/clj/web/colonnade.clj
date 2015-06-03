@@ -9,7 +9,7 @@
             [compojure.route :as route]
             [compojure.handler :as handler]))
 
-(defn- page []
+(defn- page [{:keys [db] :as req}]
   (html
    [:html
     [:head
@@ -24,9 +24,14 @@
     [:body
      [:div.root
       [:div.header
-       [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
-       [:h1#page-title "Colonnade"]
-       [:img.banner {:src "/img/kazannevsky.jpg" :width 130 :style "float: right"}]
+       [:div.header-identity
+        [:div {:style "display: inline-block"}
+         [:img.banner {:src "/img/logo_wormbase_gradient_small.png"}]
+         (if-let [name (:wormbase/system-name (entity db :wormbase/system))]
+           [:div.system-name name])]]
+       [:div.header-main
+        [:h1#page-title "Colonnade"]
+        [:img.banner {:src "/img/kazannevsky.jpg" :width 130 :style "float: right"}]]
        [:div#header-content]]
      [:div.container-fluid
       [:div#table-maker]]]
@@ -77,5 +82,5 @@
 
 (defn colonnade [db]
   (routes
-   (GET "/" [] (page))
+   (GET "/" req (page req))
    (POST "/query" {edn-params :edn-params} (post-query db edn-params))))

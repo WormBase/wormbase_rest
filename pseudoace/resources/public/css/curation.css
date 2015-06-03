@@ -4,13 +4,6 @@ body {
     margin: 0px;
 }
 
-div.header {
-    display: flex;
-    justify-content: space-between;
-    background: black;
-    padding: 8px;
-}
-
 div.header h1 {
     margin: 0px;
     color: #ccdddd;
@@ -38,15 +31,18 @@ div.block {
 }
 
 div.container {
+    display: -webkit-flex;
     display: flex;
     margin: 8px;
 }
 
 div.content {
+    -webkit-flex: 1 1;
     flex: 1 1;
 }
 
 div.menu {
+    -webkit-flex: 0 0 220px;
     flex: 0 0 220px;
     margin-left: 20px;
     background: lightgray;
