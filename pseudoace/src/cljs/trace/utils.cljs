@@ -39,6 +39,8 @@
 
 (defn process-schema [{:keys [classes attributes]}]
   {:classes (sort-by :pace/identifies-class classes)
+   :classes-by-ident (into {}
+                       (map (juxt :db/ident identity) classes))
    :attrs (into
            {}
            (for [[ns attrs] (group-by #(namespace (:db/ident %)) attributes)]

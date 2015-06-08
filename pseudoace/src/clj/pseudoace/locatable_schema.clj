@@ -143,11 +143,37 @@
     ])
 
   ;;
-  ;; Fake pseudoace metadata for locatable-model enums so that
+  ;; Fake pseudoace metadata for locatable-model entities so that
   ;; they are visible in TrACeView and Colonnade
   ;;
   
-  [{:db/id          #db/id[:db.part/user]
+  [{:db/id          #db/id[:db.part/db]
+    :db/ident       :locatable/parent
+    :pace/obj-ref   :sequence/id        ;; this isn't always true, but needed for current Colonnade code.
+    :pace/tags      "Parent"}
+   
+   {:db/id          #db/id[:db.part/db]
+    :db/ident       :locatable/min
+    :pace/tags      "Position Min"}
+
+   {:db/id          #db/id[:db.part/db]
+    :db/ident       :locatable/max
+    :pace/tags      "Position Max"}
+
+   {:db/id          #db/id[:db.part/db]
+    :db/ident       :locatable/method
+    :pace/obj-ref   :method/id
+    :pace/tags      "Method"}
+
+   {:db/id          #db/id[:db.part/db]
+    :db/ident       :locatable/score
+    :pace/tags      "Score"}
+   
+   {:db/id          #db/id[:db.part/db]
+    :db/ident       :locatable/strand
+    :pace/tags      "Strand"}
+   
+   {:db/id          #db/id[:db.part/user]
     :db/ident       :locatable.strand/positive
     :pace/tags      "Positive"}
 

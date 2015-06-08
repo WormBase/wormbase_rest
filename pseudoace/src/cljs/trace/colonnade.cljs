@@ -121,7 +121,9 @@
             attr (:attribute from)
             nss (if attr
                   (if (= (name attr) "id")
-                    [(namespace attr)]
+                    (cons
+                     (namespace attr)
+                     (:pace/use-ns ((:classes-by-ident schema) attr)))
                     (cons 
                      (str (namespace attr) "." (name attr))
                      (:pace/use-ns ((:attrs-by-ident schema) attr)))))
