@@ -49,20 +49,14 @@
 
 (def ^:private prefix-num-re #"([A-Za-z_-]*)(\d+)")
 
-(defn prefix-num-compare
-  "If x and y are strings containing numbers, possibly with a common
-   alphabetic prefix, compare the numbers.  Otherwise, compare as
-   if with `compare`."
-  [x y]
+(defn prefix-num-comparator 
+  "Normalize strings which consist of a prefix followed by an integer."
+  [x]
   (or (and (string? x)
-           (string? y)
            (if-let [[_ px nx] (re-matches prefix-num-re x)]
-             (if-let [[_ py ny] (re-matches prefix-num-re y)]
-               (and (= px py)
-                    (compare (parse-int nx)
-                             (parse-int ny))))))
-      (compare x y)))
-               
+             (format "%s%010d" px (parse-int nx))))
+      x))
+  
 
 (defn post-query [db {:keys [query rules args drop-rows max-rows timeout]}]
   (let [args (if (seq rules)
@@ -75,7 +69,7 @@
     {:status 200
      :headers {"Content-Type" "text/plain"}
      :body (pr-str {:query query
-                    :results (cond->> (sort-by first prefix-num-compare results)
+                    :results (cond->> (sort-by (comp prefix-num-comparator first) results)
                                       drop-rows    (drop drop-rows)
                                       max-rows     (take max-rows))
                     :count (count results)})}))
