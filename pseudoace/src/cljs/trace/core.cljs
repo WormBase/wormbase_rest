@@ -469,8 +469,8 @@
          (if edit-mode
            (om/build ref-edit val-holder
                      {:opts {:class class}})
-           (let [id (second val)
-                 uri (str "/view/" (namespace (first val)) "/" (second val))]
+           (let [[class id title] val
+                 uri (str "/view/" (namespace class) "/" id)]
              (dom/a {:href uri
                      :onClick (fn [e]
                                 (.preventDefault e)
@@ -480,7 +480,7 @@
                                             id
                                             uri)
                                 (secretary/dispatch! uri))}
-                    (str id))))
+                    (str (or title id)))))
 
          (= type :db.type/long)
          (if edit-mode

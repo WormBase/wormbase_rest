@@ -15,6 +15,12 @@
     (schema wormbase
      (fields
       [system-name    :string]))        
+
+    (schema wormbase.title
+     (fields
+      [user       :ref :indexed]
+      [class      :ref :indexed]
+      [attribute  :ref]))
     ])
 
    ;; Timestamp
@@ -26,7 +32,6 @@
     {:db/id          #db/id[:db.part/tx]
      :db/txInstant   #inst "1970-01-01T00:00:01"}
    ]))
-   
 
 
 (def curation-init

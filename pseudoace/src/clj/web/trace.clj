@@ -15,13 +15,45 @@
 (declare touch-link)
 (declare obj2)
 
+(def 
+  ^{:dynamic true
+    :doc "If bound to a map of :class/id -> attributes, use those attributes
+          as possible object labels."}
+  *class-titles* nil)
+
+(defn class-titles-for-user 
+  "Return the default *class-titles* map for a user."
+  [db username]
+  (if username 
+    (->> (q '[:find ?class-id ?attr-id
+              :in $ ?username
+              :where [?user :user/name ?username]
+                     [?t :wormbase.title/user ?user]
+                     [?t :wormbase.title/class ?class]
+                     [?t :wormbase.title/attribute ?attr]
+                     [?class :db/ident ?class-id]
+                     [?attr :db/ident ?attr-id]]
+            db username)
+         (into {}))))
+
+(defn- object-link 
+  "Create a lookup-ref or labelled lookup-ref to object `v` of class `class`."
+  [class v]
+  (let [ref [class (class v)]]
+    (or 
+     (some->> (get *class-titles* class)
+              (get v)
+              (conj ref))
+     ref)))
+  
+
 (defn touch-link-ref [ke v]
   (cond
    (:db/isComponent ke)  (touch-link v)
-   (:pace/obj-ref ke)    [(:pace/obj-ref ke) ((:pace/obj-ref ke) v)]
+   (:pace/obj-ref ke)    (object-link (:pace/obj-ref ke) v)
    (:db/ident v)         (:db/ident v)
    :default              (if-let [class (first (filter #(= (name %) "id") (keys v)))]
-                           [class (class v)]
+                           (object-link class v)
                            v)))
 
 (defn touch-link [ent]
@@ -97,9 +129,8 @@
          (for [[val _ _ txn] val-datoms]
            {:txn txn
             :val (let [ve (entity db val)]
-                   [obj-ref (obj-ref (if follow
-                                       (follow ve)
-                                       ve))])}))})))
+                   (object-link obj-ref (if follow (follow ve) ve)))
+           }))})))
 
 (defn xref-obj2 [db clid ent maxcount]
   (for [xref (:pace/xref (entity db clid))
@@ -131,6 +162,7 @@
       te)))
 
 (defn get-raw-obj2 [ddb class id max-out max-in txns?]
+ (binding [*class-titles* (class-titles-for-user ddb (:username (friend/current-authentication)))]
   (let [clid  (keyword class "id")
         entid (->> [clid id]
                    (entity ddb)
@@ -146,7 +178,7 @@
                         :txns   (if txns?
                                   (get-raw-txns ddb txids))})})
       {:status 404
-       :body "Not found"})))
+       :body "Not found"}))))
 
 (defn get-raw-attr2-out [ddb entid attr txns?]
   (let [prop (obj2-attr ddb nil (seq (d/datoms ddb :eavt entid attr)))
@@ -168,12 +200,13 @@
   
 
 (defn get-raw-attr2 [ddb entid attr-name txns?]
+ (binding [*class-titles* (class-titles-for-user ddb (:username (friend/current-authentication)))]
   (let [attr (keyword (.substring attr-name 1))]
     (if (.startsWith (name attr) "_")
       (get-raw-attr2-in ddb entid (keyword (namespace attr)
                                             (.substring (name attr) 1))
                         txns?)
-      (get-raw-attr2-out ddb entid attr txns?))))
+      (get-raw-attr2-out ddb entid attr txns?)))))
 
 (defn get-raw-history2 [db entid attr]
   (let [hdb (d/history db)
