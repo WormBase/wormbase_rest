@@ -72,6 +72,8 @@
                     :results (cond->> (sort-by (comp prefix-num-comparator first) results)
                                       drop-rows    (drop drop-rows)
                                       max-rows     (take max-rows))
+                    :drop-rows drop-rows
+                    :max-rows max-rows
                     :count (count results)})}))
 
 (defn colonnade [db]

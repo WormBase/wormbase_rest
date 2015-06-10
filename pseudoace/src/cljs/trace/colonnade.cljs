@@ -26,7 +26,9 @@
    :from nil
    :required true
    :visible true})
-   
+
+(def col-seed (atom 1))
+(def query-seed (atom 1))
 
 (defn input-text [data owner {:keys [key]}]
   (reify
@@ -410,13 +412,12 @@
           (if (seq (:rules q))
             (str "\nwith rules:\n" (pr-str (vec (:rules q))))))))))
 
-(defn results-view [results owner]
+(defn results-view [results owner {:keys [columns]}]
   (reify
     om/IRender
     (render [_]
       (dom/div nil
-        (dom/p nil "Showing " (count (:results results)) " of " (:count results))
-        (let [vizcols (filter :visible (for [[cid col] (:columns results)] col))]
+        (let [vizcols (filter :visible (for [[cid col] (or columns (:columns results))] col))]
           (dom/table #js {:className "table table-striped"}
             (dom/thead nil
               (dom/tr nil                    
@@ -433,7 +434,57 @@
                            (str c)))))
                     r vizcols))))))))))
                 
-(def col-seed (atom 1))
+
+
+(defn query-runner [{:keys [query columns]} owner]
+  (letfn [(run-query [offset page-size]
+            (edn-xhr-post
+             "/colonnade/query"
+             {:query (query-list query)
+              :rules (vec (:rules query))
+              :timeout (:timeout @app-state)
+              :drop-rows offset
+              :max-rows page-size}
+             (fn [resp]
+               (let [results (:results resp)]
+                 (om/update-state! owner #(assoc %
+                                            :results results
+                                            :page-size (:max-rows results)
+                                            :offset (:drop-rows results)))))))]
+            
+    (reify
+      om/IInitState
+      (init-state [_]
+        {:results   nil
+         :count     nil
+         :page-size 100
+         :offset    0})
+
+      om/IWillMount
+      (will-mount [_]
+        (run-query 0 100))
+    
+      om/IRenderState
+      (render-state [_ {:keys [results page-size offset]}]
+        (dom/div
+         (if results
+          (list
+           (dom/div
+            (dom/button
+             {:on-click #(run-query (max 0 (- offset page-size)) page-size)
+              :disabled (if (< offset 1)
+                          "yes")}
+             "Prev")
+            "Showing "
+            (inc offset) ".." (+ offset (count (:results results)))
+            " of "
+            (:count results)
+            (dom/button
+             {:on-click #(run-query (+ offset page-size) page-size)
+              :disabled (if (>= (+ offset page-size) (:count results))
+                          "yes")}
+             "Next"))
+           (om/build results-view results {:opts {:columns columns}}))))))))
 
 (defn colonnade-view [app owner]
   (reify
@@ -470,7 +521,18 @@
              "New column")
             (dom/button
              {:disabled (= (:queryStatus app) :running)
-              :on-click (fn [e]
+              :on-click (fn [_]
+                          (let [cols   (:columns @app)
+                                schema (:schema @app)
+                                q (get-query cols schema)]
+                            (om/update! app :runner
+                                        {:query q
+                                         :qid (str "query" (swap! query-seed inc))
+                                         :columns cols})))
+                                      
+
+
+                        #_(fn [e]
                           (let [cols   (:columns @app)
                                 schema (:schema @app)
                                 q (get-query cols schema)]
@@ -499,18 +561,7 @@
             (om/build query-view app)
 
             (dom/h2 nil "Results")
-            (case (:queryStatus app)
-              nil
-              nil
-
-              :running
-              (dom/img {:src "img/spinner_192.gif"})
-              
-              200
-              (om/build results-view (:results app))
-
-              ;;default
-              (dom/div nil "Error " (:queryStatus app)))))))))
-            
+            (if-let [runner (:runner app)]
+              (om/build query-runner runner {:key :qid}))))))))
 
 (om/root colonnade-view app-state {:target (gdom/getElement "table-maker")})
