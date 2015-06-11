@@ -468,23 +468,37 @@
       (render-state [_ {:keys [results page-size offset]}]
         (dom/div
          (if results
-          (list
-           (dom/div
-            (dom/button
-             {:on-click #(run-query (max 0 (- offset page-size)) page-size)
-              :disabled (if (< offset 1)
-                          "yes")}
-             "Prev")
-            "Showing "
-            (inc offset) ".." (+ offset (count (:results results)))
-            " of "
-            (:count results)
-            (dom/button
-             {:on-click #(run-query (+ offset page-size) page-size)
-              :disabled (if (>= (+ offset page-size) (:count results))
-                          "yes")}
-             "Next"))
-           (om/build results-view results {:opts {:columns columns}}))))))))
+           (let [back-disabled (if (< offset 1)
+                                 "yes")
+                 fwd-disabled  (if (>= (+ offset page-size) (:count results))
+                                 "yes")]
+             (list
+              (dom/div
+               (dom/button
+                {:on-click #(run-query 0 page-size)
+                 :disabled back-disabled}
+                (dom/i {:class "fa fa-fast-backward"}))
+               
+               (dom/button
+                {:on-click #(run-query (max 0 (- offset page-size)) page-size)
+                 :disabled back-disabled}
+                (dom/i {:class "fa fa-backward"}))
+               
+               "Showing "
+               (inc offset) ".." (+ offset (count (:results results)))
+               " of "
+               (:count results)
+               
+               (dom/button
+                {:on-click #(run-query (+ offset page-size) page-size)
+                 :disabled fwd-disabled}
+                (dom/i {:class "fa fa-forward"}))
+               
+               (dom/button
+                {:on-click #(run-query (* page-size (quot (dec (:count results)) page-size)) page-size)
+                 :disabled fwd-disabled}
+                (dom/i {:class "fa fa-fast-forward"})))
+              (om/build results-view results {:opts {:columns columns}})))))))))
 
 (defn colonnade-view [app owner]
   (reify
@@ -528,27 +542,7 @@
                             (om/update! app :runner
                                         {:query q
                                          :qid (str "query" (swap! query-seed inc))
-                                         :columns cols})))
-                                      
-
-
-                        #_(fn [e]
-                          (let [cols   (:columns @app)
-                                schema (:schema @app)
-                                q (get-query cols schema)]
-                            (om/update! app :queryStatus :running)
-                            (edn-xhr-post
-                             "/colonnade/query"
-                             {:query (query-list q)
-                              :rules (vec (:rules q))
-                              :timeout (:timeout @app)
-                              :max-rows 100}
-                             (fn [resp]
-                               (om/update! app
-                                           :queryStatus (:status resp))
-                               (om/update! app
-                                           :results (if-let [r (:results resp)]
-                                                      (assoc r :columns cols)))))))}
+                                         :columns cols})))}
              
              "Run query")
 
