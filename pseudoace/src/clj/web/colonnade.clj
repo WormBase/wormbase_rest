@@ -54,9 +54,9 @@
   [x]
   (or (and (string? x)
            (if-let [[_ px nx] (re-matches prefix-num-re x)]
-             (format "%s%010d" px (parse-int nx))))
+             (str px (subs "000000000000" 0 (- 12 (count nx))) nx)))
       x))
-  
+
 
 (defn post-query [db {:keys [query rules args drop-rows max-rows timeout]}]
   (let [args (if (seq rules)
@@ -69,7 +69,7 @@
     {:status 200
      :headers {"Content-Type" "text/plain"}
      :body (pr-str {:query query
-                    :results (cond->> (sort-by (comp prefix-num-comparator first) results)
+                    :results (cond->> (sort-by-cached (comp prefix-num-comparator first) results)
                                       drop-rows    (drop drop-rows)
                                       max-rows     (take max-rows))
                     :drop-rows drop-rows

@@ -105,6 +105,21 @@
   [& args]
   (seq (filter identity args)))
 
+(deftype Pair [k v])
+
+(defn- pair-k [^Pair p]
+  (.-k p))
+
+(defn- pair-v [^Pair p]
+  (.-v p))
+
+(defn sort-by-cached
+  "Similar to `sort-by` but caches the results of `keyfn`."
+  [keyfn coll]
+  (->> (map #(Pair. (keyfn %) %) coll)
+       (into-array Pair)
+       (sort-by pair-k)
+       (mapv pair-v)))
 ;;
 ;; From Clojure 1.7
 ;;
