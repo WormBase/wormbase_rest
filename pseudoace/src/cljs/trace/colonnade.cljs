@@ -438,6 +438,8 @@
 
 (defn query-runner [{:keys [query columns]} owner]
   (letfn [(run-query [offset page-size]
+           (when-not (om/get-state owner :running)
+            (om/set-state! owner :running true)
             (edn-xhr-post
              "/colonnade/query"
              {:query (query-list query)
@@ -445,17 +447,28 @@
               :timeout (:timeout @app-state)
               :drop-rows offset
               :max-rows page-size}
-             (fn [resp]
-               (let [results (:results resp)]
+             (fn [{status :status
+                   results :results
+                   response-text :responseText}]
+               (om/set-state! owner :running false)
+               (if (and results
+                        (< 199 status 300))
                  (om/update-state! owner #(assoc %
-                                            :results results
+                                            :results   results
+                                            :error     nil
                                             :page-size (:max-rows results)
-                                            :offset (:drop-rows results)))))))]
+                                            :offset    (:drop-rows results)))
+                 (om/update-state! owner #(assoc %
+                                            :error (if (re-find #"TimeoutException" response-text)
+                                                     "Query timed out, consider retrying with longer timeout?"
+                                                     (str "Error " status))
+                                            :results nil)))))))]
             
     (reify
       om/IInitState
       (init-state [_]
         {:results   nil
+         :error     nil
          :count     nil
          :page-size 100
          :offset    0})
@@ -465,12 +478,20 @@
         (run-query 0 100))
     
       om/IRenderState
-      (render-state [_ {:keys [results page-size offset]}]
+      (render-state [_ {:keys [running results error page-size offset]}]
         (dom/div
+         (dom/h2
+          (if running
+            "Running"
+            "Results"))
+         (if error
+           (dom/div error))
          (if results
-           (let [back-disabled (if (< offset 1)
+           (let [back-disabled (if (or running
+                                       (< offset 1))
                                  "yes")
-                 fwd-disabled  (if (>= (+ offset page-size) (:count results))
+                 fwd-disabled  (if (or running
+                                       (>= (+ offset page-size) (:count results)))
                                  "yes")]
              (list
               (dom/div
@@ -499,6 +520,7 @@
                  :disabled fwd-disabled}
                 (dom/i {:class "fa fa-fast-forward"})))
               (om/build results-view results {:opts {:columns columns}})))))))))
+           
 
 (defn colonnade-view [app owner]
   (reify
@@ -554,7 +576,6 @@
             (dom/h2 nil "Query")
             (om/build query-view app)
 
-            (dom/h2 nil "Results")
             (if-let [runner (:runner app)]
               (om/build query-runner runner {:key :qid}))))))))
 
