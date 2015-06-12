@@ -4,7 +4,8 @@
         pseudoace.binning)
   (:require [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vmap-if vassoc cond-let update those conjv]]))
+            [pseudoace.utils :refer [vmap vmap-if vassoc cond-let update those conjv]]
+            [wb.locatables :refer (root-segment)]))
 
 ;; Currently gene-specific, make more general in the future?
 
@@ -682,42 +683,43 @@
 ;;
 
 (defn- disease-models [gene]
-  {:data
-   {:potential_model
-    (seq
-     (for [d (:gene/disease-potential-model gene)]
-       (assoc (pack-obj (:gene.disease-potential-model/do-term d))
-         :ev (get-evidence d))))
+  (let [db (d/entity-db gene)]
+    {:data
+     {:potential_model
+      (seq
+       (for [d (:gene/disease-potential-model gene)]
+         (assoc (pack-obj (:gene.disease-potential-model/do-term d))
+           :ev (get-evidence d))))
 
-    :experimental_model
-    (seq
-     (for [d (:gene/disease-experimental-model gene)]
-       (assoc (pack-obj (:gene.disease-experimental-model/do-term d))
-         :ev (get-evidence d))))
+      :experimental_model
+      (seq
+       (for [d (:gene/disease-experimental-model gene)]
+         (assoc (pack-obj (:gene.disease-experimental-model/do-term d))
+           :ev (get-evidence d))))
         
-    :gene
-    (seq 
-     (q '[:find [?o ...]
-          :in $ ?gene
-          :where [?gene :gene/database ?dbent]
-                 [?omim :database/id "OMIM"]
-                 [?field :database-field/id "gene"]
-                 [?dbent :gene.database/database ?omim]
-                 [?dbent :gene.database/field ?field]
-                 [?dbent :gene.database/accession ?o]]
-        db (:db/id gene)))
+      :gene
+      (seq 
+       (q '[:find [?o ...]
+            :in $ ?gene
+            :where [?gene :gene/database ?dbent]
+                   [?omim :database/id "OMIM"]
+                   [?field :database-field/id "gene"]
+                   [?dbent :gene.database/database ?omim]
+                   [?dbent :gene.database/field ?field]
+                   [?dbent :gene.database/accession ?o]]
+          db (:db/id gene)))
 
-    :disease
-    (seq 
-     (q '[:find [?o ...]
-          :in $ ?gene
-          :where [?gene :gene/database ?dbent]
-                 [?omim :database/id "OMIM"]
-                 [?field :database-field/id "disease"]
-                 [?dbent :gene.database/database ?omim]
-                 [?dbent :gene.database/field ?field]
-                 [?dbent :gene.database/accession ?o]]
-        db (:db/id gene)))}})
+      :disease
+      (seq 
+       (q '[:find [?o ...]
+            :in $ ?gene
+            :where [?gene :gene/database ?dbent]
+                   [?omim :database/id "OMIM"]
+                   [?field :database-field/id "disease"]
+                   [?dbent :gene.database/database ?omim]
+                   [?dbent :gene.database/field ?field]
+                   [?dbent :gene.database/accession ?o]]
+          db (:db/id gene)))}}))
        
 
 (def-rest-widget human-diseases [gene]
@@ -729,7 +731,7 @@
 ;; Assembly-twiddling stuff (should be in own namespace?)
 ;;
 
-(defn locatable-root-segment [loc]
+#_(defn locatable-root-segment [loc]
   (loop [parent (:locatable/parent loc)
          min    (:locatable/min    loc)
          max    (:locatable/max    loc)]
@@ -868,7 +870,7 @@
           (seq))
      :description "antibodies generated against protein products or gene fusions"}))
 
-(def ^:private child-rule  '[[(child ?parent ?min ?max ?method ?c) [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
+#_(def ^:private child-rule  '[[(child ?parent ?min ?max ?method ?c) [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
                                                                    [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
                                                                    [?c :locatable/xbin ?xbin]
                                                                    [?c :locatable/parent ?parent]
@@ -878,33 +880,44 @@
                                                                    [(<= ?cmin ?max)]
                                                                    [(>= ?cmax ?min)]]])
 
+(def ^:private child-rule  
+  '[[(child ?parent ?min ?max ?method ?c) [?parent :sequence/id ?seq-name]
+                                          [(wb.binning/bins ?seq-name ?min ?max) [?bin ...]]
+                                          [?c :locatable/murmur-bin ?bin]
+                                          [?c :locatable/parent ?parent]
+                                          [?c :locatable/min ?cmin]
+                                          [?c :locatable/max ?cmax]
+                                          [?c :pcr-product/id _]
+                                          [?c :locatable/method ?method]
+                                          [(<= ?cmin ?max)]
+                                          [(>= ?cmax ?min)]]])
+
 (defn- orfeome-primers [gene]
   (let [db  (d/entity-db gene)
-        seg (locatable-root-segment gene)]
+        [parent start end] (root-segment gene)]
     {:data
      ;;
      ;; Big assembly-navigation query should probably be factored out somewhere
      ;; once we're a bit more solid about how this stuff should work.
      ;;
-     (if seg
+     (if parent
        (->> (q '[:find [?p ...] 
                  :in $ % ?seq ?min ?max 
                  :where [?method :method/id "Orfeome"] 
                         (or-join [?seq ?min ?max ?method ?p]
                           (and         
-                           [?seq :sequence/subsequence ?ss]
-                           [?ss :sequence.subsequence/start ?ss-min]
-                           [?ss :sequence.subsequence/end ?ss-max]
-                           [(<= ?ss-min ?max)]
-                           [(>= ?ss-max ?min)]
-                           [?ss :sequence.subsequence/sequence ?ss-seq]
-                           [(- ?min ?ss-min -1) ?rel-min]
-                           [(- ?max ?ss-min -1) ?rel-max]
-                           (child ?ss-seq ?rel-min ?rel-max ?method ?p))
+                            [?ss-seq :locatable/assembly-parent ?seq]
+                            [?ss-seq :locatable/min ?ss-min]
+                            [?ss-seq :locatable/max ?ss-max]
+                            [(<= ?ss-min ?max)]
+                            [(>= ?ss-max ?min)]
+                            [(- ?min ?ss-min -1) ?rel-min]
+                            [(- ?max ?ss-min -1) ?rel-max]
+                            (child ?ss-seq ?rel-min ?rel-max ?method ?p))
                           (child ?seq ?min ?max ?method ?p))]
                db
                child-rule
-               (:seq-id seg) (:min seg) (:max seg))
+               (:db/id parent) start end)
             (map
              (fn [ppid]
                (let [pp (entity db ppid)]
@@ -915,28 +928,27 @@
      :description "ORFeome Project primers and sequences"}))
 
 (defn- primer-pairs [gene]
-  (let [db  (d/entity-db gene)
-        seg (locatable-root-segment gene)]
+  (let [db                 (d/entity-db gene)
+        [parent start end] (root-segment gene)]
     {:data
-     (if seg
+     (if parent
        (->> (q '[:find [?p ...] 
                  :in $ % ?seq ?min ?max 
                  :where [?method :method/id "GenePairs"] 
                         (or-join [?seq ?min ?max ?method ?p]
                           (and         
-                            [?seq :sequence/subsequence ?ss]
-                            [?ss :sequence.subsequence/start ?ss-min]
-                            [?ss :sequence.subsequence/end ?ss-max]
+                            [?ss-seq :locatable/assembly-parent ?seq]
+                            [?ss-seq :locatable/min ?ss-min]
+                            [?ss-seq :locatable/max ?ss-max]
                             [(<= ?ss-min ?max)]
                             [(>= ?ss-max ?min)]
-                            [?ss :sequence.subsequence/sequence ?ss-seq]
                             [(- ?min ?ss-min -1) ?rel-min]
                             [(- ?max ?ss-min -1) ?rel-max]
                             (child ?ss-seq ?rel-min ?rel-max ?method ?p))
                           (child ?seq ?min ?max ?method ?p))]
                db
                child-rule
-               (:seq-id seg) (:min seg) (:max seg))
+               (:db/id parent) start end)
             (map
              (fn [ppid]
                (let [pp (entity db ppid)]
@@ -1166,7 +1178,7 @@
             :type
             (humanize-ident (expr-pattern-type ep))
 
-            :expresssed_in
+            :expressed_in
             (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
                  (:expr-pattern/anatomy-term ep))
 
@@ -1511,7 +1523,7 @@
                                                  [?seq :transcript/corresponding-cds ?ct]]
                   [(gene-cdst-or-cds ?gene ?seq) [?gene :gene/corresponding-cds ?cc]
                                                  [?cc :gene.corresponding-cds/cds ?seq]
-                                                 [(web.trace/imissing? $ ?seq :transcript.corresponding-cds/cds)]]
+                                                 (not [?seq :transcript.corresponding-cds/cds _])]
                   [(gene-pseudogene ?gene ?seq) [?gene :gene/corresponding-pseudogene ?cp]
                                                 [?cp :gene.corresponding-pseudogene/pseudogene ?seq]]]
                 (:db/id gene))]
