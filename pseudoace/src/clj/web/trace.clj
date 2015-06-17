@@ -209,12 +209,20 @@
       (get-raw-attr2-out ddb entid attr txns?)))))
 
 (defn get-raw-history2 [db entid attr]
-  (let [hdb (d/history db)
+  (let [hdb    (d/history db)
+        schema (entity db attr)
+        valmap (if-let [obj-ref (:pace/obj-ref schema)]
+                 (comp obj-ref (partial entity db))
+                 identity)
         datoms (sort-by :tx (seq (d/datoms hdb :eavt entid attr)))]
     {:status 200
      :headers {"Content-Type" "text/plain"}
      :body (pr-str {:datoms (map (fn [[e a v tx a]] 
-                                   {:e e :a a :v v :txid tx :added? a})
+                                   {:e e
+                                    :a a
+                                    :v (valmap v)
+                                    :txid tx
+                                    :added? a})
                                  datoms)
                     :endid entid
                     :attr attr
