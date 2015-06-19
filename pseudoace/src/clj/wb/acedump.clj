@@ -44,6 +44,8 @@
                 (splice-in-tagpath node tags ts vals)
                 (update node :children into vals))))))
 
+(declare ace-object)
+
 (defn value-node [db attr ts datom]
   (case (:db/valueType attr)
     :db.type/long
@@ -68,7 +70,7 @@
          (if-let [tags (:pace/tags e)]
            (Node. :tag ts tags nil))
 
-         (Node. :text ts "FIXME" nil)))
+         (ace-object db (:v datom))))
 
     ;; default
     (Node. :text ts "Unknown!" nil)))
@@ -81,37 +83,69 @@
                        (partition-by :a datoms)
                        (map (fn [d]
                               [(entity db (:a (first d))) d])))
-        [class [cid]] (first (filter (comp :pace/identifies-class first) data))
         tsmap         (->> (map :tx datoms)
                            (set)
                            (map (fn [tx]
                                   [tx (tx->ts (entity db tx))]))
-                           (into {}))]
-    (if class
-      (reduce
-       (fn [root [attr datoms]]
-         (if-let [tags (:pace/tags attr)]
-           (let [min-ts    (->> (map (comp tsmap :tx) datoms)
-                                (reduce smin))]
-             (if (= (:db/valueType attr) :db.type/boolean)
-               (if (some :v datoms)
-                 (splice-in-tagpath
-                  root
-                  (str/split tags #"\s")
-                  min-ts
-                  nil)
-                 root)
-               (splice-in-tagpath
-                root
-                (str/split tags #"\s")
-                min-ts
-                (map #(value-node db attr (tsmap (:tx %)) %) datoms))))
-           root))
-       (Node. (:pace/identifies-class class)
-              (tsmap (:tx cid))
-              (:v cid)
-              [])
-       data))))
+                           (into {}))
+
+        ;; Split positional from tagged attributes
+        [class [cid]] (first (filter (comp :pace/identifies-class first) data))
+        positional    (filter (comp :pace/order first) data)
+        named         (remove (comp :pace/order first) data)
+
+        ;; Make a dummy node carrying tagged attributes
+        named-tree    (reduce
+                       (fn [root [attr datoms]]
+                         (if-let [tags (:pace/tags attr)]
+                           (let [min-ts    (->> (map (comp tsmap :tx) datoms)
+                                                (reduce smin))]
+                             (if (= (:db/valueType attr) :db.type/boolean)
+                               (if (some :v datoms)
+                                 (splice-in-tagpath
+                                  root
+                                  (str/split tags #"\s")
+                                  min-ts
+                                  nil)
+                                 root)
+                               (splice-in-tagpath
+                                root
+                                (str/split tags #"\s")
+                                min-ts
+                                (mapcat (fn [datom]
+                                          (let [n (value-node db attr (tsmap (:tx datom)) datom)]
+                                            (if (= (:type n) :anonymous)
+                                              (:children n)
+                                              [n])))
+                                        datoms))))
+                           root))
+                       (Node. :anonymous
+                              nil
+                              nil
+                              [])
+                       named)]
+    (cond
+     ;; Top level object.  Positional children not allowed.
+     class
+     (Node. (:pace/identifies-class class)
+            (tsmap (:tx cid))
+            (:v cid)
+            (:children named-tree))
+
+     ;; Positional parameters exist.
+     (seq positional)
+     (loop [[[attr datoms] & rest] (reverse (sort-by (comp :pace/order first) positional))
+            children               (:children named-tree)]
+       (let [n (assoc (value-node db attr (tsmap (:tx (first datoms))) (first datoms))
+                 :children children)]
+         (if (seq rest)
+           (recur rest [n])
+           n)))
+
+     ;; Otherwise return the dummy node -- because its type is :anonymous, its
+     ;; children will be spliced.
+     :default
+     named-tree)))
 
 (defn- flatten-object
   ([root]
