@@ -1,0 +1,150 @@
+(ns wb.acedump
+  (:use pseudoace.utils)
+  (:require [datomic.api :as d :refer (q datoms entity)]
+            [clojure.string :as str]
+            [clj-time.coerce :as tc]
+            [clj-time.format :as tf]))
+
+(defrecord Node [type ts value children])
+
+(def ^:private ace-date-format
+  (tf/formatter "yyyy-MM-dd_hh:mm:ss"))
+
+(defn tx->ts [tx]
+  (str
+   (tf/unparse ace-date-format (tc/from-date (:db/txInstant tx)))
+   "_"
+   (or
+    (:importer/ts-name tx)
+    (:person/name (:wormbase/curator tx))
+    "unknown")))
+
+(defn smin
+  "Generalized `min` which works on anything that can be `compare`d."
+  [a b]
+  (if (> (compare a b) 0)
+    b a))
+
+(defn- squote [s]
+  (str \" s \"))
+
+(defn splice-in-tagpath [root [tag & tags] ts vals]
+  (if-let [[ci node] (first (keep-indexed (fn [pos node]
+                                            (if (and (= (:type node) :tag)
+                                                     (= (:value node) tag))
+                                              [pos node]))
+                                          (:children root)))]
+    (update root :children assoc ci
+            (if (seq tags)
+              (splice-in-tagpath node tags ts vals)
+              (update node :children into vals)))
+    (update root :children conj
+            (let [node (Node. :tag ts tag [])]
+              (if (seq tags)
+                (splice-in-tagpath node tags ts vals)
+                (update node :children into vals))))))
+
+(defn value-node [db attr ts datom]
+  (case (:db/valueType attr)
+    :db.type/long
+      (Node. :int      ts (:v datom) nil)
+    :db.type/float
+      (Node. :float    ts (:v datom) nil)
+    :db.type/double
+      (Node. :float    ts (:v datom) nil)
+    :db.type/instant
+      (Node. :datetype ts (tf/unparse ace-date-format (tc/from-date (:v datom))) nil)
+    :db.type/string
+      (Node. :text     ts (:v datom) nil)
+    :db.type/ref
+      (let [e (entity db (:v datom))]
+        (or
+         (if-let [obj-ref (:pace/obj-ref attr)]
+           (Node. (:pace/identifies-class (entity db obj-ref))
+                  ts
+                  (obj-ref e)
+                  nil))
+
+         (if-let [tags (:pace/tags e)]
+           (Node. :tag ts tags nil))
+
+         (Node. :text ts "FIXME" nil)))
+
+    ;; default
+    (Node. :text ts "Unknown!" nil)))
+        
+
+(defn ace-object
+  [db eid]
+  (let [datoms        (datoms db :eavt eid)
+        data          (->>
+                       (partition-by :a datoms)
+                       (map (fn [d]
+                              [(entity db (:a (first d))) d])))
+        [class [cid]] (first (filter (comp :pace/identifies-class first) data))
+        tsmap         (->> (map :tx datoms)
+                           (set)
+                           (map (fn [tx]
+                                  [tx (tx->ts (entity db tx))]))
+                           (into {}))]
+    (if class
+      (reduce
+       (fn [root [attr datoms]]
+         (if-let [tags (:pace/tags attr)]
+           (let [min-ts    (->> (map (comp tsmap :tx) datoms)
+                                (reduce smin))]
+             (if (= (:db/valueType attr) :db.type/boolean)
+               (if (some :v datoms)
+                 (splice-in-tagpath
+                  root
+                  (str/split tags #"\s")
+                  min-ts
+                  nil)
+                 root)
+               (splice-in-tagpath
+                root
+                (str/split tags #"\s")
+                min-ts
+                (map #(value-node db attr (tsmap (:tx %)) %) datoms))))
+           root))
+       (Node. (:pace/identifies-class class)
+              (tsmap (:tx cid))
+              (:v cid)
+              [])
+       data))))
+
+(defn- flatten-object
+  ([root]
+     (flatten-object [] root))
+  ([prefix root]
+     (let [path (conj prefix root)]
+       (if-let [c (seq (:children root))]
+         (mapcat #(flatten-object path %) c)
+         [path]))))
+
+(defn- ace-node-value [node]
+  (if (= (:type node) :tag)
+    (:value node)
+    (squote (:value node))))
+
+(defn- ace-node [node]
+  [(ace-node-value node)
+   "-O"
+   (str \" (:ts node) \")])
+
+(defn- ace-line [toks]
+  (str
+   (first toks)
+   \tab
+   (str/join " " (rest toks))))
+
+(defn dump-object
+  [root]
+  (println (:type root)
+           ":"
+           (squote (:value root))
+           "-O"
+           (squote (:ts root)))
+  (doseq [line (flatten-object root)]
+    (println (ace-line (mapcat ace-node (rest line)))))
+  (println))
