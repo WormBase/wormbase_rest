@@ -157,7 +157,7 @@
          [path]))))
 
 (defn- ace-node-value [node]
-  (if (= (:type node) :tag)
+  (if (#{:tag :float :int} (:type node))
     (:value node)
     (squote (:value node))))
 
