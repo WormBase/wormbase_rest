@@ -10,7 +10,9 @@
 (def ^:private ace-date-format
   (tf/formatter "yyyy-MM-dd_hh:mm:ss"))
 
-(defn tx->ts [tx]
+(defn tx->ts
+  "Generate an ACeDB-style timestamp string from a pseudoace transaction entity map."
+  [tx]
   (str
    (tf/unparse ace-date-format (tc/from-date (:db/txInstant tx)))
    "_"
@@ -25,10 +27,14 @@
   (if (> (compare a b) 0)
     b a))
 
-(defn- squote [s]
-  (str \" s \"))
+(defn- squote
+  "ACeDB-style string quoting"
+  [s]
+  (str \" (str/replace s "\"" "\\\"") \"))
 
-(defn splice-in-tagpath [root [tag & tags] ts vals]
+(defn splice-in-tagpath
+  "Splice `vals` onto `root` via a tag-path indicated by a sequence of one or more tag names."
+  [root [tag & tags] ts vals]
   (if-let [[ci node] (first (keep-indexed (fn [pos node]
                                             (if (and (= (:type node) :tag)
                                                      (= (:value node) tag))
