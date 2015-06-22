@@ -140,13 +140,19 @@
      [align-id :string
          "Alignment ID to emit in GFF dumps."]))
 
-    ])
+   ])
+
+  [{:db/id          #db/id[:db.part/tx]
+    :db/txInstant   #inst "1970-01-01T00:00:01"}]))
 
   ;;
   ;; Fake pseudoace metadata for locatable-model entities so that
   ;; they are visible in TrACeView and Colonnade
   ;;
-  
+
+
+(def locatable-extras
+ (concat
   [{:db/id          #db/id[:db.part/db]
     :db/ident       :locatable/parent
     :pace/obj-ref   :sequence/id        ;; this isn't always true, but needed for current Colonnade code.
