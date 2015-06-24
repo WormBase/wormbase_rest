@@ -338,8 +338,6 @@
    (group-by (partial take-ts 4) sc)))
 
 (defn log-coreprops [obj this imp]
-  ;; This should possibly run on ALL objects, rather than via log-custom.
-
   (let [children (select-ts obj ["SMap" "S_child"])
         method   (first (select-ts obj ["Method"]))]
     (cond-> nil
@@ -382,6 +380,34 @@
             #{(namespace (:db/ident ci))})))))
      (log-coreprops obj this imp)
      (log-custom obj this imp))))
+
+(defn patch->log [imp db obj]
+  (let [ci ((:classes imp) (:class obj))
+        this (if ci
+               [(:db/ident ci) (:id obj)])] ;; No partition hint, so we can use this as a plain Lookup ref.
+    (if-let [orig (entity db this)]
+      (cond
+       (:delete obj)
+       {nil
+        [[:db.fn/retractEntity this]]}
+       
+       (:rename obj)
+       {nil
+        [[:db/add this (:db/ident ci) (:rename obj)]]}
+       
+       :default
+       (log-nodes
+        this
+        (:lines obj)
+        imp
+        #{(namespace (:db/ident ci))})
+       (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
+         (log-deletes
+          this
+          (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
+          imp
+          #{(namespace (:db/ident ci))})))  ;; Don't patch custom props for now.
+      (obj->log imp obj))))     ;; Patch for a non-existant object is equivalent to import.
 
 (defn objs->log [imp objs]
   (reduce
