@@ -96,11 +96,17 @@
 
 (defn- current-by-concs
   "Index a set of component entities by their concrete values."
-  [currents concs]
+  [imp currents concs]
   (reduce
    (fn [cbc ent]
      (assoc cbc
-       (mapv #((:db/ident %) ent) concs)
+       (mapv (fn [conc]
+               (if-let [obj-ref (:pace/obj-ref conc)]
+                 [obj-ref
+                  (obj-ref ((:db/ident conc) ent))
+                  (get-in imp [:classes obj-ref :pace/prefer-part])]
+                 ((:db/ident conc) ent)))
+             concs)
        ent))
    {} currents))
 
@@ -113,7 +119,7 @@
                   :pace/order
                   ((:tags imp)
                    (str (namespace (:db/ident ti)) "." (name (:db/ident ti)))))
-        cbc      (current-by-concs current concs)
+        cbc      (current-by-concs imp current concs)
         nss      (:pace/use-ns ti)
         ordered? (get nss "ordered")
         hashes   (for [ns nss]
