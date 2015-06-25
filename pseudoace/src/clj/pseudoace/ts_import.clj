@@ -11,7 +11,7 @@
            java.io.FileOutputStream java.util.zip.GZIPOutputStream))
 
 ;;
-;; Logs are sets of datoms keyed by ACeDB-style timestamps.
+;; Logs are sets of :db/add and :db/retract keyed by ACeDB-style timestamps.
 ;;
 ;; The datoms can optionally contain lookup-refs or augmented lookup-refs.
 ;; These behave as normal lookup-refs if their target already exists in the
@@ -94,64 +94,93 @@
     ;;default
       (except "Can't handle " (:db/valueType ti))))
 
+(defn- current-by-concs
+  "Index a set of component entities by their concrete values."
+  [currents concs]
+  (reduce
+   (fn [cbc ent]
+     (assoc cbc
+       (mapv #((:db/ident %) ent) concs)
+       ent))
+   {} currents))
 
-(defn- log-components [[_ _ part :as this] ti imp vals]
-  (let [concs    (sort-by
+(defn- log-components [[_ _ part :as this] current ti imp vals]
+  (let [single?  (not= (:db/cardinality ti) :db.cardinality/many)
+        current  ((:db/ident ti) current)
+        current  (or (and current single? [current])
+                     current)
+        concs    (sort-by
                   :pace/order
                   ((:tags imp)
                    (str (namespace (:db/ident ti)) "." (name (:db/ident ti)))))
+        cbc      (current-by-concs current concs)
         nss      (:pace/use-ns ti)
         ordered? (get nss "ordered")
         hashes   (for [ns nss]
                    (entity (:db imp) (keyword ns "id")))]      ;; performance?
     (reduce
      (fn [log [index lines]]
-       (if (and (> index 0)
-                (not= (:db/cardinality ti) :db.cardinality/many))
+       (if (and (> index 0) single?)
          (do
            (println "WARNING: can't pack into cardinality-one component: " this lines)
            log)
-         (let [cvals (take-ts (count concs) (first lines))
-               compid [:importer/temp (d/squuid) part]]
-           (->
-            (merge-logs
-             ;; concretes
-             (reduce
-              (fn [log [conc val stamp]]
-                (if-let [lv (log-datomize-value conc imp [val])]
-                  (update
-                   log
-                   stamp
-                   conj
-                   [:db/add compid (:db/ident conc) lv])
-                  log))
-              log
-              (map vector concs cvals (:timestamps (meta cvals))))
-             
-             ;; hashes
+         (let [cvals  (take-ts (count concs) (first lines))
+               cdata  (map (fn [conc val stamp]
+                             [conc
+                              (log-datomize-value conc imp [val])
+                              stamp])
+                           concs cvals (:timestamps (meta cvals)))]
+           (if-let [current-comp (cbc (mapv second cdata))]
+             ;; Component with these concrete values already exists
              (log-nodes
-              compid
+              (:db/id current-comp)
+              current-comp
               (map (partial drop-ts (count concs)) lines)
               imp
-              nss))
-            (update (first (:timestamps (meta (first lines))))
-                    conj
-                    [:db/add this (:db/ident ti) compid])
-            (update (first (:timestamps (meta (first lines))))
-                    conj-if
-                    (if ordered?
-                      [:db/add compid :ordered/index index]))))))
-     {}
-     (indexed (partition-by (partial take (count concs)) vals)))))
+              nss)
+
+             ;; Otherwise synthesize a component ID and start from scratch
+             (let [compid [:importer/temp (d/squuid) part]]
+               (->
+                (merge-logs
+                 ;; concretes
+                 (reduce
+                  (fn [log [conc lv stamp]]
+                    (if lv
+                      (update
+                       log
+                       stamp
+                       conj
+                       [:db/add compid (:db/ident conc) lv])
+                      log))
+                  log
+                  cdata)
+             
+                 ;; hashes
+                 (log-nodes
+                  compid
+                  nil
+                  (map (partial drop-ts (count concs)) lines)
+                  imp
+                  nss))
+                (update (first (:timestamps (meta (first lines))))
+                        conj
+                        [:db/add this (:db/ident ti) compid])
+                (update (first (:timestamps (meta (first lines))))
+                        conj-if
+                        (if ordered?
+                          [:db/add compid :ordered/index index]))))))))
+       {}
+       (indexed (partition-by (partial take (count concs)) vals)))))
 
 
 
-(defn log-nodes [this lines imp nss]
+(defn log-nodes [this current lines imp nss]
   (let [tags (get-tags imp nss)]
     (reduce
      (fn [log [ti lines]]
        (if (:db/isComponent ti)
-         (merge-logs log (log-components this ti imp lines))
+         (merge-logs log (log-components this current ti imp lines))
          (reduce
           (fn [log line]
             (if-let [lv (log-datomize-value ti imp line)]
@@ -369,6 +398,7 @@
         (merge-logs
          (log-nodes
           this
+          nil   ;; Assume no pre-existing object
           (:lines obj)
           imp
           #{(namespace (:db/ident ci))})
@@ -398,15 +428,10 @@
        :default
        (log-nodes
         this
+        orig
         (:lines obj)
         imp
-        #{(namespace (:db/ident ci))})
-       (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
-         (log-deletes
-          this
-          (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
-          imp
-          #{(namespace (:db/ident ci))})))  ;; Don't patch custom props for now.
+        #{(namespace (:db/ident ci))}))
       (obj->log imp obj))))     ;; Patch for a non-existant object is equivalent to import.
 
 (defn objs->log [imp objs]
