@@ -33,6 +33,11 @@
   []
   (om/ref-cursor (:txns (om/root-cursor app-state))))
 
+(defn component-ns
+  "Get the primary namespace for a component attribute"
+  [ident]
+  (str (namespace ident) "." (name ident)))
+
 (def added-id (atom 0))
 
 (def ^:private top-bar-height 100) ;; px
@@ -461,7 +466,7 @@
                    :text-decoration-color "red"})}
         (cond
          comp?
-         (om/build tree-view val-holder)
+         (om/build tree-view val-holder {:opts {:primary-ns (component-ns key)}})
          
          (or (sequential? val)
              (sequential? edit)
@@ -657,7 +662,7 @@
                (str (:db/ident a)))))))))))
        
 
-(defn tree-view [data owner]
+(defn tree-view [data owner {:keys [primary-ns]}]
   (reify
     om/IRender
     (render [_]
@@ -672,7 +677,10 @@
                              (:edit data)
                              (:val data))]
                 (dom/tr nil 
-                        (dom/td nil (str (:key prop)))
+                        (dom/td nil (let [key (:key prop)]
+                                      (if (= (namespace key) primary-ns)
+                                        (name key)
+                                        (str key))))
                         (dom/td nil (om/build list-view prop 
                                               {:key :key      ;; Need to explicitly provide a react key
                                                               ;; here other wise some very silly element
@@ -770,7 +778,8 @@
       (dom/div {:class "trace-body"}
                (if (:loading mode)
                  (dom/img {:src "/img/spinner_192.gif"})
-                 (om/build tree-view app))))))
+                 (om/build tree-view app {:opts {:primary-ns (some-> (first (:ident app))
+                                                                     (namespace))}}))))))
                            
 
 (defn trace-tools [app owner]
