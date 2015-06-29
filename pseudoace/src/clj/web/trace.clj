@@ -75,6 +75,8 @@
 (defn obj2-attr [db maxcount datoms]
   (let [attr (entity db (:a (first datoms)))]
     {:key   (:db/ident attr)
+     :group (if-let [tags (:pace/tags attr)]
+              (first (str/split tags #" ")))
      :type  (:db/valueType attr)
      :class (:pace/obj-ref attr)
      :comp  (or (:db/isComponent attr) false)

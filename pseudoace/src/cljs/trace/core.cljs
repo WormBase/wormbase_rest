@@ -662,20 +662,33 @@
                (str (:db/ident a)))))))))))
        
 
-(defn tree-view [data owner {:keys [primary-ns]}]
+(defn- group-props [props]
+  (->> (partition-by :group props)
+       (map (fn [pl]
+              [(:group (first pl)) pl]))))
+
+(defn tree-view [data owner {:keys [primary-ns group?]}]
   (reify
     om/IRender
     (render [_]
-      (let [mode (om/observe owner (mode))]
+      (let [mode  (om/observe owner (mode))
+            props (or (:props data)
+                      (:edit data)
+                      (:mode data))
+            grouped-props (if group?
+                            (group-props props)
+                            [[nil props]])]
         (dom/div
          (when (:editing mode) 
            (om/build add-button data))
          (dom/table {:border "1"
                      :className "trace-tree table table-striped table-condensed"}
-            (dom/tbody nil
-              (for [prop (or (:props data)
-                             (:edit data)
-                             (:val data))]
+          (dom/tbody nil
+           (for [[group-label props] grouped-props]
+            (list
+              (if group-label
+                (dom/tr {:style {:background "darkgray"}} (dom/td {:colSpan 2} group-label)))
+              (for [prop props]
                 (dom/tr nil 
                         (dom/td nil (let [key (:key prop)]
                                       (if (= (namespace key) primary-ns)
@@ -687,7 +700,7 @@
                                                               ;; recycling can occur when a new property
                                                               ;; gets inserted.
                                                :opts 
-                                               {:entid (:id data)}})))))))))))
+                                               {:entid (:id data)}})))))))))))))
 
 (defn- pack-id [id]
   (if (string? id)
@@ -778,7 +791,8 @@
       (dom/div {:class "trace-body"}
                (if (:loading mode)
                  (dom/img {:src "/img/spinner_192.gif"})
-                 (om/build tree-view app {:opts {:primary-ns (some-> (first (:ident app))
+                 (om/build tree-view app {:opts {:group? true
+                                                 :primary-ns (some-> (first (:ident app))
                                                                      (namespace))}}))))))
                            
 
