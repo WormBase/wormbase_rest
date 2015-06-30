@@ -127,11 +127,8 @@
                                     [?int :interaction/molecule-interactor ?mi]
                                     [?mi :interaction.molecule-interactor/molecule ?interactor])
                                    (and
-                                    [?int :interaction/other-regulator ?ortor]
-                                    [?ortor :interaction.other-regulator/text ?interactor])
-                                   (and
-                                    [?int :interaction/other-regulated ?orted]
-                                    [?orted :interaction.other-regulated/text ?interactor])
+                                    [?int :interaction/other-interactor ?orint]
+                                    [?orint :interaction.other-interactor/text ?interactor])
                                    (and
                                     [?int :interaction/rearrangement ?ri]
                                     [?ri :interaction.rearrangement/rearrangement ?interactor])
