@@ -10,7 +10,7 @@ div.header {
     display: flex;
 }
 
-div.header-identity {
+div.header-identity {.
 }
 
 div.header-main {
@@ -42,6 +42,7 @@ table.trace-tree {
     font-size: 70%;
     color: brown;
     margin-right: 5px;
+    flex: 1 1 120px;
 }
 
 div.trace-header {
@@ -174,6 +175,15 @@ table.history-table td {
 div.trace-item {
     display: -webkit-flex;
     display: flex;
+}
+
+td.prop-name {
+    white-space: nowrap;
+}
+
+td.prop-val {
+    padding-left: 10px !important;
+    width: 99%;
 }
 
 .trace-item-content {

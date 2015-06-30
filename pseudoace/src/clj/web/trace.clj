@@ -122,6 +122,7 @@
     (when (and val-datoms
                (not (.startsWith attr-ns "2")))
       {:key      revattr
+       :group    "XREFs"
        :type     :db.type/ref
        :comp     false        ; for now...
        :count    (count val-datoms)

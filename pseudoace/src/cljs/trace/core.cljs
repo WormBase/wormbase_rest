@@ -255,7 +255,7 @@
         (dom/span
          (dom/span {:style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
-                   (str val))
+                   (name val))
          (dom/select
           {:style (display editing)
            :value (str (namespace val) "/" (name val))
@@ -265,7 +265,7 @@
           (for [ev enum-values
                 :let [id (:db/ident ev)]]
             (dom/option {:value (str (namespace id) "/" (name id))}
-                        (str id)))))))))
+                        (name id)))))))))
 
 (defn ref-edit [{:keys [added] :as vh} owner {:keys [class]}]
   (reify
@@ -501,7 +501,7 @@
               (keyword? val))
          (if edit-mode
            (om/build enum-edit val-holder {:opts {:tns (str (namespace key) "." (name key))}})
-           (dom/span (str val)))
+           (dom/span (name val)))
 
          (= type :db.type/string)
          (if edit-mode
@@ -674,7 +674,7 @@
       (let [mode  (om/observe owner (mode))
             props (or (:props data)
                       (:edit data)
-                      (:mode data))
+                      (:val data))
             grouped-props (if group?
                             (group-props props)
                             [[nil props]])]
@@ -690,17 +690,19 @@
                 (dom/tr {:style {:background "darkgray"}} (dom/td {:colSpan 2} group-label)))
               (for [prop props]
                 (dom/tr nil 
-                        (dom/td nil (let [key (:key prop)]
-                                      (if (= (namespace key) primary-ns)
-                                        (name key)
-                                        (str key))))
-                        (dom/td nil (om/build list-view prop 
-                                              {:key :key      ;; Need to explicitly provide a react key
-                                                              ;; here other wise some very silly element
-                                                              ;; recycling can occur when a new property
-                                                              ;; gets inserted.
-                                               :opts 
-                                               {:entid (:id data)}})))))))))))))
+                        (dom/td {:class "prop-name"}
+                           (let [key (:key prop)]
+                             (if (= (namespace key) primary-ns)
+                               (name key)
+                               (str key))))
+                        (dom/td {:class "prop-val"}
+                           (om/build list-view prop 
+                                     {:key :key      ;; Need to explicitly provide a react key
+                                                     ;; here other wise some very silly element
+                                                     ;; recycling can occur when a new property
+                                                     ;; gets inserted.
+                                      :opts 
+                                      {:entid (:id data)}})))))))))))))
 
 (defn- pack-id [id]
   (if (string? id)
