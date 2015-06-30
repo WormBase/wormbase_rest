@@ -252,13 +252,16 @@
             val (if (= val :empty) "New value..." val)
             schema (om/observe owner (schema))
             enum-values ((:attrs schema) tns)]
-        (dom/span
-         (dom/span {:style (display (not editing))
+        (dom/span {:class "edit-root"}
+         (dom/span {:class "edit-inactive"
+                    :style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
-                   (name val))
+                   (if (keyword? val)
+                     (name val)
+                     (str val)))
          (dom/select
           {:style (display editing)
-           :value (str (namespace val) "/" (name val))
+           :value (if (keyword? val) (str (namespace val) "/" (name val)))
            :on-change (fn [e]
                         (om/update! vh :edit (keyword (.. e -target -value)))
                         (om/set-state! owner :editing false))}
@@ -497,8 +500,7 @@
            (om/build boolean-edit val-holder)
            (dom/span (str val)))
 
-         (and (= type :db.type/ref)
-              (keyword? val))
+         (and (= type :db.type/ref))
          (if edit-mode
            (om/build enum-edit val-holder {:opts {:tns (str (namespace key) "." (name key))}})
            (dom/span (name val)))
