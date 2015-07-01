@@ -665,11 +665,17 @@
        
 
 (defn- group-props [props]
-  (reduce
-   (fn [grouped prop]
-     (update grouped (:group prop) conj prop))
-   (array-map)
-   props))
+  (loop [grouped         (group-by :group props)
+         [prop & props]  props
+         group-seq       []]
+    (if prop
+      (let [g (:group prop)]
+        (if-let [gg (grouped g)]
+          (recur (dissoc grouped g)
+                 props
+                 (conj group-seq [g gg]))
+          (recur grouped props group-seq)))
+      group-seq)))
 
 (defn tree-view [data owner {:keys [primary-ns group?]}]
   (reify
