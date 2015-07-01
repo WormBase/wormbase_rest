@@ -579,4 +579,5 @@
             (if-let [runner (:runner app)]
               (om/build query-runner runner {:key :qid}))))))))
 
-(om/root colonnade-view app-state {:target (gdom/getElement "table-maker")})
+(defn init-coll []
+  (om/root colonnade-view app-state {:target (gdom/getElement "table-maker")}))

@@ -301,7 +301,7 @@
            "trace_logged_in = null;")
          "trace_logged_in = null;")
        (str "trace_token = '" *anti-forgery-token* "';")
-       "goog.require('trace.core');"]]]]))
+       "trace.core.init_trace();"]]]]))
   
 
 (defn transact [{:keys [edn-params con] :as req}]

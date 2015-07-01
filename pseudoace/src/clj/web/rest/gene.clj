@@ -4,7 +4,7 @@
         pseudoace.binning)
   (:require [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vmap-if vassoc cond-let update those conjv]]
+            [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
             [wb.locatables :refer (root-segment)]))
 
 ;; Currently gene-specific, make more general in the future?

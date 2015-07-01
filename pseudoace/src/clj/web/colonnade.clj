@@ -41,7 +41,7 @@
                :type "text/javascript"}]
      [:script {:type "text/javascript"}
       (str "trace_token = '" *anti-forgery-token* "';")
-      "goog.require('trace.colonnade');"]]]))
+      "trace.colonnade.init_coll();"]]]))
 
 
 (defn- starts-with [^String s ^String p]
