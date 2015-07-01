@@ -665,9 +665,11 @@
        
 
 (defn- group-props [props]
-  (->> (partition-by :group props)
-       (map (fn [pl]
-              [(:group (first pl)) pl]))))
+  (reduce
+   (fn [grouped prop]
+     (update grouped (:group prop) conj prop))
+   (array-map)
+   props))
 
 (defn tree-view [data owner {:keys [primary-ns group?]}]
   (reify
