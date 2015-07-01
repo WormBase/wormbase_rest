@@ -671,8 +671,12 @@
 
 (defn tree-view [data owner {:keys [primary-ns group?]}]
   (reify
-    om/IRender
-    (render [_]
+    om/IInitState
+    (init-state [_]
+      {})
+    
+    om/IRenderState
+    (render-state [_ state]
       (let [mode  (om/observe owner (mode))
             props (or (:props data)
                       (:edit data)
@@ -689,9 +693,13 @@
            (for [[group-label props] grouped-props]
             (list
               (if group-label
-                (dom/tr {:style {:background "darkgray"}} (dom/td {:colSpan 2} group-label)))
+                (dom/tr {:style {:background "darkgray"}
+                         :on-click #(om/update-state! owner group-label not)}
+                        (dom/td {:colSpan 2}
+                                (str "[" (if (state group-label) "+" "-") "] "
+                                     group-label))))
               (for [prop props]
-                (dom/tr nil 
+                (dom/tr {:style (display (not (state group-label)))}
                         (dom/td {:class "prop-name"}
                            (let [key (:key prop)]
                              (if (= (namespace key) primary-ns)

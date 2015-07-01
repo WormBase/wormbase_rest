@@ -45,4 +45,4 @@
   :javac-options ["-target" "1.6" "-source" "1.6"]
   :license "MIT"
   :repositories [["dasmoth" {:url "http://www.biodalliance.org/people/thomas/repo"}]]
-  :jvm-opts ["-Xmx4G" "-Ddatomic.objectCacheMax=3500000000 -Ddatomic.txTimeoutMsec=1000000"])
+  :jvm-opts ["-Xmx4G" "-Ddatomic.objectCacheMax=2500000000 -Ddatomic.txTimeoutMsec=1000000"])
