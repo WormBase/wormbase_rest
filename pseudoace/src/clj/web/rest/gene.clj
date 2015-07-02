@@ -1523,7 +1523,7 @@
                                                  [?seq :transcript/corresponding-cds ?ct]]
                   [(gene-cdst-or-cds ?gene ?seq) [?gene :gene/corresponding-cds ?cc]
                                                  [?cc :gene.corresponding-cds/cds ?seq]
-                                                 (not [?seq :transcript.corresponding-cds/cds _])]
+                                                 (not [_ :transcript.corresponding-cds/cds ?seq])]
                   [(gene-pseudogene ?gene ?seq) [?gene :gene/corresponding-pseudogene ?cp]
                                                 [?cp :gene.corresponding-pseudogene/pseudogene ?seq]]]
                 (:db/id gene))]
