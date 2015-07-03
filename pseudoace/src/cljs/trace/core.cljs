@@ -459,8 +459,7 @@
           {:on-click #(om/transact! val-holder :remove not)}
           (dom/i {:class "fa fa-eraser"})))
        
-       (if txnData
-         (om/build txn-view val-holder {:opts {:key key :entid entid}}))
+       
        
        (dom/span
         {:class "trace-item-content"
@@ -511,7 +510,11 @@
            (dom/span (str val)))
 
          :default
-         (dom/span (str val)))))))))
+         (dom/span (str val))))
+
+       (if txnData
+         (om/build txn-view val-holder {:opts {:key key :entid entid}}))
+       )))))
       
 
 (defn list-view [data owner {:keys [entid]}]
