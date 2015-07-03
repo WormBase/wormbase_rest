@@ -198,3 +198,7 @@ td.prop-val {
 .edited {
     background: #ddaaff;
 }
+
+.header button {
+    color: black;
+}
