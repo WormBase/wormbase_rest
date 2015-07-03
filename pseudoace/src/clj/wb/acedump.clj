@@ -179,6 +179,7 @@
    (str/join " " (rest toks))))
 
 (defn dump-object
+  "Dump an pseudoace entity in .ace format to *out*."
   [root]
   (println (:type root)
            ":"
@@ -188,3 +189,20 @@
   (doseq [line (flatten-object root)]
     (println (ace-line (mapcat ace-node (rest line)))))
   (println))
+
+(defn dump-class
+  "Dump object of class `class` from `db`."
+  [db class & {:keys [query delete tag follow format limit]}]
+  (if-let [ident (q '[:find ?class-ident .
+                     :in $ ?class
+                     :where [?attr :pace/identifies-class ?class]
+                            [?attr :db/ident ?class-ident]]
+                   db class)]
+    (doseq [id (->> (q '[:find [?id ...]
+                         :in $ ?ident
+                         :where [?id ?ident _]]
+                       db ident)
+                    (sort)
+                    (take (or limit Integer/MAX_VALUE)))]
+      (dump-object (ace-object db id)))
+    (except "Couldn't find '" class "'")))
