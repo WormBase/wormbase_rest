@@ -752,8 +752,9 @@
            (let [is-edit (not (nil? edit))]
              (concat
               txlist
-              (if (or (and is-edit val)
-                      remove)
+              (if (and (or (and is-edit val)
+                           remove)
+                       val)       ;; Don't explicitly retract nils
                 [[:db/retract (pack-id id) (:key prop) val]])
               (if (and is-edit (not remove) (not= edit :empty))
                 (if (and (sequential? edit)
@@ -863,7 +864,7 @@
                                  (:editing mode))
                         (dom/button {:on-click #(submit app)
                                      :disabled (empty? (gather-txdata (:id @app-state) (:props @app-state)))}
-                                    "Submit"))
+                                    "Save"))
           
                       (when (and js/trace_logged_in
                                  (:editing mode))
@@ -884,6 +885,7 @@
    js/window
    "beforeunload"
    (fn [e]
-     (if (:editing (:mode @app-state))
+     (when (and (:editing (:mode @app-state))
+                (seq (gather-txdata (:id @app-state) (:props @app-state))))
        (set! (.-returnValue e) "Currently editing this entity")
        "Currently editing this entity"))))
