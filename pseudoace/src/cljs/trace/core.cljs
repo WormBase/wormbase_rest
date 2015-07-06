@@ -774,7 +774,9 @@
    {:tx (gather-txdata (:id @app-state) (:props @app-state))}
    (fn [{:keys [status responseText]}]
      (if (= status 200)
-       (secretary/dispatch! (.-pathname js/window.location))
+       (do
+         (om/update! app :err nil)
+         (secretary/dispatch! (.-pathname js/window.location)))
        (om/update! app :err responseText)))))
 
 (defn trace-title [app owner]
