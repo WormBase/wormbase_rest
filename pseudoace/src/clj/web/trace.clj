@@ -214,8 +214,21 @@
 (defn get-raw-history2 [db entid attr]
   (let [hdb    (d/history db)
         schema (entity db attr)
-        valmap (if-let [obj-ref (:pace/obj-ref schema)]
-                 (comp obj-ref (partial entity db))
+        valmap (cond
+                 (:pace/obj-ref schema)
+                 (comp (:pace/obj-ref schema) (partial entity db))
+
+                 (:db/isComponent schema)
+                 identity
+
+                 (= (:db/valueType schema) :db.type/ref)
+                 (fn [eid]
+                   (let [e (entity db eid)]
+                     (if-let [ident (:db/ident e)]
+                       (name ident)
+                       eid)))
+                 
+                 :default
                  identity)
         datoms (sort-by :tx (seq (d/datoms hdb :eavt entid attr)))]
     {:status 200

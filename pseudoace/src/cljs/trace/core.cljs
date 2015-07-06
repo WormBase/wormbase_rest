@@ -16,7 +16,7 @@
                              :editing false
                              :txnData false}}))
 
-(def time-formatter (time/formatter "yyyy-MM-dd-HH:mm:ss"))
+(def time-formatter (time/formatter "yyyy-MM-dd HH:mm:ss"))
   
 (defn mode
   "Get a ref-cursor to a map of application mode flags"
