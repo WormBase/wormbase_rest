@@ -4,6 +4,11 @@
 
 **THIS IS A PRIVATE REPOSITORY**
 
+## FULL-SCALE DATOMIC PROTOTYPE
+
+This can be found in the `pseudoace` directory.  See the [wiki](https://github.com/wormbase/db/wiki)
+for more information.
+
 ## LAYOUT
 
    README.md
