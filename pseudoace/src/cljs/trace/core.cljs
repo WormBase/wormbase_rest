@@ -309,7 +309,9 @@
                        (om/set-state! owner :checked prefix)
                        (om/set-state! owner :ncand ncnt)
                        (om/set-state! owner :candidates names)))))]
-        (dom/span {:class "edit-root"}
+        (dom/span {:class "edit-root" 
+                   :tabIndex 0
+                   :on-focus #(om/set-state! owner :editing true)}
          (dom/i {:class "fa fa-plus-circle"
                  :style (display create?)})
          (dom/span {:class "edit-inactive"
@@ -462,7 +464,8 @@
 
        (if (and edit-mode (not comp?))
          (dom/button
-          {:on-click #(om/transact! val-holder :remove not)}
+          {:tabIndex -1
+           :on-click #(om/transact! val-holder :remove not)}
           (dom/i {:class "fa fa-eraser"})))
        
        
