@@ -144,8 +144,7 @@
     
     om/IRenderState
     (render-state [_ {:keys [editing]}]
-      (let [val (or (:edit vh) (:val vh))
-            val (if (= val :empty) "New value..." val)]
+      (let [val (or (:edit vh) (:val vh))]
         (dom/span {:class "edit-root"}
          (dom/span {:class "edit-inactive"
                     :style (display (not editing))
@@ -154,12 +153,13 @@
                                          (.preventDefault event)
                                          (.stopPropagation event)
                                          (om/set-state! owner :editing true)))}
-                   val)
+                   (if (= val :empty) "New value..." val))
          (dom/input
           {:ref "input"
            :style (display editing)
            :class "text-editable"
-           :value val
+           :placeholder "Enter text..."
+           :value (if (= val :empty) "" val )
            :on-change (fn [e]
                         (om/update! vh :edit (.. e -target -value)))
            :on-blur #(om/set-state! owner :editing false)
@@ -189,8 +189,7 @@
 
     om/IRenderState 
     (render-state [_ {:keys [editing]}]
-      (let [val (or (:edit vh) (:val vh))   ;; works because 0 is truthy here.
-            val (if (= val :empty) "New value..." val)]
+      (let [val (or (:edit vh) (:val vh))]   ;; works because 0 is truthy here.
        (dom/span {:class "edit-root"}
         (dom/span {:class "edit-inactive"
                    :style (display (not editing))
@@ -199,12 +198,13 @@
                                          (.preventDefault event)
                                          (.stopPropagation event)
                                          (om/set-state! owner :editing true)))}
-                  val)
+                  (if (= val :empty) "New value..." (str val)))
         (dom/input
          {:ref "input"
           :style (display editing)
           :class "text-editable"
-          :value val
+          :placeholder "Enter number"
+          :value (if (= val :empty) "" (str val))
           :on-change (fn [e]
                        (let [ns (.. e -target -value)]
                          (if (re-matches #"\d+" ns)
@@ -620,6 +620,8 @@
                                          :values (conj (:values holder) dummy)
                                          :collapsed false))
                       (->> (conj props {:key (:db/ident item)
+                                        :group (if-let [tags (:pace/tags item)]
+                                                 (first (str/split tags #"\s")))
                                         :type (:db/valueType item)
                                         :collapsed false
                                         :comp (:db/isComponent item)
@@ -672,7 +674,9 @@
                                 (used-props (:db/ident a)))
                          "add-item add-item-disabled"
                          "add-item")
-                :on-click #(add-item data a)}
+                :on-click (fn [_]
+                            (om/set-state! owner :open false)
+                            (add-item data a))}
                (str (:db/ident a)))))))))))
        
 
