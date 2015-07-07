@@ -107,6 +107,37 @@
      (seq))))
 
 ;;
+;; Public name manglement
+;;
+
+(defn update-public-name
+  "Check if the public name of Gene `p` should be updated after applying
+   transaction `tx` to `db`, and return a list of transaction data if needed." 
+  [db tx p]
+  (let [{:keys [db-after tempids]} (d/with db tx)
+        rp (or (d/resolve-tempid db-after tempids p) p)    ;; returns null if p isn't a tempid
+        names (->> (q '[:find ?type ?name
+                        :in $ ?gene
+                        :where (or-join [?gene ?type ?name]
+                                 (and
+                                   [?gene :gene/public-name ?name]
+                                   [(ground "Public_name") ?type])
+                                 (and
+                                   [?gene :gene/sequence-name ?name]
+                                   [(ground "Sequence") ?type])
+                                 (and
+                                   [?gene :gene/cgc-name ?cgc]
+                                   [?cgc :gene.cgc-name/text ?name]
+                                   [(ground "CGC") ?type]))]
+                      db-after rp)
+                   (into {}))
+        old-public (names "Public_name")
+        new-public (some names ["CGC" "Sequence" "Public_name"])]
+    (if (and new-public
+             (not= new-public old-public))
+      [[:db/add p :gene/public-name new-public]])))   ;; go back to using the tempid...
+
+;;
 ;; Query gene
 ;;
 
@@ -144,7 +175,8 @@
                     :gene.status/status :gene.status.status/live}
                 :locatable/method [:method/id "Gene"]
                 :gene/species [:species/id (species-longnames species)])
-               (txn-meta)]]
+               (txn-meta)]
+          tx (concat tx (update-public-name db tx tid))]
       (try
         (let [txr @(d/transact con (concat
                                     tx
