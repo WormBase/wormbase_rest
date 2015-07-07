@@ -486,7 +486,11 @@
             "Results"))
          (if error
            (dom/div error))
-         (if results
+         (cond
+           running
+           (dom/img {:src "img/spinner_192.gif"})
+           
+           results
            (let [back-disabled (if (or running
                                        (< offset 1))
                                  "yes")
