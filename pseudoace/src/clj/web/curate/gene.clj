@@ -88,6 +88,24 @@
       (str "Name '" name "' does not validate for " species ":" type))
     (str "Not allowed: " species ":" type)))
 
+(defn lookup-name
+  [db type name]
+  (if-let [query (case type
+                   "CGC"
+                   '[:find [?g ...]
+                     :in $ ?name
+                     :where [?cgc :gene.cgc-name/text ?name]
+                            [?g :gene/cgc-name ?cgc]]
+                   
+                   "Sequence"
+                   '[:find [?g ...]
+                     :in $ ?name
+                     :where [?g :gene/sequence-name ?name]])]
+    (->>
+     (q query db name)
+     (map (partial entity db))
+     (seq))))
+
 ;;
 ;; Query gene
 ;;
@@ -100,12 +118,21 @@
 ;;
 
 (defn do-new-gene [con remark species new-name type]
-  (if-let [err (validate-name new-name type species)]
+ (let [db (db con)]
+  (if-let [err (or
+                (validate-name new-name type species)
+                (if-let [old (lookup-name db type new-name)]
+                  (format "%s name '%s' already used for gene '%s'."
+                          type new-name (:gene/id (first old)))))]
     {:err [err]}
     (let [tid (d/tempid :db.part/user)
           tx  [[:wb/mint-identifier :gene/id [tid]]
-               {:db/id tid 
-                :gene/sequence-name new-name
+               (vmap
+                :db/id tid
+                :gene/sequence-name (if (= type "Sequence")
+                                      new-name)
+                :gene/cgc-name      (if (= type "CGC")
+                                      {:gene.cgc-name/text new-name})
                 :gene/version       1
                 :gene/version-change {
                     :gene.version-change/version 1
@@ -116,7 +143,7 @@
                 :gene/status {
                     :gene.status/status :gene.status.status/live}
                 :locatable/method [:method/id "Gene"]
-                :gene/species [:species/id (species-longnames species)]}
+                :gene/species [:species/id (species-longnames species)])
                (txn-meta)]]
       (try
         (let [txr @(d/transact con (concat
@@ -129,7 +156,7 @@
                     (or (second (re-matches #"(\w{3,4})(?:[(]|-\d+)" new-name))
                         "-"))]
           {:done (:gene/id ent)})
-        (catch Exception e {:err [(.getMessage e)]})))))
+        (catch Exception e {:err [(.getMessage e)]}))))))
 
 (defn new-gene [{db :db con :con 
                  {:keys [remark species new_name type]} :params}]
