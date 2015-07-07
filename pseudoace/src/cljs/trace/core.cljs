@@ -6,7 +6,8 @@
             [secretary.core :as secretary :refer-macros [defroute]]
             [trace.utils :refer (edn-xhr edn-xhr-post conj-if process-schema)]
             [goog.dom :as gdom]
-            [cljs-time.format :as time]
+            [cljs-time.core :as time]
+            [cljs-time.format :as tf]
             [cljs-time.coerce :as tc]))
 
 (enable-console-print!)
@@ -16,8 +17,13 @@
                              :editing false
                              :txnData false}}))
 
-(def time-formatter (time/formatter "yyyy-MM-dd HH:mm:ss"))
-  
+(def time-formatter (tf/formatter "yyyy-MM-dd HH:mm:ss"))
+
+(defn format-local [time]
+  (->> (tc/from-date time)
+       (time/to-default-time-zone)
+       (tf/unparse-local-date time-formatter)))
+
 (defn mode
   "Get a ref-cursor to a map of application mode flags"
   []
@@ -400,8 +406,7 @@
                                    (group-by :added? datoms)
                                  txn (txmap (:txid (first datoms)))
                                  time (->> (:db/txInstant txn)
-                                           (tc/from-date)
-                                           (time/unparse time-formatter))
+                                           (format-local))
                                  who (if-let [c (:wormbase/curator txn)]
                                        (second c)
                                        (:importer/ts-name txn))]]
@@ -427,7 +432,8 @@
                  (dom/img {:src "/img/spinner_24.gif"})))))
         (if txn
           (if-let [txn-data (txn-map txn)]
-            (str (time/unparse time-formatter (tc/from-date (:db/txInstant txn-data)))
+            (str (->> (:db/txInstant txn-data)
+                      (format-local))
                  (if-let [c (:wormbase/curator txn-data)]
                    (str " (" (second c) ")")
                    (if-let [d (:importer/ts-name txn-data)]
@@ -509,6 +515,9 @@
            (om/build text-edit val-holder)
            (dom/span (str val)))
 
+         (= type :db.type/instant)
+         (dom/span (format-local val))
+         
          :default
          (dom/span (str val))))
 
