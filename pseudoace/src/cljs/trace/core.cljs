@@ -156,7 +156,7 @@
                                          (.stopPropagation event)
                                          (om/set-state! owner :editing true)))}
                    (if (= val :empty) "New value..." val))
-         (dom/textarea
+         (dom/input   ;; Should be a textarea in some cases -- how to decide?
           {:ref "input"
            :style (display editing)
            :class "text-editable"
