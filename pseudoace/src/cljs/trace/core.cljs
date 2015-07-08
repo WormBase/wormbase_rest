@@ -156,7 +156,7 @@
                                          (.stopPropagation event)
                                          (om/set-state! owner :editing true)))}
                    (if (= val :empty) "New value..." val))
-         (dom/input
+         (dom/textarea
           {:ref "input"
            :style (display editing)
            :class "text-editable"
@@ -480,7 +480,7 @@
            txnData   (:txnData mode)
            edit-mode (:editing mode)]
       (dom/div 
-       {:class (if edit 
+       {:class (if (and edit (not= edit val))
                   "trace-item edited"
                   "trace-item")}
 
@@ -787,7 +787,8 @@
         
         (reduce
          (fn [txlist {:keys [edit val remove]}]
-           (let [is-edit (not (nil? edit))]
+           (let [is-edit (and (not (nil? edit))
+                              (not= edit val))]
              (concat
               txlist
               (if (and (or (and is-edit val)
