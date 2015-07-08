@@ -145,7 +145,9 @@
     om/IRenderState
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))]
-        (dom/span {:class "edit-root"}
+        (dom/span {:class "edit-root"
+                   :tabIndex (if editing -1 0)  ; Make un-tabbable when already editing so shift-TAB works right.
+                   :on-focus #(om/set-state! owner :editing true)}
          (dom/span {:class "edit-inactive"
                     :style (display (not editing))
                     :on-double-click (fn [event]
@@ -190,7 +192,9 @@
     om/IRenderState 
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))]   ;; works because 0 is truthy here.
-       (dom/span {:class "edit-root"}
+       (dom/span {:class "edit-root"
+                  :tabIndex (if editing -1 0)  ; Make un-tabbable when already editing so shift-TAB works right.
+                  :on-focus #(om/set-state! owner :editing true)}
         (dom/span {:class "edit-inactive"
                    :style (display (not editing))
                    :on-double-click (fn [event]
@@ -232,7 +236,9 @@
                   (:val vh)
                   (:edit vh))
             val (if (= val :empty) "New value..." val)]
-        (dom/span {:class "edit-root"}
+        (dom/span {:class "edit-root"
+                   :tabIndex (if editing -1 0)  ; Make un-tabbable when already editing so shift-TAB works right.
+                   :on-focus #(om/set-state! owner :editing true)}
          (dom/span {:class "edit-inactive"
                     :style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
@@ -246,19 +252,32 @@
           (dom/option {:value "false"} "false")
           (dom/option {:value "true"} "true")))))))
 
-(defn enum-edit [vh owner {:keys [tns]}]
+(defn enum-edit [{:keys [added] :as vh} owner {:keys [tns]}]
   (reify
     om/IInitState
     (init-state [_]
-      {:editing false})
+      {:editing (= added @added-id)})
 
+    om/IDidMount
+    (did-mount [_]
+      (if (= added @added-id)
+        (.focus (om/get-node owner "input"))))
+
+    om/IDidUpdate
+    (did-update [_ _ {:keys [editing]}]
+      (if (and (not editing)
+               (om/get-state owner :editing))
+        (.focus (om/get-node owner "input"))))
+    
     om/IRenderState
     (render-state [_ {:keys [editing]}]
       (let [val (or (:edit vh) (:val vh))
             val (if (= val :empty) "New value..." val)
             schema (om/observe owner (schema))
             enum-values ((:attrs schema) tns)]
-        (dom/span {:class "edit-root"}
+        (dom/span {:class "edit-root"
+                   :tabIndex (if editing -1 0)  ; Make un-tabbable when already editing so shift-TAB works right.
+                   :on-focus #(om/set-state! owner :editing true)}
          (dom/span {:class "edit-inactive"
                     :style (display (not editing))
                     :on-double-click #(om/set-state! owner :editing true)}
@@ -266,8 +285,11 @@
                      (name val)
                      (str val)))
          (dom/select
-          {:style (display editing)
+          {:ref "input"
+           :style (display editing)
            :value (if (keyword? val) (str (namespace val) "/" (name val)))
+           :on-blur (fn [_]
+                      (js/setTimeout #(om/set-state! owner :editing false) 200))
            :on-change (fn [e]
                         (om/update! vh :edit (keyword (.. e -target -value)))
                         (om/set-state! owner :editing false))}
@@ -309,8 +331,8 @@
                        (om/set-state! owner :checked prefix)
                        (om/set-state! owner :ncand ncnt)
                        (om/set-state! owner :candidates names)))))]
-        (dom/span {:class "edit-root" 
-                   :tabIndex 0
+        (dom/span {:class "edit-root"
+                   :tabIndex (if editing -1 0)  ; Make un-tabbable when already editing so shift-TAB works right.
                    :on-focus #(om/set-state! owner :editing true)}
          (dom/i {:class "fa fa-plus-circle"
                  :style (display create?)})
