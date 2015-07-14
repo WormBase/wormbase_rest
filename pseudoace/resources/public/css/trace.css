@@ -42,6 +42,7 @@ table.trace-tree {
     font-size: 70%;
     color: brown;
     margin-right: 5px;
+    -webkit-flex: 1 1;
     flex: 1 1;
 }
 
@@ -72,6 +73,7 @@ div.trace-header {
 
 .edit-inactive {
     flex-grow: 1;
+    -webkit-flex-grow: 1;
 }
 
 .collapse-button {
@@ -189,6 +191,7 @@ td.prop-val {
 
 .trace-item-content {
     width: 100%;
+    -webkit-flex: 1 1;
     flex: 1 1;
 }
 
