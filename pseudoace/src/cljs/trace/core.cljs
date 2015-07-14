@@ -392,7 +392,11 @@
            "Create"))
          
             ))))))
-      
+
+(defn curator-name [c]
+  (or (:person/standard-name c)
+      (:person/id c)))
+
 (defn txn-view [{:keys [txn] :as val-holder} owner {:keys [entid key]}]
   (reify
     om/IInitState
@@ -413,7 +417,7 @@
                          (om/set-state! owner :hdata resp))))
                     (om/update-state! owner :history not))}
        (if history
-         (dom/div {:class "history-box-holder"}
+         (dom/div {:class "x-history-box-holder"}
             (dom/div {:class "history-box"} 
                (if hdata
                  (let [txmap (->> (map (juxt :db/id identity) (:txns hdata))
@@ -432,7 +436,7 @@
                                  time (->> (:db/txInstant txn)
                                            (format-local))
                                  who (if-let [c (:wormbase/curator txn)]
-                                       (second c)
+                                       (curator-name c)
                                        (:importer/ts-name txn))]]
                        (if (= (count added) (count retracted) 1)
                          (dom/tr
@@ -453,17 +457,17 @@
                              (dom/td "added")
                              (dom/td (:v d))
                              (dom/td who)))))))))
-                 (dom/img {:src "/img/spinner_24.gif"})))))
-        (if txn
-          (if-let [txn-data (txn-map txn)]
-            (str (->> (:db/txInstant txn-data)
+                 (dom/img {:src "/img/spinner_24.gif"}))))
+         (if txn
+           (if-let [txn-data (txn-map txn)]
+             (str (->> (:db/txInstant txn-data)
                       (format-local))
-                 (if-let [c (:wormbase/curator txn-data)]
-                   (str " (" (second c) ")")
-                   (if-let [d (:importer/ts-name txn-data)]
-                     (str " (" d ")"))))
-            (str txn))
-          "NEW"))))))
+                  (if-let [c (:wormbase/curator txn-data)]
+                    (str " (" (curator-name c) ")")
+                    (if-let [d (:importer/ts-name txn-data)]
+                      (str " (" d ")"))))
+             (str txn))
+           "NEW")))))))
 
 (defn item-view [{:keys [val edit txn remove added] :as val-holder} 
                  owner 
@@ -546,7 +550,8 @@
          :default
          (dom/span (str val))))
 
-       (if txnData
+       (if (and txnData
+                (not comp?))
          (om/build txn-view val-holder {:opts {:key key :entid entid}}))
        )))))
       

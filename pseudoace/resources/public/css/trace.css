@@ -42,7 +42,7 @@ table.trace-tree {
     font-size: 70%;
     color: brown;
     margin-right: 5px;
-    flex: 1 1 120px;
+    flex: 1 1;
 }
 
 div.trace-header {
@@ -156,7 +156,7 @@ div.history-box-holder {
 }
 
 div.history-box {
-    position: absolute;
+//    position: absolute;
     display: inline-block;
     background: white;
     padding: 5px;
@@ -189,6 +189,7 @@ td.prop-val {
 
 .trace-item-content {
     width: 100%;
+    flex: 1 1;
 }
 
 .text-editable {

@@ -161,7 +161,9 @@
                        (into {} $)
                        (assoc $ :db/id t))]]
     (if-let [curator (:wormbase/curator te)]
-      (assoc te :wormbase/curator [:person/id (:person/id curator)])
+      (assoc te :wormbase/curator
+             {:person/id            (:person/id curator)
+              :person/standard-name (:person/standard-name curator)})
       te)))
 
 (defn get-raw-obj2 [ddb class id max-out max-in txns?]
