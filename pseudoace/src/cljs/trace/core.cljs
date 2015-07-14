@@ -482,7 +482,8 @@
     (render [_]
      (let [mode      (om/observe owner (mode))
            txnData   (:txnData mode)
-           edit-mode (:editing mode)]
+           edit-mode (and (:editing mode)
+                          (not (= (name key) "id")))]    ;; blacklist primary entity IDs
       (dom/div 
        {:class (if (and edit (not= edit val))
                   "trace-item edited"
