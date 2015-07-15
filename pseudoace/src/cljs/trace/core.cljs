@@ -843,15 +843,20 @@
          (fn [resp]
            (om/transact! app (fn [app]
                                (assoc app 
-                                      :mode {:loading false
-                                             :editing false
-                                             :txnData false}
+                                      :mode    (merge (:mode app)
+                                                               {:loading false
+                                                                :editing false})
                                       :props   (props->state (:props resp))
                                       :txns    (->> (for [t (:txns resp)]
                                                       [(:db/id t) t])
-                                                    (into {}))
+                                                    (into (if (= (:id resp) (:id app))
+                                                            (:txns app)
+                                                            {})))   ;; Start again with empty txn map if moving to a new object
                                       :id      (:id resp)
-                                      :ident [(keyword c "id") i]))))))
+                                      :ident [(keyword c "id") i])))
+           (if (:txnData (:mode @app))
+             (fetch-missing-txns app)))))
+                                 
       (secretary/dispatch! (.-pathname js/window.location))
       (.addEventListener js/window
                          "popstate"
