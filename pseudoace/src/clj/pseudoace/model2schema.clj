@@ -7,7 +7,10 @@
 
 (def ^:dynamic *schema-notes* false)
 
-(defn- datomize-name [^String n]
+(defn- datomize-name
+  "Make `n` into a Datomic-friendly name by converting to lower case and replacing
+   underscores with hyphens."
+  [^String n]
   (if (Character/isDigit (first n))
     (if *schema-notes*
       (println "WARNING: name starts with a digit: " n)))
@@ -41,7 +44,10 @@
    :date     :db.type/instant
    :ref      :db.type/ref})
 
-(defn- tuple-member-names [items attr]
+(defn- tuple-member-names
+  "Take a sequence of model nodes representing attributes within a component, and
+   return a list of suitable names."
+  [items attr]
   (let [basenames (map (comp datomize-name (some-fn :alt-name :name)) items)
         dups (->> (frequencies basenames)
                   (filter (fn [[k count]]
@@ -92,7 +98,12 @@
   (and (<= (count prefix) (count whole))
        (= (vec (take (count prefix) whole)) (vec prefix))))
 
-(defn tag->schema [sid mns tagpath node]
+(defn tag->schema
+  "Build schema entities for `node`. 
+     `sid` is a tempid for the class identifier attribute.
+     `mns` is a string representing the namespace in which this tag is located.
+     `tagpath` is a sequence of strings representing the tag-path through the AceDB model."
+  [sid mns tagpath tpm node]
   (let [attribute  (keyword mns (or (:alt-name node)
                                      (datomize-name (last tagpath))))
         fchild (first (:children node))]
@@ -155,12 +166,10 @@
                    {:db/id          (tempid :db.part/db)
                     :pace/identifies-class (.substring cname 1)
                     :pace/xref    {:db/id                (tempid :db.part/user)
-                                     :pace.xref/tags       x
-                                     :pace.xref/attribute  {:db/id    (tempid :db.part/db)
-                                                            :db/ident attribute}
-                                     :pace.xref/obj-ref    sid
-                                                           #_{:db/id (tempid :db.part/db)
-                                                                              :db/ident (keyword mns "id")}}})
+                                   :pace.xref/tags       (or (tpm [(datomize-name cname) x])
+                                                             x)
+                                   :pace.xref/attribute  {:db/id    (tempid :db.part/db)
+                                                          :db/ident attribute}}})
              schema)))
 
        ;; "compound datum" case
@@ -237,12 +246,11 @@
                          {:db/id          (tempid :db.part/db)
                           :pace/identifies-class (.substring cname 1)
                           :pace/xref      {:db/id                (tempid :db.part/user)
-                                           :pace.xref/tags       x
+                                           :pace.xref/tags       (or (tpm [(datomize-name cname) x])
+                                                                     x)
                                            :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                                   :db/ident cattr}
-                                           :pace.xref/obj-ref    sid
-                                                                 #_{:db/id (tempid :db.part/db)
-                                                                  :db/ident (keyword mns "id")}}})
+                                           :pace.xref/obj-ref    sid}})
                    schema)))
              (iterate inc (if enum 1 0))   ;; In enum case, order 0 is reserved for the enum.
              concretes
@@ -274,17 +282,19 @@
    (do
      (when *schema-notes*
        (println "Candidate augmented enum at " mns ":" tagpath))
-     (mapcat (partial node->schema sid mns tagpath) (:children node)))
+     (mapcat (partial node->schema sid mns tagpath tpm) (:children node)))
 
    :default 
-   (mapcat (partial node->schema sid mns tagpath) (:children node)))))
+   (mapcat (partial node->schema sid mns tagpath tpm) (:children node)))))
 
-(defn node->schema [sid mns tagpath node]
+(defn- node->schema [sid mns tagpath tpm node]
   (if (= (:type node) :tag)
-    (tag->schema sid mns (conj tagpath (:name node)) node)))
+    (tag->schema sid mns (conj tagpath (:name node)) tpm node)))
 
-
-(defn model->schema [{:keys [name alt-name] :as model}]
+(defn model->schema
+ ([model]
+  (model->schema {} model))
+ ([tpm {:keys [name alt-name] :as model}]
   (let [mns (or alt-name
                 (datomize-name name))
         is-hash? (.startsWith name "#")
@@ -292,7 +302,7 @@
               (tempid :db.part/db))
         sid (tempid :db.part/db)]
     (conj-if
-     (mapcat (partial node->schema sid mns []) (:children model))
+     (mapcat (partial node->schema sid mns [] tpm) (:children model))
      (if pid
        {:db/id       pid
         :db/ident    (keyword "wb.part" mns)
@@ -306,8 +316,37 @@
       :db/cardinality :db.cardinality/one
       :db.install/_attribute :db.part/db
       :pace/identifies-class (.substring name 1)
-      :pace/is-hash is-hash?))))
-      
+      :pace/is-hash is-hash?)))))
+
+(defn xref-tagpath-map
+  "Build a map of inbound XREFs for `model`."
+  ([model]
+   (reduce (partial xref-tagpath-map (datomize-name (:name model)) [])
+           {}
+           (:children model)))
+  ([class tagpath tpm node]
+   (cond
+     (= (:type node) :tag)
+     (reduce (partial xref-tagpath-map class (conj tagpath (:name node)))
+             tpm (:children node))
+
+     (:xref node)
+     (assoc tpm [class (last tagpath)] (str/join " " tagpath))
+
+     :default
+     tpm)))
+
+(defn models->schema
+  "Convert a set of models to a schema, resolving tag-paths of XREFs."
+  [models]
+  (mapcat (partial model->schema
+                   (reduce merge (map xref-tagpath-map models)))
+          models))
+             
+;;
+;; Model reconstruction from a schema
+;;
+
 (defn conj-in-tagpath [root tagpath nodes]
   (if (empty? tagpath)
     (if (seq nodes)
