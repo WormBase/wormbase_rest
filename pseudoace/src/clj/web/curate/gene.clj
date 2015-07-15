@@ -297,7 +297,7 @@
 (defn kill-object [domain
                    {con :con
                     {:keys [id reason]} :params}]
-  (page db
+  (page (db con)
    (let [result (if id
                   (do-kill-gene con id reason))]
      (if (:done result)
