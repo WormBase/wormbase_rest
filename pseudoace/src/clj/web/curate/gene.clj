@@ -323,3 +323,112 @@
                      :maxlength 200
                      :value (or reason "")}]]]]
          [:input {:type "submit"}]]]))))
+
+
+
+(defn- do-add-name [con id type name species]
+  (let
+    [db   (db con)
+     cid  (first (lookup "Gene" db id))
+     gene    (and cid (entity db [:gene/id cid]))
+     old-name (q (case type
+                   "Sequence"
+                   '[:find ?name .
+                     :in $ ?gid
+                     :where [?gene :gene/id ?gid]
+                            [?gene :gene/sequence-name ?name]]
+
+                   "CGC"
+                   '[:find ?name .
+                     :in $ ?gid
+                     :where [?gene :gene/id ?gid]
+                            [?gene :gene/cgc-name ?cgc]
+                            [?cgc :gene.cgc-name/text ?name]])
+                 db cid)
+     errs (those
+           (if-not cid
+             (str "Couldn't find " id))
+           #_(if (= type "CGC")
+               (if-not (authorized? #{:user.role/cgc} friend/*identity*)
+                 "You do not have permission to add CGC names."))
+           (if-not (name-checks species)
+             (str "Unknown species " species))
+           (if-not (#{"CGC" "Sequence" "Public_name"} type)
+             (str "Unknown type " type))
+           (if-let [existing (first (lookup "Gene" db name))]
+             (list name " already exists as " (link "Gene" existing)))
+           (validate-name name type species))]
+    (if errs
+      {:err errs}
+      (let [version (or (:gene/version gene) 1)
+            txn [[:db.fn/cas [:gene/id cid] :gene/version version (inc version)]
+
+
+                 (vmap
+                  :db/id [:gene/id cid]
+
+                  :gene/sequence-name (if (= type "Sequence")
+                                        name)
+
+                  :gene/cgc-name (if (= type "CGC")
+                                   {:gene.cgc-name/text name})
+
+                  :gene/version-change
+                  (vmap
+                   :gene.version-change/version (inc version)
+                   :gene.version-change/person  [:person/id (:wbperson (friend/current-authentication))]
+                   :gene.version-change/date    (Date.)   ;; Now.  May be a few seconds different from
+                                                          ;; the :db/txInstant :-(.
+                   :gene-history-action/sequence-name-change (if (= type "Sequence")
+                                                               name)
+                   :gene-history-action/cgc-name-change (if (= type "CGC")
+                                                          name)))
+            
+                 (txn-meta)]]
+        (try
+          (let [txr @(d/transact con (concat
+                                      txn
+                                      (update-public-name db txn [:gene/id cid])))]
+            {:done true
+             :canonical cid})
+          (catch Exception e {:err [(.getMessage e)]}))))))
+
+(defn add-gene-name [{db :db
+                      con :con
+                      {:keys [id type name species]} :params}]
+  (page db
+   (let [result (if (and id name)
+                  (do-add-name con id type name species))]
+     (if (:done result)
+       [:div.block
+        "Added " [:strong name] " as " type " for " (link "Gene" (:canonical result))]
+       [:div.block
+        [:form {:method "POST"}
+         [:h3 "Add gene name"]
+         (for [err (:err result)]
+           [:p.err err])
+         (anti-forgery-field)
+         [:table.info
+          [:tr
+           [:th "ID:"]
+           [:td (ac-field "id" "Gene" id)]]
+          [:tr
+           [:th "Type:"]
+           [:td
+            [:select {:name "type"}
+             (if #_(authorized? #{:user.role/cgc} friend/*identity*) true
+               [:option {:selected (if (= type "CGC") "yes")} "CGC"])
+             [:option {:selected (if (= type "Sequence") "yes")} "Sequence"]]]]
+          [:tr
+           [:th "Name to add:"]
+           [:td [:input {:type "text"
+                         :name "name"
+                         :size 20
+                         :maxlength 40
+                         :value (or name "")}]]]
+          [:tr
+           [:th "Species:"]
+           [:td
+            (species-menu "species" species)]]]
+        
+         [:input {:type "submit"}]]]))))

@@ -47,8 +47,8 @@
      
      [:p [:a {:href "/curate/gene/query"} "Find gene"]]
      
-     (if (authorized? #{:user.role/edit} id)
-       [:p [:a {:href "/add-gene-name"} "Add name"]])
+     (if true #_(authorized? #{:user.role/edit} id)
+       [:p [:a {:href "/curate/gene/add-name"} "Add name"]])
      
      (if (authorized? #{:user.role/edit} id)
        [:p [:a {:href "/remove-gene-name"} "Remove name"]])    
