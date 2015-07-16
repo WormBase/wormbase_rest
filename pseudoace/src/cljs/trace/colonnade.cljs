@@ -430,7 +430,8 @@
                      (dom/td nil
                        (if (not= c :none)      
                          (if (= (name (:attribute col)) "id")
-                           (dom/a #js {:href (str "/view/" (namespace (:attribute col)) "/" c)} c)
+                           (dom/a {:href (str "/view/" (namespace (:attribute col)) "/" c)
+                                   :target "_blank"} c)
                            (str c)))))
                     r vizcols))))))))))
                 
