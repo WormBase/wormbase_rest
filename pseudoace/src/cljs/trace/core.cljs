@@ -812,17 +812,39 @@
          txlist
          (:values prop))))
     [] props))
-        
+
+(defn edit [app]
+  (when-not (or (:editing (:mode @app))
+                (:fetching-schema (:mode @app)))
+    (if (:schema @app)
+      (om/update! app [:mode :editing] true)
+      (do
+        (om/update! app [:mode :fetching-schema] true)
+        (edn-xhr 
+         "/schema"
+         (fn [resp]
+           (om/update! app :schema (process-schema resp))
+           (om/update! app [:mode :fetching-schema] false)
+           (om/update! app [:mode :editing] true)))))))
+
 (defn submit [app]
-  (edn-xhr-post
-   "/transact"
-   {:tx (gather-txdata (:id @app-state) (:props @app-state))}
-   (fn [{:keys [status responseText]}]
-     (if (= status 200)
-       (do
-         (om/update! app :err nil)
-         (secretary/dispatch! (.-pathname js/window.location)))
-       (om/update! app :err responseText)))))
+  (let [tx (gather-txdata (:id @app-state) (:props @app-state))]
+    (when (seq tx)
+      (edn-xhr-post
+       "/transact"
+       {:tx tx}
+       (fn [{:keys [status responseText]}]
+         (if (= status 200)
+           (do
+             (om/update! app :err nil)
+             (secretary/dispatch! (.-pathname js/window.location)))
+           (om/update! app :err responseText))))
+      true)))
+
+(defn cancel [app]
+  (when (:editing (:mode @app))
+    (secretary/dispatch! (.-pathname js/window.location))
+    true))
 
 (defn trace-title [app owner]
   (reify
@@ -862,6 +884,39 @@
                          "popstate"
                          (fn [e]
                            (secretary/dispatch! (.-pathname js/window.location)))))
+
+
+    om/IDidMount
+    (did-mount [_]
+      (.addEventListener js/window
+         "keydown"
+         (fn [ev]
+           (let [code (.-keyCode ev)
+                 ctrl (or (.-ctrlKey ev)
+                          (.-metaKey ev))]
+             (when
+               (cond
+
+                 (and ctrl (= code 83))
+                 (submit app)
+                      
+                 (and ctrl (= code 84))
+                 (do
+                   (if (:txnData (:mode @(om/transact! app [:mode :txnData] not)))
+                     (fetch-missing-txns app))
+                   true)
+
+                 (and ctrl (= code 88))
+                 (cancel app)
+
+                 (and ctrl (= code 69))
+                 (edit app)
+
+                 )
+               (.preventDefault ev)
+               (.stopPropagation ev))))
+         false))
+    
     om/IRender
     (render [_]
       (dom/div {:class "trace-body"}
@@ -880,12 +935,12 @@
         (dom/div
          nil
          (dom/div {}
-                  (dom/label "Timestamps")
-                  (dom/input {:type "checkbox"
-                              :checked (:txnData (:mode app))
-                              :on-click (fn [_]
-                                          (if (:txnData (:mode @(om/transact! app [:mode :txnData] not)))
-                                            (fetch-missing-txns app)))})
+                  (dom/label "Timestamps"
+                    (dom/input {:type "checkbox"
+                                :checked (:txnData (:mode app))
+                                :on-click (fn [_]
+                                            (if (:txnData (:mode @(om/transact! app [:mode :txnData] not)))
+                                              (fetch-missing-txns app)))}))
                   
                   (when (:fetching-schema mode)
                     (dom/span "Fetching schema..."))
@@ -894,17 +949,7 @@
                     [
                     (when (and js/trace_logged_in
                                (not (:editing mode)))
-                      (dom/button {:on-click (fn [ev]
-                                               (if (:schema app)
-                                                 (om/update! app [:mode :editing] true)
-                                                 (do
-                                                   (om/update! app [:mode :fetching-schema] true)
-                                                   (edn-xhr 
-                                                    "/schema"
-                                                    (fn [resp]
-                                                      (om/update! app :schema (process-schema resp))
-                                                      (om/update! app [:mode :fetching-schema] false)
-                                                      (om/update! app [:mode :editing] true))))))}
+                      (dom/button {:on-click #(edit app)}
                                    "Edit"))
 
                       #_(when (and js/trace_logged_in
@@ -920,7 +965,7 @@
           
                       (when (and js/trace_logged_in
                                  (:editing mode))
-                        (dom/button {:on-click #(secretary/dispatch! (.-pathname js/window.location))}
+                        (dom/button {:on-click #(cancel app)}
                                     "Cancel"))])
 
                   (dom/span {:style {:color "red"}} (:err app))))))))

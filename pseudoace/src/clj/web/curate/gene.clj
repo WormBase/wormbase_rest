@@ -276,7 +276,7 @@
                     :gene.version-change/version (inc version)
                     :gene.version-change/person  [:person/id (:wbperson (friend/current-authentication))]
                     :gene.version-change/date    (Date.)   ;; Now.  May be a few seconds different from
-                                                           ;; the :db/txInstant :-(.                  
+                                                           ;; the :db/txInstant :-(.
                     :gene-history-action/killed true
                   }
 
