@@ -15,6 +15,10 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [bk/ring-gzip "0.1.1"]
                  [com.cemerick/friend "0.2.1"]
+                 [friend-oauth2 "0.1.3"]
+                 [org.apache.httpcomponents/httpclient "4.3.6"]
+                 [base64-clj "0.1.1"]
+                 [cheshire "5.4.0"]
                  [ring/ring-anti-forgery "1.0.0"]
                  [clj-time "0.9.0"]
 

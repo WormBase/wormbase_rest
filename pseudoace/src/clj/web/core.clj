@@ -16,10 +16,10 @@
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
-            [compojure.core :refer (defroutes GET POST context wrap-routes)]
+            [compojure.core :refer (defroutes GET POST ANY context wrap-routes)]
             [compojure.route :as route]
             [compojure.handler :as handler]
-            [ring.util.response :refer [file-response]]
+            [ring.util.response :refer [redirect file-response]]
             [cemerick.friend :as friend]
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
@@ -75,6 +75,8 @@
 
 
 (defroutes routes
+  (GET "/" [] "hello")
+  (friend/logout (ANY "/logout" [] (redirect "/")))
   (GET "/raw2/:class/:id" {params :params db :db}
        (get-raw-obj2
         db
