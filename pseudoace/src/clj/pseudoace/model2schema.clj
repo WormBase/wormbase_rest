@@ -169,7 +169,8 @@
                                    :pace.xref/tags       (or (tpm [(datomize-name cname) x])
                                                              x)
                                    :pace.xref/attribute  {:db/id    (tempid :db.part/db)
-                                                          :db/ident attribute}}})
+                                                          :db/ident attribute}
+                                   :pace.xref/obj-ref    sid}})
              schema)))
 
        ;; "compound datum" case
