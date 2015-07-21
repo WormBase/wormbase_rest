@@ -257,7 +257,10 @@
 
                      (if (= (:gene.status/status (:gene/status gene))
                             :gene.status.status/dead)
-                       "What is dead may never die.")]
+                       "What is dead may never die.")
+
+                     (if (or (not reason) (empty? reason))
+                       "Must give a reason for killing a gene.")]
                     (filter identity)
                     (seq))]
     (if errs
@@ -401,7 +404,7 @@
                   (do-add-name con id type name species))]
      (if (:done result)
        [:div.block
-        "Added " [:strong name] " as " type " for " (link "Gene" (:canonical result))]
+        "Added " [:strong name] " as " type " name for " (link "Gene" (:canonical result))]
        [:div.block
         [:form {:method "POST"}
          [:h3 "Add gene name"]
