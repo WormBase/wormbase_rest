@@ -1,5 +1,6 @@
 (ns web.anti-forgery
   "Ring middleware to prevent CSRF attacks with an anti-forgery token."
+  (:use [hiccup core form])
   (:require [crypto.random :as random]
             [crypto.equality :as crypto]))
 
@@ -73,3 +74,10 @@
         (:error-response options (access-denied "<h1>Invalid anti-forgery token</h1>"))
         (if-let [response (handler request)]
           (assoc-session-token response request *anti-forgery-token*))))))
+
+(defn anti-forgery-field
+  "Create a hidden field with the session anti-forgery token as its value.
+  This ensures that the form it's inside won't be stopped by the anti-forgery
+  middleware."
+  []
+  (html (hidden-field "__anti-forgery-token" *anti-forgery-token*)))

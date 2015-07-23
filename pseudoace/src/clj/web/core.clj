@@ -193,7 +193,7 @@
                                                   (re-find #"CN=([^,]+)")
                                                   (second))])]
     {:identity ssl-client-cert
-     :wbperson (:user/wbperson u)
+     :wbperson (:person/id (:user/wbperson u))
      :roles #{::user}}))
 
 (def client-config {:client-id      (env :trace-oauth2-client-id)

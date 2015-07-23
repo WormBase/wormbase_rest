@@ -6,7 +6,7 @@
   (:require [datomic.api :as d :refer (q db history touch entity)]
             [clojure.string :as str]
             [cemerick.friend :as friend :refer [authorized?]]
-            [ring.util.anti-forgery :refer [anti-forgery-field]]))
+            [web.anti-forgery :refer [anti-forgery-field]]))
 
 (defmethod lookup "Gene"
   [_ db id]

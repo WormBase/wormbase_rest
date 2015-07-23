@@ -331,7 +331,7 @@
                    (let [v (second x)]
                      (if (string? v)
                        (Long/parseLong v)
-                       v))
+                       x))
                    x))
                (:tx edn-params))
             {:db/id (d/tempid :db.part/tx)
