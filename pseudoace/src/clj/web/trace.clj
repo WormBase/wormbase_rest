@@ -1,6 +1,6 @@
 (ns web.trace
   (:use hiccup.core
-        ring.middleware.anti-forgery
+        web.anti-forgery
         clojure.walk
         pseudoace.utils)
   (:require [datomic.api :as d :refer (db history q touch entity)]

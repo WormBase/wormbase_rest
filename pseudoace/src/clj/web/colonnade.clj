@@ -1,7 +1,7 @@
 (ns web.colonnade
   (:use hiccup.core
         pseudoace.utils
-        ring.middleware.anti-forgery)   ;; for *anti-forgery-token*
+        web.anti-forgery)   ;; for *anti-forgery-token*
   (:require [datomic.api :as d :refer (history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]

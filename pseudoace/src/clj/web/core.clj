@@ -4,9 +4,9 @@
         ring.middleware.params
         ring.middleware.keyword-params
         web.edn
+        web.anti-forgery
         ring.middleware.gzip
         ring.middleware.session
-        ring.middleware.anti-forgery
         ring.middleware.cookies
         web.widgets
         web.colonnade
@@ -188,7 +188,6 @@
      :roles #{::user}}))
 
 (defn- ssl-credential-fn [{:keys [ssl-client-cert]}]
-  (println (.getSubjectX500Principal ssl-client-cert))
   (if-let [u (entity (db con) [:user/x500-cn (->> (.getSubjectX500Principal ssl-client-cert)
                                                   (.getName)
                                                   (re-find #"CN=([^,]+)")
@@ -233,7 +232,7 @@
 
 (def secure-app
   (-> (compojure.core/routes
-       (wrap-routes routes wrap-anti-forgery)
+       (wrap-routes routes wrap-anti-forgery-ssl)
        api-routes)
       (friend/authenticate {:allow-anon? true #_(not (env :trace-require-login))
                             :workflows [(ssl/client-cert-workflow
