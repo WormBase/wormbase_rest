@@ -138,7 +138,7 @@
           [:div.system-name name])]]
       [:div.header-main
        [:h1#page-title "Curation"]
-       [:div.ident (:email (friend/current-authentication))]]]
+       [:div.ident (:wbperson (friend/current-authentication))]]]
      [:div.container
       (vec (cons :div.content content))
       [:div.menu (menu)]]]]))

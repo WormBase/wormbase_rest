@@ -176,14 +176,6 @@
 (defroutes api-routes
   (POST "/api/query" {params :params} (if (env :trace-accept-rest-query) (post-query-restful con params))))
 
-(defn users [username]
-  (if-let [u (entity (db con) [:user/name username])]
-    {:username (:user/name u)
-     :password (:user/bcrypt-passwd u)
-     :wbperson (->> (:user/wbperson u)
-                    (:person/id))
-     :roles    #{::user}}))
-
 (defn wrap-db [handler]
   (fn [request]
     (handler (assoc request :con con :db (db con)))))
@@ -195,19 +187,15 @@
      :wbperson (:person/id (:user/wbperson u))
      :roles #{::user}}))
 
-
-;    {:identity token
-;     :wbperson "unauthorized"
-;     :roles #{:user.role/none}})
-
 (defn- ssl-credential-fn [{:keys [ssl-client-cert]}]
+  (println (.getSubjectX500Principal ssl-client-cert))
   (if-let [u (entity (db con) [:user/x500-cn (->> (.getSubjectX500Principal ssl-client-cert)
                                                   (.getName)
                                                   (re-find #"CN=([^,]+)")
                                                   (second))])]
     {:identity ssl-client-cert
      :wbperson (:user/wbperson u)
-     :roles (:user/role u)}))
+     :roles #{::user}}))
 
 (def client-config {:client-id      (env :trace-oauth2-client-id)
                     :client-secret  (env :trace-oauth2-client-secret)
