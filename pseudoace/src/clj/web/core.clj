@@ -100,7 +100,7 @@
   (GET "/txns" {params :params}
        (get-raw-txns2
         (db con)
-        (let [ids (params "id")]
+        (let [ids (params :id)]
           (if (string? ids)
             [(Long/parseLong ids)]
             (map #(Long/parseLong %) ids)))))

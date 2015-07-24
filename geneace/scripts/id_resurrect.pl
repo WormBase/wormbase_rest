@@ -5,6 +5,7 @@ use strict;
 use edn;
 use Getopt::Long;
 use HTTP::Tiny;
+use Data::Dumper;
 
 my $USAGE = <<END;
 Usage: $0 <options>
