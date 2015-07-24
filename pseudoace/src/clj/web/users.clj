@@ -12,6 +12,20 @@
     :db.install/_attribute :db.part/db}
 
    {:db/id          #db/id[:db.part/db]
+    :db/ident       :user/email
+    :db/valueType   :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/unique      :db.unique/identity
+    :db.install/_attribute :db.part/db}
+
+   {:db/id          #db/id[:db.part/db]
+    :db/ident       :user/x500-cn
+    :db/valueType   :db.type/string
+    :db/cardinality :db.cardinality/many
+    :db/unique      :db.unique/value
+    :db.install/_attribute :db.part/db}
+
+   {:db/id          #db/id[:db.part/db]
     :db/ident       :user/bcrypt-passwd
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one

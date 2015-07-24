@@ -1,6 +1,6 @@
 (ns web.trace
   (:use hiccup.core
-        ring.middleware.anti-forgery
+        web.anti-forgery
         clojure.walk
         pseudoace.utils)
   (:require [datomic.api :as d :refer (db history q touch entity)]
@@ -331,7 +331,7 @@
                    (let [v (second x)]
                      (if (string? v)
                        (Long/parseLong v)
-                       v))
+                       x))
                    x))
                (:tx edn-params))
             {:db/id (d/tempid :db.part/tx)

@@ -2,10 +2,12 @@
   (:use hiccup.core
         ring.middleware.stacktrace
         ring.middleware.params
+        ring.middleware.keyword-params
         web.edn
+        web.anti-forgery
         ring.middleware.gzip
         ring.middleware.session
-        ring.middleware.anti-forgery
+        ring.middleware.cookies
         web.widgets
         web.colonnade
         web.query
@@ -23,6 +25,11 @@
             [cemerick.friend :as friend]
             (cemerick.friend [workflows :as workflows]
                              [credentials :as creds])
+            [friend-oauth2.workflow :as oauth2]
+            [friend-oauth2.util     :refer [format-config-uri]]
+            [base64-clj.core :as base64]
+            [cheshire.core :as json :refer [parse-string]]
+            [web.ssl :as ssl]
             [environ.core :refer (env)]
             wb.object     ;; Not actually used but we want it available
                           ;; via the REST query mechanism.
@@ -72,7 +79,6 @@
   (if s
     (Integer/parseInt s)))
         
-
 
 (defroutes routes
   (GET "/" [] "hello")
@@ -170,33 +176,79 @@
 (defroutes api-routes
   (POST "/api/query" {params :params} (if (env :trace-accept-rest-query) (post-query-restful con params))))
 
-(defn users [username]
-  (if-let [u (entity (db con) [:user/name username])]
-    {:username (:user/name u)
-     :password (:user/bcrypt-passwd u)
-     :wbperson (->> (:user/wbperson u)
-                    (:person/id))
-     :roles    #{::user}}))
-
 (defn wrap-db [handler]
   (fn [request]
     (handler (assoc request :con con :db (db con)))))
 
+(defn- goog-credential-fn [token]
+  (if-let [u (entity (db con) [:user/email (:id (:access-token token))])]
+    {:identity token
+     :email (:user/email u)
+     :wbperson (:person/id (:user/wbperson u))
+     :roles #{::user}}))
+
+(defn- ssl-credential-fn [{:keys [ssl-client-cert]}]
+  (if-let [u (entity (db con) [:user/x500-cn (->> (.getSubjectX500Principal ssl-client-cert)
+                                                  (.getName)
+                                                  (re-find #"CN=([^,]+)")
+                                                  (second))])]
+    {:identity ssl-client-cert
+     :wbperson (:person/id (:user/wbperson u))
+     :roles #{::user}}))
+
+(def client-config {:client-id      (env :trace-oauth2-client-id)
+                    :client-secret  (env :trace-oauth2-client-secret)
+                    :callback {:domain (or (env :trace-oauth2-redirect-domain)
+                                           "http://127.0.0.1:8130")
+                               :path "/oauth2callback"}})
+                    
+
+(def uri-config
+  {:authentication-uri {:url "https://accounts.google.com/o/oauth2/auth"
+                        :query {:client_id (:client-id client-config)
+                               :response_type "code"
+                               :redirect_uri (format-config-uri client-config)
+                               :scope "email"}}
+
+   :access-token-uri {:url "https://accounts.google.com/o/oauth2/token"
+                      :query {:client_id (:client-id client-config)
+                              :client_secret (:client-secret client-config)
+                              :grant_type "authorization_code"
+                              :redirect_uri (format-config-uri client-config)}}})
+
+(defn- flex-decode [s]
+  (let [m (mod (count s) 4)
+        s (if (> m 0)
+            (str s (.substring "====" m))
+            s)]
+    (base64/decode s)))
+    
+
+(defn- goog-token-parse [resp]
+  (let [token     (parse-string (:body resp) true)
+        id-token  (parse-string (flex-decode (second (str/split (:id_token token) #"\."))) true)]
+    {:access_token (:access_token token)
+     :id (:email id-token)}))
+
 (def secure-app
   (-> (compojure.core/routes
-       (wrap-routes routes wrap-anti-forgery)
+       (wrap-routes routes wrap-anti-forgery-ssl)
        api-routes)
-      (friend/authenticate {:allow-anon? (not (env :trace-require-login))
-                            :unauthenticated-handler #(workflows/http-basic-deny "Demo" %)
-                            :workflows [(workflows/http-basic
-                                         :credential-fn (partial creds/bcrypt-credential-fn users)
-                                         :realm "Demo")]})
+      (friend/authenticate {:allow-anon? true #_(not (env :trace-require-login))
+                            :workflows [(ssl/client-cert-workflow
+                                         :credential-fn ssl-credential-fn)
+                                        (oauth2/workflow
+                                         {:client-config client-config
+                                          :uri-config uri-config
+                                          :access-token-parsefn goog-token-parse
+                                          :credential-fn goog-credential-fn})]})
       wrap-db
       wrap-edn-params-2
+      wrap-keyword-params
       wrap-params
       wrap-stacktrace
       wrap-session
-      wrap-gzip))
+      wrap-cookies))
       
 
 (def trace-port (let [p (env :trace-port)]
@@ -205,5 +257,23 @@
                    (string? p)   (parse-int p)
                    :default      8120)))
 
-(defonce server (run-jetty #'secure-app {:port trace-port
-                                         :join? false}))
+(def trace-ssl-port (let [p (env :trace-ssl-port)]
+                        (cond
+                          (integer? p)   p
+                          (string? p)    (parse-int p))))
+
+(def keystore (env :trace-ssl-keystore))
+(def keypass  (env :trace-ssl-password))
+
+(defonce server
+  (if trace-ssl-port
+    (run-jetty #'secure-app {:port trace-port
+                             :join? false
+                             :ssl-port trace-ssl-port
+                             :keystore keystore
+                             :key-password keypass
+                             :truststore keystore
+                             :trust-password keypass
+                             :client-auth :want})
+    (run-jetty #'secure-app {:port trace-port
+                             :join? false})))
