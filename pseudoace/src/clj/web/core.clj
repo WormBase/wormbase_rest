@@ -234,7 +234,7 @@
   (-> (compojure.core/routes
        (wrap-routes routes wrap-anti-forgery-ssl)
        api-routes)
-      (friend/authenticate {:allow-anon? true #_(not (env :trace-require-login))
+      (friend/authenticate {:allow-anon? (not (env :trace-require-login))
                             :workflows [(ssl/client-cert-workflow
                                          :credential-fn ssl-credential-fn)
                                         (oauth2/workflow
