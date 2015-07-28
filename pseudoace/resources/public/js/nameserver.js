@@ -35,7 +35,6 @@ function initClearButton(i) {
         return;
     }
 
-    console.log(i);
     var clear = document.createElement('span');
     clear.textContent = 'x';
     clear.className = 'clear-button';
@@ -51,6 +50,28 @@ function initClearButton(i) {
     }, false);
 }
 
+function initMultiInput(holder) {
+    var inputs = Array.prototype.slice.call(
+                   holder.querySelectorAll('input')
+                 );
+    var check = function() {
+        if (!inputs.some(function(i) {return i.value == ''})) {
+            console.log('no empty inputs');
+            var fc = holder.firstChild;
+            var nc = fc.cloneNode(true);
+            var nci = nc.querySelector('input');
+            holder.appendChild(nc);
+            nci.value = '';
+            nci.addEventListener('keypress', check);
+            inputs.push(nci);
+        }
+    };
+    for (var i = 0; i < inputs.length; ++i) {
+        inputs[i].addEventListener('keypress', check);
+    }
+        
+}
+
 document.addEventListener('DOMContentLoaded', function(ev) {
     var acs = document.querySelectorAll('input.autocomplete');
     for (var i = 0; i < acs.length; ++i) {
@@ -60,5 +81,10 @@ document.addEventListener('DOMContentLoaded', function(ev) {
     var inputs = document.querySelectorAll('input');
     for (var i = 0; i < inputs.length; ++i) {
         initClearButton(inputs[i]);
+    }
+
+    var multis = document.querySelectorAll('.multi-input');
+    for (var i = 0; i < multis.length; ++i) {
+        initMultiInput(multis[i]);
     }
 }, false);

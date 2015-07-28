@@ -24,7 +24,7 @@
                 [?alt :gene.other-name/text ?name]
                 [?g :gene/other-name ?alt]))
               [?g :gene/id ?gid]]
-     db id))
+     db (or id "")))
      
 (def species-longnames
   {"elegans"        "Caenorhabditis elegans"
@@ -327,27 +327,26 @@
                      :value (or reason "")}]]]]
          [:input {:type "submit"}]]]))))
 
-
-
-(defn- do-add-name [con id type name species]
+(defn- do-add-name [con id type name species papers people]
   (let
-    [db   (db con)
-     cid  (first (lookup "Gene" db id))
-     gene    (and cid (entity db [:gene/id cid]))
-     old-name (q (case type
-                   "Sequence"
-                   '[:find ?name .
-                     :in $ ?gid
-                     :where [?gene :gene/id ?gid]
-                            [?gene :gene/sequence-name ?name]]
+    [db       (db con)
+     cid      (first (lookup "Gene" db id))
+     gene     (and cid (entity db [:gene/id cid]))
+     old-name (if cid
+                (q (case type
+                     "Sequence"
+                     '[:find ?name .
+                       :in $ ?gid
+                       :where [?gene :gene/id ?gid]
+                              [?gene :gene/sequence-name ?name]]
 
-                   "CGC"
-                   '[:find ?name .
-                     :in $ ?gid
-                     :where [?gene :gene/id ?gid]
-                            [?gene :gene/cgc-name ?cgc]
-                            [?cgc :gene.cgc-name/text ?name]])
-                 db cid)
+                     "CGC"
+                     '[:find ?name .
+                       :in $ ?gid
+                       :where [?gene :gene/id ?gid]
+                              [?gene :gene/cgc-name ?cgc]
+                              [?cgc :gene.cgc-name/text ?name]])
+                   db cid))
      errs (those
            (if-not cid
              (str "Couldn't find " id))
@@ -360,6 +359,10 @@
              (str "Unknown type " type))
            (if-let [existing (first (lookup "Gene" db name))]
              (list name " already exists as " (link "Gene" existing)))
+           (if-let [bad-people (seq (filter #(not (entity db [:person/id %])) people))]
+             (str "Invalid person id: " (str/join ", " bad-people)))
+           (if-let [bad-papers (seq (filter #(not (entity db [:paper/id %])) papers))]
+             (str "Invalid paper id: " (str/join ", " bad-papers)))
            (validate-name name type species))]
     (if errs
       {:err errs}
@@ -374,7 +377,19 @@
                                         name)
 
                   :gene/cgc-name (if (= type "CGC")
-                                   {:gene.cgc-name/text name})
+                                   (vmap
+                                    :gene.cgc-name/text
+                                    name
+
+                                    :evidence/paper-evidence
+                                    (seq
+                                     (for [p papers]
+                                       [:paper/id p]))
+                                    
+                                    :evidence/person-evidence
+                                    (seq
+                                     (for [p people]
+                                       [:person/id p]))))
 
                   :gene/version-change
                   (vmap
@@ -396,12 +411,22 @@
              :canonical cid})
           (catch Exception e {:err [(.getMessage e)]}))))))
 
+(defn- multi-input-vals [vals]
+  (cond
+    (string? vals)
+    (if (empty? vals) nil [vals])
+
+    :default
+    (filterv seq vals)))
+
 (defn add-gene-name [{db :db
                       con :con
-                      {:keys [id type name species]} :params}]
+                      {:keys [id type name species paper person]} :params}]
   (page db
-   (let [result (if (and id name)
-                  (do-add-name con id type name species))]
+   (let [paper  (multi-input-vals paper)
+         person (multi-input-vals person)
+         result (if (and id name)
+                  (do-add-name con id type name species paper person))]
      (if (:done result)
        [:div.block
         "Added " [:strong name] " as " type " name for " (link "Gene" (:canonical result))]
@@ -432,6 +457,28 @@
           [:tr
            [:th "Species:"]
            [:td
-            (species-menu "species" species)]]]
-        
+            (species-menu "species" species)]]
+
+          [:tr
+           [:th "Person:"]
+           [:td.multi-input
+            (for [p (conj person "")]
+              [:div
+               [:input {:type "text"
+                        :name "person"
+                        :size 20
+                        :maxlength 40
+                        :value p}]])]]
+
+          [:tr
+           [:th "Paper:"]
+           [:td.multi-input
+            (for [p (conj paper "")]
+              [:div
+               [:input {:type "text"
+                        :name "paper"
+                        :size 20
+                        :maxlength 40
+                        :value p}]])]]]
+         
          [:input {:type "submit"}]]]))))
