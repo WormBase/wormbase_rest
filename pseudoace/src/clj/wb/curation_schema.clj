@@ -23,12 +23,18 @@
       [attribute  :ref]))
     ])
 
-   ;; Timestamp
+
    [
 
+    ;;
+    ;; Entity which can be used as the subject of system-wide predicates
+    ;; ("global variables").
+    ;;
+    
     {:db/id          #db/id[:db.part/user]
      :db/ident       :wormbase/system}
-    
+
+    ;; Timestamp
     {:db/id          #db/id[:db.part/tx]
      :db/txInstant   #inst "1970-01-01T00:00:01"}
    ]))
@@ -41,8 +47,17 @@
     {:db/id                     #db/id[:db.part/user]
      :id-generator/identifier   :gene/id
      :id-generator/template     "WBGene%08d"
-     :id-generator/last-id      300000}
+     :id-generator/last-id      301000}
 
+    {:db/id                     #db/id[:db.part/user]
+     :id-generator/identifier   :variation/id
+     :id-generator/template     "WBVar%08d"
+     :id-generator/last-id      2200000}
+
+    {:db/id                     #db/id[:db.part/user]
+     :id-generator/identifier   :feature/id
+     :id-generator/template     "WBsf%08d"
+     :id-generator/last-id      1000000}
 
     ;; Timestamp
     {:db/id          #db/id[:db.part/tx]
