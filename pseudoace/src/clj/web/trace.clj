@@ -319,26 +319,33 @@
        "trace.core.init_trace();"]]]]))
   
 
+(defn- id-report [db datoms]
+  (for [d datoms
+        :let [i (:db/ident (entity db (.a d)))]
+        :when (= (name i) "id")]
+    (.v d)))
+
 (defn transact [{:keys [edn-params con] :as req}]
   (try
-    @(d/transact
-      con
-      (conj (postwalk
-              (fn [x]
-                (if (and (coll? x)
-                         (= (count x) 2)
-                         (= (first x) :db/id))
-                   (let [v (second x)]
-                     (if (string? v)
-                       (Long/parseLong v)
+    (let [txr
+          @(d/transact
+            con
+            (conj (postwalk
+                   (fn [x]
+                     (if (and (coll? x)
+                              (= (count x) 2)
+                              (= (first x) :db/id))
+                       (let [v (second x)]
+                         (if (string? v)
+                           (Long/parseLong v)
+                           x))
                        x))
-                   x))
-               (:tx edn-params))
-            {:db/id (d/tempid :db.part/tx)
-             :db/doc (str "Write test by " (:current (friend/identity req)))
-             :wormbase/curator [:person/id (:wbperson (friend/current-authentication req))]}))
-    {:status 200
-     :body "OK"}
+                   (:tx edn-params))
+                  {:db/id (d/tempid :db.part/tx)
+                   :wormbase/curator [:person/id (:wbperson (friend/current-authentication req))]}))]
+      {:status 200
+       :body (pr-str {:status "OK"
+                      :ids (id-report (:db-after txr) (:tx-data txr))})})
     (catch Exception e {:status 500
                         :body (.getMessage e)})))
 
