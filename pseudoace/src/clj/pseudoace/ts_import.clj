@@ -202,7 +202,7 @@
       (fn [m line]
         (loop [[node & nodes]   line
                [stamp & stamps] (:timestamps (meta line))]
-          (if node
+          (if (and node (not= node "-D"))   ;; Skip deletion nodes, which should be handled elsewhere.
             (if-let [ti (tags node)]
               (update-in m [ti] conjv (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
               (recur nodes stamps))
@@ -467,6 +467,13 @@
         [datom temps]
         (println "Nil in " datom)))))
 
+(defn- lur
+  "Helper to turn 3-element pseudo-lookup-refs into plain lookup-refs."
+  [e]
+  (if (and (vector? e) (= (count e) 3))
+    (vec (take 2 e))
+    e))
+
 (defn fixup-datoms
   "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids,
    and expand wildcard :db/retracts"
@@ -485,7 +492,7 @@
      (fn [[op e a v :as datom]]
        (if (and (= op :db/retract)
                 (nil? v))
-         (for [[_ _ v] (d/datoms db :eavt e a)]
+         (for [[_ _ v] (d/datoms db :eavt (lur e) a)]
            (conj datom v))
          [datom]))
      datoms))
