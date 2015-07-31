@@ -434,12 +434,19 @@
         [[:db/add this (:db/ident ci) (:rename obj)]]}
        
        :default
-       (log-nodes
-        this
-        orig
-        (:lines obj)
-        imp
-        #{(namespace (:db/ident ci))}))
+       (merge-logs
+        (log-nodes
+         this
+         orig
+         (:lines obj)
+         imp
+         #{(namespace (:db/ident ci))})
+        (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
+          (log-deletes
+           this
+           (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
+           imp
+           #{(namespace (:db/ident ci))}))))
       (obj->log imp obj))))     ;; Patch for a non-existant object is equivalent to import.
 
 (defn objs->log [imp objs]
