@@ -3,7 +3,7 @@
                  [com.datomic/datomic-free "0.9.5186" :exclusions [joda-time]]
                  [datomic-schema "1.3.0"]
                  [org.clojure/tools.cli "0.3.1"]
-                 [acetyl "0.0.7-SNAPSHOT"]
+                 [acetyl "0.0.8-SNAPSHOT"]
                  [com.novemberain/monger "2.0.0"]
                  [hiccup "1.0.5"]
                  [ring "1.4.0"]
