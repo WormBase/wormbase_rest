@@ -135,7 +135,9 @@
                              [conc
                               (log-datomize-value conc imp [val])
                               stamp])
-                           concs cvals (:timestamps (meta cvals)))]
+                           concs cvals (lazy-cat
+                                        (:timestamps (meta cvals))
+                                        (repeat nil)))]
            (if-let [current-comp (cbc (mapv second cdata))]
              ;; Component with these concrete values already exists
              (log-nodes
