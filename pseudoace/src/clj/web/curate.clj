@@ -1,7 +1,8 @@
 (ns web.curate
   (:use ring.middleware.keyword-params
         web.curate.common
-        acetyl.parser)
+        acetyl.parser
+        pseudoace.utils)
   (:require [compojure.core :refer (routes GET POST context wrap-routes)]
             [web.curate.gene :as gene]
             [pseudoace.import :refer [importer]]
@@ -9,21 +10,25 @@
             [datomic.api :as d]
             [web.anti-forgery :refer [anti-forgery-field]]))
 
-(defn- do-ace-patch [con patch]
+(defn- do-ace-patch [con patch note]
   (let [imp  (importer con)
         objs (->> (java.io.StringReader. patch)
                   (ace-reader)
                   (ace-seq))
         logs (mapcat val (i/objs->log imp objs))]
-    @(d/transact con (conj (i/fixup-datoms (d/db con) logs) (txn-meta)))
+    @(d/transact con (-> (i/fixup-datoms (d/db con) logs)
+                          (conj (vassoc
+                                 (txn-meta)
+                                 :db/doc  (if (not (empty? note))
+                                            note)))))
     {:success true}))
        
 
 (defn ace-patch [{db  :db
                   con :con
-                  {:keys [patch] :as params} :params}]
-  (let [result (if patch
-                 (do-ace-patch con patch))]
+                  {:keys [patch note] :as params} :params}]
+  (let [result (if (and patch (not (empty? patch)))
+                 (do-ace-patch con patch note))]
     (page db
       (if (:success result)
         [:div.block
@@ -37,6 +42,11 @@
                     :rows 30}
          (if (and (not (:success result)) patch)
            patch)]
+        [:br]
+        [:label "Note:"
+         [:input {:type "text"
+                  :name "note"
+                  :value (or note "")}]]
         [:input {:type "submit"}]]])))
 
 (def curation-forms
