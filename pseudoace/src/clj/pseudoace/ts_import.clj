@@ -450,6 +450,14 @@
        log))
    {} objs))
 
+(defn patches->log [imp db objs]
+  (reduce
+   (fn [log obj]
+     (if-let [objlog (patch->log imp db obj)]
+       (merge-logs log objlog)
+       log))
+   {} objs))
+
 (defn- temp-datom [db datom temps index]
   (let [ref (datom index)]
     (if (vector? ref)

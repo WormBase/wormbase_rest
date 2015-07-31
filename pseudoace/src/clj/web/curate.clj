@@ -12,11 +12,12 @@
 
 (defn- do-ace-patch [con patch note]
   (let [imp  (importer con)
+        db   (d/db con)
         objs (->> (java.io.StringReader. patch)
                   (ace-reader)
                   (ace-seq))
-        logs (mapcat val (i/objs->log imp objs))]
-    @(d/transact con (-> (i/fixup-datoms (d/db con) logs)
+        logs (mapcat val (i/patches->log imp db objs))]
+    @(d/transact con (-> (i/fixup-datoms db logs)
                           (conj (vassoc
                                  (txn-meta)
                                  :db/doc  (if (not (empty? note))
