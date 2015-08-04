@@ -1,14 +1,18 @@
 (ns trace.utils
   (:require [cljs.reader :as reader]))
 
-(defn edn-xhr [uri callback]
+(defn edn-xhr
+  "Fetch `uri`.  Invoke `callback` with an edn-parsed response, or `nil` if the request fails."
+  [uri callback]
   (let [x (js/XMLHttpRequest.)]
     (.open x "GET" uri true)
     (.addEventListener
        x
        "load" 
        (fn []
-         (callback (reader/read-string (.-responseText x))))
+         (callback
+          (if (= (.-status x) 200)
+            (reader/read-string (.-responseText x)))))
        false)
     (.send x)))
 

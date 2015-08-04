@@ -862,30 +862,46 @@
        (str (or (om/value (:ident app))
                                    "TrACeView"))))))
 
+(defn- trace-load [app c i]
+  (om/update! app [:mode :loading] true)
+  (edn-xhr 
+   (str "/raw2/" c "/" i "?max-in=5&max-out=10&txns=false")
+   (fn [resp]
+     (if resp
+       (do
+         (om/transact! app (fn [app]
+                             (assoc app 
+                                    :mode    (merge (:mode app)
+                                                    {:loading false
+                                                     :editing false})
+                                    :error   nil
+                                    :props   (props->state (:props resp))
+                                    :txns    (->> (for [t (:txns resp)]
+                                                    [(:db/id t) t])
+                                                  (into (if (= (:id resp) (:id app))
+                                                          (:txns app)
+                                                          {})))   ;; Start again with empty txn map if moving to a new object
+                                    :id      (:id resp)
+                                    :ident [(keyword c "id") i])))
+         (if (:txnData (:mode @app))
+           (fetch-missing-txns app)))
+       (om/transact! app (fn [app]
+                           (assoc app
+                                  :error (str "Couldn't load " i)
+                                  :mode  (merge (:mode app)
+                                                {:loading false
+                                                 :editing false})
+                                  :props nil
+                                  :txns {}
+                                  :id i
+                                  :ident [(keyword c "id") i])))))))
+
 (defn trace-view [app owner]
   (reify
     om/IWillMount
     (will-mount [_]
       (defroute "/view/:class/:id" {c :class i :id}
-        (om/update! app [:mode :loading] true)
-        (edn-xhr 
-         (str "/raw2/" c "/" i "?max-in=5&max-out=10&txns=false")
-         (fn [resp]
-           (om/transact! app (fn [app]
-                               (assoc app 
-                                      :mode    (merge (:mode app)
-                                                               {:loading false
-                                                                :editing false})
-                                      :props   (props->state (:props resp))
-                                      :txns    (->> (for [t (:txns resp)]
-                                                      [(:db/id t) t])
-                                                    (into (if (= (:id resp) (:id app))
-                                                            (:txns app)
-                                                            {})))   ;; Start again with empty txn map if moving to a new object
-                                      :id      (:id resp)
-                                      :ident [(keyword c "id") i])))
-           (if (:txnData (:mode @app))
-             (fetch-missing-txns app)))))
+        (trace-load app c i))
                                  
       (secretary/dispatch! (.-pathname js/window.location))
       (.addEventListener js/window
@@ -928,8 +944,14 @@
     om/IRender
     (render [_]
       (dom/div {:class "trace-body"}
-               (if (:loading mode)
+               (cond
+                 (:loading (:mode app))
                  (dom/img {:src "/img/spinner_192.gif"})
+
+                 (:error app)
+                 (dom/p (:error app))
+
+                 :default
                  (om/build tree-view app {:opts {:group? true
                                                  :primary-ns (some-> (first (:ident app))
                                                                      (namespace))}}))))))
