@@ -51,9 +51,15 @@
                           (= clidv :allocate)
                           (update clid conj idv))})
                 
-                ;; currently don't do anything to vector items.
-                {:tx (conj tx item)
-                 :ids ids}))
+                ;; vector case
+                (let [[cmd e a v] item]
+                  (if (and (= cmd :db/add)
+                           (clids a)
+                           (= v :allocate))
+                    {:tx  tx
+                     :ids (update ids (:db/ident (clids a)) conj e)}
+                    {:tx (conj tx item)
+                     :ids ids}))))
 
         {:keys [tx ids]}
             (reduce resolve-txitem {} tx)]
