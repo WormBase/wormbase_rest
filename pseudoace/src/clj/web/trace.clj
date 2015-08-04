@@ -246,6 +246,15 @@
                     :attr attr
                     :txns (get-raw-txns db (set (map :tx datoms)))})}))
 
+(defn get-transaction-notes [db id]
+  {:status 200
+   :headers {"Content-Type" "text/plain"}
+   :body (q '[:find ?d .
+              :in $ ?tx
+              :where [?tx :db/doc ?d]]
+            db id)})
+            
+
 (defn get-raw-ent [ddb id]
   {:status 200
    :headers {"Content-Type" "application/edn"}

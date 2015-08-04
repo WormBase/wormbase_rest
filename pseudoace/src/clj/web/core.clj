@@ -111,6 +111,9 @@
         (keyword (.substring (:attrns params) 1) (:attrname params))))
   (GET "/ent/:id" {params :params db :db}
        (get-raw-ent db (Long/parseLong (:id params))))
+  (GET "/transaction-notes/:id" {{:keys [id]} :params
+                                 db :db}
+       (get-transaction-notes db (Long/parseLong id)))
   (GET "/view/:class/:id" req (viewer-page req))
   (GET "/gene-by-name/:name" {params :params}
        (get-gene-by-name (:name params)))

@@ -425,38 +425,46 @@
                    (dom/table {:class "history-table table table-striped"}
                     (dom/thead 
                      (dom/tr
-                      (for [c ["Date" "Action" "Value" "Who?"]]
+                      (for [c ["Date" "Action" "Value" "Who?" "Note"]]
                         (dom/th c))))
                     (dom/tbody
                      (for [datoms (->> (sort-by :txid (:datoms hdata))
                                        (partition-by :txid))
                            :let [{added true retracted false}
-                                   (group-by :added? datoms)
-                                 txn (txmap (:txid (first datoms)))
+                                     (group-by :added? datoms)
+                                 txid (:txid (first datoms))
+                                 txn  (txmap txid)
                                  time (->> (:db/txInstant txn)
                                            (format-local))
-                                 who (if-let [c (:wormbase/curator txn)]
-                                       (curator-name c)
-                                       (:importer/ts-name txn))]]
+                                 who  (if-let [c (:wormbase/curator txn)]
+                                        (curator-name c)
+                                        (:importer/ts-name txn))
+                                 note (if (:db/doc txn)
+                                        (dom/a {:href (str "/transaction-notes/" txid)
+                                                :target "_new"}
+                                           (dom/i {:class "fa fa-file-text-o"})))]]
                        (if (= (count added) (count retracted) 1)
                          (dom/tr
                           (dom/td time)
                           (dom/td "changed")
                           (dom/td (:v (first added)))
-                          (dom/td who))
+                          (dom/td who)
+                          (dom/td note))
                          (concat
                           (for [d retracted]
                             (dom/tr
                              (dom/td time)
                              (dom/td "retracted")
                              (dom/td (:v d))
-                             (dom/td who)))
+                             (dom/td who)
+                             (dom/td note)))
                           (for [d added]
                             (dom/tr
                              (dom/td time)
                              (dom/td "added")
                              (dom/td (:v d))
-                             (dom/td who)))))))))
+                             (dom/td who)
+                             (dom/td note)))))))))
                  (dom/img {:src "/img/spinner_24.gif"}))))
          (if txn
            (if-let [txn-data (txn-map txn)]
