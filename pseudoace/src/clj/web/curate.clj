@@ -3,7 +3,8 @@
         web.curate.common
         acetyl.parser
         pseudoace.utils)
-  (:require [compojure.core :refer (routes GET POST context wrap-routes)]
+  (:require [wb.liberal-txns :refer (resolve-liberal-tx)]
+            [compojure.core :refer (routes GET POST context wrap-routes)]
             [web.curate.gene :as gene]
             [pseudoace.import :refer [importer]]
             [pseudoace.ts-import :as i]
@@ -17,9 +18,10 @@
                   (ace-reader)
                   (ace-seq))
         logs (mapcat val (i/patches->log imp db objs))]
-    @(d/transact con (-> (i/fixup-datoms db logs)
-                          (conj (vassoc
-                                 (txn-meta)
+    (d/transact con (->> (i/fixup-datoms db logs)
+                         (resolve-liberal-tx db)
+                         (cons (vassoc
+                                (txn-meta)
                                  :db/doc  (if (not (empty? note))
                                             note)))))
     {:success true}))
