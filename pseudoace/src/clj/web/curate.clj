@@ -3,12 +3,14 @@
         web.curate.common
         acetyl.parser
         pseudoace.utils)
-  (:require [wb.liberal-txns :refer (resolve-liberal-tx)]
+  (:require [ring.util.response :refer (redirect)]
+            [wb.liberal-txns :refer (resolve-liberal-tx)]
             [compojure.core :refer (routes GET POST context wrap-routes)]
             [web.curate.gene :as gene]
             [pseudoace.import :refer [importer]]
             [pseudoace.ts-import :as i]
             [datomic.api :as d]
+            [clojure.edn :as edn]
             [web.anti-forgery :refer [anti-forgery-field]]))
 
 (defn- entity-lur
@@ -44,11 +46,49 @@
      :entities (touched-entities (:db-after txr) (:tx-data txr))}))
        
 
-(defn ace-patch [{db  :db
-                  con :con
-                  {:keys [patch note] :as params} :params}]
+(def reader-map
+  {'db/id (fn [[part n]] (d/tempid part n))})
+
+(def eof-marker (java.lang.Object.))  ;; a unique object which can't be
+                                      ;; equal to anything produced by
+                                      ;; reading EDN.
+
+(defn- read-all
+  "Return a sequence of EDN data by repeatedly reading from the string `s`."
+  [s]
+  (let [r (->> (java.io.StringReader. s)
+               (java.io.PushbackReader.))]
+    (loop [data []]
+      (let [datum (edn/read {:readers reader-map
+                             :eof eof-marker}
+                            r)]
+        (if (= datum eof-marker)
+          data
+          (recur (conj data datum)))))))
+
+(defn- do-edn-patch [con patch note]
+  (let [tx  (read-all patch)
+        txr @(d/transact con (->> (resolve-liberal-tx (d/db con) tx)
+                                  (cons (vassoc
+                                         (txn-meta)
+                                         :db/doc (if (not (empty? note))
+                                                   note)))))]
+    {:success true
+     :entities (touched-entities (:db-after txr) (:tx-data txr))}))
+
+(defn patch [{db  :db
+              con :con
+              {:keys [patch note format] :as params} :params}]
   (let [result (if (and patch (not (empty? patch)))
-                 (do-ace-patch con patch note))]
+                 (case format
+                   "ace"
+                   (do-ace-patch con patch note)
+
+                   "edn"
+                   (do-edn-patch con patch note)
+
+                   ;;default
+                   (except "Bad format " format)))]
     (page db
       (if (:success result)
         [:div.block
@@ -62,7 +102,19 @@
       [:div.block
        [:form {:method "POST"}
         (anti-forgery-field)
-        [:h3 "Ace format submission"]
+        [:h3 "Database patch submission"]
+        [:strong "Format:"]
+        [:label "Ace"
+         [:input {:type "radio"
+                  :value "ace"
+                  :name "format"
+                  :checked (if (not= format "edn") "1")}]]
+        [:label "Datomic"
+         [:input {:type "radio"
+                  :value "edn"
+                  :name "format"
+                  :checked (if (= format "edn") "1")}]]
+        [:br]
         [:textarea {:name "patch"
                     :cols 80
                     :rows 30}
@@ -85,7 +137,8 @@
    (POST "/gene/kill"     req (gene/kill-object "Gene" req))
    (GET "/gene/add-name"  req (gene/add-gene-name req))
    (POST "/gene/add-name" req (gene/add-gene-name req))
-   (GET "/ace-patch"      req (ace-patch req))
-   (POST "/ace-patch"     req (ace-patch req))
+   (GET "/ace-patch"      req (redirect "patch"))
+   (GET "/patch"          req (patch req))
+   (POST "/patch"         req (patch req))
    )
   wrap-keyword-params))
