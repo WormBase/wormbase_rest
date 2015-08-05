@@ -11,20 +11,37 @@
             [datomic.api :as d]
             [web.anti-forgery :refer [anti-forgery-field]]))
 
+(defn- entity-lur
+  "Return a lookup ref for `ent`, if it has a :class/id property."
+  [ent]
+  (if-let [cid (first (filter #(= (name %) "id") (keys ent)))]
+    [cid (get ent cid)]))
+
+(defn- touched-entities
+  "Return lookup refs for entities that were modified in the transaction
+   described by `datoms`."
+  [db datoms]
+  (->> (map :e datoms)
+       (set)
+       (map (partial d/entity db))
+       (map entity-lur)
+       (filter identity)))
+
 (defn- do-ace-patch [con patch note]
   (let [imp  (importer con)
         db   (d/db con)
         objs (->> (java.io.StringReader. patch)
                   (ace-reader)
                   (ace-seq))
-        logs (mapcat val (i/patches->log imp db objs))]
-    (d/transact con (->> (i/fixup-datoms db logs)
-                         (resolve-liberal-tx db)
-                         (cons (vassoc
-                                (txn-meta)
-                                 :db/doc  (if (not (empty? note))
-                                            note)))))
-    {:success true}))
+        logs (mapcat val (i/patches->log imp db objs))
+        txr  @(d/transact con (->> (i/fixup-datoms db logs)
+                                   (resolve-liberal-tx db)
+                                   (cons (vassoc
+                                          (txn-meta)
+                                          :db/doc  (if (not (empty? note))
+                                                     note)))))]
+    {:success true
+     :entities (touched-entities (:db-after txr) (:tx-data txr))}))
        
 
 (defn ace-patch [{db  :db
@@ -35,7 +52,13 @@
     (page db
       (if (:success result)
         [:div.block
-         [:p "Database updated!"]])
+         [:p "Database updated!"]
+         [:p
+           (interpose ", "
+             (for [[cid id] (:entities result)]
+               [:a {:href (str "/view/" (namespace cid) "/" id)
+                    :target "_new"}
+                id]))]])
       [:div.block
        [:form {:method "POST"}
         (anti-forgery-field)
