@@ -2,7 +2,7 @@
   (:require clojure.edn
             [datomic.api :as d]))
 
-(def reader-map
+(def ^:private reader-map
   {'db/id (fn [[part n]] (d/tempid part n))})
 
 (defn- edn-request?

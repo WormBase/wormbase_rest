@@ -46,12 +46,12 @@
      :entities (touched-entities (:db-after txr) (:tx-data txr))}))
        
 
-(def reader-map
+(def ^:private reader-map
   {'db/id (fn [[part n]] (d/tempid part n))})
 
-(def eof-marker (java.lang.Object.))  ;; a unique object which can't be
-                                      ;; equal to anything produced by
-                                      ;; reading EDN.
+(def ^:private eof-marker (java.lang.Object.))  ;; a unique object which can't be
+                                                ;; equal to anything produced by
+                                                ;; reading EDN.
 
 (defn- read-all
   "Return a sequence of EDN data by repeatedly reading from the string `s`."
