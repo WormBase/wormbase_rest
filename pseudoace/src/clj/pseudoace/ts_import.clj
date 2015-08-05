@@ -387,11 +387,17 @@
        conj
        [:db/add this :locatable/method [:method/id (first method)]]))))
 
-(defn obj->log [imp obj]
-  (let [ci ((:classes imp) (:class obj))
-        this (if ci
-               [(:db/ident ci) (:id obj) (or (:pace/prefer-part ci) :db.part/user)])]
+(defn obj->log [imp {:keys [id] :as obj}]
+  (let [ci     ((:classes imp) (:class obj))
+        alloc? (= id "__ALLOCATE__")
+        part   (or (:pace/prefer-part ci) :db.part/user)
+        this   (if ci
+                 (if alloc?
+                   [:importer/temp (d/squuid) part] 
+                   [(:db/ident ci) (:id obj) part]))]
     (merge-logs
+     (if (and this alloc?)
+       {nil [[:db/add this (:db/ident ci) :allocate]]})
      (if this
        (cond
         (:delete obj)
@@ -419,10 +425,10 @@
      (log-coreprops obj this imp)
      (log-custom obj this imp))))
 
-(defn patch->log [imp db obj]
-  (let [ci ((:classes imp) (:class obj))
-        this (if ci
-               [(:db/ident ci) (:id obj)])] ;; No partition hint, so we can use this as a plain Lookup ref.
+(defn patch->log [imp db {:keys [id] :as obj}]
+  (let [ci     ((:classes imp) (:class obj))
+        this   (if ci
+                 [(:db/ident ci) (:id obj)])] ;; No partition hint, so we can use this as a plain Lookup ref.
     (if-let [orig (entity db this)]
       (cond
        (:delete obj)
