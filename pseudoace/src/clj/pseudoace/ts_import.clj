@@ -79,9 +79,11 @@
     :db.type/double
       (parse-double (first val))
     :db.type/instant
-      (if-let [v (first val)]  
-        (-> (str/replace v #"_" "T")
-            (read-instant-date))
+      (if-let [v (first val)]
+        (if (= v "now")
+          (java.util.Date.)
+          (-> (str/replace v #"_" "T")
+              (read-instant-date)))
         (if (:pace/fill-default ti)
           (read-instant-date "1977-10-29")))
     :db.type/boolean
@@ -389,7 +391,8 @@
 
 (defn obj->log [imp {:keys [id] :as obj}]
   (let [ci     ((:classes imp) (:class obj))
-        alloc? (= id "__ALLOCATE__")
+        alloc? (or (= id "__ALLOCATE__")
+                   (= id "__ASSIGN__"))
         part   (or (:pace/prefer-part ci) :db.part/user)
         this   (if ci
                  (if alloc?
