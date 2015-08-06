@@ -3,6 +3,7 @@
         ring.middleware.stacktrace
         ring.middleware.params
         ring.middleware.keyword-params
+        ring.middleware.multipart-params
         web.edn
         web.anti-forgery
         ring.middleware.gzip
@@ -249,6 +250,7 @@
       wrap-edn-params-2
       wrap-keyword-params
       wrap-params
+      wrap-multipart-params
       wrap-stacktrace
       wrap-session
       wrap-cookies))
