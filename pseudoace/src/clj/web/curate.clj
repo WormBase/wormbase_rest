@@ -26,6 +26,7 @@
   [db datoms]
   (->> (map :e datoms)
        (set)
+       (sort)
        (map (partial d/entity db))
        (map entity-lur)
        (filter identity)))
@@ -66,7 +67,7 @@
           (recur (conj data datum)))))))
 
 (defn- do-edn-patch [con rdr note]
-  (let [tx  (read-all patch)
+  (let [tx  (read-all rdr)
         txr @(d/transact con (->> (resolve-liberal-tx (d/db con) tx)
                                   (cons (vassoc
                                          (txn-meta)
