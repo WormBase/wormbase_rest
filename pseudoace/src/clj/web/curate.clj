@@ -138,6 +138,24 @@
                         :value (or note "")}]]
               [:input {:type "submit"}]]]))))
 
+(defn txn-report [{db  :db
+                   con :con
+                   {:keys [from to count] :as params} :params}]
+  (let [basis (d/basis-t db)
+        txs   (d/tx-range (d/log con) (- basis 10) nil)]
+    (page db
+      [:h2 "Transaction log"]
+      (for [{:keys [t data]} (reverse (seq txs))
+            :let [txn (d/entity db (d/t->tx t))]]
+        [:div.block
+         [:h3 t " " (:db/txInstant txn) " " (:person/standard-name (:wormbase/curator txn))]
+         [:p  (interpose ", "
+                      (for [[cid id] (touched-entities db data)]
+                        [:a {:href (str "/view/" (namespace cid) "/" id)
+                             :target "_new"}
+                id]))]]))))
+   
+
 (def curation-forms
  (wrap-routes
   (routes
@@ -151,5 +169,6 @@
    (GET "/ace-patch"      req (redirect "patch"))
    (GET "/patch"          req (patch req))
    (POST "/patch"         req (patch req))
+   (GET "/txns"           req (txn-report req))
    )
   wrap-keyword-params))
