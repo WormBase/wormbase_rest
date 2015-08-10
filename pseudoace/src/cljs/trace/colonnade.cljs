@@ -244,7 +244,13 @@
 
          (dom/div {:class "form-group"}
            (dom/label "Constrain: ")
-           (constraint-editor col)))))))
+           (constraint-editor col))
+         
+         (dom/div {:class "form-group"}
+           (dom/label "In txn:"
+             (om/build input-text col {:opts {:key :in-txn}})))
+         
+         )))))
 
 (defn get-query [columns schema]
   (reduce
@@ -275,6 +281,9 @@
 
         :where
         (concat where
+                 (if-let [txn (:in-txn col)]
+                   [[(list 'web.trace/in-transaction '?log (js/parseInt txn))
+                     [(symbol (str "?" k)) '...]]])
                  (if via
                    (if (:required col)
                      (if via-xref
@@ -399,8 +408,8 @@
 (defn query-list [q]
   (vec
    (if (seq (:rules q))
-     (concat [:find] (:find q) [:in '$ '%] [:where] (:where q))
-     (concat [:find] (:find q) [:where] (:where q)))))
+     (concat [:find] (:find q) [:in '$ '?log '%] [:where] (:where q))
+     (concat [:find] (:find q) [:in '$ '?log] [:where] (:where q)))))
 
 (defn query-view [app owner]
   (reify
@@ -444,6 +453,7 @@
             (edn-xhr-post
              "/colonnade/query"
              {:query (query-list query)
+              :log   true
               :rules (vec (:rules query))
               :timeout (:timeout @app-state)
               :drop-rows offset

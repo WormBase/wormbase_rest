@@ -58,9 +58,12 @@
       x))
 
 
-(defn post-query [db {:keys [query rules args drop-rows max-rows timeout]}]
+(defn post-query [con db {:keys [query rules args drop-rows max-rows timeout log]}]
   (let [args (if (seq rules)
                (cons rules args)
+               args)
+        args (if log
+               (cons (d/log con) args)
                args)
         results (d/query
                  {:query query
@@ -79,4 +82,4 @@
 (defn colonnade [db]
   (routes
    (GET "/" req (page req))
-   (POST "/query" {edn-params :edn-params} (post-query db edn-params))))
+   (POST "/query" {edn-params :edn-params con :con} (post-query con db edn-params))))

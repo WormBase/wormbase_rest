@@ -374,3 +374,9 @@
    :header {"Content-Type" "text/plain"}
    :body (pr-str
           {:txns (get-raw-txns db ids)})})
+
+(defn in-transaction [log tx]
+  (->> (d/tx-range log tx (inc tx))
+       (mapcat :data)
+       (map :e)
+       (set)))
