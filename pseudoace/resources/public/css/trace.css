@@ -3,11 +3,12 @@ div.header {
     width: 100%;
     background: #111111;
     color: #ccdddd;
-    height: 100px;
+    height: 75px;
     padding: 8px;
     z-index: 10000000;
     display: -webkit-flex;
     display: flex;
+    box-sizing: border-box;
 }
 
 div.header-identity {.
@@ -22,15 +23,16 @@ div.header-main {
 h1#page-title {
     display: inline-block;
     margin-top: 0px;
+    font-size: 20pt;
 }
 
 div.container {
-    padding-top: 120px;
+    padding-top: 90px;
     width: 100%;
 }
 
 div.container-fluid {
-    padding-top: 120px;
+    padding-top: 90px;
     width: 100%;
 }
 

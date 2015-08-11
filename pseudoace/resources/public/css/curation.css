@@ -33,7 +33,6 @@ div.block {
 div.container {
     display: -webkit-flex;
     display: flex;
-    margin: 8px;
 }
 
 div.content {

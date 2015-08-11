@@ -281,9 +281,11 @@
 
         :where
         (concat where
-                 (if-let [txn (:in-txn col)]
-                   [[(list 'web.trace/in-transaction '?log (js/parseInt txn))
-                     [(symbol (str "?" k)) '...]]])
+                (if-let [txn (:in-txn col)]
+                  (let [txn (js/parseInt txn)]
+                    (if-not (js/isNaN txn)
+                      [[(list 'web.trace/in-transaction '?log (js/parseInt txn))
+                        [(symbol (str "?" k)) '...]]])))
                  (if via
                    (if (:required col)
                      (if via-xref

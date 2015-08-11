@@ -867,6 +867,7 @@
   (edn-xhr 
    (str "/raw2/" c "/" i "?max-in=5&max-out=10&txns=false")
    (fn [resp]
+     (set! (.-title js/document) i)
      (if resp
        (do
          (om/transact! app (fn [app]
