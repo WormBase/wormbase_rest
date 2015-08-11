@@ -44,6 +44,7 @@
                                           :db/doc  (if (not (empty? note))
                                                      note)))))]
     {:success true
+     :db-after (:db-after txr)
      :entities (touched-entities (:db-after txr) (:tx-data txr))}))
        
 
@@ -74,6 +75,7 @@
                                          :db/doc (if (not (empty? note))
                                                    note)))))]
     {:success true
+     :db-after (:db-after txr)
      :entities (touched-entities (:db-after txr) (:tx-data txr))}))
 
 (defn patch [{db  :db
@@ -98,7 +100,9 @@
       (page db
             (if (:success result)
               [:div.block
-               [:p "Database updated!"]
+               [:p "Database updated.  Your patch has transaction ID "
+                (let [t (d/basis-t (:db-after result))]
+                  [:a {:href (str "txns?id=" t)} t])]
                [:p
            (interpose ", "
                       (for [[cid id] (:entities result)]
@@ -140,9 +144,15 @@
 
 (defn txn-report [{db  :db
                    con :con
-                   {:keys [from to count] :as params} :params}]
+                   {:keys [from to count id] :as params} :params}]
   (let [basis (d/basis-t db)
-        txs   (d/tx-range (d/log con) (- basis 10) nil)]
+        txs   (cond
+                (string? id)
+                (let [t (Integer/parseInt id)]
+                  (d/tx-range (d/log con) t (inc t)))
+
+                :default
+                (d/tx-range (d/log con) (- basis 10) nil))]
     (page db
       [:h2 "Transaction log"]
       (for [{:keys [t data]} (reverse (seq txs))
