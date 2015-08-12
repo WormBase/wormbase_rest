@@ -40,9 +40,15 @@
  (let [id friend/*identity*]
    (list 
     [:div.menu-header
-     [:h3 "Name server tasks"]]
+     [:h3 "Curation tasks"]]
 
     [:div.menu-content
+
+     [:h4 "General"]
+
+     [:p [:a {:href "/curate/patch"} "Patch DB"]]
+     [:p [:a {:href "/curate/txns"} "Transaction log"]]
+     
      [:h4 "Gene"]
      
      [:p [:a {:href "/curate/gene/query"} "Find gene"]]
@@ -59,8 +65,8 @@
      (if true #_(authorized? #{:user.role/edit} id)
        [:p [:a {:href "/curate/gene/kill"} "Kill gene"]])
 
-     (if (authorized? #{:user.role/edit} id)
-       [:p [:a {:href "/merge-gene"} "Merge gene"]])
+     (if true #_(authorized? #{:user.role/edit} id)
+       [:p [:a {:href "/curate/gene/merge"} "Merge gene"]])
 
      (if (authorized? #{:user.role/edit} id)
        [:p [:a {:href "/split-gene"} "Split gene"]])

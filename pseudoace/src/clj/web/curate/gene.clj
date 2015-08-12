@@ -482,3 +482,118 @@
                         :value p}]])]]]
          
          [:input {:type "submit"}]]]))))
+
+;;
+;; Merge two genes
+;;
+
+(defn cgc-name [db id]
+  (q '[:find ?name .
+       :in $ ?id
+       :where [?g :gene/id ?id]
+              [?g :gene/cgc-name ?cgc]
+              [?cgc :gene.cgc-name/text ?name]]
+     db id))
+     
+(defn do-merge-genes [con id idx]
+  (let [db   (db con)
+        cid  (first (lookup "Gene" db id))
+        cidx (first (lookup "Gene" db idx))
+        obj  (if cid
+               (entity db [:gene/id cid]))
+        objx (if cidx
+               (entity db [:gene/id cidx]))
+        is-cgc? true #_(authorized? #{:user.role/cgc} friend/*identity*)
+        errs (->> [(if-not cid
+                     (str "No match for " id))
+                   (if-not cidx
+                     (str "No match for " idx))
+                   (if (= (:object/live obj) false)
+                     (str "Cannot merge because " cid " is not live."))
+                   (if (and cid (= cid cidx))
+                     (str "Cannot merge " (if (= id cid)
+                                            cid
+                                            (str id " (" cid ")"))
+                          " into itself"))
+                   (if-not is-cgc?
+                     (if-let [cgcx (cgc-name db cidx)]
+                       (if-let [cgc (cgc-name db cid)]
+                         (str "Both genes have cgc names " cgc " and " cgcx ". "
+                              "please contact the Geneace curator.")
+                         (str "Gene to be killed has a cgc name " cgcx "."
+                              "please contact the Geneace curator."))))]
+                   (filter identity)
+                   (seq))
+        warnings (those
+                  (if-let [cgcx (cgc-name db cidx)]
+                    (format "Killed gene %s had CGC name %s." cidx cgcx))
+                  (if (= (:gene.status/status (:gene/status objx)) :gene.status.status/dead)
+                    (format "Merged gene %s was dead." cidx)))]
+    (if errs
+      {:err errs}
+      (let [v   (or (:gene/version obj) 1)
+            vx  (or (:gene/version objx) 1)
+            txn [[:db.fn/cas [:gene/id cid] :gene/version v (inc v)]
+                 [:db.fn/cas [:gene/id cidx] :gene/version vx (inc vx)]
+                 
+                 {:db/id [:gene/id cid]
+                  :gene/acquires-merge [[:gene/id cidx]]
+                  :gene/version-change {
+                     :gene.version-change/version (inc v)
+                     :gene.version-change/person  [:person/id (:wbperson (friend/current-authentication))]
+                     :gene.version-change/date    (Date.)   ;; Now.  May be a few seconds different from
+                                                            ;; the :db/txInstant :-(.
+                     :gene-history-action/acquires-merge [:gene/id cidx]
+                                        }}
+                 
+                 {:db/id [:gene/id cidx]
+                  :gene/status {
+                      :gene.status/status :gene.status.status/dead
+                  }
+                  
+                  :gene/version-change {
+                    :gene.version-change/version (inc vx)
+                    :gene.version-change/person  [:person/id (:wbperson (friend/current-authentication))]
+                    :gene.version-change/date    (Date.)   ;; Now.  May be a few seconds different from
+                                                           ;; the :db/txInstant :-(.
+                    :gene-history-action/merged-into [:gene/id cid]
+                                        }}
+                 
+                  (txn-meta)]]
+        (try
+          (let [txr @(d/transact con txn)]
+            #_(ns-email (format "Merged genes %s (%s) - %s (%s)" id cid idx cidx)
+                "LIVE" (format "retained gene %s" cid)
+                "DEAD" (format "killed   gene %s" cidx)
+                "WARNING" (if warnings (str/join "; " warnings)))
+            {:done true
+             :warnings warnings
+             :cid cid :cidx cidx})
+          (catch Exception e {:err [(.getMessage (.getCause e))]}))))))
+
+(defn merge-gene [{con :con
+                   db  :db
+                   {:keys [id idx]} :params}]
+  (page db
+   (let [result (if (and id idx)
+                  (do-merge-genes con id idx))]
+     (if (:done result)
+       [:div.block
+        [:h3 "Merged Genes"]
+        [:p "Gene " (link "Gene" (:cidx result)) " is DEAD and has been merged into " (link "Gene" (:cid result))]
+        (for [w (:warnings result)]
+          [:p.err "WARNING: " w])]
+       [:div.block
+        [:form {:method "POST"}
+         [:h3 "Merge genes"]
+         (for [err (:err result)]
+           [:p.err err])
+         (anti-forgery-field)
+         [:table.info
+          [:tr
+           [:th "Gene to stay alive:"]
+           [:td (ac-field "id" "Gene" id)]]
+          [:tr
+           [:th "Gene to remove:"]
+           [:td (ac-field "idx" "Gene" idx)]]]
+         [:input {:type "submit"}]]]))))

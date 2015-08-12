@@ -176,6 +176,8 @@
    (POST "/gene/kill"     req (gene/kill-object "Gene" req))
    (GET "/gene/add-name"  req (gene/add-gene-name req))
    (POST "/gene/add-name" req (gene/add-gene-name req))
+   (GET "/gene/merge"     req (gene/merge-gene req))
+   (POST "/gene/merge"    req (gene/merge-gene req))
    (GET "/ace-patch"      req (redirect "patch"))
    (GET "/patch"          req (patch req))
    (POST "/patch"         req (patch req))
