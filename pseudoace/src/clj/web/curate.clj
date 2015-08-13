@@ -189,6 +189,24 @@
         :db/add)
       e (:db/ident a) v])))
 
+(defn- find-retracted-objs
+  "Search a transaction for retractions of the form [:db/retract <end> :<class>/id _].
+   Return a map of entity id -> lookup ref."
+  [txn]
+  (->> (for [[op e a v] txn
+             :when (and (= op :db/retract)
+                        (= (name a) "id"))]
+         [e [a v]])
+       (into {})))
+
+(defn- find-entangled-txns [db entity gt-t]
+  (->> (concat
+        (d/datoms db :eavt entity)
+        (d/datoms db :vaet entity))
+       (map :tx)
+       (filter #(> % gt-t))
+       (into #{})))
+
 (defn undo-txn [{{:keys [t]}  :params
                  db           :db
                  con          :con
@@ -199,7 +217,8 @@
                    (first)
                    (:data))]
     (if datoms
-      (let [reverse (make-reverse-txn db datoms)]
+      (let [reverse        (make-reverse-txn db datoms)
+            retracted-objs (find-retracted-objs reverse)]
         (if (= method :post)
           (let [txr @(d/transact con (conj reverse
                                            (txn-meta)
@@ -207,7 +226,7 @@
                                             :db/doc (str "Revert transaction " t)}))]
             (page db
               [:h3 "Transaction " t " was undone!"]))
-          (let [test (d/with db reverse)]
+          (let [test (d/with db reverse)]                
             (page db
               [:form {:method "POST"}
                (anti-forgery-field)
@@ -215,6 +234,16 @@
                         :name "t"
                         :value t}]
                [:h3 "Transaction " t " can be undone."]
+               (if-let [tangle (->> (keys retracted-objs)
+                                    (mapcat #(find-entangled-txns db % (d/t->tx t)))
+                                    (set)
+                                    (sort)
+                                    (seq))]
+                 [:p "Warning: potentially-entangled transactions "
+                  (interpose ", "
+                   (for [tx tangle
+                         :let [t (d/tx->t tx)]]
+                      [:a {:href (str "txns?t=" t)} t]))])
                [:input {:type "submit"}]]
               (str reverse)))))
       (page db "No such txn"))))
