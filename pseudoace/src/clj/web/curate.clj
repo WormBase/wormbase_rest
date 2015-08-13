@@ -159,12 +159,55 @@
             :let [txn (d/entity db (d/t->tx t))]]
         [:div.block
          [:h3 t " " (:db/txInstant txn) " " (:person/standard-name (:wormbase/curator txn))]
+         (if-let [doc (:db/doc txn)]
+           [:p doc])
          [:p  (interpose ", "
                       (for [[cid id] (touched-entities db data)]
                         [:a {:href (str "/view/" (namespace cid) "/" id)
                              :target "_new"}
                 id]))]]))))
-   
+
+
+(defn make-reverse-txn [db datoms]
+  (vec
+   (for [[e a v _ add?] datoms
+         :let  [a (d/entity db a)]
+         :when (and (not= (d/part e) 3)
+                    (not (:db/noHistory a)))]      ;; :db.part/tx is always partition 3???
+     [(if add?
+        :db/retract
+        :db/add)
+      e (:db/ident a) v])))
+
+(defn undo-txn [{{:keys [t]}  :params
+                 db           :db
+                 con          :con
+                 method       :request-method}]
+  (let [t      (Integer/parseInt t)
+        datoms (-> (d/log con)
+                   (d/tx-range t (inc t))
+                   (first)
+                   (:data))]
+    (if datoms
+      (let [reverse (make-reverse-txn db datoms)]
+        (if (= method :post)
+          (let [txr @(d/transact con (conj reverse
+                                           (txn-meta)
+                                           {:db/id (d/tempid :db.part/tx)
+                                            :db/doc (str "Revert transaction " t)}))]
+            (page db
+              [:h3 "Transaction " t " was undone!"]))
+          (let [test (d/with db reverse)]
+            (page db
+              [:form {:method "POST"}
+               (anti-forgery-field)
+               [:input {:type "hidden"
+                        :name "t"
+                        :value t}]
+               [:h3 "Transaction " t " can be undone."]
+               [:input {:type "submit"}]]
+              (str reverse)))))
+      (page db "No such txn"))))
 
 (def curation-forms
  (wrap-routes
@@ -182,5 +225,7 @@
    (GET "/patch"          req (patch req))
    (POST "/patch"         req (patch req))
    (GET "/txns"           req (txn-report req))
+   (GET "/undo-txn"       req (undo-txn req))
+   (POST "/undo-txn"      req (undo-txn req))
    )
   wrap-keyword-params))
