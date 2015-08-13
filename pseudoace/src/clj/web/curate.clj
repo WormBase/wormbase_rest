@@ -144,11 +144,11 @@
 
 (defn txn-report [{db  :db
                    con :con
-                   {:keys [from to count id] :as params} :params}]
+                   {:keys [from to count id t] :as params} :params}]
   (let [basis (d/basis-t db)
         txs   (cond
-                (string? id)
-                (let [t (Integer/parseInt id)]
+                (string? (or t id))
+                (let [t (Long/parseLong (or t id))]
                   (d/tx-range (d/log con) t (inc t)))
 
                 :default
@@ -158,14 +158,15 @@
       (for [{:keys [t data]} (reverse (seq txs))
             :let [txn (d/entity db (d/t->tx t))]]
         [:div.block
-         [:h3 t " " (:db/txInstant txn) " " (:person/standard-name (:wormbase/curator txn))]
+         [:h3 t " " (:db/txInstant txn) " " (:person/standard-name (:wormbase/curator txn)) " "
+          [:a {:href (str "undo-txn?t=" t)} "[undo]"]]
          (if-let [doc (:db/doc txn)]
            [:p doc])
          [:p  (interpose ", "
                       (for [[cid id] (touched-entities db data)]
                         [:a {:href (str "/view/" (namespace cid) "/" id)
                              :target "_new"}
-                id]))]]))))
+                         id]))]]))))
 
 
 (defn make-reverse-txn [db datoms]

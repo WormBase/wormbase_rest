@@ -425,7 +425,7 @@
                    (dom/table {:class "history-table table table-striped"}
                     (dom/thead 
                      (dom/tr
-                      (for [c ["Date" "Action" "Value" "Who?" "Note"]]
+                      (for [c ["Date" "Action" "Value" "Who?" "Txn"]]
                         (dom/th c))))
                     (dom/tbody
                      (for [datoms (->> (sort-by :txid (:datoms hdata))
@@ -439,17 +439,16 @@
                                  who  (if-let [c (:wormbase/curator txn)]
                                         (curator-name c)
                                         (:importer/ts-name txn))
-                                 note (if (:db/doc txn)
-                                        (dom/a {:href (str "/transaction-notes/" txid)
-                                                :target "_new"}
-                                           (dom/i {:class "fa fa-file-text-o"})))]]
+                                 txln (dom/a {:href (str "/curate/txns?t=" txid)
+                                              :target "_new"}
+                                             (dom/i {:class "fa fa-file-text-o"}))]]
                        (if (= (count added) (count retracted) 1)
                          (dom/tr
                           (dom/td time)
                           (dom/td "changed")
                           (dom/td (:v (first added)))
                           (dom/td who)
-                          (dom/td note))
+                          (dom/td txln))
                          (concat
                           (for [d retracted]
                             (dom/tr
@@ -457,14 +456,14 @@
                              (dom/td "retracted")
                              (dom/td (:v d))
                              (dom/td who)
-                             (dom/td note)))
+                             (dom/td txln)))
                           (for [d added]
                             (dom/tr
                              (dom/td time)
                              (dom/td "added")
                              (dom/td (:v d))
                              (dom/td who)
-                             (dom/td note)))))))))
+                             (dom/td txln)))))))))
                  (dom/img {:src "/img/spinner_24.gif"}))))
          (if txn
            (if-let [txn-data (txn-map txn)]
