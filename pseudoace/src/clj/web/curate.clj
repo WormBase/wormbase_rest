@@ -14,11 +14,21 @@
             [clojure.java.io :refer [reader]]
             [web.anti-forgery :refer [anti-forgery-field]]))
 
-(defn- entity-lur
-  "Return a lookup ref for `ent`, if it has a :class/id property."
-  [ent]
-  (if-let [cid (first (filter #(= (name %) "id") (keys ent)))]
-    [cid (get ent cid)]))
+(defn- id-attribs [db]
+  (->> (d/q '[:find ?eid ?ident
+              :where [?eid :db/ident ?ident]
+                     [(name ?ident) ?ident-name]
+                     [(ground "id") ?ident-name]]
+          db)
+       (into {})))
+
+(defn- entity-lur-datoms [db id-attrs eid]
+  "Return a lookup ref for `ent`, if it has a :class/id property.  Doesn't call `entity`, so can be used on history dbs."
+  (last
+   (for [[e a v t added?] (d/datoms db :eavt eid)
+         :let [a (id-attrs a)]
+         :when (and a added?)]
+     [a v])))
 
 (defn- touched-entities
   "Return lookup refs for entities that were modified in the transaction
@@ -27,8 +37,7 @@
   (->> (map :e datoms)
        (set)
        (sort)
-       (map (partial d/entity db))
-       (map entity-lur)
+       (map (partial entity-lur-datoms (d/history db) (id-attribs db)))
        (filter identity)))
 
 (defn- do-ace-patch [con rdr note]
