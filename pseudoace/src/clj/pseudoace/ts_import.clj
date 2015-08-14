@@ -213,7 +213,32 @@
             m)))
       {} lines))))
 
-(defn log-deletes [this lines imp nss]
+(defn- find-delete-component
+  "Attempt to find which component entity is meant in a delete.  Currently a somewhat-conservative impl."
+  [this db imp ti nodes]
+  (if-let [current-obj (and db (entity db this))]
+    (let [single? (not= (:db/cardinality ti) :db.cardinality/many)
+          current ((:db/ident ti) current-obj)
+          current (or (and current single? [current])
+                      current)
+          concs   (sort-by
+                  :pace/order
+                  ((:tags imp)
+                   (str (namespace (:db/ident ti)) "." (name (:db/ident ti)))))
+          cbc     (current-by-concs imp current concs)
+          cvals   (take-ts (count concs) nodes)
+          cdata   (map (fn [conc val stamp]
+                         [conc
+                          (log-datomize-value conc imp [val])
+                          stamp])
+                       concs cvals (lazy-cat
+                                    (:timestamps (meta cvals))
+                                    (repeat nil)))]
+      (if-let [current-comp (cbc (mapv second cdata))]
+        (:db/id current-comp)))))
+      
+
+(defn log-deletes [this db lines imp nss]
   (let [tags (get-tags imp nss)]
     (reduce
      (fn [log line]
@@ -221,17 +246,23 @@
               [stamp & stamps] (:timestamps (meta line))]
          (if node
            (if-let [ti (tags node)]
-             (update
-              log
-              stamp
-              conj
-              (conj-if
-               [:db/retract this (:db/ident ti)]
-               (log-datomize-value     ;; If no value then this returns nil and
-                ti                     ;; we get a "wildcard" retract that will be handled
-                imp                    ;; at playback time.
-                (if nodes
-                  (with-meta nodes {:timestamps stamps})))))))))
+             (let [retract [:db/retract this (:db/ident ti)]]
+               (update
+                log
+                stamp
+                conj-if
+                (if (:db/isComponent ti)
+                  (if (seq nodes)  ;; Need to special-case delete-with-value for components.
+                    (if-let [comp (find-delete-component this db imp ti nodes)]
+                      (conj retract comp))
+                    retract)
+                  (conj-if
+                   retract
+                   (log-datomize-value     ;; If no value then this returns nil and
+                    ti                     ;; we get a "wildcard" retract that will be handled
+                    imp                    ;; at playback time.
+                    (if nodes
+                      (with-meta nodes {:timestamps stamps})))))))))))
      {} lines)))
      
 
@@ -422,6 +453,7 @@
          (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
            (log-deletes
             this
+            nil
             (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
             imp
             #{(namespace (:db/ident ci))})))))
@@ -453,6 +485,7 @@
         (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
           (log-deletes
            this
+           db
            (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
            imp
            #{(namespace (:db/ident ci))}))))
