@@ -12,6 +12,11 @@
             [cemerick.friend :as friend]
             [environ.core :refer (env)]))
 
+;;
+;; Back-end for the TrACe tree-viewer/editor.  Current TrACe uses the "obj2" protocol.
+;; Any references to the original "obj" protocol are vestigial.
+;;
+
 (declare touch-link)
 (declare obj2)
 
@@ -72,75 +77,102 @@
            v)]))))
 
 
-(defn obj2-attr [db maxcount datoms]
+(defn obj2-attr [db maxcount exclude datoms]
   (let [attr (entity db (:a (first datoms)))]
-    {:key   (:db/ident attr)
-     :group (if-let [tags (:pace/tags attr)]
-              (first (str/split tags #" ")))
-     :type  (:db/valueType attr)
-     :class (:pace/obj-ref attr)
-     :comp  (or (:db/isComponent attr) false)
-     :count (count datoms)
-     :values
-     (if (or (not maxcount)
-             (< (count datoms) maxcount))
-       (for [d datoms]
-         {:txn (:tx d)
-          :id (if (:db/isComponent attr)
-                (str (:v d)))
-          :val (cond
-                (:db/isComponent attr)
-                 (obj2 db (:v d) maxcount)
-                (= (:db/valueType attr) :db.type/ref)
-                 (touch-link-ref attr (entity db (:v d)))
-                :default
-                 (:v d))}))}))
+    (if (not (or (exclude (:db/ident attr))
+                 (= :importer/temp (:db/ident attr))))
+      {:key   (:db/ident attr)
+       :group (if-let [tags (:pace/tags attr)]
+                (first (str/split tags #" ")))
+       :type  (:db/valueType attr)
+       :class (:pace/obj-ref attr)
+       :comp  (or (:db/isComponent attr) false)
+       :count (count datoms)
+       :values
+       (if (or (not maxcount)
+               (< (count datoms) maxcount))
+         (for [d datoms]
+           {:txn (:tx d)
+            :id (if (:db/isComponent attr)
+                  (str (:v d)))
+            :val (cond
+                   (:db/isComponent attr)
+                   (obj2 db (:v d) maxcount)
+                   (= (:db/valueType attr) :db.type/ref)
+                   (touch-link-ref attr (entity db (:v d)))
+                   :default
+                   (:v d))}))})))
          
 
-(defn obj2 [db ent maxcount]
-  (->> (d/datoms db :eavt ent)
-       (seq)
-       (sort-by :a)
-       (partition-by :a)
-       (map (partial obj2-attr db maxcount))))    
+(defn obj2
+  ([db ent maxcount] (obj2 db ent maxcount #{}))
+  ([db ent maxcount exclude]
+   (->> (d/datoms db :eavt ent)
+        (seq)
+        (sort-by :a)
+        (partition-by :a)
+        (map (partial obj2-attr db maxcount exclude))
+        (filter identity))))
 
-(defn xref-obj2-attr [db ent attr maxcount]
-  (let [attr-ns    (namespace attr)
+(defn- xref-component-parent [db ent obj-ref]
+  (let [[e a v t]   (first (d/datoms db :vaet ent))
+        attrent     (entity db a)
+        attr        (:db/ident attrent)
+        attr-ns    (namespace attr)
         attr-name  (name attr)
         revattr    (keyword attr-ns
                             (str "_" attr-name))
-        obj-ref    (q '[:find ?o .
-                        :in $ ?a
-                        :where [?x :pace.xref/attribute ?a]
-                               [?x :pace.xref/obj-ref ?oi]
-                               [?oi :db/ident ?o]]
-                      db attr)
-        val-datoms (seq (d/datoms db :vaet ent attr))
-        [a1 a2]    (str/split attr-ns #"\.")
-        follow     (if a2
-                     (keyword a1 (str "_" a2)))]
+        ent         (entity db e)]
+    (cond
+      (obj-ref ent)
+      {:key     attr
+       :type    :db.type/ref
+       :comp    false
+       :count   1
+       :values [{:txn t
+                 :val (object-link obj-ref ent)}]}
+
+      ent
+      (xref-component-parent db e obj-ref)
+
+      ;; if no parent, we'll return nil
+      )))
+    
+
+(defn xref-obj2-attr [db ent xref maxcount]
+  (let [attr       (:pace.xref/attribute xref)
+        obj-ref    (:pace.xref/obj-ref xref)
+        attr-ns    (namespace attr)
+        attr-name  (name attr)
+        comp?      (not= attr-ns (namespace obj-ref))
+        revattr    (keyword attr-ns
+                            (str "_" attr-name))
+        val-datoms (seq (d/datoms db :vaet ent attr))]
     (when (and val-datoms
                (not (.startsWith attr-ns "2")))
       {:key      revattr
        :group    "XREFs"
        :type     :db.type/ref
-       :comp     false        ; for now...
+       :comp     comp?
        :count    (count val-datoms)
        :values
        (if (or (not maxcount)
                (< (count val-datoms) maxcount))
          (for [[val _ _ txn] val-datoms]
            {:txn txn
-            :val (let [ve (entity db val)]
-                   (object-link obj-ref (if follow (follow ve) ve)))
+            :val (if comp?
+                   (conj-if (obj2 db val maxcount #{attr})
+                            (xref-component-parent db val obj-ref))
+                   (object-link obj-ref (entity db val)))
            }))})))
 
-(defn xref-obj2 [db clid ent maxcount]
+(defn xref-obj2
+  "Make obj2-format records of all inbound attributes to `ent`."
+  [db clid ent maxcount]
   (for [xref (:pace/xref (entity db clid))
-        :let [attr       (:pace.xref/attribute xref)
-              vm         (xref-obj2-attr db ent attr maxcount)]
+        :let [vm         (xref-obj2-attr db ent xref maxcount)]
         :when vm]
-    vm))           
+    vm))
 
 (defn find-txids [props]
   (mapcat
@@ -195,7 +227,11 @@
                     :txns (if txns? (get-raw-txns ddb txids))))}))
 
 (defn get-raw-attr2-in [ddb entid attr txns?]
-  (let [prop (xref-obj2-attr ddb entid attr nil)
+  (let [xref (entity ddb (q '[:find ?x .
+                              :in $ ?a
+                              :where [?x :pace.xref/attribute ?a]]
+                            ddb attr))
+        prop (xref-obj2-attr ddb entid attr nil)
         txids (set (find-txids [prop]))]
     {:status 200
      :headers {"Content-Type" "text/plain"}
