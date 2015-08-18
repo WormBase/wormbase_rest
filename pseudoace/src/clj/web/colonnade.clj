@@ -7,7 +7,9 @@
             [ring.adapter.jetty :refer (run-jetty)]
             [compojure.core :refer (defroutes GET POST routes)]
             [compojure.route :as route]
-            [compojure.handler :as handler]))
+            [compojure.handler :as handler]
+            [clojure.edn :as edn]
+            [clojure.data.csv :refer (write-csv)]))
 
 (defn- page [{:keys [db] :as req}]
   (html
@@ -58,8 +60,18 @@
       x))
 
 
-(defn post-query [con db {:keys [query rules args drop-rows max-rows timeout log]}]
-  (let [args (if (seq rules)
+(defn post-query [con db {:keys [query rules args drop-rows max-rows 
+                                 timeout log format]}]
+  (let [query (if (string? query)
+                (edn/read-string query)
+                query)
+        rules (if (string? rules)
+                (edn/read-string rules)
+                rules)
+        args  (if (string? args)
+                (edn/read-string args)
+                args)
+        args (if (seq rules)
                (cons rules args)
                args)
         args (if log
@@ -69,17 +81,31 @@
                  {:query query
                   :args (cons db args)
                   :timeout (or timeout 5000)})]
-    {:status 200
-     :headers {"Content-Type" "text/plain"}
-     :body (pr-str {:query query
-                    :results (cond->> (sort-by-cached (comp prefix-num-comparator first) results)
-                                      drop-rows    (drop drop-rows)
-                                      max-rows     (take max-rows))
-                    :drop-rows drop-rows
-                    :max-rows max-rows
-                    :count (count results)})}))
+    (case format
+      "csv"
+      {:status 200
+       :headers {"Content-Type" "text/csv"
+                 "Content-Disposition" "attachment; filename=colonnade.csv"}
+       :body (with-out-str
+               (write-csv 
+                *out*
+                results
+                :quote? (constantly true)))}
 
-(defn colonnade [db]
+      ;; default
+      {:status 200
+       :headers {"Content-Type" "text/plain"}
+       :body (pr-str {:query query
+                      :results (cond->> (sort-by-cached (comp prefix-num-comparator first) results)
+                                 drop-rows    (drop drop-rows)
+                                 max-rows     (take max-rows))
+                      :drop-rows drop-rows
+                      :max-rows max-rows
+                      :count (count results)})})))
+
+      
+  
+  (defn colonnade [db]
   (routes
    (GET "/" req (page req))
-   (POST "/query" {edn-params :edn-params con :con} (post-query con db edn-params))))
+   (POST "/query" {params :params con :con} (post-query con db params))))

@@ -21,6 +21,7 @@
                  [cheshire "5.4.0"]
                  [ring/ring-anti-forgery "1.0.0"]
                  [clj-time "0.9.0"]
+                 [org.clojure/data.csv "0.1.3"]
 
                  [org.clojure/clojurescript "0.0-3308"]
                  [org.omcljs/om "0.8.8"]

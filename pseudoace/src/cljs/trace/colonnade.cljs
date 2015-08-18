@@ -484,14 +484,15 @@
          :error     nil
          :count     nil
          :page-size 100
-         :offset    0})
+         :offset    0
+         :show-export false})
 
       om/IWillMount
       (will-mount [_]
         (run-query 0 100))
     
       om/IRenderState
-      (render-state [_ {:keys [running results error page-size offset]}]
+      (render-state [_ {:keys [running results error page-size offset show-export]}]
         (dom/div
          (dom/h2
           (if running
@@ -511,6 +512,32 @@
                                        (>= (+ offset page-size) (:count results)))
                                  "yes")]
              (list
+              (dom/div {:class "panel panel-default"}
+                (dom/div {:class "panel-heading"
+                          :on-click #(om/update-state! owner :show-export not)}
+                  "Export")
+                (dom/div {:class "panel-body"
+                          :style {:display (if show-export "block" "none")}}
+                  (dom/form {:action "/colonnade/query"
+                             :method "POST"
+                             :encType "multipart/form-data"}
+                  (dom/input {:type "hidden"
+                              :name "__anti-forgery-token"
+                              :value js/trace_token})
+                  (dom/input {:type "hidden"
+                              :name "query"
+                              :value (str (query-list query))})
+                  (dom/input {:type "hidden"
+                              :name "rules"
+                              :value (str (vec (:rules query)))})
+                  (dom/input {:type "hidden"
+                              :name "log"
+                              :value "true"})
+                  (dom/select {:name "format"}
+                     (dom/option {:value "csv"} "CSV")
+                     #_(dom/option {:value "keyset"} ".ace keyset")
+                     #_(dom/option {:value "ace"} ".ace dump"))
+                  (dom/input {:type "submit"}))))
               (dom/div
                (dom/button
                 {:on-click #(run-query 0 page-size)
