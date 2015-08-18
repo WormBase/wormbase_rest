@@ -27,7 +27,6 @@
    :required true
    :visible true})
 
-(def col-seed (atom 1))
 (def query-seed (atom 1))
 
 (defn input-text [data owner {:keys [key]}]
@@ -574,8 +573,9 @@
         (fn [resp]
           (om/update! app {:schema (process-schema resp)
                            :timeout 5000
-                           :columns (array-map
-                                     "col1" (assoc column-template :root true))}))))
+                           :col-seed 1
+                           :columns  (array-map
+                                      "col1" (assoc column-template :root true))}))))
     
     om/IRender
     (render [_]
@@ -587,18 +587,29 @@
             (dom/div nil
               (for [[k col] (:columns app)]
                 (om/build column-def-view col)))
+
             (dom/button
-             #js {:onClick (fn [e]
-                             (om/transact! app :columns
-                                           (fn [cols]
-                                             (let [cid (swap! col-seed inc)]
-                                               (assoc cols
-                                                 (str "col" cid)
-                                                 (assoc column-template
-                                                   :name (str "Column " cid)
-                                                   :from "col1"))))))}
-                                                 
+             {:on-click #(om/transact! app 
+                           (fn [{:keys [col-seed] :as app}]
+                             (assoc app
+                                :columns (array-map "col1" (assoc column-template :root true))
+                                :col-seed 1)))}
+             "Clear query")
+
+            (dom/button
+                {:on-click   #(om/transact! app
+                                           (fn [{:keys [columns col-seed] :as app}]
+                                             (let [cid (inc col-seed)]
+                                               (assoc app
+                                                 :columns
+                                                 (assoc columns
+                                                   (str "col" cid)
+                                                   (assoc column-template
+                                                     :name (str "Column " cid)
+                                                     :from "col1"))
+                                                 :col-seed cid))))}
              "New column")
+
             (dom/button
              {:disabled (= (:queryStatus app) :running)
               :on-click (fn [_]
