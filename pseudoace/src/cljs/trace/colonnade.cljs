@@ -507,7 +507,7 @@
            (dom/img {:src "img/spinner_192.gif"})
            
            results
-           (let [export-keyset (#{"keyset" "ace"} export-format)
+           (let [export-keyset (#{"keyset" "ace" "acets"} export-format)
                  back-disabled (if (or running
                                        (< offset 1))
                                  "yes")
@@ -550,7 +550,8 @@
                                :on-change #(om/set-state! owner :export-format (.. % -target -value))}
                      (dom/option {:value "csv"} "CSV")
                      (dom/option {:value "keyset"} ".ace keyset")
-                     #_(dom/option {:value "ace"} ".ace dump"))
+                     (dom/option {:value "ace"} ".ace dump")
+                     (dom/option {:value "acets"} ".ace with timestamps"))
 
                   (dom/select {:name "keyset-column"
                                :value keyset-column

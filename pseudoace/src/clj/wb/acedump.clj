@@ -10,6 +10,10 @@
 (def ^:private ace-date-format
   (tf/formatter "yyyy-MM-dd_hh:mm:ss"))
 
+(def ^{:dynamic true
+       :doc "Include timestamps in .ace dumps."}
+  *timestamps* true)
+
 (defn tx->ts
   "Generate an ACeDB-style timestamp string from a pseudoace transaction entity map."
   [tx]
@@ -168,9 +172,11 @@
     (squote (:value node))))
 
 (defn- ace-node [node]
-  [(ace-node-value node)
-   "-O"
-   (str \" (:ts node) \")])
+  (if *timestamps*
+    [(ace-node-value node)
+     "-O"
+     (str \" (:ts node) \")]
+    [(ace-node-value node)]))
 
 (defn- ace-line [toks]
   (str
@@ -181,11 +187,15 @@
 (defn dump-object
   "Dump an pseudoace entity in .ace format to *out*."
   [root]
-  (println (:type root)
-           ":"
-           (squote (:value root))
-           "-O"
-           (squote (:ts root)))
+  (if *timestamps*
+    (println (:type root)
+             ":"
+             (squote (:value root))
+             "-O"
+             (squote (:ts root)))
+    (println (:type root)
+             ":"
+             (squote (:value root))))
   (doseq [line (flatten-object root)]
     (println (ace-line (mapcat ace-node (rest line)))))
   (println))

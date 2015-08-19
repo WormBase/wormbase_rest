@@ -9,7 +9,8 @@
             [compojure.route :as route]
             [compojure.handler :as handler]
             [clojure.edn :as edn]
-            [clojure.data.csv :refer (write-csv)]))
+            [clojure.data.csv :refer (write-csv)]
+            [wb.acedump :refer (ace-object dump-object *timestamps*)]))
 
 (defn- page [{:keys [db] :as req}]
   (html
@@ -101,8 +102,29 @@
                    "Content-Disposition" "attachment; filename=colonnade.ace"}
          :body (with-out-str
                  (doseq [[o] results]
-                   (println class ":" (str \" o \"))
-                   (println)))})
+                   (println class ":" (str \" o \"))))})
+
+      "ace"
+      (binding [*timestamps* false]
+        (let [clid (:attribute (get columns keyset-column))]
+          {:status 200
+           :headers {"Content-Type" "text/plain"
+                     "Content-Disposition" "attachment; filename=colonnade.ace"}
+           :body (with-out-str
+                   (doseq [[id] results]
+                     (dump-object (ace-object db [clid id]))))}))
+
+      
+      "acets"
+      (binding [*timestamps* true]
+        (let [clid (:attribute (get columns keyset-column))]
+          {:status 200
+           :headers {"Content-Type" "text/plain"
+                     "Content-Disposition" "attachment; filename=colonnade.ace"}
+           :body (with-out-str
+                   (doseq [[id] results]
+                     (dump-object (ace-object db [clid id]))))}))
+                   
                      
       
       ;; default
