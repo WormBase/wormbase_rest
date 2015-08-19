@@ -617,7 +617,8 @@
                            (fn [{:keys [col-seed] :as app}]
                              (assoc app
                                 :columns (array-map "col1" (assoc column-template :root true))
-                                :col-seed 1)))}
+                                :col-seed 1)))
+              :style {:float "right"}}
              "Clear query")
 
             (dom/button
