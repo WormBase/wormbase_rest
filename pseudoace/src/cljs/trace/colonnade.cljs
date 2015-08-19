@@ -533,12 +533,12 @@
                   (dom/input {:type "hidden"
                               :name "query"
                               :value (pr-str
-                                      (query-list
-                                       (if export-keyset     ;; if in keyset mode, simplify the query to only
-                                                             ;; request the target column.
-                                         (assoc query :from
-                                                [(symbol (str "?" keyset-column "-id"))])
-                                         query)))})
+                                       (query-list
+                                        (if export-keyset     ;; if in keyset mode, simplify the query to only
+                                                              ;; request the target column.
+                                          (assoc query :find
+                                                 [(symbol (str "?" keyset-column "-id"))])
+                                          query)))})
                   (dom/input {:type "hidden"
                               :name "rules"
                               :value (str (vec (:rules query)))})
@@ -553,6 +553,7 @@
                      #_(dom/option {:value "ace"} ".ace dump"))
 
                   (dom/select {:name "keyset-column"
+                               :value keyset-column
                                :style {:display (if export-keyset "inline" "none")}
                                :on-change #(om/set-state! owner :keyset-column (.. % -target -value))}
                     (for [[id col] columns]
