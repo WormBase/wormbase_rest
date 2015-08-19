@@ -350,7 +350,7 @@
                                                         ".*"
                                                         (str \\ p))))]
                        (if (>= (.indexOf cleaned-con ".*") 0)
-                         [[(list 're-pattern cleaned-con) (symbol (str "?" k "-regex"))]
+                         [[(list 're-pattern (str "(?i)" cleaned-con)) (symbol (str "?" k "-regex"))]
                           [(list 're-matches
                                  (symbol (str "?" k "-regex"))
                                  (if (= (name attr) "id")
