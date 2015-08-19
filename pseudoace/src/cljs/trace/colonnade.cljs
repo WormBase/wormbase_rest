@@ -484,14 +484,17 @@
          :count     nil
          :page-size 100
          :offset    0
-         :show-export false})
+         :show-export false
+         :export-format "csv"
+         :keyset-column "col1"})
 
       om/IWillMount
       (will-mount [_]
         (run-query 0 100))
     
       om/IRenderState
-      (render-state [_ {:keys [running results error page-size offset show-export]}]
+      (render-state [_ {:keys [running results error page-size offset
+                               show-export export-format keyset-column]}]
         (dom/div
          (dom/h2
           (if running
@@ -504,7 +507,8 @@
            (dom/img {:src "img/spinner_192.gif"})
            
            results
-           (let [back-disabled (if (or running
+           (let [export-keyset (#{"keyset" "ace"} export-format)
+                 back-disabled (if (or running
                                        (< offset 1))
                                  "yes")
                  fwd-disabled  (if (or running
@@ -524,18 +528,35 @@
                               :name "__anti-forgery-token"
                               :value js/trace_token})
                   (dom/input {:type "hidden"
+                              :name "columns"
+                              :value (pr-str columns)})
+                  (dom/input {:type "hidden"
                               :name "query"
-                              :value (str (query-list query))})
+                              :value (pr-str
+                                      (query-list
+                                       (if export-keyset     ;; if in keyset mode, simplify the query to only
+                                                             ;; request the target column.
+                                         (assoc query :from
+                                                [(symbol (str "?" keyset-column "-id"))])
+                                         query)))})
                   (dom/input {:type "hidden"
                               :name "rules"
                               :value (str (vec (:rules query)))})
                   (dom/input {:type "hidden"
                               :name "log"
                               :value "true"})
-                  (dom/select {:name "format"}
+                  (dom/select {:name "format"
+                               :value export-format
+                               :on-change #(om/set-state! owner :export-format (.. % -target -value))}
                      (dom/option {:value "csv"} "CSV")
-                     #_(dom/option {:value "keyset"} ".ace keyset")
+                     (dom/option {:value "keyset"} ".ace keyset")
                      #_(dom/option {:value "ace"} ".ace dump"))
+
+                  (dom/select {:name "keyset-column"
+                               :style {:display (if export-keyset "inline" "none")}}
+                    (for [[id col] columns]
+                      (if (= (name (:attribute col)) "id")
+                        (dom/option {:value id} (:name col)))))
                   (dom/input {:type "submit"}))))
               (dom/div
                (dom/button

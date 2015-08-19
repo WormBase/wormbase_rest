@@ -60,8 +60,8 @@
       x))
 
 
-(defn post-query [con db {:keys [query rules args drop-rows max-rows 
-                                 timeout log format]}]
+(defn post-query [con db {:keys [columns query rules args drop-rows max-rows 
+                                 timeout log format keyset-column]}]
   (let [query (if (string? query)
                 (edn/read-string query)
                 query)
@@ -71,6 +71,8 @@
         args  (if (string? args)
                 (edn/read-string args)
                 args)
+        columns (if (string? columns)
+                  (edn/read-string columns))
         args (if (seq rules)
                (cons rules args)
                args)
@@ -92,6 +94,17 @@
                 results
                 :quote? (constantly true)))}
 
+      "keyset"
+      (let [class (:pace/identifies-class (entity db (:attribute (get columns keyset-column))))]
+        {:status 200
+         :headers {"Content-Type" "text/plain"
+                   "Content-Disposition" "attachment; filename=colonnade.ace"}
+         :body (with-out-str
+                 (doseq [[o] results]
+                   (println class ":" (str \" o \"))
+                   (println)))})
+                     
+      
       ;; default
       {:status 200
        :headers {"Content-Type" "text/plain"}
