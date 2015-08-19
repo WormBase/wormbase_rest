@@ -553,7 +553,8 @@
                      #_(dom/option {:value "ace"} ".ace dump"))
 
                   (dom/select {:name "keyset-column"
-                               :style {:display (if export-keyset "inline" "none")}}
+                               :style {:display (if export-keyset "inline" "none")}
+                               :on-change #(om/set-state! owner :keyset-column (.. % -target -value))}
                     (for [[id col] columns]
                       (if (= (name (:attribute col)) "id")
                         (dom/option {:value id} (:name col)))))
