@@ -14,6 +14,10 @@
        :doc "Include timestamps in .ace dumps."}
   *timestamps* true)
 
+(def ^{:dynamic true
+       :doc "Include inbound XREFs."}
+  *xrefs* false)
+
 (defn tx->ts
   "Generate an ACeDB-style timestamp string from a pseudoace transaction entity map."
   [tx]
@@ -85,10 +89,15 @@
     ;; default
     (Node. :text ts "Unknown!" nil)))
         
+(defn- xref-obj [db ent obj-ref]
+  (or
+   (obj-ref ent)
+   (if-let [[e a v t] (first (d/datoms db :vaet (:db/id ent)))]
+     (xref-obj db (entity db e) obj-ref))))
 
 (defn ace-object
   [db eid]
-  (let [datoms        (datoms db :eavt eid)
+  (let [datoms        (d/datoms db :eavt eid)
         data          (->>
                        (partition-by :a datoms)
                        (map (fn [d]
@@ -133,7 +142,39 @@
                               nil
                               nil
                               [])
-                       named)]
+                       named)
+
+        ;; Splice in in-bound xrefs, if appropriate.
+        named-tree   (if (and *xrefs* class)
+                       (reduce
+                        (fn [root xref]
+                          (if-let [datoms (seq (d/datoms db :vaet eid (:pace.xref/attribute xref)))]
+                            (let [obj-ref (:pace.xref/obj-ref xref)
+                                  xclass  (:pace/identifies-class (entity db obj-ref))
+                                  tsmap   (->> (map :tx datoms)
+                                               (set)
+                                               (map (fn [tx]
+                                                      [tx (tx->ts (entity db tx))]))
+                                               (into {}))
+                                  min-ts  (->> (map (comp tsmap :tx) datoms)
+                                               (reduce smin))]
+                              (splice-in-tagpath
+                               root
+                               (str/split (:pace.xref/tags xref) #"\s")
+                               min-ts
+                               (mapcat
+                                (fn [datom]
+                                  (let [e (entity db (:e datom))
+                                        o (xref-obj db e obj-ref)]
+                                    (if o
+                                     [(Node. xclass (tsmap (:tx datom)) o nil)])))
+                                datoms)))
+                            root))
+                        named-tree
+                        (:pace/xref class))
+                       named-tree)
+                       
+                       ]
     (cond
      ;; Top level object.  Positional children not allowed.
      class

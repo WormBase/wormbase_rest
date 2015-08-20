@@ -10,7 +10,7 @@
             [compojure.handler :as handler]
             [clojure.edn :as edn]
             [clojure.data.csv :refer (write-csv)]
-            [wb.acedump :refer (ace-object dump-object *timestamps*)]))
+            [wb.acedump :refer (ace-object dump-object *timestamps* *xrefs*)]))
 
 (defn- page [{:keys [db] :as req}]
   (html
@@ -105,7 +105,8 @@
                    (println class ":" (str \" o \"))))})
 
       "ace"
-      (binding [*timestamps* false]
+      (binding [*timestamps* false
+                *xrefs*      true]
         (let [clid (:attribute (get columns keyset-column))]
           {:status 200
            :headers {"Content-Type" "text/plain"
@@ -116,7 +117,8 @@
 
       
       "acets"
-      (binding [*timestamps* true]
+      (binding [*timestamps* true
+                *xrefs*      true]
         (let [clid (:attribute (get columns keyset-column))]
           {:status 200
            :headers {"Content-Type" "text/plain"
