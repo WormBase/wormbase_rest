@@ -90,6 +90,14 @@
    :db/ident         :pace.xref/obj-ref
    :db/valueType     :db.type/ref
    :db/cardinality   :db.cardinality/one
+   :db/doc           "Identity attribute for the object at the outbound end of the XREF."
+   :db.install/_attribute :db.part/db}
+
+  {:db/id            (tempid :db.part/db)
+   :db/ident         :pace.xref/use-ns
+   :db/valueType     :db.type/string
+   :db/cardinality   :db.cardinality/many
+   :db/doc           "For 'complex' XREFs, a set of namespaces for additional data which should be visible on the inbound end."
    :db.install/_attribute :db.part/db}
 
   {:db/id            (tempid :db.part/tx)
