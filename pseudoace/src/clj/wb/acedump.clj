@@ -88,15 +88,21 @@
 
     ;; default
     (Node. :text ts "Unknown!" nil)))
-        
-(defn- xref-obj [db ent obj-ref]
-  (or
-   (obj-ref ent)
-   (if-let [[e a v t] (first (d/datoms db :vaet (:db/id ent)))]
-     (xref-obj db (entity db e) obj-ref))))
 
+(defn- xref-obj
+  ([db ent obj-ref]
+   (xref-obj db ent nil nil obj-ref))
+  ([db ent a v obj-ref]
+   (or
+    (if-let [r (obj-ref ent)]
+      [r (entity db a) v])
+    (if-let [[e a v t] (first (d/datoms db :vaet (:db/id ent)))]
+      (xref-obj db (entity db e) a v obj-ref)))))
+     
 (defn ace-object
-  [db eid]
+ ([db eid]
+  (ace-object db eid false))
+ ([db eid exclude-posn?]
   (let [datoms        (d/datoms db :eavt eid)
         data          (->>
                        (partition-by :a datoms)
@@ -164,10 +170,14 @@
                                min-ts
                                (mapcat
                                 (fn [datom]
-                                  (let [e (entity db (:e datom))
-                                        o (xref-obj db e obj-ref)]
+                                  (let [e          (entity db (:e datom))
+                                        [o a comp] (xref-obj db e obj-ref)
+                                        children   (if (and a comp false)   ;; Currently disabled, pending some extra
+                                                                            ;; metaschema to track which inbound XREFs
+                                                                            ;; should actually have hashses.
+                                                     (:children (ace-object db comp true)))]
                                     (if o
-                                     [(Node. xclass (tsmap (:tx datom)) o nil)])))
+                                     [(Node. xclass (tsmap (:tx datom)) o children)])))
                                 datoms)))
                             root))
                         named-tree
@@ -184,7 +194,7 @@
             (:children named-tree))
 
      ;; Positional parameters exist.
-     (seq positional)
+     (and (seq positional) (not exclude-posn?))
      (loop [[[attr datoms] & rest] (reverse (sort-by (comp :pace/order first) positional))
             children               (:children named-tree)]
        (let [n (assoc (value-node db attr (tsmap (:tx (first datoms))) (first datoms))
@@ -196,7 +206,7 @@
      ;; Otherwise return the dummy node -- because its type is :anonymous, its
      ;; children will be spliced.
      :default
-     named-tree)))
+     named-tree))))
 
 (defn- flatten-object
   ([root]
