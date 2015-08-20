@@ -162,15 +162,16 @@
                                            (.startsWith cname "?"))
                         :pace/fill-default (or (:fill-default fchild) nil))]]
            (if-let [x (:xref fchild)]
-             (conj schema
-                   {:db/id          (tempid :db.part/db)
-                    :pace/identifies-class (.substring cname 1)
-                    :pace/xref    {:db/id                (tempid :db.part/user)
-                                   :pace.xref/tags       (or (tpm [(datomize-name cname) x])
-                                                             x)
-                                   :pace.xref/attribute  {:db/id    (tempid :db.part/db)
-                                                          :db/ident attribute}
-                                   :pace.xref/obj-ref    sid}})
+             (let [{:keys [tags use-ns]} (tpm [(datomize-name cname) x])]
+               (conj schema
+                     {:db/id          (tempid :db.part/db)
+                      :pace/identifies-class (.substring cname 1)
+                      :pace/xref  (vmap :db/id                (tempid :db.part/user)
+                                        :pace.xref/tags       (or tags x)
+                                        :pace.xref/attribute  {:db/id    (tempid :db.part/db)
+                                                               :db/ident attribute}
+                                        :pace.xref/obj-ref    sid
+                                        :pace.xref/use-ns     use-ns)}))
              schema)))
 
        ;; "compound datum" case
@@ -243,15 +244,17 @@
                                                  {:db/id (tempid :db.part/db)
                                                   :pace/identifies-class (.substring cname 1)}))]]
                  (if-let [x (:xref c)]
-                   (conj schema
-                         {:db/id          (tempid :db.part/db)
-                          :pace/identifies-class (.substring cname 1)
-                          :pace/xref      {:db/id                (tempid :db.part/user)
-                                           :pace.xref/tags       (or (tpm [(datomize-name cname) x])
-                                                                     x)
-                                           :pace.xref/attribute  {:db/id    (tempid :db.part/db)
-                                                                  :db/ident cattr}
-                                           :pace.xref/obj-ref    sid}})
+                   (let [{:keys [tags use-ns]} (tpm [(datomize-name cname) x])]
+                     (conj schema
+                           {:db/id          (tempid :db.part/db)
+                            :pace/identifies-class (.substring cname 1)
+                            :pace/xref      (vmap
+                                             :db/id                (tempid :db.part/user)
+                                             :pace.xref/tags       (or tags x)
+                                             :pace.xref/attribute  {:db/id    (tempid :db.part/db)
+                                                                    :db/ident cattr}
+                                             :pace.xref/obj-ref    sid
+                                             :pace.xref/use-ns     use-ns)}))
                    schema)))
              (iterate inc (if enum 1 0))   ;; In enum case, order 0 is reserved for the enum.
              concretes
@@ -319,20 +322,35 @@
       :pace/identifies-class (.substring name 1)
       :pace/is-hash is-hash?)))))
 
-(defn xref-tagpath-map
+(defn xref-info-map
   "Build a map of inbound XREFs for `model`."
   ([model]
-   (reduce (partial xref-tagpath-map (datomize-name (:name model)) [])
+   (reduce (partial xref-info-map (datomize-name (:name model)) [])
            {}
            (:children model)))
   ([class tagpath tpm node]
    (cond
      (= (:type node) :tag)
-     (reduce (partial xref-tagpath-map class (conj tagpath (:name node)))
+     (reduce (partial xref-info-map class (conj tagpath (:name node)))
              tpm (:children node))
 
      (:xref node)
-     (assoc tpm [class (last tagpath)] (str/join " " tagpath))
+     (assoc tpm [class (last tagpath)]
+            {:tags (str/join " " tagpath)
+             :use-ns (if (:suppress-xref node)
+                       (when-let [[h :as children] (:children node)]
+                         (cond
+                           (> (count children) 1)
+                           (println "NOXREF has multiple children at " (pr-str node))
+                           
+                           (seq (:children h))
+                           (println "NOXREF can only be followed by a single node at " (pr-str node))
+                           
+                           (not= (:type h) :hash)
+                           (println "NOXREF can only be followed by a hash at " (pr-str node))
+
+                           :default
+                           #{(datomize-name (:name h))})))})
 
      :default
      tpm)))
@@ -341,7 +359,7 @@
   "Convert a set of models to a schema, resolving tag-paths of XREFs."
   [models]
   (mapcat (partial model->schema
-                   (reduce merge (map xref-tagpath-map models)))
+                   (reduce merge (map xref-info-map models)))
           models))
              
 ;;
