@@ -141,7 +141,9 @@
          (:enum node))      ;; "Simple" enums have already been caught at this point.
      (if (and (empty? (:children fchild))
               (not= (:type fchild) :hash)
-              (not (:enum node)))
+              (not (:enum node))
+              (not (if-let [x (:xref fchild)]    ;; Becomes complex if there's a hash at the other end of the XREF.
+                     (:use-ns (tpm [(datomize-name (:name fchild)) x])))))
        ;; "simple datum" case
        (when (not (:suppress-xref fchild))
          (let [cname       (:name fchild)
@@ -162,7 +164,7 @@
                                            (.startsWith cname "?"))
                         :pace/fill-default (or (:fill-default fchild) nil))]]
            (if-let [x (:xref fchild)]
-             (let [{:keys [tags use-ns]} (tpm [(datomize-name cname) x])]
+             (let [{:keys [tags]} (tpm [(datomize-name cname) x])]
                (conj schema
                      {:db/id          (tempid :db.part/db)
                       :pace/identifies-class (.substring cname 1)
@@ -170,8 +172,7 @@
                                         :pace.xref/tags       (or tags x)
                                         :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                                :db/ident attribute}
-                                        :pace.xref/obj-ref    sid
-                                        :pace.xref/use-ns     use-ns)}))
+                                        :pace.xref/obj-ref    sid)}))
              schema)))
 
        ;; "compound datum" case

@@ -13,7 +13,7 @@
 
 (defn- indexed-tokens [s]
   "Return the tokens of s, along with the column indices in which they start"
-  (doall (indexed-tokens* (re-matcher #"[A-Za-z0-9_\?\#\^-\|]+" s))))
+  (doall (indexed-tokens* (re-matcher #"[A-Za-z0-9_\?\#\^\|-]+" s))))
 
 (defn- positive? [i]
   (> i 0))
