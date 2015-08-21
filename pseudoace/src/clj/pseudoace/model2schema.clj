@@ -341,13 +341,13 @@
                        (when-let [[h :as children] (:children node)]
                          (cond
                            (> (count children) 1)
-                           (println "NOXREF has multiple children at " (pr-str node))
+                           (println "WARNING: NOXREF has multiple children at " (pr-str node))
                            
                            (seq (:children h))
-                           (println "NOXREF can only be followed by a single node at " (pr-str node))
+                           (println "WARNING: NOXREF can only be followed by a single node at " (pr-str node))
                            
                            (not= (:type h) :hash)
-                           (println "NOXREF can only be followed by a hash at " (pr-str node))
+                           (println "WARNING: NOXREF can only be followed by a hash at " (pr-str node))
 
                            :default
                            #{(datomize-name (:name h))})))})

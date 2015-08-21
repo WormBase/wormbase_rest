@@ -276,9 +276,9 @@
                              Transposon_insertion Text
                              Detection_method Text
         Map UNIQUE ?Map YESXREF Locus #Map_position
-        Positive Inside_rearr ?Rearrangement NOXREF Locus_inside ?Author
-        Negative Outside_rearr ?Rearrangement NOXREF Locus_outside ?Author
-                 Negative_clone ?Clone NOXREF Negative_locus ?Author
+        Positive Inside_rearr ?Rearrangement NOXREF Locus_inside   // ?Author  (model2schema currently only allows hashes...)
+        Negative Outside_rearr ?Rearrangement NOXREF Locus_outside // ?Author
+                 Negative_clone ?Clone NOXREF Negative_locus       // ?Author
         Mapping_data    Well_ordered            // "on the line"
                         2_point ^two-point ?2_point_data  NOXREF xxx
                         Multi_point ?Multi_pt_data NOXREF xxx
@@ -629,11 +629,11 @@
                 Map ?Map YESXREF Rearrangement #Map_position
                 Positive Gene_inside ?Gene YESXREF Inside_rearr #Evidence
                          Locus_inside ?Locus YESXREF Inside_rearr ?Author
-                         Clone_inside ?Clone NOXREF Inside_rearr ?Author
+                         Clone_inside ?Clone NOXREF Inside_rearr  // ?Author
                          Rearr_inside ?Rearrangement
                 Negative Gene_outside ?Gene YESXREF Outside_rearr #Evidence
                          Locus_outside ?Locus YESXREF Outside_rearr ?Author
-                         Clone_outside ?Clone NOXREF Outside_rearr ?Author
+                         Clone_outside ?Clone NOXREF Outside_rearr // ?Author
                          Rearr_outside ?Rearrangement
                 Mapping_data    Pos_neg_data ?Pos_neg_data
                                 2_point ^two-point ?2_point_data
@@ -750,12 +750,12 @@
                  Inside_rearr ?Rearrangement YESXREF Clone_inside ?Author
                  Hybridizes_to ?Clone YESXREF Positive_probe ?Grid
                  Hybridizes_weak ?Clone YESXREF Pos_probe_weak ?Grid
-                 Positive_probe ?Clone NOXREF Hybridizes_to ?Grid
-                 Pos_probe_weak ?Clone NOXREF Hybridizes_weak ?Grid
+                 Positive_probe ?Clone NOXREF Hybridizes_to   // ?Grid   (not supported on inbound end)
+                 Pos_probe_weak ?Clone NOXREF Hybridizes_weak // ?Grid
         Negative Negative_gene ?Gene YESXREF Negative_clone
                  Negative_locus ?Locus YESXREF Negative_clone ?Author
                  Outside_rearr ?Rearrangement YESXREF Clone_outside ?Author
-                 Negative_probe ?Clone NOXREF Does_not_hybridize_to ?Grid
+                 Negative_probe ?Clone NOXREF Does_not_hybridize_to // ?Grid
                  Does_not_hybridize_to ?Clone YESXREF Negative_probe ?Grid
         In_strain ?Strain YESXREF Clone
         Mutation ?Text                                  // Paul D. WS244
