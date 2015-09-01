@@ -84,12 +84,16 @@
          (if-let [tags (:pace/tags e)]
            (Node. :tag ts tags nil))
 
-         (ace-object db (:v datom))))
+         (ace-object db (:v datom) (into #{(str (namespace (:db/ident attr)) "." (name (:db/ident attr)))}
+                                         (:pace/use-ns attr)))))
 
     ;; default
     (Node. :text ts "Unknown!" nil)))
 
 (defn- xref-obj
+  "Helper to find the object at the outbound end of an inbound XREF.
+   Returns a vector of [object attribute comp] where `comp` is the 
+   component entity which reifies this XREF, or nil for a simple XREF."
   ([db ent obj-ref]
    (xref-obj db ent nil nil obj-ref))
   ([db ent a v obj-ref]
@@ -101,13 +105,18 @@
      
 (defn ace-object
  ([db eid]
-  (ace-object db eid false))
- ([db eid exclude-posn?]
+  (ace-object db eid nil))
+ ([db eid restrict-ns]
   (let [datoms        (d/datoms db :eavt eid)
         data          (->>
                        (partition-by :a datoms)
                        (map (fn [d]
                               [(entity db (:a (first d))) d])))
+        data          (if restrict-ns
+                        (filter (fn [[a v]]
+                                  (restrict-ns (namespace (:db/ident a))))
+                                data)
+                        data)
         tsmap         (->> (map :tx datoms)
                            (set)
                            (map (fn [tx]
@@ -172,19 +181,16 @@
                                 (fn [datom]
                                   (let [e          (entity db (:e datom))
                                         [o a comp] (xref-obj db e obj-ref)
-                                        children   (if (and a comp false)   ;; Currently disabled, pending some extra
-                                                                            ;; metaschema to track which inbound XREFs
-                                                                            ;; should actually have hashses.
-                                                     (:children (ace-object db comp true)))]
+                                        children   (if (and a comp)
+                                                     (if-let [hash-ns (:pace.xref/use-ns xref)]
+                                                       (:children (ace-object db comp hash-ns))))]
                                     (if o
                                      [(Node. xclass (tsmap (:tx datom)) o children)])))
                                 datoms)))
                             root))
                         named-tree
                         (:pace/xref class))
-                       named-tree)
-                       
-                       ]
+                       named-tree)]
     (cond
      ;; Top level object.  Positional children not allowed.
      class
@@ -194,7 +200,7 @@
             (:children named-tree))
 
      ;; Positional parameters exist.
-     (and (seq positional) (not exclude-posn?))
+     (seq positional)
      (loop [[[attr datoms] & rest] (reverse (sort-by (comp :pace/order first) positional))
             children               (:children named-tree)]
        (let [n (assoc (value-node db attr (tsmap (:tx (first datoms))) (first datoms))
