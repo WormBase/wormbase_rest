@@ -150,7 +150,11 @@
               nss)
 
              ;; Otherwise synthesize a component ID and start from scratch
-             (let [compid [:importer/temp (d/squuid) part]]
+             (let [clean-this (if (vector? this)
+                                (vec (take 2 this))
+                                this)
+                   temp (str/join " " (apply vector clean-this (:db/ident ti) cvals))
+                   compid [:importer/temp temp part]]
                (->
                 (merge-logs
                  ;; concretes
@@ -293,7 +297,7 @@
     (->>
      (concat
       (if (seq bgs)
-        (let [holder [:importer/temp (d/squuid)]]
+        (let [holder [:importer/temp (str (d/squuid))]]
           (conj
            (for [base ["A" "C" "G" "T"]
                  :let [val (bgs base)]]
@@ -307,7 +311,7 @@
               [c c-ts]
               [g g-ts]
               [t t-ts]]
-           (let [holder [:importer/temp (d/squuid)]]
+           (let [holder [:importer/temp (str (d/squuid))]]
              [[timestamp [:db/add [:position-matrix/id id] :position-matrix/values holder]]
               [timestamp [:db/add holder :ordered/index index]]
               [a-ts [:db/add holder :position-matrix.value/a (parse-double a)]]
@@ -427,7 +431,7 @@
         part   (or (:pace/prefer-part ci) :db.part/user)
         this   (if ci
                  (if alloc?
-                   [:importer/temp (d/squuid) part] 
+                   [:importer/temp (str (d/squuid)) part] 
                    [(:db/ident ci) (:id obj) part]))]
     (merge-logs
      (if (and this alloc?)

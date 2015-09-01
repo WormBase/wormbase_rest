@@ -22,7 +22,7 @@
   (let [offset (or offset 0)]
     (reduce
      (fn [log [[method start-s end-s score note :as core] [lines]]]
-       (let [tid   [:importer/temp (d/squuid)]
+       (let [tid   [:importer/temp (str (d/squuid))]
              start (parse-int start-s)
              end   (parse-int end-s)
              min   (+ offset -1 (min start end))
@@ -49,7 +49,7 @@
     (reduce
      (fn [log [start-s end-s confirm-type confirm confirm-x :as line]]
        (if confirm
-         (let [tid   [:importer/temp (d/squuid)]
+         (let [tid   [:importer/temp (str (d/squuid))]
                start (parse-int start-s)
                end   (parse-int end-s)
                min   (+ offset -1 (min start end))
@@ -81,7 +81,7 @@
                         [[:db/add tid :splice-confirm/rst [:sequence/id confirm]]]
                         
                         "RNASeq"
-                        (let [rtid [:importer/temp (d/squuid)]]
+                        (let [rtid [:importer/temp (str (d/squuid))]]
                           [[:db/add tid :splice-confirm/rnaseq rtid]
                            [:db/add rtid :splice-confirm.rnaseq/analysis [:analysis/id confirm]]
                            [:db/add rtid :splice-confirm.rnaseq/count (parse-int confirm-x)]])
@@ -115,7 +115,7 @@
  (let [offset (or offset 0)]
   (reduce
    (fn [log [[type target method score-s parent-start-s parent-end-s target-start-s target-end-s :as line] lines]]
-     (let [tid   [:importer/temp (d/squuid)]
+     (let [tid   [:importer/temp (str (d/squuid))]
            start (parse-int parent-start-s)
            end   (parse-int parent-end-s)
            min   (if start (+ offset -1 start))

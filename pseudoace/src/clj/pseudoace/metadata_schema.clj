@@ -169,7 +169,7 @@
    ;;
 
    {:db/id           (tempid :db.part/db)
-    :db/valueType    :db.type/uuid
+    :db/valueType    :db.type/string
     :db/cardinality  :db.cardinality/one
     :db/unique       :db.unique/identity
     :db/ident        :importer/temp
