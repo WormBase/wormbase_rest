@@ -1,4 +1,4 @@
-(ns pseudoace.ts-import
+ (ns pseudoace.ts-import
   (:use pseudoace.utils
         wb.binning
         clojure.instant)
@@ -150,9 +150,7 @@
               nss)
 
              ;; Otherwise synthesize a component ID and start from scratch
-             (let [clean-this (if (vector? this)
-                                (vec (take 2 this))
-                                this)
+             (let [clean-this (lur this)
                    temp (str/join " " (apply vector clean-this (:db/ident ti) cvals))
                    compid [:importer/temp temp part]]
                (->
@@ -188,6 +186,21 @@
        (indexed (partition-by (partial take (count concs)) vals)))))
 
 
+(defn- find-keys
+  "Helper to group `lines` according to a set of tags.  `tags` should be a
+   map of tag-name -> tag-info.  The result is a map with tag-info objects
+   as keys."
+  [tags lines]
+  (reduce
+   (fn [m line]
+     (loop [[node & nodes]   line
+            [stamp & stamps] (:timestamps (meta line))]
+       (if (and node (not= node "-D"))   ;; Skip deletion nodes, which should be handled elsewhere.
+         (if-let [ti (tags node)]
+           (update-in m [ti] conjv (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
+           (recur nodes stamps))
+         m)))
+   {} lines))
 
 (defn log-nodes [this current lines imp nss]
   (let [tags (get-tags imp nss)]
@@ -206,17 +219,44 @@
               log))
           log lines)))
      {}
-     (reduce
-      (fn [m line]
-        (loop [[node & nodes]   line
-               [stamp & stamps] (:timestamps (meta line))]
-          (if (and node (not= node "-D"))   ;; Skip deletion nodes, which should be handled elsewhere.
-            (if-let [ti (tags node)]
-              (update-in m [ti] conjv (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
-              (recur nodes stamps))
-            m)))
-      {} lines))))
+     (find-keys tags lines))))
 
+(defn- get-xref-tags [clent]
+  (if-let [xrefs (seq (:pace/xref clent))]
+    (->> xrefs
+         (map
+          (fn [xref]
+            [(last (str/split (:pace.xref/tags xref) #" "))
+             xref]))
+         (into {}))))
+
+(defn log-xref-nodes [this current lines clent]
+  (if-let [tags (get-xref-tags clent)]
+    (reduce
+     (fn [log [{obj-ref :pace.xref/obj-ref
+                attr    :pace.xref/attribute
+                :as xref}
+               lines]]
+       (println xref)
+       (let [remote-class (entity (d/entity-db clent) obj-ref)]             
+         (if (= (namespace obj-ref) (namespace attr))
+           ;; Simple case
+           (reduce
+            (fn [log line]
+              (update
+               log
+               (first (:timestamps (meta line)))
+               conj
+               [:db/add [obj-ref (first line) (:pace/prefer-part remote-class)]
+                        attr
+                        this]))
+            log lines)
+
+           ;; Complex case
+           log)))
+     {}
+     (find-keys tags lines))))
+  
 (defn- find-delete-component
   "Attempt to find which component entity is meant in a delete.  Currently a somewhat-conservative impl."
   [this db imp ti nodes]
@@ -454,6 +494,13 @@
           (:lines obj)
           imp
           #{(namespace (:db/ident ci))})
+         
+         (log-xref-nodes
+          this
+          nil
+          (:lines obj)
+          ci)
+         
          (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
            (log-deletes
             this
