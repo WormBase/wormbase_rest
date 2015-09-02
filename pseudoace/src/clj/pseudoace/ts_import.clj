@@ -1,8 +1,8 @@
- (ns pseudoace.ts-import
+(ns pseudoace.ts-import
   (:use pseudoace.utils
         wb.binning
         clojure.instant)
-  (:require [pseudoace.import :refer [get-tags datomize-objval]]
+  (:require [pseudoace.import :refer [datomize-objval]]
             [datomic.api :as d :refer (db q entity touch tempid)]
             [acetyl.parser :as ace]
             [clojure.string :as str]
@@ -49,6 +49,15 @@
   (with-meta (drop n seq)
     {:timestamps (drop n (:timestamps (meta seq)))}))
 
+(defn get-tag-paths [imp nss]
+  (->> (mapcat (:tags imp) nss)
+       (mapcat
+        (fn [attr]
+          (let [path (str/split (:pace/tags attr) #" ")]
+            (if (> (count path) 1)
+              [[path attr] [[(last path)] attr]]
+              [[path attr]]))))
+       (into {})))
 
 (defn merge-logs
   ([l1 l2]
@@ -194,16 +203,18 @@
   (reduce
    (fn [m line]
      (loop [[node & nodes]   line
+            path             []
             [stamp & stamps] (:timestamps (meta line))]
        (if (and node (not= node "-D"))   ;; Skip deletion nodes, which should be handled elsewhere.
-         (if-let [ti (tags node)]
-           (update-in m [ti] conjv (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
-           (recur nodes stamps))
+         (let [path (conj path node)]
+           (if-let [ti (tags path)]
+             (update-in m [ti] conjv (with-meta (or nodes []) {:timestamps (or (seq stamps) [stamp])}))
+             (recur nodes path stamps)))
          m)))
    {} lines))
 
 (defn log-nodes [this current lines imp nss]
-  (let [tags (get-tags imp nss)]
+  (let [tags (get-tag-paths imp nss)]
     (reduce
      (fn [log [ti lines]]
        (if (:db/isComponent ti)
@@ -224,20 +235,21 @@
 (defn- get-xref-tags [clent]
   (if-let [xrefs (seq (:pace/xref clent))]
     (->> xrefs
-         (map
+         (mapcat
           (fn [xref]
-            [(last (str/split (:pace.xref/tags xref) #" "))
-             xref]))
+            (let [path (str/split (:pace.xref/tags xref) #" ")]
+              (if (> (count path) 1)
+                [[path xref] [[(last path)] xref]]
+                [[path xref]]))))
          (into {}))))
 
-(defn log-xref-nodes [this current lines clent]
+(defn log-xref-nodes [this current lines clent imp]
   (if-let [tags (get-xref-tags clent)]
     (reduce
      (fn [log [{obj-ref :pace.xref/obj-ref
                 attr    :pace.xref/attribute
                 :as xref}
                lines]]
-       (println xref)
        (let [remote-class (entity (d/entity-db clent) obj-ref)]             
          (if (= (namespace obj-ref) (namespace attr))
            ;; Simple case
@@ -253,7 +265,36 @@
             log lines)
 
            ;; Complex case
-           log)))
+           (let [[ns an]    (str/split (namespace attr) #"\.")
+                 link-attr  (if an (keyword ns an))
+                 link-ent   (entity (d/entity-db clent) link-attr)]
+             (if (and link-ent (= ns (namespace obj-ref)))
+               (reduce-kv
+                (fn [log xo lines]
+                  (let [remote [obj-ref xo (:pace/prefer-part remote-class)]
+                        temp (str/join " " [(lur remote) link-attr (if (vector? this)
+                                                                     (second this)
+                                                                     this)])
+                        compid [:importer/temp temp (:pace/prefer-part remote-class)]]
+                    (merge-logs
+                     (update
+                      log
+                      (first (:timestamps (meta (first lines))))
+                      conj
+                      [:db/add remote link-attr compid]
+                      [:db/add compid attr this])
+                     (log-nodes
+                        compid
+                        nil
+                        (map (partial drop-ts 1) lines)
+                        imp
+                        (:pace.xref/use-ns xref)))))
+                log (group-by first lines))
+
+               (do
+                 (println "WARNING: Couldn't link" attr)
+                 log))))))
+                 
      {}
      (find-keys tags lines))))
   
@@ -499,7 +540,8 @@
           this
           nil
           (:lines obj)
-          ci)
+          ci
+          imp)
          
          (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
            (log-deletes
