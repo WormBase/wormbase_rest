@@ -2,7 +2,7 @@
   (:use pseudoace.utils
         wb.binning
         clojure.instant)
-  (:require [pseudoace.import :refer [datomize-objval]]
+  (:require [pseudoace.import :refer [datomize-objval get-tags]]
             [datomic.api :as d :refer (db q entity touch tempid)]
             [acetyl.parser :as ace]
             [clojure.string :as str]
@@ -48,6 +48,13 @@
   [n seq]
   (with-meta (drop n seq)
     {:timestamps (drop n (:timestamps (meta seq)))}))
+
+(defn- lur
+  "Helper to turn 3-element pseudo-lookup-refs into plain lookup-refs."
+  [e]
+  (if (and (vector? e) (= (count e) 3))
+    (vec (take 2 e))
+    e))
 
 (defn get-tag-paths [imp nss]
   (->> (mapcat (:tags imp) nss)
@@ -233,7 +240,7 @@
      (find-keys tags lines))))
 
 (defn- get-xref-tags [clent]
-  (if-let [xrefs (seq (:pace/xref clent))]
+  (if-let [xrefs (seq (filter :pace.xref/import (:pace/xref clent)))]
     (->> xrefs
          (mapcat
           (fn [xref]
@@ -324,7 +331,7 @@
       
 
 (defn log-deletes [this db lines imp nss]
-  (let [tags (get-tags imp nss)]
+  (let [tags (get-tags imp nss)]  ;; should be changed to use get-tag-paths?
     (reduce
      (fn [log line]
        (loop [[node & nodes]   line
@@ -619,12 +626,7 @@
         [datom temps]
         (println "Nil in " datom)))))
 
-(defn- lur
-  "Helper to turn 3-element pseudo-lookup-refs into plain lookup-refs."
-  [e]
-  (if (and (vector? e) (= (count e) 3))
-    (vec (take 2 e))
-    e))
+
 
 (defn fixup-datoms
   "Replace any lookup refs in `datoms` which can't be resolved in `db` with tempids,

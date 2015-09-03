@@ -164,12 +164,15 @@
                                            (.startsWith cname "?"))
                         :pace/fill-default (or (:fill-default fchild) nil))]]
            (if-let [x (:xref fchild)]
-             (let [{:keys [tags]} (tpm [(datomize-name cname) x])]
+             (let [{:keys [tags mode]} (tpm [(datomize-name cname) x])]
                (conj schema
                      {:db/id          (tempid :db.part/db)
                       :pace/identifies-class (.substring cname 1)
                       :pace/xref  (vmap :db/id                (tempid :db.part/user)
                                         :pace.xref/tags       (or tags x)
+                                        :pace.xref/view       true
+                                        :pace.xref/import     (= mode "INXREF")
+                                        :pace.xref/export     (= mode "INXREF")
                                         :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                                :db/ident attribute}
                                         :pace.xref/obj-ref    sid)}))
@@ -245,7 +248,7 @@
                                                  {:db/id (tempid :db.part/db)
                                                   :pace/identifies-class (.substring cname 1)}))]]
                  (if-let [x (:xref c)]
-                   (let [{:keys [tags use-ns]} (tpm [(datomize-name cname) x])]
+                   (let [{:keys [tags use-ns mode]} (tpm [(datomize-name cname) x])]
                      (conj schema
                            {:db/id          (tempid :db.part/db)
                             :pace/identifies-class (.substring cname 1)
@@ -255,6 +258,9 @@
                                              :pace.xref/attribute  {:db/id    (tempid :db.part/db)
                                                                     :db/ident cattr}
                                              :pace.xref/obj-ref    sid
+                                             :pace.xref/view       true
+                                             :pace.xref/import     (= mode "INXREF")
+                                             :pace.xref/export     (= mode "INXREF")
                                              :pace.xref/use-ns     use-ns)}))
                    schema)))
              (iterate inc (if enum 1 0))   ;; In enum case, order 0 is reserved for the enum.
@@ -338,17 +344,18 @@
      (:xref node)
      (assoc tpm [class (last tagpath)]
             {:tags (str/join " " tagpath)
-             :use-ns (if (:suppress-xref node)
+             :mode (:suppress-xref node)
+             :use-ns (if (= (:suppress-xref node) "INXREF")
                        (when-let [[h :as children] (:children node)]
                          (cond
                            (> (count children) 1)
-                           (println "WARNING: NOXREF has multiple children at " (pr-str node))
+                           (println "WARNING: INXREF has multiple children at " (pr-str node))
                            
                            (seq (:children h))
-                           (println "WARNING: NOXREF can only be followed by a single node at " (pr-str node))
+                           (println "WARNING: INXREF can only be followed by a single node at " (pr-str node))
                            
                            (not= (:type h) :hash)
-                           (println "WARNING: NOXREF can only be followed by a hash at " (pr-str node))
+                           (println "WARNING: INXREF can only be followed by a hash at " (pr-str node))
 
                            :default
                            #{(datomize-name (:name h))})))})

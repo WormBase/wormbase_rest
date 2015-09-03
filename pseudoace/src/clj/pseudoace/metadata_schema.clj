@@ -94,6 +94,27 @@
    :db.install/_attribute :db.part/db}
 
   {:db/id            (tempid :db.part/db)
+   :db/ident         :pace.xref/import
+   :db/valueType     :db.type/boolean
+   :db/cardinality   :db.cardinality/one
+   :db/doc           "Should inbound occurrences of this XREF be considered by the ACeDB importer."
+   :db.install/_attribute :db.part/db}
+
+  {:db/id            (tempid :db.part/db)
+   :db/ident         :pace.xref/export
+   :db/valueType     :db.type/boolean
+   :db/cardinality   :db.cardinality/one
+   :db/doc           "Should inbound occurrences of this XREF be dumped by the .ace file exporter."
+   :db.install/_attribute :db.part/db}
+
+  {:db/id            (tempid :db.part/db)
+   :db/ident         :pace.xref/view
+   :db/valueType     :db.type/boolean
+   :db/cardinality   :db.cardinality/one
+   :db/doc           "Should inbound occurrences of this XREF be shown in user-oriented viewers."
+   :db.install/_attribute :db.part/db}
+
+  {:db/id            (tempid :db.part/db)
    :db/ident         :pace.xref/use-ns
    :db/valueType     :db.type/string
    :db/cardinality   :db.cardinality/many
