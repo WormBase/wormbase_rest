@@ -2186,9 +2186,9 @@
               Expression_data Life_stage ?Life_stage YESXREF Expr_pattern #Qualifier
                               Anatomy_term ?Anatomy_term YESXREF Expr_pattern #Qualifier
                               GO_term ?GO_term YESXREF Expr_pattern #GR_condition
-			      Not_in_Life_stage ?Life_stage #Qualifier
-			      Not_in_Anatomy_term ?Anatomy_term #Qualifier
-			      Not_in_GO_term ?GO_term #GR_condition 
+                              Not_in_Life_stage ?Life_stage #Qualifier
+                              Not_in_Anatomy_term ?Anatomy_term #Qualifier
+                              Not_in_GO_term ?GO_term #GR_condition 
               Subcellular_localization ?Text
               Type Reporter_gene ?Text FILL_DEFAULT
                    In_situ Text FILL_DEFAULT
@@ -2739,18 +2739,18 @@
                 Caused_by_other ?Text #Evidence
                 Rescued_by_transgene ?Transgene
                 Variation_effect ENUM Gain_of_function_undetermined_type #Evidence
-				      Antimorph_gain_of_function #Evidence
-				      Dominant_negative_gain_of_function #Evidence
-				      Hypermorph_gain_of_function #Evidence
-				      Neomorph_gain_of_function #Evidence
-				      Loss_of_function_undetermined_extent #Evidence    
-				      Null #Evidence
-				      Predicted_null_via_sequence #Evidence
-				      Probable_null_via_phenotype #Evidence
-				      Hypomorph_reduction_of_function #Evidence
-				      Predicted_hypomorph_via_sequence #Evidence
-				      Probable_hypomorph_via_phenotype #Evidence
-				      Wild_allele #Evidence
+                                      Antimorph_gain_of_function #Evidence
+                                      Dominant_negative_gain_of_function #Evidence
+                                      Hypermorph_gain_of_function #Evidence
+                                      Neomorph_gain_of_function #Evidence
+                                      Loss_of_function_undetermined_extent #Evidence
+                                      Null #Evidence
+                                      Predicted_null_via_sequence #Evidence
+                                      Probable_null_via_phenotype #Evidence
+                                      Hypomorph_reduction_of_function #Evidence
+                                      Predicted_hypomorph_via_sequence #Evidence
+                                      Probable_hypomorph_via_phenotype #Evidence
+                                      Wild_allele #Evidence
                 Affected_by Molecule ?Molecule #Evidence // ?Molecule model Karen Yook
                 Temperature_sensitive Heat_sensitive Text #Evidence
                                       Cold_sensitive Text #Evidence
@@ -3705,8 +3705,7 @@
 //
 //////////////////////////////////////////////////      
 
-?WBProcess      Public_name ?Text
-                Summary UNIQUE ?Text #Evidence
+?WBProcess      Summary UNIQUE ?Text #Evidence
                 Process_term ?Text
                 Public_name UNIQUE ?Text
                 Other_name ?Text
