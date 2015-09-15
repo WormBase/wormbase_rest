@@ -769,7 +769,7 @@
                 Backbone ^backbone-length UNIQUE Int                     // bp Paul D. WS244
         Location ?Laboratory #Lab_Location
         URL Text                          // to link to MRC_geneservice website ar2
-        Gridded ?Grid INXREF Clone
+        Gridded ?Grid NOXREF Clone
         Grid_data ?Grid_data INXREF Probe
         FingerPrint     Gel_Number UNIQUE Int
                         Approximate_Match_to UNIQUE ?Clone NOXREF Canonical_for       // Should these be outbound? TAD

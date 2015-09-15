@@ -257,7 +257,8 @@
                 attr    :pace.xref/attribute
                 :as xref}
                lines]]
-       (let [remote-class (entity (d/entity-db clent) obj-ref)]             
+       (let [lines (filter seq lines)    ;; Ignore empty inbound XREF lines.
+             remote-class (entity (d/entity-db clent) obj-ref)]             
          (if (= (namespace obj-ref) (namespace attr))
            ;; Simple case
            (reduce
