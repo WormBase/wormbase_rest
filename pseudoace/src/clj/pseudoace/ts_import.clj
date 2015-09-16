@@ -300,7 +300,7 @@
                 log (group-by first lines))
 
                (do
-                 (println "WARNING: Couldn't link" attr)
+                 #_(println "WARNING: Couldn't link" attr)
                  log))))))
                  
      {}
