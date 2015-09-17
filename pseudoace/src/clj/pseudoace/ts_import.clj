@@ -614,6 +614,15 @@
          (:lines obj)
          imp
          #{(namespace (:db/ident ci))})
+
+        (log-xref-nodes
+          this
+          db
+          orig
+          (:lines obj)
+          ci
+          imp)
+
         (if-let [dels (seq (filter #(= (first %) "-D") (:lines obj)))]
           (log-deletes
            this
