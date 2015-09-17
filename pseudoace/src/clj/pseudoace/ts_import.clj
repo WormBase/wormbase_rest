@@ -172,7 +172,13 @@
 
              ;; Otherwise synthesize a component ID and start from scratch
              (let [clean-this (lur this)
-                   temp (str/join " " (apply vector clean-this (:db/ident ti) cvals))
+                   temp (str/join " "
+                           (apply vector clean-this (:db/ident ti)
+                                  (map (fn [cv]
+                                         (if-let [[_ alloc? alloc-name] (re-matches #"__(ALLOCATE|ASSIGN)__(.+)?" cv)]
+                                           (str (d/basis-t current-db) ":" alloc-name)
+                                           cv))
+                                       cvals)))
                    compid [:importer/temp temp part]]
                (->
                 (merge-logs
@@ -287,7 +293,7 @@
                 (fn [log xo lines]
                   (let [remote (if-let [[_ alloc? alloc-name] (re-matches #"__(ALLOCATE|ASSIGN)__(.+)?" xo)]
                                  (if alloc-name
-                                   [:importer/temp (str (d/basis-t db) ":" alloc-name)]
+                                   [:importer/temp (str (d/basis-t current-db) ":" alloc-name)]
                                    (except "Can't link to a non-named tempid: " val))
                                  [obj-ref xo (:pace/prefer-part remote-class)])
                         temp (str/join " " [(lur remote) link-attr (if (vector? this)
