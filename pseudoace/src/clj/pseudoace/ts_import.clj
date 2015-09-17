@@ -83,7 +83,7 @@
   ([l1 l2 & ls]
      (reduce merge-logs (merge-logs l1 l2) ls)))
 
-(defn- log-datomize-value [ti imp val]
+(defn- log-datomize-value [ti db imp val]
   (case (:db/valueType ti)
     :db.type/string
       (or (ace/unescape (first val))
@@ -106,8 +106,12 @@
       true      ; ACeDB just has tag presence/absence rather than booleans.
     :db.type/ref
       (if-let [objref (:pace/obj-ref ti)]
-        (if (first val)
-          [objref (first val) (or (get-in imp [:classes objref :pace/prefer-part]) :db.part/user)])
+        (if-let [val (first val)]
+          (if-let [[_ alloc? alloc-name] (re-matches #"__(ALLOCATE|ASSIGN)__(.+)?" val)]
+            (if alloc-name
+              [:importer/temp (str (d/basis-t db) ":" alloc-name)]
+              (except "Can't link to a non-named tempid: " val))
+            [objref val (or (get-in imp [:classes objref :pace/prefer-part]) :db.part/user)]))
         (datomize-objval ti imp val))
     ;;default
       (except "Can't handle " (:db/valueType ti))))
@@ -128,7 +132,7 @@
        ent))
    {} currents))
 
-(defn- log-components [[_ _ part :as this] current ti imp vals]
+(defn- log-components [[_ _ part :as this] current-db current ti imp vals]
   (let [single?  (not= (:db/cardinality ti) :db.cardinality/many)
         current  ((:db/ident ti) current)
         current  (or (and current single? [current])
@@ -151,7 +155,7 @@
          (let [cvals  (take-ts (count concs) (first lines))
                cdata  (map (fn [conc val stamp]
                              [conc
-                              (log-datomize-value conc imp [val])
+                              (log-datomize-value conc current-db imp [val])
                               stamp])
                            concs cvals (lazy-cat
                                         (:timestamps (meta cvals))
@@ -160,6 +164,7 @@
              ;; Component with these concrete values already exists
              (log-nodes
               (:db/id current-comp)
+              current-db
               current-comp
               (map (partial drop-ts (count concs)) lines)
               imp
@@ -187,6 +192,7 @@
                  ;; hashes
                  (log-nodes
                   compid
+                  current-db
                   nil
                   (map (partial drop-ts (count concs)) lines)
                   imp
@@ -220,15 +226,15 @@
          m)))
    {} lines))
 
-(defn log-nodes [this current lines imp nss]
+(defn log-nodes [this current-db current lines imp nss]
   (let [tags (get-tag-paths imp nss)]
     (reduce
      (fn [log [ti lines]]
        (if (:db/isComponent ti)
-         (merge-logs log (log-components this current ti imp lines))
+         (merge-logs log (log-components this current-db current ti imp lines))
          (reduce
           (fn [log line]
-            (if-let [lv (log-datomize-value ti imp line)]
+            (if-let [lv (log-datomize-value ti current-db imp line)]
               (update-in
                log
                [(first (:timestamps (meta line)))]
@@ -250,7 +256,7 @@
                 [[path xref]]))))
          (into {}))))
 
-(defn log-xref-nodes [this current lines clent imp]
+(defn log-xref-nodes [this current-db current lines clent imp]
   (if-let [tags (get-xref-tags clent)]
     (reduce
      (fn [log [{obj-ref :pace.xref/obj-ref
@@ -293,6 +299,7 @@
                       [:db/add compid attr this])
                      (log-nodes
                         compid
+                        current-db
                         nil
                         (map (partial drop-ts 1) lines)
                         imp
@@ -322,7 +329,7 @@
           cvals   (take-ts (count concs) nodes)
           cdata   (map (fn [conc val stamp]
                          [conc
-                          (log-datomize-value conc imp [val])
+                          (log-datomize-value conc db imp [val])
                           stamp])
                        concs cvals (lazy-cat
                                     (:timestamps (meta cvals))
@@ -353,7 +360,8 @@
                    retract
                    (log-datomize-value     ;; If no value then this returns nil and
                     ti                     ;; we get a "wildcard" retract that will be handled
-                    imp                    ;; at playback time.
+                    db                     ;; at playback time.
+                    imp                    
                     (if nodes
                       (with-meta nodes {:timestamps stamps})))))))))))
      {} lines)))
@@ -513,15 +521,25 @@
        conj
        [:db/add this :locatable/method [:method/id (first method)]]))))
 
-(defn obj->log [imp {:keys [id] :as obj}]
-  (let [ci     ((:classes imp) (:class obj))
-        alloc? (or (= id "__ALLOCATE__")
-                   (= id "__ASSIGN__"))
-        part   (or (:pace/prefer-part ci) :db.part/user)
-        this   (if ci
-                 (if alloc?
-                   [:importer/temp (str (d/squuid)) part] 
-                   [(:db/ident ci) (:id obj) part]))]
+(defn obj->log
+ ([imp obj]
+  (obj->log imp nil obj))
+ ([imp db {:keys [id] :as obj}]
+  (let [ci                     ((:classes imp) (:class obj))
+        [_ alloc? alloc-name]  (re-matches #"__(ALLOCATE|ASSIGN)__(.+)?" id)
+        part                   (or (:pace/prefer-part ci) :db.part/user)
+        this                   (if ci
+                                 (if alloc?
+                                   [:importer/temp
+                                    (if alloc-name
+                                      (if db
+                                        (str (d/basis-t db) ":" alloc-name)
+                                        (except "Can't use named allocation when a db is not provided: " id))
+                                      (str (d/squuid)))
+                                    part]
+                                   [(:db/ident ci)
+                                    (:id obj)
+                                    part]))]
     (merge-logs
      (if (and this alloc?)
        {nil [[:db/add this (:db/ident ci) :allocate]]})
@@ -539,6 +557,7 @@
         (merge-logs
          (log-nodes
           this
+          db
           nil   ;; Assume no pre-existing object
           (:lines obj)
           imp
@@ -546,6 +565,7 @@
          
          (log-xref-nodes
           this
+          db
           nil
           (:lines obj)
           ci
@@ -559,7 +579,7 @@
             imp
             #{(namespace (:db/ident ci))})))))
      (log-coreprops obj this imp)
-     (log-custom obj this imp))))
+     (log-custom obj this imp)))))
 
 (defn patch->log [imp db {:keys [id] :as obj}]
   (let [ci     ((:classes imp) (:class obj))
@@ -579,6 +599,7 @@
        (merge-logs
         (log-nodes
          this
+         db
          orig
          (:lines obj)
          imp
@@ -590,7 +611,7 @@
            (map (partial drop-ts 1) dels)  ; Remove the leading "-D"
            imp
            #{(namespace (:db/ident ci))}))))
-      (obj->log imp obj))))     ;; Patch for a non-existant object is equivalent to import.
+      (obj->log imp db obj))))     ;; Patch for a non-existant object is equivalent to import.
 
 (defn objs->log [imp objs]
   (reduce
