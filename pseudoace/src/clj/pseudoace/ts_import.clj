@@ -285,7 +285,11 @@
              (if (and link-ent (= ns (namespace obj-ref)))
                (reduce-kv
                 (fn [log xo lines]
-                  (let [remote [obj-ref xo (:pace/prefer-part remote-class)]
+                  (let [remote (if-let [[_ alloc? alloc-name] (re-matches #"__(ALLOCATE|ASSIGN)__(.+)?" xo)]
+                                 (if alloc-name
+                                   [:importer/temp (str (d/basis-t db) ":" alloc-name)]
+                                   (except "Can't link to a non-named tempid: " val))
+                                 [obj-ref xo (:pace/prefer-part remote-class)])
                         temp (str/join " " [(lur remote) link-attr (if (vector? this)
                                                                      (second this)
                                                                      this)])
