@@ -29,11 +29,15 @@
                  [prismatic/om-tools "0.3.11"]
                  [com.andrewmcveigh/cljs-time "0.3.0"]
                  
-                 [environ "1.0.0"]]
+                 [environ "1.0.0"]
+
+                 [org.clojure/tools.cli "0.3.3"]]
   :description "ACeDB emulator and migration tools"
-  :source-paths ["src/clj"]
+  :source-paths ["src/clj/pseudoace", "src/clj/"]
   :java-source-paths ["src/java"]
   :resource-paths ["resources"]
+  
+  :main ace-to-datomic
 
   :plugins [[lein-cljsbuild "1.0.6"]
             [lein-environ "1.0.0"]]
