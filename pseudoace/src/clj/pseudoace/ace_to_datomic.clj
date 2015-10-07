@@ -11,10 +11,17 @@
             [pseudoace.utils :as utils]
             [clojure.pprint :as pp]
 
+            [pseudoace.import :as old-import]
+            [pseudoace.ts-import :as ts-import]
+            [acetyl.parser :as ace]
+
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]])
-  (:import (java.net InetAddress))
+  (:import (java.net InetAddress) 
+           (java.io.FileInputStream) 
+           (java.util.zip.GZIPInputStream)
+           (java.lang.Runtimea))
   (:gen-class))
 
 (def cli-options
@@ -22,8 +29,10 @@
    ;; example argument description, and a description. All three are optional
    ;; and positional.
    [nil "--model PATH" "Specify the model file that you would like to use that is found in the models folder e.g. models.wrm.WS250.annot"]
-   [nil "--url URL" "Specify the url of the Dataomic transactor you would like to connect to example: (datomic:free://localhost:4334/WS25)"]
+   [nil "--url URL" "Specify the url of the Dataomic transactor you would like to connect. Example: datomic:free://localhost:4334/WS25"]
    [nil "--schema-filename PATH" "Specify the name of the file for the schema view to be written to when selecting Action: generate-schema-view exampls schema250.edn"]
+   [nil "--log-dir PATH" "Specifies the path to and empty directory to store the Datomic logs in. Example: /datastore/datomic/tmp/datomic/import-logs-WS250/"]
+   [nil "--acedump-dir PATH" "Specifies the path to the directory of the desired acedump. Example /datastore/datomic/tmp/acedata/WS250/"]
    ["-v" "--verbose"]
    ["-h" "--help"]])
 
@@ -36,10 +45,12 @@
        options-summary
        ""
        "Actions:"
-       "  create-database              Select this option if you would like to create a Datomic database from a schema. Required options [model, url]"
-       "  generate-datomic-schema-view Select if you would like the schema to the database to be exported to a file. Required options [schema-filename, url]" 
-       ""
-       "Please refer to the manual page for more information."]
+       "  create-database                      Select this option if you would like to create a Datomic database from a schema. Required options [model, url]"
+       "  generate-datomic-schema-view         Select if you would like the schema to the database to be exported to a file. Required options [schema-filename, url]" 
+       "  acedump-to-datomic-log               Select if you are importing data from ACeDB to Datomic and would like to create the Datomic log files [url, log-dir, acedump-dir]"
+       "  sort-datomic-log                     Select if you would like to sort the log files generated from your ACeDB dump [log-dir]"
+       "  import-logs-back-into-datomic        Select if you would like to import the sorted logs back into datomic [log-dir, url]"
+       "  all-actions                          Select if you would like to perform all actions from acedb to datomic [all options required]"]
        (string/join \newline)))
 
 (defn error-msg [errors]
@@ -77,11 +88,9 @@
                      :db/txInstant   #inst "1970-01-01T00:00:01"}))
        (catch Exception e(str "Caught Exception: " (.getMessage e))))) 
 
-(defn create-database [options]
-    (if (:verbose options) (println "Creating Database"))
-    (generate-schema options)
+(defn load-schema [options]
     (def uri (:url options))
-    (datomic/create-database uri)
+    (if (:verbose options) (println "Loading Schema"))
     (if (:verbose options) (println "\tCreating database connection"))
     (def con (datomic/connect uri))
     ;; define function tx-quiet that runs a transaction, 
@@ -111,19 +120,124 @@
     (if (:verbose options) (println "\tReleasing database connection"))
     (datomic/release con))
  
+(defn create-database [options]
+    (if (:verbose options) (println "Creating Database"))
+    (generate-schema options)
+    (def uri (:url options))
+    (datomic/create-database uri)
+    (load-schema options))
+
+(defn directory-walk [directory pattern]
+  (doall (filter #(re-matches pattern (.getName %))
+                 (file-seq (io/file directory)))))
+
+(defn get-ace-files [directory]
+    (map #(.getPath %) (directory-walk directory #".*\.ace.gz")))
+
+(defn get-datomic-log-files [directory]
+    (map #(.getPath %) (directory-walk directory #".*\.edn.gz")))
+
+(def not-nil? (complement nil?))
+
+(defn acedump-file-to-datalog [imp file log-dir verbose]
+    (if (not-nil? verbose)  (println "Converting " file))
+    ;; then pull out objects from the pipeline in chunks of 20 objects. 
+    ;; Larger block size may be faster if you have plenty of memory
+    (doseq [blk (->> (java.io.FileInputStream. file)
+                     (java.util.zip.GZIPInputStream.)
+                     (ace/ace-reader)
+                     (ace/ace-seq)
+                     (partition-all 20))] 
+           (ts-import/split-logs-to-dir imp blk log-dir)))
+
+(defn acedump-to-datomic-log [options]
+    (if (:verbose options) (println "Converting ACeDump to Datomic Log"))
+    (if (:verbose options) (println "\tCreating database connection"))
+    (def uri (:url options))
+    (def con (datomic/connect uri))
+    (def imp (old-import/importer con)) ;; Helper object, holds a cache of schema data.
+    (def log-dir (io/file (:log-dir options)))   ;; Must be an empty directory
+    (def files (get-ace-files (:acedump-dir options)))
+    (doseq [file files] (acedump-file-to-datalog imp file log-dir (:verbose options)))
+    (if (:verbose options) (println "\tReleasing database connection"))
+    (datomic/release con))
+
+(defn remove-from-end [s end]
+  (if (.endsWith s end)
+      (.substring s 0 (- (count s)
+                         (count end)))
+    s))
+
+(defn sort-datomic-log [options]
+    (if (:verbose options) (println "sorting datomic log"))
+    (def files (get-datomic-log-files (:log-dir options)))
+    (doseq [file files] 
+        (if (:verbose options) (println "sorting file " file))
+        (def basename (remove-from-end file ".gz"))
+        (println basename)))
+;;        (. (java.lang.Runtime/getRuntime) exec "cd " (:log-dir options) "; gzip -dc " file " | sort -T sort-temp -k1,1 -s | gzip -c >" basename ".sort.gz")))      
+
+(defn import-logs-into-datomic [options]
+    (if (:verbose options) (println "importing logs into datomic"))
+    (def uri (:url options))
+    (def con (datomic/connect uri))
+    (def log-files (->> (.listFiles (:log-dir options)
+                        (filter #(.endsWith (.getName %) ".edn.sort.gz"))
+                        (sort-by #(.getName %)))))
+    (doseq [f log-files]
+       (if (:verbose options) (println "Importing " (.getName f))
+       (ts-import/play-logfile con (java.util.zip.GZIPInputStream. (java.io.FileInputStream. f)))))
+    (if (:verbose options) (println "\tReleasing database connection"))
+    (datomic/release con))
+
+(defn all-actions [options]
+    (generate-datomic-schema-view options)
+    (create-database options)
+    (acedump-to-datomic-log options)
+    (sort-datomic-log options)
+    (import-logs-into-datomic options)
+    (test-datomic-data options))
+
+(defn test-datomic-data [options]
+    (if (:verbose options) (println "testing datomic data"))
+    (def uri (:url options))
+    (def con (datomic/connect uri))
+    (is #{[923589767780191]} (datomic/q '[:find ?c :in $ :where [?c :gene/id "WBGene00018635"]] (datomic/db con)) ))
+
 (defn -main [& args]
     (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
-    ;; Handle help and error conditions
     (cond
         (:help options) (exit 0 (usage summary))
         (not= (count arguments) 2) (exit 1 (usage summary))
         errors (exit 1 (error-msg errors)))
-        ;; Execute program with options
     (case (last arguments)
-        "generate-datomic-schema-view" (if (or (string/blank? (:schema-filename options)) (string/blank? (:url options)))
-                                          (println "Options --url and --schema-filename are required for generating the schema view")
-                                          (generate-datomic-schema-view options))
-        "create-database" (if (or (string/blank? (:model options)) (string/blank? (:url options)))  
-                               (println "The option url is required when generating the dataomic schema view")  
-                               (create-database options))
+        "generate-datomic-schema-view" (if (or (string/blank? (:schema-filename options)) 
+                                               (string/blank? (:url options)))
+                                           (println "Options --url and --schema-filename are required for generating the schema view")
+                                           (generate-datomic-schema-view options))
+        "create-database"              (if (or (string/blank? (:model options)) 
+                                               (string/blank? (:url options)))  
+                                           (println "Options url and model are required when generating the dataomic schema view")  
+                                           (create-database options))
+        "acedump-to-datomic-log"       (if (or (string/blank? (:url options)) 
+                                               (string/blank? (:log-dir options)) 
+                                               (string/blank? (:acedump-dir options)))
+                                           (println "Options url and log-dir and ace-dump-dir are required for converting the acedump into datomic-log format")
+                                           (acedump-to-datomic-log options))
+        "sort-datomic-log"             (if (string/blank? (:log-dir options))
+                                           (println "Options log-dir is required for sorting the datomic log")
+                                           (sort-datomic-log options))
+        "import-logs-into-datomic"     (if (or (string/blank? (:log-dir options)) 
+                                               (sting/blank? (:url options)))
+                                           (println "Options log-dir and url are required for importing logs into datomic")
+                                           (import-logs-into-datomic options))
+        "test-datomic-data"            (if (or (string/blank? (:url options)))
+                                           (println "Option url is require for performing tests on datomic data"))
+        "all-actions"                  (if (or (string/blank? (:url options)) 
+                                               (string/blank? (:log-dir options)) 
+                                               (string/blank? (:acedump-dir options)) 
+                                               (string/blank? (:schema-filname options)) 
+                                               (string/blank? (:model options)))
+                                           (println "All options are required if you would like to peform all actions")
+                                           (all-actions options))
         (exit 1 (usage summary)))))
