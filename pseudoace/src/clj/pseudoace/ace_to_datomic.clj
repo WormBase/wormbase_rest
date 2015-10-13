@@ -17,7 +17,10 @@
 
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :refer [parse-opts]])
+            [clojure.tools.cli :refer [parse-opts]]
+ 
+            [clj-commons-exec :as exec] 
+            [clojure.java.shell :as shell])
   (:import (java.net InetAddress) 
            (java.io.FileInputStream) 
            (java.util.zip.GZIPInputStream)
@@ -135,7 +138,7 @@
     (map #(.getPath %) (directory-walk directory #".*\.ace.gz")))
 
 (defn get-datomic-log-files [directory]
-    (map #(.getPath %) (directory-walk directory #".*\.edn.gz")))
+    (map #(.getName %) (directory-walk directory #".*\.edn.gz")))
 
 (def not-nil? (complement nil?))
 
@@ -168,14 +171,29 @@
                          (count end)))
     s))
 
+(defn check-sh-pipe-results [results options]
+   (doseq [result results]
+        (if-not (zero? (:exit result)) 
+            (println "ERROR: Sort command had exit value: " (:exit result) " and err: " (:err result) ) 
+            (if (:verbose options) 
+                (println "Sort completed Successfully")) )))
+
+(defn sort-datomic-log-command [file sort-temp-folder output-file options]
+    (exec/sh-pipe ["gzip" "-dc" file] 
+                  ["sort" "-T" sort-temp-folder "-K1,1" "-s"]
+                  ["gzip" "-c" ">"  output-file] {:dir (:log-dir options) :shutdown true}))
+
 (defn sort-datomic-log [options]
     (if (:verbose options) (println "sorting datomic log"))
     (def files (get-datomic-log-files (:log-dir options)))
     (doseq [file files] 
         (if (:verbose options) (println "sorting file " file))
         (def basename (remove-from-end file ".gz"))
-        (println basename)))
-;;        (. (java.lang.Runtime/getRuntime) exec "cd " (:log-dir options) "; gzip -dc " file " | sort -T sort-temp -k1,1 -s | gzip -c >" basename ".sort.gz")))      
+        (def sort-temp-folder (string/join "" [(:log-dir options) "sort-temp"]))
+        (def output-file (string/join "" [basename ".sort.gz"]))
+        (def results (sort-datomic-log-command file sort-temp-folder output-file options)) 
+;; this runs in a seperate process and I have not figured out how to wait for it to complete. Once this bug is fixed we will be able to run this migration from beginning to end with clojure alone. 
+        (if (:verbose options) (println "running sort command"))))
 
 (defn import-logs-into-datomic [options]
     (if (:verbose options) (println "importing logs into datomic"))
@@ -190,6 +208,12 @@
     (if (:verbose options) (println "\tReleasing database connection"))
     (datomic/release con))
 
+(defn test-datomic-data [options]
+    (if (:verbose options) (println "testing datomic data"))
+    (def uri (:url options))
+    (def con (datomic/connect uri))
+ ;;   (is #{[923589767780191]} (datomic/q '[:find ?c :in $ :where [?c :gene/id "WBGene00018635"]] (datomic/db con)) ))
+)
 (defn all-actions [options]
     (generate-datomic-schema-view options)
     (create-database options)
@@ -197,12 +221,6 @@
     (sort-datomic-log options)
     (import-logs-into-datomic options)
     (test-datomic-data options))
-
-(defn test-datomic-data [options]
-    (if (:verbose options) (println "testing datomic data"))
-    (def uri (:url options))
-    (def con (datomic/connect uri))
-    (is #{[923589767780191]} (datomic/q '[:find ?c :in $ :where [?c :gene/id "WBGene00018635"]] (datomic/db con)) ))
 
 (defn -main [& args]
     (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
@@ -228,10 +246,10 @@
                                            (println "Options log-dir is required for sorting the datomic log")
                                            (sort-datomic-log options))
         "import-logs-into-datomic"     (if (or (string/blank? (:log-dir options)) 
-                                               (sting/blank? (:url options)))
+                                               (string/blank? (:url options)))
                                            (println "Options log-dir and url are required for importing logs into datomic")
                                            (import-logs-into-datomic options))
-        "test-datomic-data"            (if (or (string/blank? (:url options)))
+        "test-datomic-data"            (if (string/blank? (:url options))
                                            (println "Option url is require for performing tests on datomic data"))
         "all-actions"                  (if (or (string/blank? (:url options)) 
                                                (string/blank? (:log-dir options)) 

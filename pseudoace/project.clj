@@ -31,7 +31,8 @@
                  
                  [environ "1.0.0"]
 
-                 [org.clojure/tools.cli "0.3.3"]]
+                 [org.clojure/tools.cli "0.3.3"]
+                 [org.clojars.hozumi/clj-commons-exec "1.0.6" ]]
   :description "ACeDB emulator and migration tools"
   :source-paths ["src/clj/pseudoace", "src/clj/"]
   :java-source-paths ["src/java"]
