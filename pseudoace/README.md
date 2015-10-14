@@ -5,3 +5,7 @@ Pseudoace is a work-in-progress which includes tools for:
 - Model-driven import of ACeDB data into multiple databases (currently Datomic and MongoDB).
 - Emulating an ACeDB server (currently incomplete).
 
+Installation
+
+sudo yum -y install perl-autodie perl-IPC-System-Simple
+

@@ -19,9 +19,10 @@
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
  
-            [clj-commons-exec :as exec] 
+;;            [clj-commons-exec :as exec] 
             [clojure.java.shell :as shell])
-  (:import (java.net InetAddress) 
+  (:import (java.lang.Runtime)
+           (java.net InetAddress) 
            (java.io.FileInputStream) 
            (java.util.zip.GZIPInputStream)
            (java.lang.Runtimea))
@@ -178,21 +179,21 @@
             (if (:verbose options) 
                 (println "Sort completed Successfully")) )))
 
-(defn sort-datomic-log-command [file sort-temp-folder output-file options]
-    (exec/sh-pipe ["gzip" "-dc" file] 
-                  ["sort" "-T" sort-temp-folder "-K1,1" "-s"]
-                  ["gzip" "-c" ">"  output-file] {:dir (:log-dir options) :shutdown true}))
+(defn get-current-directory []
+  (. (java.io.File. ".") getCanonicalPath))
+
+(defn sort-datomic-log-command [file]
+    (def script (string/join "" [(get-current-directory) "/src/perl/sort-edn-log.pl"]))
+    (def result (shell/sh "./src/perl/sort-edn-log.pl" file :dir (get-current-directory)))
+    (println result))
 
 (defn sort-datomic-log [options]
     (if (:verbose options) (println "sorting datomic log"))
     (def files (get-datomic-log-files (:log-dir options)))
     (doseq [file files] 
         (if (:verbose options) (println "sorting file " file))
-        (def basename (remove-from-end file ".gz"))
-        (def sort-temp-folder (string/join "" [(:log-dir options) "sort-temp"]))
-        (def output-file (string/join "" [basename ".sort.gz"]))
-        (def results (sort-datomic-log-command file sort-temp-folder output-file options)) 
-;; this runs in a seperate process and I have not figured out how to wait for it to complete. Once this bug is fixed we will be able to run this migration from beginning to end with clojure alone. 
+        (def filepath (string/join "" [(:log-dir options) file]))
+        (def results (sort-datomic-log-command filepath)) 
         (if (:verbose options) (println "running sort command"))))
 
 (defn import-logs-into-datomic [options]
