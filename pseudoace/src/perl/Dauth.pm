@@ -99,7 +99,7 @@ sub new {
 sub get_db_ini_file {
   my ($self) = @_;
 
-  my $path = glob("~/.deuce/");
+  my $path = glob("~/.dauth/");
   if (!-e $path) {mkdir $path};
   my $db_ini_file = "$path/CERTIFICATE.s";
   my $ini = Config::IniFiles->new( -file => $db_ini_file, -allowempty => 1);
