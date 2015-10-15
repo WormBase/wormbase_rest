@@ -141,6 +141,11 @@
 (defn get-datomic-log-files [directory]
     (map #(.getName %) (directory-walk directory #".*\.edn.gz")))
 
+(defn get-datomic-sorted-log-files [log-dir]
+    (->> (.listFiles (io/file log-dir))
+        (filter #(.endsWith (.getName %) ".edn.sort.gz"))
+        (sort-by #(.getName %))))
+
 (def not-nil? (complement nil?))
 
 (defn acedump-file-to-datalog [imp file log-dir verbose]
@@ -172,12 +177,10 @@
                          (count end)))
     s))
 
-(defn check-sh-pipe-results [results options]
-   (doseq [result results]
-        (if-not (zero? (:exit result)) 
-            (println "ERROR: Sort command had exit value: " (:exit result) " and err: " (:err result) ) 
-            (if (:verbose options) 
-                (println "Sort completed Successfully")) )))
+(defn check-sh-result [result options]
+    (if-not (zero? (:exit result)) 
+        (println "ERROR: Sort command had exit value: " (:exit result) " and err: " (:err result) ) 
+        (if (:verbose options) (println "Sort completed Successfully"))))
 
 (defn get-current-directory []
   (. (java.io.File. ".") getCanonicalPath))
@@ -193,20 +196,18 @@
     (doseq [file files] 
         (if (:verbose options) (println "sorting file " file))
         (def filepath (string/join "" [(:log-dir options) file]))
-        (def results (sort-datomic-log-command filepath)) 
-        (if (:verbose options) (println "running sort command"))))
+        (def result (sort-datomic-log-command filepath)) 
+        (check-sh-result result options)))
 
 (defn import-logs-into-datomic [options]
     (if (:verbose options) (println "importing logs into datomic"))
     (def uri (:url options))
     (def con (datomic/connect uri))
-    (def log-files (->> (.listFiles (:log-dir options)
-                        (filter #(.endsWith (.getName %) ".edn.sort.gz"))
-                        (sort-by #(.getName %)))))
-    (doseq [f log-files]
-       (if (:verbose options) (println "Importing " (.getName f))
-       (ts-import/play-logfile con (java.util.zip.GZIPInputStream. (java.io.FileInputStream. f)))))
-    (if (:verbose options) (println "\tReleasing database connection"))
+    (def log-files (get-datomic-sorted-log-files (:log-dir options)))
+    (doseq [file log-files]
+       (if (:verbose options) (println "\tsorted log file:" (.getName file)))
+       (ts-import/play-logfile con (java.util.zip.GZIPInputStream. (io/input-stream file))))
+    (if (:verbose options) (println "\treleasing database connection"))
     (datomic/release con))
 
 (defn test-datomic-data [options]
