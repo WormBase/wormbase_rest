@@ -104,7 +104,7 @@ sub new {
   bless $self, $class;
 
   my $db = shift;
-  $self->db = $db;
+  $self->{db} = $db;
 
   return $self;
   
