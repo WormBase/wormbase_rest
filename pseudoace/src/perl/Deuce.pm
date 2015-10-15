@@ -17,44 +17,39 @@
 
 =head1 SYNOPSIS
 
-
-  my @db_names = Deuce::get_list_of_databases(); # return a list of known database names
-
+  use Dauth;
   use Deuce;
-  my $db = Deuce->new(); # prompts you to supply a database name and details which are stored for later
-  my $db = Deuce->new($db_name); # to use a specific database
+  my $dauth = Dauth->new('geneace');
+  my $deuce = Deuce->new($dauth);
 
-  my $results = $db->$query($datomic_querystr, $queryargs);
-  my $schema = $db->schema;
-  my $object = $db->fetch_object($class, $id);
-  my @ID_names = $db->fetch($class, $class_id_pattern);
-  my @ID_names = $db->fetch($class, $class_id_pattern, $CRITERIONS);
+  my @ID_names = $deuce->fetch($class, $class_id_pattern);
+  my @ID_names = $deuce->fetch($class, $class_id_pattern, $CRITERIA);
 
 e.g.
-  my @ID_names = $db->fetch('CDS', '*', "Remark#evidence/Curator_confirmed = 'WBPerson4025'; FOLLOW Gene"); # search for CDSs curated by WBPerson4025 then return the list of attached Genes
+  my @ID_names = $deuce->fetch('CDS', '*', "Remark#evidence/Curator_confirmed = 'WBPerson4025'; FOLLOW Gene"); # search for CDSs curated by WBPerson4025 then return the list of attached Genes
 
- my @ID_names = $db->fetch('CDS', '*', "COUNT Source_exons > 2 ; Isoform") # find CDSs with more than 2 exons and which are Isoforms
+ my @ID_names = $deuce->fetch('CDS', '*', "COUNT Source_exons > 2 ; Isoform") # find CDSs with more than 2 exons and which are Isoforms
 
- my @ID_names = $db->fetch('Keyset', '~/Project/myGenes.set', "Live ; Corresponding_CDS"); # get the list of Genes from the keyset file that are Live and are coding.
+ my @ID_names = $deuce->fetch('Keyset', '~/Project/myGenes.set', "Live ; Corresponding_CDS"); # get the list of Genes from the keyset file that are Live and are coding.
 
 
 
-The 'CRITERIONS' specifier has the format:
+The 'CRITERIA' specifier has the format:
 
-CRITERIONS = CRITERION [; CRITERION]                     # the Criteria are implicitly 'AND'ed together
-CRITERION = [IS_CRITERION | FOLLOW_CRITERION | COUNT_CRITERION | EXISTS_TAG_CRITERION | MISSING_TAG_CRITERION]
+CRITERIA = CRITERION [; CRITERION]                       # the Criteria are implicitly 'AND'ed together
+CRITERION = IS_CRITERION | FOLLOW_CRITERION | COUNT_CRITERION | EXISTS_TAG_CRITERION | MISSING_TAG_CRITERION
 
 IS_CRITERION = 'IS' pattern                              # find object whose name matches the pattern
-pattern = string | wirldcard_string
+pattern = string | wildcard_string
 
-FOLLOW_CRITERION = 'FOLLOW' TAG_INDICATOR                # follow the tag to the new class and return the matching IDs
-TAG_INDICATOR = TAG_NAME | TAG_NAME NEXT
-TAG_NAME = name of ACE tag | name of datormic tag | name#hash_name/field
+FOLLOW_CRITERION = 'FOLLOW' TAG_INDICATOR                # follow the tag to the new class and return its matching IDs instead of the original class
+TAG_INDICATOR = name_of_ACE_tag | name_of_datomic_tag | name#hash_name/field
 hash_name = name of hash class (e.g. 'evidence')
+name_of_ACE_tag = ACE_TAG_name | ACE_TAG_name 'NEXT' | ACE_TAG_name^additional_name  # the additional name was added by Thomas to avoid any anonymous fields
 
-COUNT_CRITERION = 'COUNT' TAG_NAME OP number             # the number of existing TAGs must match the specified number
+COUNT_CRITERION = 'COUNT' TAG_INDICATOR OP number             # the number of existing TAGs must match the specified number
 
-EXISTS_TAG_CRITERION = TAG_NAME | TAG_NAME OP VALUE      # the specified tag or tag with values must exist
+EXISTS_TAG_CRITERION = TAG_INDICATOR | TAG_INDICATOR OP VALUE      # the specified tag or tag with values must exist
 OP = GT | > | LT | < | EQ | = | LE | <= | GE | >= | NE | NOT | !=
 VALUE = string | wildcard_string | number
 
@@ -88,25 +83,18 @@ Gary gw3@ebi.ac.uk
 
 package Deuce;
 
-use lib $ENV{'CVS_DIR'};
-use Carp;
+use Dauth;
 use warnings;
 use edn;          # Thomas Down's module for wrapping data in EDN
-use Getopt::Long;
-use HTTP::Tiny;
-use HTTP::Tiny::Multipart;
-use Data::Dumper;
-use Config::IniFiles;
-
 
 
 =head2
 
     Title   :   new
-    Usage   :   my $db = Deuce->new();
+    Usage   :   my $deuce = Deuce->new($dauth_db);
     Function:   initialises the connection to the datomic REST server
     Returns :   Deuce object;
-    Args    :   name - text - db name (as stored in the ~/.deuce/CERTIFICATE.s INI file)
+    Args    :   Dauth database connection
 
 =cut
 
@@ -115,328 +103,13 @@ sub new {
   my $self = {};
   bless $self, $class;
 
-  my $name = shift;
-  
-  my ($url, $cert, $key, $pw) = $self->get_cert_file($name);
+  my $db = shift;
+  $self->db = $db;
 
-  $self->{'url'} = $url;
-
-  $self->{client} = HTTP::Tiny->new(
-				    max_redirect => 0, 
-				    SSL_options => {
-						    SSL_cert_file  => $cert, 
-						    SSL_key_file   => $key,
-						    SSL_passwd_cb  => sub { return $pw; }
-						   });
   return $self;
   
 }
 
-#############################################################################
-
-=head2
-
-    Title   :   get_db_ini_file
-    Usage   :   $ini = $self->get_db_ini_file()
-    Function:   Gets the object for the INI config file
-    Returns :   ref to INI object, file path
-    Args    :   
-
-=cut
-
-
-sub get_db_ini_file {
-  my ($self) = @_;
-
-  my $path = glob("~/.deuce/");
-  if (!-e $path) {mkdir $path};
-  my $db_ini_file = "$path/CERTIFICATE.s";
-  my $ini = Config::IniFiles->new( -file => $db_ini_file, -allowempty => 1);
-  return ($ini, $db_ini_file);
-}
-
-#############################################################################
-
-=head2 
-  
-  Title   :   get_cert_file
-  Usage   :   $self->get_cert_file();
-  Function:   save to a file the path to your SSL certificate and key files and later retrieve it
-  Returns :   certificate file path, key file path, password
-  Args    :   text - (optional) name of database
-
-=cut
-
-sub get_cert_file {
-  my ($self, $name) = @_;
-  
-  my ($cert, $key, $pw);
-  
-  my ($ini, $path) = $self->get_db_ini_file();
-
-  if (!defined $name || $name eq '') {
-     my @sections = $ini->Sections;
-     die "DB name not specified.\nKnown DB names are: @sections\nTo store details on a new name, you should specify a new name.";
-  }
-
-  if ($ini->SectionExists($name)) {
-    $url = $ini->val($name, 'URL');
-    $cert = $ini->val($name, 'CERTIFICATE');
-    $key = $ini->val($name, 'KEY');
-    $pw = $ini->val($name, 'PASSWORD');
-
-  } else {    
-    print "Database '$name' not known, please enter details...\n";
-    print "Enter URL of machine [http://db.wormbase.org:8120] > ";
-    do {
-      $url = <STDIN>;
-      chomp $url;
-#  'https://curation.wormbase.org:8131'; # SSL version of geneace
-      if ($url eq '') {$url = 'http://db.wormbase.org:8120'}
-    } while ($url =~ /^http[s]*\:\/\/\S+?\.wormbase.org:\d+$/); # e.g. http://db.wormbase.org:8120
-    
-    do {
-      print "Enter full path of your SSL certificate .pem file > ";
-      $cert = <STDIN>;
-      chomp $cert;
-      $cert = glob $cert;
-    } while (! -e $cert);
-    do {
-      print "Enter full path of your SSL key .pem file > ";
-      $key = <STDIN>;
-      chomp $key;
-      $key = glob $key;
-    } while (! -e $key);
-    print "Enter password for your SSL .pem files > ";
-    $pw = <STDIN>;
-    chomp $pw;
-
-    $ini->AddSection ($name);
-    $ini->RewriteConfig;
-
-    $ini->newval($name, 'URL', $url);
-    $ini->newval($name, 'CERTIFICATE', $cert);
-    $ini->newval($name, 'KEY', $key);
-    $ini->newval($name, 'PASSWORD', $pw);
-    $ini->RewriteConfig;
-
-    chmod 0600, $path;
-    print "Details have been stored in $path\n";
-  }
-  
-  return ($url, $cert, $key, $pw);
-}
-#############################################################################
-=head2 
-  
-  Title   :   get_list_of_databases
-  Usage   :   @db_names = Deuce::get_list_of_databases();
-  Function:   get a lis of the available names of databases stored in the certificates file
-  Returns :   array of text database names
-  Args    :   none
-
-=cut
-
-sub get_list_of_databases {
-  my ($ini, $path) = Deuce::get_db_ini_file();
-  return $ini->Sections();
-}
-
-
-#############################################################################
-# Stuff for accessing the REST services
-#############################################################################
-
-=head2 
-
-    Title   :   edn_post
-    Usage   :   my $results = $db->$edn_post($uri, $content)
-    Function:   post an EDN string to the database and get the result - used by a couple of query-type methods here
-    Returns :   array of arrays holding the result of the query or transaction
-    Args    :   $uri - string - URI of the server
-                $content - string - EDN query or transaction
-
-=cut
-
-sub edn_post {
-    my ($self, $uri, $content) = @_;
-    my $resp = $self->{client}->post($uri, {
-        content => $content,
-        headers => {
-            'content-type' => 'application/edn'
-        }
-    });
-    die "Failed to connect to nameserver $resp->{'content'}" unless $resp->{'success'};
-    return edn::read($resp->{'content'});
-}
-
-#############################################################################
-
-=head2 
-
-    Title   :   query
-    Usage   :   my $results = $db->$query($querystr, $queryargs)
-    Function:   get the results of a datomic query 
-    Returns :   int count of total number of results, not constrained by the $max_rows
-                array of arrays holding the result of the first $max_rows results of the query
-    Args    :   q - string - datomic query
-                params - string - optional list of arguments for the query (e.g. IDs from a Keyset:  '["WBGene00000016" "WBGene00000017"]')
-
-=cut
-
-sub query {
-  my $self = shift;
-  my $q = shift;
-  my $params = [ {'db/alias' => 'x'}, @_ ];
-  
-  $q = EDN::Literal->new($q) unless ref($q);
-  
-  my $post = {
-	      'q' => $q
-	     };
-  
-  if (scalar(@$params) > 0) {
-    $post->{'args'} = $params;
-  };
-  
-  $self->edn_post(
-		  "$self->{url}/api/query", 
-		  edn::write($post)
-		 );
-}
-
-#############################################################################
-
-=head2 
-
-    Title   :   transact
-    Usage   :   my $results = $db->$transact($txn, $opts)
-    Function:   do a transaction to change data
-    Returns :   results
-    Args    :   $transaction - edn string of transaction
-                $opts - optional string '-tempids' to return a mapping between any temporary ids in the input transaction data and the actual entity IDs used in the database.  Potentially useful if you are creating objects and then doing stuff with them.
-
-=cut
-
-sub transact {
-  my $self = shift;
-  my $txn = shift;
-  my $opts = { @_ };
-    
-  $txn = EDN::Literal->new($txn) unless ref($txn);
-  my $post = {
-	      'tx' => $txn
-	     };
-
-  if ($opts->{'-tempids'}) {
-    $post->{'tempid-report'} = edn::read('true');
-  };
-  
-  edn_post(
-	   "$self->{url}/transact",
-	   edn::write($post)
-	  );
-}
-
-#############################################################################
-
-=head2 
-
-    Title   :   load_ace
-    Usage   :   my $results = $db->$load_ace($ace)
-    Function:   read in ACE data
-    Returns :   results
-    Args    :   $ace - string - ACE commands
-                $note - string - optional note attached to the transaction
-
-Want to do a multi-part post with the following stuff:
-Content-Disposition: form-data; name="format"
-ace
-
-Content-Disposition: form-data; name="patch"
-Feature : __ALLOCATE__
-Public_name "dummy"
-
-=cut
-
-sub load_ace {
-  my $self = shift;
-  my $ace = shift;
-  my $note = shift;
-  if (!defined $note) {$note = ''}
-    
-  my $resp = $self->{client}->post_multipart($self->{url}."/curate/patch", {
-									    format => 'ace',
-									    patch => $ace,
-									    note => $note,
-									   });
-  die "Failed to connect to nameserver $resp->{'content'}" unless $resp->{'success'};
-  return $resp->{'content'};
-  
-}
-#############################################################################
-
-=head2 
-
-    Title   :   get_schema
-    Usage   :   my $schema = $db->get_schema;
-    Function:   returns a reference to the complete schema of the database (hash-ref)
-    Returns :   the complete schema (hash-ref)
-    Args    :   
-
-=cut
-
-sub get_schema {
- my ($self) = @_;
-
- if (!defined $self->{schema}) {
-
-   print "Getting schema ...\n";
-   
-   my $schema_url = $self->{url}.'/schema';
-   my $response = $self->{client}->get($schema_url);
-   
-   if (!$response->{success}) {
-     die "In schema()\nStatus: $response->{status} Reason: $response->{reason}\nContent: $response->{'content'}\n";
-   }
-   
-   $self->{schema} = edn::read($response->{'content'});
-
-   if (!exists $self->{schema}{classes} || !exists $self->{schema}{attributes}) {
-     die "In schema()\nThe expected data is not in the schema\n";
-   }
- }
-
- return $self->{schema};
-}
-
-#############################################################################
-
-=head2 
-
-    Title   :   fetch_object
-    Usage   :   my $object = $db->fetch_object($class, $id);
-    Function:   gets the complete object data
-    Returns :   the object data or undef if the object is not found in the database
-    Args    :   string - datomic class name e.g. 'gene'
-                string - ID name to fetch e.g. 'WBGene00300002'
-
-=cut
-
-sub fetch_object {             
- my ($self, $class, $id) = @_;
- 
- my $object_url = $self->{url}.'/raw2/' . $class . '/' . $id;
- my $response = $self->{client}->get($object_url);
-
- if (!$response->{success}) {
-   if ($response->{content} eq 'Not found') {return undef}
-   die "In fetch_object()\nStatus: $response->{status} Reason: $response->{reason}\nContent: $response->{'content'}\n";
- }
-
- return edn::read($response->{'content'});
-
-}
 
 #############################################################################
 # Stuff for reading various bits of the schema
@@ -445,7 +118,7 @@ sub fetch_object {
 =head2 
 
     Title   :   get_classes
-    Usage   :   my $classes = $db->get_classes();
+    Usage   :   my $classes = $deuce->get_classes();
     Function:   returns the complete hash-ref of classes keyed on the datomic name of the class
             :   useful data includes:
             :     'db/ident' => name of the class in the datomic database (e.g. 'transposon/id')
@@ -462,7 +135,7 @@ sub get_classes {
 
  if (!defined $self->{classes}) {
 
-   my $schema = $self->get_schema();
+   my $schema = ($self->{db})->get_schema();
    my %classes;
    my %ace_classes;
    my %datomic_classes;
@@ -490,7 +163,7 @@ sub get_classes {
 =head2 
 
     Title   :   get_attributes
-    Usage   :   my $attributes = $db->get_attributes();
+    Usage   :   my $attributes = $deuce->get_attributes();
     Function:   returns the complete attributes of the classes
     Returns :   the complete attributes of the classes - array-ref of hashes
     Args    :   
@@ -502,7 +175,7 @@ sub get_attributes {
 
  if (!defined $self->{attributes}) {
 
-   my $schema = $self->get_schema();
+   my $schema = ($self->{db})->get_schema();
   
    my $attributes = $schema->{attributes};
    $self->{attributes} = $attributes
@@ -517,7 +190,7 @@ sub get_attributes {
 =head2 
 
     Title   :   get_class_attributes
-    Usage   :   my $class_desc = $db->get_class_attributes($class);
+    Usage   :   my $class_desc = $deuce->get_class_attributes($class);
     Function:   returns an array holding the attributes for this class
     Returns :   array of hash holding the attributes of the class
     Args    :   class - string - ACE name of the class
@@ -556,7 +229,7 @@ sub get_class_attributes {
 =head2 
 
     Title   :   get_class_name_in_datomic
-    Usage   :   my $class_desc = $db->get_class_name_in_datomic($class);
+    Usage   :   my $class_desc = $deuce->get_class_name_in_datomic($class);
     Function:   input an ACE class name and it returns the datomic equivalent of the ACE class name
     Returns :   returns the datomic equivalent of the ACE class name (i.e. with the '/id' suffix)
     Args    :   class - string - ACE class name or datomic class name
@@ -580,7 +253,7 @@ sub get_class_name_in_datomic {
 =head2 
 
     Title   :   get_class_name_in_ace
-    Usage   :   my $class_desc = $db->get_class_name_in_ace($class);
+    Usage   :   my $class_desc = $deuce->get_class_name_in_ace($class);
     Function:   input an datomic class name and it returns the ACE equivalent of the datomic class name
     Returns :   returns the ACE equivalent of the datomic class name
     Args    :   class - string - class datomic name
@@ -603,7 +276,7 @@ sub get_class_name_in_ace {
 =head2 
 
     Title   :   is_class_a_hash
-    Usage   :   my $boolean = $db->is_class_a_hash($class);
+    Usage   :   my $boolean = $deuce->is_class_a_hash($class);
     Function:   returns whether the class is a hash class, like ?Evidence or not
     Returns :   boolean
     Args    :   class - string - class datomic name
@@ -624,7 +297,7 @@ sub is_class_a_hash {
 =head2 
 
     Title   :   output_class_model_as_ace
-    Usage   :   my $model = $db->output_class_model_as_ace($class);
+    Usage   :   my $model = $deuce->output_class_model_as_ace($class);
     Function:   returns the class model as an text ACE file
     Returns :   text ACE file class format
     Args    :   class - string - ACE name of the class
@@ -765,7 +438,7 @@ sub output_class_model_as_ace {
 =head2 
 
     Title   :   model
-    Usage   :   my $model = $db->model($class);
+    Usage   :   my $model = $deuce->model($class);
     Function:   returns the class model as an text ACE file
     Returns :   array-ref of class tags and values
     Args    :   string - datomic class name
@@ -795,7 +468,7 @@ sub model {
 =head2 
 
     Title   :   parse_class_object
-    Usage   :   my $model = $db->parse_class_object($class_attributes, $class_data, $objstr);
+    Usage   :   my $model = $deuce->parse_class_object($class_attributes, $class_data, $objstr);
     Function:   returns the class model as a parsed object with an ACE model-like tree structure
     Returns :   array of class elements
     Args    :   class_attributes = array of attributes that have an ident that matches this class
@@ -1106,7 +779,7 @@ sub parse_class_object {
 =head2 
 
     Title   :   add_tags_to_tree
-    Usage   :   my $object = $db->add_tags_to_tree($objstr, @ace_tags, $ident);
+    Usage   :   my $object = $deuce->add_tags_to_tree($objstr, @ace_tags, $ident);
     Function:   populate ACE non-datomic tree of tags in objstr using
                 the pace/tags names to find the position to add the new node
     Returns :   int element of objstr that matches the last tag name in the array
@@ -1338,7 +1011,7 @@ sub parse_cmd {
 =head2 
 
     Title   :   protect
-    Usage   :   $pattern = $db->protect($pattern);
+    Usage   :   $pattern = $deuce->protect($pattern);
     Function:   change the wildcards in the pattern into a perl or java.util.regex.Pattern regex
     Returns :   perl regex
     Args    :   $pattern - string - optionally containing '.', '?', '*' to be protected
@@ -1360,7 +1033,7 @@ sub protect {
 =head2 
 
     Title   :   get_tag_name
-    Usage   :   $tag_name_element = $db->get_tag_name($class, $tokens, \$next_token);
+    Usage   :   $tag_name_element = $deuce->get_tag_name($class, $tokens, \$next_token);
     Function:   get the class schema @{$objstr} element number of the required tag in a class
     Returns :   int array element of the class model @{$objstr} which has the required tag
                 array-ref of the class model $objstr
@@ -1392,11 +1065,14 @@ sub get_tag_name {
   # get first tag name
   my ($tag, $tag_name) = @{$tokens->[$$next_token++]};
 
+  # +++ check if tag name is followed by 'NEXT'
+
   # search through @{$objstr} for a match of the tag name to either the Ace or the Datomic tag names
   # valid tag names are: 
   #  the last word of a 'pace/tags' list
   #  the 'ident' name
-  #  either or the above with a virtual tag name appended (including the '^'), e.g. 'Database^field'
+  #  either of the above with a virtual tag name appended (including the '^'), e.g. 'Database^field'
+  #  either of the above with a '#' then hash class/field, e.g. 'Remark#evidence/Curator_confirmed'
 
   my $tag_name_virtual_half = '';
   if ($tag_name =~ /(\S+)\^(\S+)/) {
@@ -1446,7 +1122,7 @@ sub get_tag_name {
 =head2 
 
     Title   :   ace_to_querystr
-    Usage   :   my $querystr = $db->ace_to_querystr($class, $class_pattern, $querystr)
+    Usage   :   my $querystr = $deuce->ace_to_querystr($class, $class_pattern, $querystr)
     Function:   convert an ACE-style query string into a datomic-like query string
     Returns :   datomic query string or undef if error
                 datomic args string formed from any keyset file specified as the class 'Keyset'
@@ -1589,7 +1265,7 @@ sub ace_to_querystr {
 =head2 
 
     Title   :   OP
-    Usage   :   my $opstr = $db->OP($OP);
+    Usage   :   my $opstr = $deuce->OP($OP);
     Function:   convert any of the ways an operator may be written into the cononical form required
     Returns :   canonical form of the OP string
     Args    :   an OP string written by the user
@@ -1628,7 +1304,7 @@ sub OP {
 =head2 
 
     Title   :   TAG_command
-    Usage   :   my $querystr = $db->TAG_command();
+    Usage   :   my $querystr = $deuce->TAG_command();
     Function:   Construct a TAG query. The tag should exist or it should match the OP VALUE constraint.
     Returns :   datomic query string or undef if error
     Args    :   
@@ -1647,7 +1323,7 @@ sub TAG_command {
 =head2 
 
     Title   :   COUNT_command
-    Usage   :   my $querystr = $db->COUNT_command();
+    Usage   :   my $querystr = $deuce->COUNT_command();
     Function:   Construct a COUNT query. The following TAG should match the OP NUM constraint
     Returns :   datomic query string or undef if error
     Args    :   
@@ -1667,7 +1343,7 @@ sub COUNT_command {
 =head2 
 
     Title   :   MISSING_command
-    Usage   :   my $querystr = $db->MISSING_command();
+    Usage   :   my $querystr = $deuce->MISSING_command();
     Function:   Construct a MISSING query. The following TAG should not exist, or the TAG OP VALUE should not exist.
     Returns :   datomic query string or undef if error
     Args    :   
@@ -1686,7 +1362,7 @@ sub MISSING_command {
 =head2 
 
     Title   :   FOLLOW_command
-    Usage   :   my ($new_class, $where) = $db->FOLLOW_command();
+    Usage   :   my ($new_class, $where) = $deuce->FOLLOW_command();
     Function:   Construct a FOLLOW query. Follow the xref and change the class we return.
     Returns :   new 'class' name string and 'where' clause or undef if error
     Args    :   
@@ -1731,7 +1407,7 @@ sub FOLLOW_command {
 =head2 
 
     Title   :   IS_command
-    Usage   :   my $querystr = $db->IS_command();
+    Usage   :   my $querystr = $deuce->IS_command();
     Function:   Construct an IS query. Constrain the class ID name to match the following pattern.
     Returns :   datomic query string or undef if error
     Args    :   
@@ -1777,7 +1453,7 @@ sub IS_command {
 =head2 
 
     Title   :   construct_where_line {
-    Usage   :   my $querystr = $db->construct_where_line($previous_entity, $element, $objstr);
+    Usage   :   my $querystr = $deuce->construct_where_line($previous_entity, $element, $objstr);
     Function:   Construct a set of where lines. Updates the hash of idents => entity names used.
     Returns :   new where lines and the name of the value for other lines to use and name of new class in case it has changed (used in a FOLLOW)
     Args    :   
@@ -1891,7 +1567,7 @@ sub construct_where_line {
 =head2 
 
     Title   :   fetch
-    Usage   :   @results = $db->fetch('CDS', 'AC3.3*', 'Method = curated', \$count, \$returned_class)
+    Usage   :   @results = $deuce->fetch('CDS', 'AC3.3*', 'Method = curated', \$count, \$returned_class)
     Function:   gets a list of the names of the members of the specified class that match the patetrn and the optional query criteria
     Returns :   number of results or sorted ID names of matching objects in array.
     Args    :  $class - string - the class of object to get (datomic or Ace names can be used), Also includes the special "classes" 'Class' and 'Keyset'
@@ -2080,8 +1756,8 @@ simple tag format
 enum
 ----
 
-find the parent component's ident by stripping of the component part
-off the tag's ident - repeat as many times as required (adding clauses
+find the parent component's ident by stripping off the component part
+from the tag's ident - repeat as many times as required (adding clauses
 as you go) to get to the base component
 
 [?object-entity :object/tag-name ?ref-tag-value-1] <- this is the parent component. :object/tag-name is the parent component's ident
