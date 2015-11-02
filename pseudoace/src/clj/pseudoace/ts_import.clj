@@ -6,6 +6,7 @@
             [datomic.api :as d :refer (db q entity touch tempid)]
             [acetyl.parser :as ace]
             [clojure.string :as str]
+ ;;           [clojure.core.async :as a :refer (>!! <! >! go-loop)]
             [clojure.java.io :refer (file reader writer)])
   (:import java.io.FileInputStream java.util.zip.GZIPInputStream
            java.io.FileOutputStream java.util.zip.GZIPOutputStream))
@@ -770,11 +771,16 @@
 
 (defn play-logfile [con logfile]
   (with-open [r (reader logfile)]
-    (doseq [rblk (partition-log 1000 50000 (logfile-seq r))]
+    (doseq [rblk (partition-log 100 5000 (logfile-seq r))] ;; was 1000 50000
       (doseq [sblk (partition-by first rblk)
               :let [stamp (ffirst sblk)]]
         (let [blk (map second sblk)
               db      (db con)
               fdatoms (filter (fn [[_ _ _ v]] (not (map? v))) blk)
               datoms  (fixup-datoms db fdatoms)]
-          @(d/transact-async con (conj datoms (txmeta stamp))))))))
+          (try
+              @(d/transact-async con (conj datoms (txmeta stamp)))
+          (catch Throwable t
+            (.printStackTrace t) )))))))
+
+
