@@ -1,4 +1,6 @@
-Pseudoace is a work-in-progress which includes tools for:
+# pseudoace
+
+
 
 - Reading and writing ACeDB model files.
 - Generating Datomic schemas based on ACeDB models.
@@ -9,15 +11,17 @@ Installation
 
 sudo yum -y install perl-autodie perl-IPC-System-Simple
 
-To get help run the folowing command
+
+##Ace to Datomic
+
+This tool is used to import databases from ACeDB to Datomic
 
 
-To get help run the following command
+   - To get help run the following command
 
 lein run ace-to-datomic --help
 
-
-Usage:
+###Help Output
 
 Ace to dataomic is tool for importing data from ACeDB into to Datomic database
 
