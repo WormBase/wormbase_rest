@@ -13,6 +13,7 @@
 
             [pseudoace.import :as old-import]
             [pseudoace.ts-import :as ts-import]
+            [pseudoace.locatable-import :as loc-import]
             [acetyl.parser :as ace]
 
             [clojure.java.io :as io]
@@ -54,10 +55,12 @@
        ""
        "Actions: (required options for each action are provided in square brackets)"
        "  create-database                      Select this option if you would like to create a Datomic database from a schema. Required options [model, url]"
+       "  create--helper-database              Select this option if you would like to create a helper Datomic database from a schema. Required options [model, url]"
        "  generate-datomic-schema-view         Select if you would like the schema to the database to be exported to a file. Required options [schema-filename, url]" 
        "  acedump-to-datomic-log               Select if you are importing data from ACeDB to Datomic and would like to create the Datomic log files [url, log-dir, acedump-dir]"
        "  sort-datomic-log                     Select if you would like to sort the log files generated from your ACeDB dump [log-dir]"
-       "  import-logs-into-datomic             Select if you would like to import the sorted logs back into datomic [log-dir, url]"
+       "  import-logs-into-datomic             Select if you would like to import the sorted logs into datomic [log-dir, url]"
+       "  import-helper-log-into-datomic       Select if you would like to import the helper log into datomic [log-dir, url]"
        "  excise-tmp-data                      Select in order to remove all the tmp data that was created in the database to import the data [url]"
        "  test-datomic-data                    Select if you would like to perform tests on the generated database [url acedump-dir]"
        "  all-import-actions                   Select if you would like to perform all actions from acedb to datomic [model url schema-filename log-dir acedump-dir]"
@@ -97,8 +100,8 @@
     (doseq [s (schema-datomic/schema-from-db (datomic/db con))]
         (pp/pprint s)
         (println))
-        (if (:verbose options) (println "\tReleasing database connection"))
-        (datomic/release con)))
+    (if (:verbose options) (println "\tReleasing database connection"))
+    (datomic/release con)))
 
 (defn generate-schema [options]
     (if (:verbose options) (println "\tGenerating Schema"))
@@ -115,9 +118,8 @@
                      :db/txInstant   #inst "1970-01-01T00:00:01"}))
        (catch Exception e(str "Caught Exception: " (.getMessage e))))) 
 
-(defn load-schema [options]
-    (def uri (:url options))
-    (if (:verbose options) (println "Loading Schema"))
+(defn load-schema [uri options]
+    (if (:verbose options) (println (string/join " " ["Loading Schema into:" uri])))
     (if (:verbose options) (println "\tCreating database connection"))
     (def con (datomic/connect uri))
     ;; define function tx-quiet that runs a transaction, 
@@ -152,7 +154,15 @@
     (generate-schema options)
     (def uri (:url options))
     (datomic/create-database uri)
-    (load-schema options))
+    (load-schema uri options))
+
+(defn uri-to-helper-uri [uri]
+     (string/join "-" [uri "helper"]))
+
+(defn create-helper-database [options]
+    (if (:verbose options) (println "Creating Helper Database"))
+    (def helper_uri (uri-to-helper-uri (:url options)))
+    (datomic/create-database helper_uri))
 
 (defn directory-walk [directory pattern]
   (doall (filter #(re-matches pattern (.getName %))
@@ -182,17 +192,21 @@
                      (partition-all 20))] 
            (ts-import/split-logs-to-dir imp blk log-dir)))
 
+(defn helper-file [] "helper.edn.gz")
+
+(defn helper-folder [log-dir]
+    (string/join "" [log-dir "helper/"]))
+
+(defn helper-dest [log-dir]
+    (def helper_folder (helper-folder log-dir ))
+    (string/join "" [(helper-folder log-dir) (helper-file)]))
+
 (defn move-helper-log-file [options]
     (if (:verbose options) (println "\tMoving helper log file"))
-    (def helper_file "helper.edn.gz")
-    (def helper_folder (string/join "" [(:log-dir options) "helper/"]))
-    (.mkdir (java.io.File.  helper_folder))
-    
-    (def source       (string/join "" [(:log-dir options) "/" helper_file]))
-    (def destination  (string/join "" [(:log-dir options) "helper/" helper_file]))
-    (io/copy (io/file source) (io/file destination))
+    (.mkdir (java.io.File.  (helper-folder (:log-dir options))))
+    (def source       (string/join "" [(:log-dir options) "/" (helper-file)]))
+    (io/copy (io/file source) (io/file (helper-dest (:log-dir options))))
     (io/delete-file (io/file source)))
-
 
 (defn acedump-to-datomic-log [options]
     (if (:verbose options) (println "Converting ACeDump to Datomic Log"))
@@ -249,8 +263,7 @@
 (defn excise-tmp-data [options]
     (def uri (:url options))
     (def con (datomic/connect uri))
-    (datomic/transact con [{:db/id #db/id[:db.part/user] 
-                   :db/excise :importer/temp}]))
+    (datomic/transact con [{:db/id #db/id[:db.part/user] :db/excise :importer/temp}]))
 
 (defn test-datomic-data [options]
     (if (:verbose options) (println "testing datomic data"))
@@ -261,15 +274,57 @@
     (if (:verbose options) (println "\treleasing database connection"))
     (datomic/release con))
 
-(defn all-import-actions [options]
-    (create-database options)
-    (generate-datomic-schema-view options)
-    (acedump-to-datomic-log options)
-    (sort-datomic-log options)
-    (import-logs-into-datomic options)
-    (excise-tmp-data options)
-    (test-datomic-data options))
 
+(defn import-helper-log-into-datomic [options]
+    (if (:verbose options) (println "importing helper log into helper database"))
+    (def helper-uri (uri-to-helper-uri (:url options)))
+    (def helper-connection (datomic/connect helper-uri))
+    (ts-import/binding [*suppress-timestamps* true]
+        (ts-import/play-logfile helper-connection (helper-dest (:log-dir options)))
+    (if (:verbose options) (println "\treleasing helper database connection"))
+    (datomic/release helper-connection))
+
+(defn helper-file-to-datalog [helper-db imp file log-dir verbose]
+    (if (not-nil? verbose)  (println "\tAdding extra data from: " file))
+    ;; then pull out objects from the pipeline in chunks of 20 objects. 
+    (doseq [blk (->> (java.io.FileInputStream. file)
+                     (java.util.zip.GZIPInputStream.)
+                     (ace/ace-reader)
+                     (ace/ace-seq)
+                     (partition-all 20))] ;; Larger block size may be faster if
+                                          ;; you have plenty of memory.
+          (loc-import/split-locatables-to-dir helper-db imp blk log-dir)))
+
+(defn run-locatables-importer-for-helper [options]
+    (if (:verbose options) (println "importing logs with loactables importer into helper database"))
+    (def helper-uri (uri-to-helper-uri (:url options)))
+    (def helper-connection (datomic/connect helper-uri))
+    (def helper-db (datomic/db helper-connection))
+    (def imp (old-import/importer helper-connection)) ;; Helper object, holds a cache of schema data.
+    (def log-dir (:log-dir options))
+    (def files (get-ace-files (:acedump-dir options)))
+    (doseq [file files] (helper-file-to-datalog helper-db imp file log-dir (:verbose options)))
+    (if (:verbose options) (println "\treleasing helper database connection"))
+    (datomic/release helper-connection))
+
+(defn delete-helper-database [options]
+    (if (:verbose options) (println "deleting helper database"))
+    (def helper_uri (uri-to-helper-uri (:url options)))
+    (datomic/delete-database helper_uri))
+
+(defn all-import-actions [options]
+;;    (acedump-to-datomic-log options)
+;;    (create-helper-database options)
+;;      (create-database options)
+      (generate-datomic-schema-view options)
+      (import-helper-log-into-datomic options)
+;;    (run-locatables-importer-for-helper options)
+;;    (delete-helper-database options)
+;;    (sort-datomic-log options)
+;;    (import-logs-into-datomic options)
+;;    (excise-tmp-data options)
+;;    (test-datomic-data options))
+)
 (defn list-databases [options]
     (doseq [database-name (datomic/get-database-names (:url options))]
           (println database-name)))    
@@ -316,26 +371,34 @@
         (not= (count arguments) 2) (exit 1 (usage summary))
         errors (exit 1 (error-msg errors)))
     (case (last arguments)
-        "generate-datomic-schema-view"      (if (or (string/blank? (:schema-filename options)) 
-                                                    (string/blank? (:url options)))
-                                                (println "Options --url and --schema-filename are required for generating the schema view")
-                                                (generate-datomic-schema-view options))
-        "create-database"                   (if (or (string/blank? (:model options)) 
-                                                    (string/blank? (:url options)))  
-                                                (println "Options url and model are required when generating the dataomic schema view")  
-                                                (create-database options))
         "acedump-to-datomic-log"            (if (or (string/blank? (:url options)) 
                                                     (string/blank? (:log-dir options)) 
                                                     (string/blank? (:acedump-dir options)))
                                                 (println "Options url and log-dir and ace-dump-dir are required for converting the acedump into datomic-log format")
                                                 (acedump-to-datomic-log options))
-        "sort-datomic-log"                  (if (string/blank? (:log-dir options))
-                                                (println "Options log-dir is required for sorting the datomic log")
-                                                (sort-datomic-log options))
+        "create-helper-database"            (if (or (string/blank? (:model options)) 
+                                                    (string/blank? (:url options)))  
+                                                (println "Options url and model are required when creating helper database")  
+                                                (create-helper-database options))
+        "create-database"                   (if (or (string/blank? (:model options)) 
+                                                    (string/blank? (:url options)))  
+                                                (println "Options url and model are required when creating database")  
+                                                (create-database options))
+        "generate-datomic-schema-view"      (if (or (string/blank? (:schema-filename options)) 
+                                                    (string/blank? (:url options)))
+                                                (println "Options --url and --schema-filename are required for generating the schema view")
+                                                (generate-datomic-schema-view options))
         "import-logs-into-datomic"          (if (or (string/blank? (:log-dir options)) 
                                                     (string/blank? (:url options)))
                                                 (println "Options log-dir and url are required for importing logs into datomic")
                                                 (import-logs-into-datomic options))
+        "import-helper-log-into-datomic"    (if (or (string/blank? (:log-dir options)) 
+                                                    (string/blank? (:url options)))
+                                                (println "Options log-dir and url are required for importing logs into datomic")
+                                                (import-helper-log-into-datomic options))
+        "sort-datomic-log"                  (if (string/blank? (:log-dir options))
+                                                (println "Options log-dir is required for sorting the datomic log")
+                                                (sort-datomic-log options))
         "excise-tmp-data"                   (if (string/blank? (:url options))
                                                 (println "Option url is required for removing tmp data")
                                                 (excise-tmp-data options))
