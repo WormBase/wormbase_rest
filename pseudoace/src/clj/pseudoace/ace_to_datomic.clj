@@ -24,6 +24,7 @@
   (:import (java.lang.Runtime)
            (java.net InetAddress) 
            (java.io.FileInputStream) 
+           (java.io.File)
            (java.util.zip.GZIPInputStream)
            (java.lang.Runtimea))
   (:gen-class))
@@ -181,6 +182,18 @@
                      (partition-all 20))] 
            (ts-import/split-logs-to-dir imp blk log-dir)))
 
+(defn move-helper-log-file [options]
+    (if (:verbose options) (println "\tMoving helper log file"))
+    (def helper_file "helper.edn.gz")
+    (def helper_folder (string/join "" [(:log-dir options) "helper/"]))
+    (.mkdir (java.io.File.  helper_folder))
+    
+    (def source       (string/join "" [(:log-dir options) "/" helper_file]))
+    (def destination  (string/join "" [(:log-dir options) "helper/" helper_file]))
+    (io/copy (io/file source) (io/file destination))
+    (io/delete-file (io/file source)))
+
+
 (defn acedump-to-datomic-log [options]
     (if (:verbose options) (println "Converting ACeDump to Datomic Log"))
     (if (:verbose options) (println "\tCreating database connection"))
@@ -190,6 +203,8 @@
     (def log-dir (io/file (:log-dir options)))   ;; Must be an empty directory
     (def files (get-ace-files (:acedump-dir options)))
     (doseq [file files] (acedump-file-to-datalog imp file log-dir (:verbose options)))
+
+    (move-helper-log-file options)
     (if (:verbose options) (println "\tReleasing database connection"))
     (datomic/release con))
 
@@ -249,10 +264,10 @@
 (defn all-import-actions [options]
     (create-database options)
     (generate-datomic-schema-view options)
-;;    (acedump-to-datomic-log options)
-;;    (sort-datomic-log options)
+    (acedump-to-datomic-log options)
+    (sort-datomic-log options)
     (import-logs-into-datomic options)
-;;   (excise-tmp-data options)
+    (excise-tmp-data options)
     (test-datomic-data options))
 
 (defn list-databases [options]

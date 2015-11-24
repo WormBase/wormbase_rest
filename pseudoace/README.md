@@ -53,8 +53,14 @@ Actions: (required options for each action are provided in square brackets)
   delete-database                      Select this option if you would like to delete a database in datomic [url]. If the force option you will not be asked if you are certain about your decision
   backup-database                      Select if you would like to backup a datomic database into a file
 
+####Example Command 1
 
-Example command
+lein run ace-to-datomic all-import-actions --url=datomic:free://localhost:4334/WS251 --log-dir=/datastore/datomic/tmp/datomic/import-logs-WS251/ --model=models.wrm.WS251.annot --acedump-dir=/datastore/datomic/dumps/WS251_dump/ --schema-filename=schema251.edn -v
+
+####Example Command 2
 
 lein run ace-to-datomic generate-datomic-database-report --url datomic:free://localhost:4334/WS250 --datomic-database-report-filename /home/ec2-user/git/db/pseudoace/hello.t -v
+
+
+
 
