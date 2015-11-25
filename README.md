@@ -16,6 +16,10 @@ for more information.
    ec2/        -- scripts and credentials for developing
                   and benchmarking on the AWS cloud
    platforms/  -- one directory for each system under evaluation
+
+##DEVELOPMENT PROCEDURE
+
+Follow the GitFlow mechanism for branching and commiting changes as detailed [here](https://datasift.github.io/gitflow/IntroducingGitFlow.html)
    
 ## DATA
 
