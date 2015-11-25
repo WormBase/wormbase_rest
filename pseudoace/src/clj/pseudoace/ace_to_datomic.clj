@@ -161,8 +161,10 @@
 
 (defn create-helper-database [options]
     (if (:verbose options) (println "Creating Helper Database"))
+    (generate-schema options)
     (def helper_uri (uri-to-helper-uri (:url options)))
-    (datomic/create-database helper_uri))
+    (datomic/create-database helper_uri)
+    (load-schema helper_uri options))
 
 (defn directory-walk [directory pattern]
   (doall (filter #(re-matches pattern (.getName %))
@@ -279,12 +281,13 @@
     (if (:verbose options) (println "importing helper log into helper database"))
     (def helper-uri (uri-to-helper-uri (:url options)))
     (def helper-connection (datomic/connect helper-uri))
-    (ts-import/binding [*suppress-timestamps* true]
-        (ts-import/play-logfile helper-connection (helper-dest (:log-dir options)))
+    (def helper-destination (helper-dest (:log-dir options)))
+    (binding [ts-import/*suppress-timestamps* true]
+        (ts-import/play-logfile helper-connection  (java.util.zip.GZIPInputStream. (io/input-stream helper-destination)) ))
     (if (:verbose options) (println "\treleasing helper database connection"))
     (datomic/release helper-connection))
 
-(defn helper-file-to-datalog [helper-db imp file log-dir verbose]
+(defn helper-file-to-datalog [helper-db file log-dir verbose]
     (if (not-nil? verbose)  (println "\tAdding extra data from: " file))
     ;; then pull out objects from the pipeline in chunks of 20 objects. 
     (doseq [blk (->> (java.io.FileInputStream. file)
@@ -293,17 +296,16 @@
                      (ace/ace-seq)
                      (partition-all 20))] ;; Larger block size may be faster if
                                           ;; you have plenty of memory.
-          (loc-import/split-locatables-to-dir helper-db imp blk log-dir)))
+          (loc-import/split-locatables-to-dir helper-db blk log-dir)))
 
 (defn run-locatables-importer-for-helper [options]
     (if (:verbose options) (println "importing logs with loactables importer into helper database"))
     (def helper-uri (uri-to-helper-uri (:url options)))
     (def helper-connection (datomic/connect helper-uri))
     (def helper-db (datomic/db helper-connection))
-    (def imp (old-import/importer helper-connection)) ;; Helper object, holds a cache of schema data.
     (def log-dir (:log-dir options))
     (def files (get-ace-files (:acedump-dir options)))
-    (doseq [file files] (helper-file-to-datalog helper-db imp file log-dir (:verbose options)))
+    (doseq [file files] (helper-file-to-datalog helper-db file log-dir (:verbose options)))
     (if (:verbose options) (println "\treleasing helper database connection"))
     (datomic/release helper-connection))
 
@@ -313,18 +315,18 @@
     (datomic/delete-database helper_uri))
 
 (defn all-import-actions [options]
-;;    (acedump-to-datomic-log options)
-;;    (create-helper-database options)
-;;      (create-database options)
-      (generate-datomic-schema-view options)
-      (import-helper-log-into-datomic options)
-;;    (run-locatables-importer-for-helper options)
-;;    (delete-helper-database options)
-;;    (sort-datomic-log options)
-;;    (import-logs-into-datomic options)
-;;    (excise-tmp-data options)
-;;    (test-datomic-data options))
-)
+    (acedump-to-datomic-log options)
+    (create-helper-database options)
+    (create-database options)
+    (generate-datomic-schema-view options)
+    (import-helper-log-into-datomic options)
+    (run-locatables-importer-for-helper options)
+    (delete-helper-database options)
+    (sort-datomic-log options)
+    (import-logs-into-datomic options)
+    (excise-tmp-data options)
+    (test-datomic-data options))
+
 (defn list-databases [options]
     (doseq [database-name (datomic/get-database-names (:url options))]
           (println database-name)))    
