@@ -27,6 +27,8 @@ my $input = substr($edn_path, $i);
 my $output = $input;
 say $output =~ s/\.gz$/.sort.gz/g;
 
-my $command = "cd $log_dir; gzip -dc $input | sort -T sort-temp -k1,1 -s | gzip -c > $output";
+exit if ($input eq 'helper.edn.gz');
+
+my $command = "cd $log_dir; mkdir -p sort-temp; gzip -dc $input | sort -T sort-temp -k1,1 -s | gzip -c > $output; rm $input";
 
 system($command);
