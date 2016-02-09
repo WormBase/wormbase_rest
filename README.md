@@ -1,4 +1,4 @@
-#db
+#Datomic to Catalyst
 
 *The database migration project at WormBase.*
 
