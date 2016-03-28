@@ -10,12 +10,12 @@
         ring.middleware.session
         ring.middleware.cookies
         web.widgets
-        web.colonnade
+;;        web.colonnade
         web.query
         clojure.walk
-        pseudoace.utils
-        web.trace
-        web.curate)
+        pseudoace.utils)
+;;        web.trace
+;;        web.curate)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
             [ring.adapter.jetty :refer (run-jetty)]
@@ -39,91 +39,90 @@
             [web.rest.references :refer (get-references)]
             [web.locatable-api :refer (feature-api)]))
 
-(def uri (or (env :trace-db) "datomic:free://localhost:4334/wb248-imp1"))
+(def uri (env :trace-db))
 (def con (d/connect uri))
-
-
-(def ^:private rules 
-  '[[[gene-name ?g ?n] [?g :gene/public-name ?n]]
-    [[gene-name ?g ?n] [?c :gene.cgc-name/text ?n] [?g :gene/cgc-name ?c]]
-    [[gene-name ?g ?n] [?g :gene/molecular-name ?n]]
-    [[gene-name ?g ?n] [?g :gene/sequence-name ?n]]
-    [[gene-name ?g ?n] [?o :gene.other-name/text ?n] [?g :gene/other-name ?o]]])
-
-(defn get-gene-by-name [name]
-  (let [ddb   (db con)
-        genes (q '[:find ?gid
-                   :in $ % ?name
-                   :where (gene-name ?g ?name)
-                          [?g :gene/id ?gid]]
-                 ddb rules name)
-        oldmems (q '[:find ?gcid
-                     :in $ ?name
-                     :where [?gc :gene-class/old-member ?name]
-                            [?gc :gene-class/id ?gcid]]
-                   ddb name)]
-    (html
-     [:h1 "Matches for " name]
-     [:ul
-      (for [[gid] genes]
-        [:li
-         [:a {:href (str "/view/gene/" gid)} gid]])]
-     (when-let [o (seq oldmems)]
-       [:div
-        [:h1 "Old member of..."]
-        [:ul
-         (for [[gcid] o]
-           [:a {:href (str "/view/gene-class/" gcid)} gcid])]]))))
-
-
-(defn parse-int-if [s]
-  (if s
-    (Integer/parseInt s)))
-        
+;;
+;;(def ^:private rules 
+;;  '[[[gene-name ?g ?n] [?g :gene/public-name ?n]]
+;;    [[gene-name ?g ?n] [?c :gene.cgc-name/text ?n] [?g :gene/cgc-name ?c]]
+;;    [[gene-name ?g ?n] [?g :gene/molecular-name ?n]]
+;;    [[gene-name ?g ?n] [?g :gene/sequence-name ?n]]
+;;    [[gene-name ?g ?n] [?o :gene.other-name/text ?n] [?g :gene/other-name ?o]]])
+;;
+;;(defn get-gene-by-name [name]
+;;  (let [ddb   (db con)
+;;        genes (q '[:find ?gid
+;;                   :in $ % ?name
+;;                   :where (gene-name ?g ?name)
+;;                          [?g :gene/id ?gid]]
+;;                 ddb rules name)
+;;        oldmems (q '[:find ?gcid
+;;                     :in $ ?name
+;;                     :where [?gc :gene-class/old-member ?name]
+;;                            [?gc :gene-class/id ?gcid]]
+;;                   ddb name)]
+;;    (html
+;;     [:h1 "Matches for " name]
+;;     [:ul
+;;      (for [[gid] genes]
+;;        [:li
+;;         [:a {:href (str "/view/gene/" gid)} gid]])]
+;;     (when-let [o (seq oldmems)]
+;;       [:div
+;;        [:h1 "Old member of..."]
+;;        [:ul
+;;         (for [[gcid] o]
+;;           [:a {:href (str "/view/gene-class/" gcid)} gcid])]]))))
+;;
+;;
+;;(defn parse-int-if [s]
+;;  (if s
+;;    (Integer/parseInt s)))
+;;        
 
 (defroutes routes
   (GET "/" [] "hello")
   (friend/logout (ANY "/logout" [] (redirect "/")))
-  (GET "/raw2/:class/:id" {params :params db :db}
-       (get-raw-obj2
-        db
-        (:class params)
-        (:id params)
-        (parse-int-if (params "max-out"))
-        (parse-int-if (params "max-in"))
-        (= (params "txns") "true")))
-  (GET "/attr2/:entid/:attrns/:attrname" {params :params}
-       (get-raw-attr2
-        (db con)
-        (Long/parseLong (:entid params))
-        (str (:attrns params) "/" (:attrname params))
-        (= (params "txns") "true")))
-  (GET "/txns" {params :params}
-       (get-raw-txns2
-        (db con)
-        (let [ids (params :id)]
-          (if (string? ids)
-            [(Long/parseLong ids)]
-            (map #(Long/parseLong %) ids)))))
-  (GET "/history2/:entid/:attrns/:attrname" {params :params}
-       (get-raw-history2
-        (db con)
-        (Long/parseLong (:entid params))
-        (keyword (.substring (:attrns params) 1) (:attrname params))))
-  (GET "/ent/:id" {params :params db :db}
-       (get-raw-ent db (Long/parseLong (:id params))))
-  (GET "/transaction-notes/:id" {{:keys [id]} :params
-                                 db :db}
-       (get-transaction-notes db (Long/parseLong id)))
-  (GET "/view/:class/:id" req (viewer-page req))
-  (GET "/gene-by-name/:name" {params :params}
-       (get-gene-by-name (:name params)))
-  
-  (GET "/gene-phenotypes/:id" {params :params}
-       (gene-phenotypes-widget (db con) (:id params)))
-  (GET "/gene-genetics/:id" {params :params}
-       (gene-genetics-widget (db con) (:id params)))
-
+;;  (GET "/raw2/:class/:id" {params :params db :db}
+;;       (get-raw-obj2
+;;        db
+;;        (:class params)
+;;        (:id params)
+;;        (parse-int-if (params "max-out"))
+;;        (parse-int-if (params "max-in"))
+;;        (= (params "txns") "true")))
+;;  (GET "/attr2/:entid/:attrns/:attrname" {params :params}
+;;       (get-raw-attr2
+;;        (db con)
+;;        (Long/parseLong (:entid params))
+;;        (str (:attrns params) "/" (:attrname params))
+;;        (= (params "txns") "true")))
+;;  (GET "/txns" {params :params}
+;;       (get-raw-txns2
+;;        (db con)
+;;        (let [ids (params :id)]
+;;          (if (string? ids)
+;;            [(Long/parseLong ids)]
+;;            (map #(Long/parseLong %) ids)))))
+;;  (GET "/history2/:entid/:attrns/:attrname" {params :params}
+;;       (get-raw-history2
+;;        (db con)
+;;        (Long/parseLong (:entid params))
+;;        (keyword (.substring (:attrns params) 1) (:attrname params))))
+;;  (GET "/ent/:id" {params :params db :db}
+;;       (get-raw-ent db (Long/parseLong (:id params))))
+;;  (GET "/transaction-notes/:id" {{:keys [id]} :params
+;;                                 db :db}
+;;       (get-transaction-notes db (Long/parseLong id)))
+;;  (GET "/view/:class/:id" req (viewer-page req))
+;;  (GET "/gene-by-name/:name" {params :params}
+;;       (get-gene-by-name (:name params)))
+;;  
+;;  (GET "/gene-phenotypes/:id" {params :params}
+;;       (gene-phenotypes-widget (db con) (:id params)))
+;;  (GET "/gene-genetics/:id" {params :params}
+;;       (gene-genetics-widget (db con) (:id params)))
+;;
   (GET "/rest/widget/gene/:id/overview" {params :params}
        (gene/overview (db con) (:id params)))
   (GET "/rest/widget/gene/:id/history" {params :params}
@@ -155,27 +154,27 @@
   (GET "/rest/widget/gene/:id/genetics" {params :params}
        (gene/genetics (db con) (:id params)))
   (GET "/rest/widget/gene/:id/external_links" {params :params}
-       (gene/external-links (db con) (:id params)))
+       (gene/external-links (db con) (:id params))))
 
-  (context "/features" [] feature-api)
-  
-  (GET "/prefix-search" {params :params}
-       (get-prefix-search (db con) (params "class") (params "prefix")))
-  (GET "/schema" {db :db} (get-schema db))
-  (GET "/rest/auth" [] "hello")
-
-  (POST "/transact" req
-        (friend/authorize #{::user}
-          (transact req)))
-  (context "/colonnade" req (friend/authorize #{::user}
-                              (colonnade (db con))))
-
-  (context "/curate" req (friend/authorize #{::user}
-                          (if (env :trace-enable-curation-forms)
-                            curation-forms
-                            (GET "/*" [] "Curation disabled on this server"))))
-
-  (route/files "/" {:root "resources/public"}))
+;;  (context "/features" [] feature-api)
+;;  
+;;  (GET "/prefix-search" {params :params}
+;;       (get-prefix-search (db con) (params "class") (params "prefix")))
+;;  (GET "/schema" {db :db} (get-schema db))
+;;  (GET "/rest/auth" [] "hello")
+;;
+;;  (POST "/transact" req
+;;        (friend/authorize #{::user}
+;;          (transact req)))
+;;  (context "/colonnade" req (friend/authorize #{::user}
+;;                              (colonnade (db con))))
+;;
+;;  (context "/curate" req (friend/authorize #{::user}
+;;                          (if (env :trace-enable-curation-forms)
+;;                            curation-forms
+;;                            (GET "/*" [] "Curation disabled on this server"))))
+;;
+;;  (route/files "/" {:root "resources/public"}))
 
 (defroutes api-routes
   (POST "/api/query" {params :params} (if (env :trace-accept-rest-query) (post-query-restful con params))))
