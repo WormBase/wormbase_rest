@@ -1,2 +1,0 @@
-DROP KEYSPACE titan;
-CREATE KEYSPACE titan WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 1};
