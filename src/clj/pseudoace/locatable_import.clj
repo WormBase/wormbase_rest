@@ -114,64 +114,64 @@
 (defn- log-homols [homol-lines parent offset protein?]
  (let [offset (or offset 0)]
   (reduce
-   (fn [log [[type target method score-s parent-start-s parent-end-s target-start-s target-end-s :as line] lines]]
+   (fn [log [[type target method score-s parent-start-s parent-end-s target-start-s target-end-s :as line] lines ]] 
      (let [tid   [:importer/temp (str (d/squuid))]
            start (parse-int parent-start-s)
            end   (parse-int parent-end-s)
            min   (if start (+ offset -1 start))
            max   (if end (+ offset end))]
-       (update log (first (drop 3 (:timestamps (meta line))))
-         (fn [old]
-           (into (or old [])
-            (let [base (those
-                         [:db/add tid :locatable/parent parent]
-                         (and method [:db/add tid :locatable/method [:method/id method]])
-                         (and min [:db/add tid :locatable/min min])
-                         (and max [:db/add tid :locatable/max max])
-                         (if-not protein?
-                           [:db/add tid :locatable/strand (if (> start end)
-                                                            :locatable.strand/negative
-                                                            :locatable.strand/positive)])
-                         (bin-me-maybe tid parent min max)
-                         (and target-start-s [:db/add tid :homology/min (dec (parse-int target-start-s))])
-                         (and target-end-s [:db/add tid :homology/max      (parse-int target-end-s)   ])
-                         (and score-s [:db/add tid :locatable/score (parse-double score-s)]))]
-               (case type
-                 "DNA_homol"
-                 (if protein?
-                   (except "Don't support protein->DNA homols")
-                   (conj base [:db/add tid :homology/dna [:sequence/id target]]))
-
-                 "Pep_homol"
-                 (conj base [:db/add tid :homology/protein [:protein/id target]])
-                 
-                 "Structure_homol"
-                 (conj base [:db/add tid :homology/structure [:structure-data/id target]])
-
-                 "Motif_homol"
-                 (conj base [:db/add tid :homology/motif [:motif/id target]])
-
-                 "RNAi_homol"
-                 (conj base [:db/add tid :homology/rnai [:rnai/id target]])
-
-                 "Oligo_set_homol"
-                 (conj base [:db/add tid :homology/oligo-set [:oligo-set/id target]])
-
-                 "Expr_homol"
-                 (conj base [:db/add tid :homology/expr [:expr-pattern/id target]])
-
-                 "MSPeptide_homol"
-                 (conj base [:db/add tid :homology/ms-peptide [:mass-spec-peptide/id target]])
-
-                 "SAGE_homol"
-                 (conj base [:db/add tid :homology/sage [:sage-tag/id target]])
-
-                 "Homol_homol"   ;; silently ignore
-                 nil
-
-                 ;; default
-                 (except "Don't understand homology type " type))))))))
-   {}
+           (update log (first (drop 3 (:timestamps (meta line))))
+             (fn [old]
+               (into (or old [])
+                (let [base (those
+                             [:db/add tid :locatable/parent parent]
+                             (and (some? method) [:db/add tid :locatable/method [:method/id method]])
+                             (and (some? min) [:db/add tid :locatable/min min])
+                             (and (some? max) [:db/add tid :locatable/max max])
+                             (and (not-any? nil? [start end]) (if-not protein?
+                               [:db/add tid :locatable/strand (if (> start end)
+                                                                :locatable.strand/negative
+                                                                :locatable.strand/positive)]))
+                             (and (not-any? nil? [min max]) (bin-me-maybe tid parent min max))
+                             (and (some? target-start-s) [:db/add tid :homology/min (dec (parse-int target-start-s))])
+                             (and (some? target-end-s) [:db/add tid :homology/max      (parse-int target-end-s)   ])
+                             (and (some? score-s) [:db/add tid :locatable/score (parse-double score-s)]))]
+                   (case type
+                     "DNA_homol"
+                     (if protein?
+                       (except "Don't support protein->DNA homols")
+                       (conj base [:db/add tid :homology/dna [:sequence/id target]]))
+    
+                     "Pep_homol"
+                     (conj base [:db/add tid :homology/protein [:protein/id target]])
+                     
+                     "Structure_homol"
+                     (conj base [:db/add tid :homology/structure [:structure-data/id target]])
+    
+                     "Motif_homol"
+                     (conj base [:db/add tid :homology/motif [:motif/id target]])
+    
+                     "RNAi_homol"
+                     (conj base [:db/add tid :homology/rnai [:rnai/id target]])
+    
+                     "Oligo_set_homol"
+                     (conj base [:db/add tid :homology/oligo-set [:oligo-set/id target]])
+    
+                     "Expr_homol"
+                     (conj base [:db/add tid :homology/expr [:expr-pattern/id target]])
+    
+                     "MSPeptide_homol"
+                     (conj base [:db/add tid :homology/ms-peptide [:mass-spec-peptide/id target]])
+    
+                     "SAGE_homol"
+                     (conj base [:db/add tid :homology/sage [:sage-tag/id target]])
+    
+                     "Homol_homol"   ;; silently ignore
+                     nil
+    
+                     ;; default
+                     (except "Don't understand homology type " type))))))))
+       {}
    (group-by (partial take-ts 8) homol-lines))))
               
 
@@ -230,5 +230,3 @@
 (defn split-locatables-to-dir
   [db objs dir]
   (logs-to-dir (lobjs->log db objs) dir))
-  
-  

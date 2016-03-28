@@ -39,7 +39,8 @@
   :source-paths ["src/clj/pseudoace", "src/clj/", "src/perl/"]
   :java-source-paths ["src/java"]
   :resource-paths ["resources"]
-  
+ 
+ 
   :main ace-to-datomic
 
   :plugins [[lein-cljsbuild "1.0.6"]
@@ -57,7 +58,7 @@
   :javac-options ["-target" "1.6" "-source" "1.6"]
   :license "MIT"
   :repositories [["dasmoth" {:url "http://www.biodalliance.org/people/thomas/repo"}]]
-  :jvm-opts ["-Xmx4G"
+  :jvm-opts ["-Xmx6G"
              "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"  ;; same GC options as the transactor,
                                                        ;; should minimize long pauses.
              "-Ddatomic.objectCacheMax=2500000000" 

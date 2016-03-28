@@ -11,8 +11,7 @@ Installation
 
 sudo yum -y install perl-autodie perl-IPC-System-Simple
 
-
-##Ace to Datomic
+#Ace to Datomic
 
 This tool is used to import databases from ACeDB to Datomic
 
