@@ -1,48 +1,23 @@
-#db
+# datomic-to-catalyst
 
-*The database migration project at WormBase.*
 
-**THIS IS A PRIVATE REPOSITORY**
 
-## FULL-SCALE DATOMIC PROTOTYPE
+- Reading and writing ACeDB model files.
+- Generating Datomic schemas based on ACeDB models.
+- Model-driven import of ACeDB data into multiple databases (currently Datomic and MongoDB).
+- Emulating an ACeDB server (currently incomplete).
 
-This can be found in the `pseudoace` directory.  See the [wiki](https://github.com/wormbase/db/wiki)
-for more information.
+Installation
 
-## LAYOUT
+sudo yum -y install perl-autodie perl-IPC-System-Simple
 
-   README.md
-   data/       -- sample data files, organized by date
-   ec2/        -- scripts and credentials for developing
-                  and benchmarking on the AWS cloud
-   platforms/  -- one directory for each system under evaluation
+#Ace to Datomic
 
-##DEVELOPMENT PROCEDURE
+This tool is used to import databases from ACeDB to Datomic
 
-Follow the GitFlow mechanism for branching and commiting changes as detailed [here](https://datasift.github.io/gitflow/IntroducingGitFlow.html)
-   
-## DATA
 
-smallace datasets, versioned by date, prepared by @khowe. Please
-reference which dataset you use in your documentation.
+   - To get help run the following command
 
-## CONVENTIONS
+lein run dynamodb-to-catalyst --help
 
-I suggest we use some standard bioinformatics conventions. For each platform:
-
-* scripts in bin/ (or scripts/)
-* lib/ if required, etc.
-* If your code requires third party modules, please document them and (if possible) include them as submodules.
-* There is a stub README in each directory. This would be a good place to collect documentation for now.
-
-## DOCUMENTATION STANDARDS
-
-Minimally, documentation should include the shell commands necessary to load your resource, expected
-input files and any output created.
-
-Better yet, assume a naive user and vanilla system. Include all commands necessary to get that
-system up and running with your platform and loaded with the test data.  This will enable any of us
-to test, verify or extend any of the platforms with minimal work by launching a new instance on AWS. 
-We can (and should) automate the installation, configuration and loading of each platform so that we
-can easily evaluate more complicated scenarios.
 
