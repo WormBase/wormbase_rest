@@ -21,3 +21,7 @@ This tool is used to import databases from ACeDB to Datomic
 lein run dynamodb-to-catalyst --help
 
 
+##Setting environment variables
+    export TRACE_PORT=8130
+    export TRACE_DB="datomic:ddb://us-east-1/wormbase/WS252"
+

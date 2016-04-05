@@ -39,9 +39,6 @@
   :source-paths ["src/clj/pseudoace", "src/clj/", "src/perl/"]
   :java-source-paths ["src/java"]
   :resource-paths ["resources"]
- 
- 
-  :main ace-to-datomic
 
   :plugins [[lein-cljsbuild "1.0.6"]
             [lein-environ "1.0.0"]]
