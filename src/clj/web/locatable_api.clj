@@ -1,8 +1,8 @@
 (ns web.locatable-api
   (:use pseudoace.utils
         web.rest.object
-        wb.locatables
-        wb.sequence)
+        pseudoace.locatables
+        pseudoace.sequence)
   (:require pseudoace.binning
             [datomic.api :as d :refer (q entity)]
             [cheshire.core :as json]

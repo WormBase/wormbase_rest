@@ -29,7 +29,7 @@
             [cheshire.core :as json :refer [parse-string]]
             [web.ssl :as ssl]
             [environ.core :refer (env)]
-            wb.object     ;; Not actually used but we want it available
+  ;;          pseudoace.object     ;; Not actually used but we want it available   - doesn't work with the latest pseudoace clojure.jar
                           ;; via the REST query mechanism.
             [web.rest.gene :as gene]
             [web.rest.interactions :refer (get-interactions get-interaction-details)]
