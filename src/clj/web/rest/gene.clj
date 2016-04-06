@@ -5,7 +5,7 @@
   (:require [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
-            [wb.locatables :refer (root-segment)]))
+            [pseudoace.locatables :refer (root-segment)]))
 
 ;; Currently gene-specific, make more general in the future?
 
@@ -882,7 +882,7 @@
 
 (def ^:private child-rule  
   '[[(child ?parent ?min ?max ?method ?c) [?parent :sequence/id ?seq-name]
-                                          [(wb.binning/bins ?seq-name ?min ?max) [?bin ...]]
+                                          [(pseudoace.binning/bins ?seq-name ?min ?max) [?bin ...]]
                                           [?c :locatable/murmur-bin ?bin]
                                           [?c :locatable/parent ?parent]
                                           [?c :locatable/min ?cmin]

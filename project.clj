@@ -4,6 +4,7 @@
                  [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time]] ;; added
                  [com.amazonaws/aws-java-sdk-dynamodb "1.9.39" :exclusions [joda-time]] ;; added
                  [datomic-schema "1.3.0"]
+                 [wormbase/pseudoace "0.2.0"]
                  [org.clojure/tools.cli "0.3.1"]
                  [acetyl "0.0.9-SNAPSHOT"]
                  [com.novemberain/monger "2.0.0"]
@@ -28,15 +29,14 @@
                  [org.clojure/clojurescript "0.0-3308"]
                  [org.omcljs/om "0.8.8"]
                  [secretary "1.2.3"]
-                 [prismatic/om-tools "0.3.11"]
                  [com.andrewmcveigh/cljs-time "0.3.0"]
                  
                  [environ "1.0.0"]
 
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojars.hozumi/clj-commons-exec "1.0.6" ]]
-  :description "ACeDB emulator and migration tools"
-  :source-paths ["src/clj/pseudoace", "src/clj/", "src/perl/"]
+  :description "REST API for getting data from datomic on a per widget basis"
+  :source-paths ["src/clj/"]
   :java-source-paths ["src/java"]
   :resource-paths ["resources"]
 
