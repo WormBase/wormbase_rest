@@ -4,7 +4,7 @@
                  [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time]] ;; added
                  [com.amazonaws/aws-java-sdk-dynamodb "1.9.39" :exclusions [joda-time]] ;; added
                  [datomic-schema "1.3.0"]
-                 [wormbase/pseudoace "0.2.0"]
+                 [wormbase/pseudoace "0.3.0"]
                  [org.clojure/tools.cli "0.3.1"]
                  [acetyl "0.0.9-SNAPSHOT"]
                  [com.novemberain/monger "2.0.0"]
