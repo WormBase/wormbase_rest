@@ -36,7 +36,7 @@
                  [org.clojure/tools.cli "0.3.3"]
                  [org.clojars.hozumi/clj-commons-exec "1.0.6" ]]
   :description "REST API for getting data from datomic on a per widget basis"
-  :source-paths ["src/clj/pseudoace", "src/clj/", "src/perl/"]
+  :source-paths ["src/clj/"]
   :java-source-paths ["src/java"]
   :resource-paths ["resources"]
 
