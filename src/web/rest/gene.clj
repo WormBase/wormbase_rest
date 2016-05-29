@@ -90,7 +90,7 @@
                                  db (:db/id gene))
                             "Confirmed")}]
      (assoc data
-       :prose
+       :prose_description
        (str/join " "
          (those
           ;; Currently confused about where "locus" is meant to come from in Perl code...
@@ -133,6 +133,28 @@
      (pack-obj "operon" operon))
    :description "Operon the gene is contained in"})
 
+(defn- gene-cluster [gene]
+   {:data
+    (->> (:gene/main-name/text gene))
+    :description "The gene cluster for this gene"})
+
+(defn- gene-other-names [gene]
+   {:data nil
+    :description (format "other names that have been used to refer to %s" (:gene/id gene))})
+
+(defn- gene-status [gene]
+   {:data "hello"
+ ;;   (if-let [class (:gene/status gene)]
+   ;;    (:status/status class))
+    :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})
+
+(defn- gene-taxonomy [gene]
+   {:data (if-let [class (:gene/species gene)]
+             (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
+                 {:genus genus :species species}
+                   {:genus (:gene/species gene)}))
+    :description "the genus and species of the current object"})
+
 (defn- concise-description [gene]
   {:data
    (if-let [desc (or (first (:gene/concise-description gene))
@@ -145,7 +167,8 @@
                           (:transcript/brief-identification)))]
      {:text (some (fn [[k v]] (if (= (name k) "text") v)) desc)
       :evidence (or (get-evidence desc)
-                    (get-evidence (first (:gene/provisional-description gene))))})
+                    (get-evidence (first (:gene/provisional-description gene))))}
+     {:text nil :evidence nil})
    :description "A manually curated description of the gene's function"})
 
 (defn- curatorial-remarks [gene]
@@ -222,9 +245,9 @@
    :description
    "curated description of human disease relevance"})
 
-(defn- version [gene]
-  {:data
-   (str (:gene/version gene))
+(defn- gene-version [gene]
+  {:data (if (= (:gene/version gene) "") 
+            (str (:gene/version gene)))
    :description "the current WormBase version of the gene"})
 
 (defn- also-refers-to [gene]
@@ -304,7 +327,7 @@
 
 (def-rest-widget overview [gene]
   {:name                     (name-field gene)
-   :version                  (version gene)
+   :version                  (gene-version gene)
    :classification           (gene-classification gene)
    :also_refers_to           (also-refers-to gene)
    :merged_into              (merged-into gene)
@@ -312,6 +335,10 @@
    :concise_description      (concise-description gene)
    :remarks                  (curatorial-remarks gene)
    :operon                   (gene-operon gene)
+   :gene_cluster             (gene-cluster gene)
+   :other_names              (gene-other-names gene)
+   :taxonomy                 (gene-taxonomy gene)
+   :status                   (gene-status gene)
    :legacy_information       (legacy-info gene)
    :named_by                 (named-by gene)
    :parent_sequence          (parent-sequence gene)
