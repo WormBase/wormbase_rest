@@ -1,6 +1,6 @@
-(ns web.locatable-api
+(ns datomic-rest-api.locatable-api
   (:use pseudoace.utils
-        web.rest.object
+        datomic-rest-api.rest.object
         pseudoace.locatables
         pseudoace.sequence)
   (:require pseudoace.binning
@@ -109,7 +109,7 @@
                                          (or start 1) 
                                          (or end (seq-length parent)))]
       {:status 200
-       :content-type "text/plain"
+       :content-type "application/json"
        :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
        :body (json/generate-string
               {:features (get-features db type parent min max)}
@@ -117,7 +117,7 @@
 
 (defn json-stats-global [db {:keys [type]}]
   {:status 200
-   :content-type "text/plain"
+   :content-type "application/json"
    :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
    :body (json/generate-string
           {}
@@ -132,7 +132,7 @@
                                          (or end (seq-length parent)))
           features         (get-features db type parent min max)]
       {:status 200
-       :content-type "text/plain"
+       :content-type "application/json"
        :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
        :body (json/generate-string
               {:featureDensity (float (/ (count features) (- max min)))
@@ -163,7 +163,7 @@
                             (vec (repeat bin-count 0))
                             features)]
       {:status 200
-       :content-type "text/plain"
+       :content-type "application/json"
        :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
        :body (json/generate-string
               {:bins counts

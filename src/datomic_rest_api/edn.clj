@@ -1,6 +1,5 @@
-(ns web.edn
-  (:require clojure.edn
-            [datomic.api :as d]))
+(ns datomic-rest-api.edn
+  (:require clojure.edn [datomic.api :as d]))
 
 (def ^:private reader-map
   {'db/id (fn [[part n]] (d/tempid part n))})

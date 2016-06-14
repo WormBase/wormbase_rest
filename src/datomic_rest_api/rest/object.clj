@@ -1,4 +1,4 @@
-(ns web.rest.object
+(ns datomic-rest-api.rest.object
   (:use pseudoace.utils)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]))
