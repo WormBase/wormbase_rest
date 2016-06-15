@@ -17,12 +17,12 @@
             [datomic-rest-api.rest.gene :as gene]
             [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
             [datomic-rest-api.rest.references :refer (get-references)]
-            [datomic-rest-api.locatable-api :refer (feature-api)]))
+            [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
 
 (def uri (env :trace-db))
 (def con (d/connect uri))
 
-(defroutes routes
+(defroutes get-routes
   (GET "/rest/widget/gene/:id/overview" {params :params}
        (gene/overview (db con) (:id params)))
   (GET "/rest/widget/gene/:id/history" {params :params}
@@ -63,4 +63,4 @@
                    :default      8120)))
 
 (defonce server
-    (run-jetty handler {:port trace-port}))
+    (run-jetty get-routes {:port trace-port}))

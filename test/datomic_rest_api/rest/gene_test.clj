@@ -1,4 +1,4 @@
-(ns web.core-test
+(ns datomic_rest_api.rest.gene-test
   (:use midje.sweet)
   (:require [clojure.test :refer :all]
             [environ.core :refer (env)]

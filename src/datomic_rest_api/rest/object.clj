@@ -52,7 +52,7 @@
        (str/split #"\s+")
        (last))))
 
-(defn- author-list [paper]
+(defn author-list [paper]
   (let [authors (->> (:paper/author paper)
                      (sort-by :ordered/index))]
     (cond

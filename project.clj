@@ -1,11 +1,14 @@
 (defproject datomic-rest-api "0.0.3-SNAPSHOT"
   :description "REST API for retrieving data from datomic on a per widget basis"
-  :dependencies [[org.clojure/clojure "1.7.0"]
+
+  :min-lein-version "2.0.0"
+
+  :dependencies [[org.clojure/clojure "1.8.0"]
  ;;                [com.datomic/datomic-free "0.9.5186" :exclusions [joda-time]]
-                 [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time]] ;; added
+                 [com.datomic/datomic-pro "0.9.5359" :exclusions [joda-time]] ;; added
                  [com.amazonaws/aws-java-sdk-dynamodb "1.9.39" :exclusions [joda-time]] ;; added
                  [datomic-schema "1.3.0"]
-                 [wormbase/pseudoace "0.3.0"]
+                 [wormbase/pseudoace "0.4.6"]
                  [hiccup "1.0.5"]
                  [ring "1.4.0"]
                  [fogus/ring-edn "0.2.0"]
@@ -22,6 +25,9 @@
                  [secretary "1.2.3"]
                  [environ "1.0.3"]]
 
+  :profiles {:dev {:dependencies [[midje "1.6.3"]]
+                 :plugins [[lein-midje "3.1.3"]]}}
+
   :source-paths ["src"]
 
   :plugins [[lein-environ "1.0.3"]]
@@ -33,4 +39,3 @@
                                                        ;; should minimize long pauses.
              "-Ddatomic.objectCacheMax=2500000000" 
              "-Ddatomic.txTimeoutMsec=1000000"])
-

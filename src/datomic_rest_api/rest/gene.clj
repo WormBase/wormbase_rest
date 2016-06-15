@@ -1,7 +1,6 @@
 (ns datomic-rest-api.rest.gene
-  (:use pseudoace/binning)
   (:require [cheshire.core :as c :refer (generate-string)]
-;;            [pseudoace.binning :refer (reg2bins xbin bins)]
+            [pseudoace.binning :refer (reg2bins xbin bins)]
             [datomic-rest-api.rest.object :refer (humanize-ident get-evidence author-list)]
             [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
