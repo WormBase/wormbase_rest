@@ -1,4 +1,4 @@
-(ns web.rest.object
+(ns datomic-rest-api.rest.object
   (:use pseudoace.utils)
   (:require [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]))
@@ -52,7 +52,7 @@
        (str/split #"\s+")
        (last))))
 
-(defn- author-list [paper]
+(defn author-list [paper]
   (let [authors (->> (:paper/author paper)
                      (sort-by :ordered/index))]
     (cond

@@ -1,5 +1,5 @@
-(ns web.rest.references
-  (:use web.rest.object)
+(ns datomic-rest-api.rest.references
+  (:use datomic-rest-api.rest.object)
   (:require [cheshire.core :as json]
             [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
@@ -26,7 +26,7 @@
         refs (get obj (keyword class "reference"))]
     (if refs
       {:status 200
-       :content-type "text/plain"
+       :content-type "application/json"
        :body (json/generate-string
               {:count (count refs)
                :page  1

@@ -1,5 +1,5 @@
-(ns web.rest.interactions
-  (:use web.rest.object)
+(ns datomic-rest-api.rest.interactions
+  (:use datomic-rest-api.rest.object)
   (:require [cheshire.core :as json]
             [datomic.api :as d :refer (db history q touch entity)]
             [clojure.string :as str]
