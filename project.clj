@@ -1,10 +1,9 @@
 (defproject datomic-rest-api "0.0.3-SNAPSHOT"
   :description "REST API for retrieving data from datomic on a per widget basis"
-
   :min-lein-version "2.0.0"
-
+  :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
+                                   :creds :gpg}}
   :dependencies [[org.clojure/clojure "1.8.0"]
- ;;                [com.datomic/datomic-free "0.9.5186" :exclusions [joda-time]]
                  [com.datomic/datomic-pro "0.9.5359" :exclusions [joda-time]] ;; added
                  [com.amazonaws/aws-java-sdk-dynamodb "1.9.39" :exclusions [joda-time]] ;; added
                  [datomic-schema "1.3.0"]
