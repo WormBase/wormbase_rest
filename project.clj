@@ -24,7 +24,6 @@
                  [cheshire "5.6.1"]
                  [secretary "1.2.3"]
                  [environ "1.0.3"]]
-
   :profiles {:dev {:dependencies [[midje "1.6.3"]]
                  :plugins [[lein-midje "3.1.3"]]}}
 
@@ -37,5 +36,5 @@
   :jvm-opts ["-Xmx6G"
              "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"  ;; same GC options as the transactor,
                                                        ;; should minimize long pauses.
-             "-Ddatomic.objectCacheMax=2500000000" 
+             "-Ddatomic.objectCacheMax=2500000000"
              "-Ddatomic.txTimeoutMsec=1000000"])
