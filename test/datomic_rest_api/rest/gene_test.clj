@@ -1,28 +1,32 @@
 (ns datomic_rest_api.rest.gene-test
   (:use midje.sweet)
+ ;; (:use [datomic-rest-api.rest.gene])
   (:require [clojure.test :refer :all]
             [environ.core :refer (env)]
             [clojure.data.json :as json]
             [clojure.string :as string]))
 
+;;(def uri (env :trace-db))
+;;(def con (datomic.api/connect uri))
 
-;; general test
+;;(def base_url "localhost:8008")
+
+(defn first-element [sequence default]
+  (if (nil? sequence)
+    default
+    (first sequence)))
+
+
+(facts "about `first-element`"
+  (fact "it normally returns the first element"
+    (first-element [1 2 3] :default) => 1
+    (first-element '(1 2 3) :default) => 1))
+
+
 
 ;;(facts "The base url is simply for testing purposes"
-;;  (let [response (http/get base_url)]
-;;    (fact "Check status"
-;;           (:status response) => 200)
-;;    (fact "check response body"
-;;           (:body response) => "hello")))
-;;
-;;(facts "GENE: Checking human_diseases" 
-;;   (let [gene_id "WBGene00000900"
-;;         url  (reduce str [ base_url "rest/widget/gene/" gene_id "/human_diseases"])
-;;         response (http/get url {:accept :json})]
-;;     (print response)
-;;     (fact "check response status"
-;;           (:status response) => 200)))
-;;     (fact "check body - expermental_model - nill returned when there is no data"
-;;           (let [body  (json/read-str (:body response) :key-fn keyword)]
-;;             (print body)))))
-;;             (:experimenta_model (:data (:human_diseases (:fields body)))) => nil))))
+;;  (fact "Url test"
+;;  (let [base_url "localhost:8080"
+;;        url base_url]
+;;      (fact "Check base url"
+;;           (expect uri => "http://localhost:8130")))))

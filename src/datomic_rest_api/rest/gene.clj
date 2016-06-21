@@ -1,4 +1,5 @@
 (ns datomic-rest-api.rest.gene
+  (:import java.text.SimpleDateFormat)
   (:require [cheshire.core :as c :refer (generate-string)]
             [pseudoace.binning :refer (reg2bins xbin bins)]
             [datomic-rest-api.rest.object :refer (humanize-ident get-evidence author-list)]
@@ -122,7 +123,7 @@
   {:data
    (if-let [class (:gene/gene-class gene)]
      {:tag (datomic-rest-api.rest.object/pack-obj "gene-class" class)
-      :description (str "Datomic: " (first (:gene-class/description class)))})
+      :description (str (first (:gene-class/description class)))})
    :description "The gene class for this gene"})
 
 (defn- gene-operon [gene]
@@ -139,11 +140,14 @@
     :description "The gene cluster for this gene"})
 
 (defn- gene-other-names [gene]
-   {:data nil
+   {:data
+    (->> (:gene/other-name gene)
+        (datomic-rest-api.rest.object/get-evidence)
+        (mapcat val))
     :description (format "other names that have been used to refer to %s" (:gene/id gene))})
 
 (defn- gene-status [gene]
-   {:data "hello"
+   {:data (:version gene)
  ;;   (if-let [class (:gene/status gene)]
    ;;    (:status/status class))
     :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})

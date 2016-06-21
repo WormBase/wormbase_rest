@@ -1,6 +1,8 @@
 (ns datomic-rest-api.rest.object
   (:use pseudoace.utils)
+  (:import java.text.SimpleDateFormat)
   (:require [datomic.api :as d :refer (db history q touch entity)]
+            [clj-time.format :as f]
             [clojure.string :as str]))
 
 ;;
@@ -241,8 +243,11 @@
       (pack-obj "paper" paper)))
 
    :Date_last_updated
-   (:evidence/date-last-updated holder)
-   
+   (if-let [date (:evidence/date-last-updated holder)]     
+       { :id (str (.format (java.text.SimpleDateFormat. "yyyy-M-d") date))
+         :label (str (.format (java.text.SimpleDateFormat. "yyyy-M-d") date))
+         :class "text"})
+       
    :Remark
    (seq
     (:evidence/remark holder))
