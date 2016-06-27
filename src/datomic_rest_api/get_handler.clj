@@ -24,37 +24,37 @@
 
 (defroutes get-routes
   (GET "/rest/widget/gene/:id/overview" {params :params}
-       (gene/overview (db con) (:id params)))
+       (gene/overview (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/overview")))
   (GET "/rest/widget/gene/:id/history" {params :params}
-       (gene/history (db con) (:id params)))
+       (gene/history (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/history")))
   (GET "/rest/widget/gene/:id/phenotype" {params :params}
-       (gene/phenotypes (db con) (:id params)))
+       (gene/phenotypes (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/phenotype")))
   (GET "/rest/widget/gene/:id/interactions" {params :params}
-       (get-interactions "gene" (db con) (:id params)))
+       (get-interactions "gene" (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/interactions")))
   (GET "/rest/widget/gene/:id/interaction_details" {params :params}
-       (get-interaction-details "gene" (db con) (:id params)))
+       (get-interaction-details "gene" (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/interaction_details")))
   (GET "/rest/widget/gene/:id/mapping_data" {params :params}
-       (gene/mapping-data (db con) (:id params)))
+       (gene/mapping-data (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/mapping_data")))
   (GET "/rest/widget/gene/:id/human_diseases" {params :params}
-       (gene/human-diseases (db con) (:id params)))
+       (gene/human-diseases (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/human_disease")))
   (GET "/rest/widget/gene/:id/references" {params :params}
-       (get-references "gene" (db con) (:id params)))
+       (get-references "gene" (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/references")))
   (GET "/rest/widget/gene/:id/reagents" {params :params}
-       (gene/reagents (db con) (:id params)))
+       (gene/reagents (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/reagents")))
   (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
-       (gene/gene-ontology (db con) (:id params)))
+       (gene/gene-ontology (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/gene_ontology")))
   (GET "/rest/widget/gene/:id/expression" {params :params}
-       (gene/expression (db con) (:id params)))
+       (gene/expression (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/expression")))
   (GET "/rest/widget/gene/:id/homology" {params :params}
-       (gene/homology (db con) (:id params)))
+       (gene/homology (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/homology")))
   (GET "/rest/widget/gene/:id/sequences" {params :params}
-       (gene/sequences (db con) (:id params)))
+       (gene/sequences (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/sequences")))
   (GET "/rest/widget/gene/:id/feature" {params :params}
-       (gene/features (db con) (:id params)))
+       (gene/features (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/feature")))
   (GET "/rest/widget/gene/:id/genetics" {params :params}
-       (gene/genetics (db con) (:id params)))
+       (gene/genetics (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/genetics")))
   (GET "/rest/widget/gene/:id/external_links" {params :params}
-       (gene/external-links (db con) (:id params))))
+       (gene/external-links (db con) (:id params) (str "/rest/widget/gene/" (:id params) "/overview"))))
 
 (def trace-port (let [p (env :trace-port)]
                   (cond

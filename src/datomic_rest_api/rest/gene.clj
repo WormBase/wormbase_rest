@@ -14,13 +14,14 @@
   "Define a handler for a rest widget endpoint.  `body` is executed with `gene-binding` 
    will bound to the gene's entity-map, and should return a map of field values."
   [name [gene-binding] & body]
-  `(defn ~name [db# id#]
+  `(defn ~name [db# id# uri#]
      (if-let [~gene-binding (entity db# [:gene/id id#])]
        {:status 200
         :content-type "application/json"
         :body (generate-string
                {:class "gene"
                 :name id#
+                :url uri#
                 :fields (do ~@body)}
                {:pretty true})}
        {:status 404
@@ -42,6 +43,7 @@
 (def ^:private transcript-types
   {:transcript/asrna             "asRNA"
    :transcript/lincrna           "lincRNA"
+
    :transcript/processed-mrna    "mRNA"
    :transcript/unprocessed-mrna  "mRNA"
    :transcript/mirna             "miRNA"
@@ -282,7 +284,7 @@
           (datomic-rest-api.rest.object/pack-obj "gene"))
      :description "the gene this one has merged into"}))
 
-(defn- get-sd [gene type]
+(defn- get-structured-description [gene type]
   (let [key     (keyword "gene" type)
         txt-key (keyword (str "gene." type) "text")]
     (->> (key gene)
@@ -306,25 +308,25 @@
           :evidence (datomic-rest-api.rest.object/get-evidence p)})))
 
     :Other_description
-    (get-sd gene "other-description")
+    (get-structured-description gene "other-description")
 
     :Sequence_features
-    (get-sd gene "sequence-features")
+    (get-structured-description gene "sequence-features")
 
     :Functional_pathway
-    (get-sd gene "functional-pathway")
+    (get-structured-description gene "functional-pathway")
 
     :Functional_physical_interaction
-    (get-sd gene "functional-physical-interaction")
+    (get-structured-description gene "functional-physical-interaction")
 
     :Molecular_function
-    (get-sd gene "molecular-function")
+    (get-structured-description gene "molecular-function")
 
     :Biological_process
-    (get-sd gene "biological-process")
+    (get-structured-description gene "biological-process")
 
     :Expression
-    (get-sd gene "expression"))
+    (get-structured-description gene "expression"))
 
    :description
    "structured descriptions of gene function"})
@@ -1235,15 +1237,72 @@
        (fn [ec-id]
          (let [ec (entity db ec-id)]
            {:expression_cluster (datomic-rest-api.rest.object/pack-obj "expression-cluster" ec)
-            :description        (:expression-cluster/description ec)}))))
+            :description      (str (:expression-cluster/description ec))}))))
      :description
      "expression cluster data"}))
+
+(defn- anatomic-expression-patterns [gene]
+    {:data  {}
+      :description "expression patterns for the gene"})
+
+(defn- anatomy-function [gene]
+   {:data {}
+    :description "anatomy functions associatated with this gene"})
+
+(defn- expression-profiling-graphs [gene]
+   {:data []
+    :description (format "expression patterns associated with the gene:%s" (:gene/id gene))})
+
+(defn- fourd-expression-movies [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->>
+      (q '[:find [?ep ...]
+           :in $ ?gene
+           :where [?epg :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?epg]
+ ;;                 [?ep :expr-pattern/author ?author]
+ ;;                 [(re-find #".*Mohler.*" ?author)]
+                  (not
+                    [?ep :expr-pattern/microarray _])
+                  (not
+                    [?ep :expr-pattern/tiling-array _])]
+         db (:db/id gene))
+      (map
+       (fn [ep-id]
+         (let [ep (entity db ep-id)]
+           (vmap
+              :movie
+                (first (:expr-pattern/movieurl ep))
+
+              :test
+                   (expr-pattern-type ep)
+ 
+              :details 
+                (:expr-pattern/pattern ep)
+ 
+              :object "movie")))))
+
+    :description "interactive 4D expression movies"}))
+
+(defn- microarray-topology-map-position [gene]
+    {:data
+        (for[expression (:gene/expression gene)]
+          (expression))     
+     :description "microarray topography map"})
+
+
 
 (def-rest-widget expression [gene]
   {:name                (name-field gene)
    :anatomy_terms       (anatomy-terms gene)
    :expression_patterns (expression-patterns gene)
-   :expression_cluster  (expression-clusters gene)})
+   :expression_cluster  (expression-clusters gene)
+   :expression_profiling_graphs (expression-profiling-graphs gene)
+   :anatomic_expression_patterns (anatomic-expression-patterns gene)
+   :microarray_topology_map_position (microarray-topology-map-position gene)
+   :fourd_expression_movies (fourd-expression-movies gene)
+   :anatomy_function (anatomy-function gene)})
 
 ;;
 ;; Homology widget
