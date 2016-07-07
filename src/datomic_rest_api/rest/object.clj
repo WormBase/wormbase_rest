@@ -51,8 +51,9 @@
         (:person/last-name))
    (-> (:paper.author/author author-holder)
        (:author/id)
+       (.trim)
        (str/split #"\s+")
-       (last))))
+       (first))))
 
 (defn author-list [paper]
   (let [authors (->> (:paper/author paper)
@@ -63,7 +64,7 @@
 
      (< (count authors) 6)
      (let [names (map author-lastname authors)]
-       (str (str/join ", " (butlast names)) " & " (last names)))
+       (str (str/join ", " (butlast names)) ", & " (last names)))
 
      :default
      (str (author-lastname (first authors)) " et al."))))
@@ -94,7 +95,7 @@
       (:transgene/id tg)))
 
 (defmethod obj-label "go-term" [_ go]
-  (first (:go-term/term go)))    ;; Not clear why multiples allowed here!
+  (first (:go-term/name go)))    ;; Not clear why multiples allowed here!
 
 (defmethod obj-label "life-stage" [_ ls]
   (:life-stage/public-name ls))
@@ -170,11 +171,13 @@
 
 (defmethod obj-name "gene" [class db id]
   (let [obj (obj-get class db id)]
-    {:id    (:gene/id obj)
-     :label (or (:gene/public-name obj)
+    {:data 
+     {:id    (:gene/id obj)
+       :label (or (:gene/public-name obj)
                 (:gene/id obj))
-     :class "gene"
-     :taxonomy (obj-tax class obj)}))
+       :class "gene"
+       :taxonomy (obj-tax class obj)}
+     :description (str "The name and WormBase internal ID of " (:gene/id obj))}))
 
 (defn obj-class
   "Attempt to determine the class of a WormBase-ish entity-map."
@@ -212,6 +215,7 @@
   ([class obj & {:keys [label]}]
    (if obj
      {:id       ((keyword class "id") obj)
+ ;;     :test     [keys obj]
       :label    (or label
                   (obj-label class obj))
       :class    (if class
