@@ -42,19 +42,19 @@
   (GET "/rest/widget/gene/:id/reagents" {params :params}
        (gene/reagents (db con) (:id params) (str "rest/widget/gene/" (:id params) "/reagents"))) ;; looks correct; needs sort to confirm
   (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
-       (gene/gene-ontology (db con) (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology")))
+       (gene/gene-ontology (db con) (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology"))) ;; substancially same structure. not producing the same results 
   (GET "/rest/widget/gene/:id/expression" {params :params}
-       (gene/expression (db con) (:id params) (str "rest/widget/gene/" (:id params) "/expression")))
+       (gene/expression (db con) (:id params) (str "rest/widget/gene/" (:id params) "/expression"))) ;; This one is predominantly done but needs a little checking and sequence data
   (GET "/rest/widget/gene/:id/homology" {params :params}
        (gene/homology (db con) (:id params) (str "rest/widget/gene/" (:id params) "/homology"))) ;; need to wait for homology data to be added to datomic database
   (GET "/rest/widget/gene/:id/sequences" {params :params}
        (gene/sequences (db con) (:id params) (str "rest/widget/gene/" (:id params) "/sequences")))
   (GET "/rest/widget/gene/:id/feature" {params :params}
-       (gene/features (db con) (:id params) (str "rest/widget/gene/" (:id params) "/feature")))
+       (gene/features (db con) (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
   (GET "/rest/widget/gene/:id/genetics" {params :params}
        (gene/genetics (db con) (:id params) (str "rest/widget/gene/" (:id params) "/genetics")))
   (GET "/rest/widget/gene/:id/external_links" {params :params}
-       (gene/external-links (db con) (:id params) (str "rest/widget/gene/" (:id params) "/overview"))))
+       (gene/external-links (db con) (:id params) (str "rest/widget/gene/" (:id params) "/external_links"))))
 
 (def trace-port (let [p (env :trace-port)]
                   (cond

@@ -5,7 +5,7 @@
                  [com.datomic/datomic-pro "0.9.5359" :exclusions [joda-time]] ;; added
                  [com.amazonaws/aws-java-sdk-dynamodb "1.9.39" :exclusions [joda-time]] ;; added
                  [datomic-schema "1.3.0"]
-                 [wormbase/pseudoace "0.4.6"]
+                 [wormbase/pseudoace "0.4.9"]
                  [hiccup "1.0.5"]
                  [ring "1.4.0"]
                  [fogus/ring-edn "0.2.0"]
@@ -39,3 +39,4 @@
              "-Ddatomic.txTimeoutMsec=1000000"]
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :creds :gpg}})
+                                   

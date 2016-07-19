@@ -840,20 +840,6 @@
           (seq))
      :description "transgenes that express this gene"}))
 
-;;(defn- transgene-products [gene]
-;;  (let [db (d/entity-db gene)]
-;;    {:data
-;;     (->> (q '[:find [?cons ...]
-;;               :in $ ?gene
-;;               :where [?cg :construct.gene/gene ?gene]
-;;                      [?cons :construct/gene ?cg]]
-;;             db (:db/id gene))
-;;          (map (partial entity db))
-;;          (mapcat transgene-record)
-;;          (seq))
-;;     :description "transgenes that express this gene"}))
-;;
-
 (def ^:private probe-types
   {:oligo-set.type/affymetrix-microarray-probe "Affymetrix"
    :oligo-set.type/washu-gsc-microarray-probe  "GSC"
@@ -1301,7 +1287,7 @@
        (fn [ec-id]
          (let [ec (entity db ec-id)]
            {:expression_cluster (datomic-rest-api.rest.object/pack-obj "expression-cluster" ec)
-            :description      (str (:expression-cluster/description ec))}))))
+            :description     (apply str (:expression-cluster/description ec))}))))
      :description
      "expression cluster data"}))
 
@@ -1310,12 +1296,59 @@
       :description "expression patterns for the gene"})
 
 (defn- anatomy-function [gene]
-   {:data {}
-    :description "anatomy functions associatated with this gene"})
+  (let [db (d/entity-db gene)]
+   {:data 
+    (->>
+     (q '[:find [?af ...]
+          :in $ ?gene
+          :where [?afg :anatomy-function.gene/gene ?gene]
+                 [?af :anatomy-function/gene ?afg]]
+        db (:db/id gene))
+      (map 
+       (fn [af-id]
+        (let [af (entity db af-id)]
+           {:anatomy-function (datomic-rest-api.rest.object/pack-obj "expression-cluster" af)})))) ;; need to still make this packed object - so far have not seen an exmample of it filled in
+      :description "anatomy functions associatated with this gene"}))
+
+;; I haven't found an example for this to show that it works
+(defn- curated-images [ep]
+ (let [images (:picture/expr_pattern ep)]
+     (map 
+      (fn [image]
+        (datomic-rest-api.rest.object/pack-obj "picture" image))
+            images)))
 
 (defn- expression-profiling-graphs [gene]
-   {:data []
-    :description (format "expression patterns associated with the gene:%s" (:gene/id gene))})
+  (let [db (d/entity-db gene)]
+   {:data
+    (->>
+     (q '[:find [?ep ...]
+          :in $ ?gene
+          :where [?epg :expr-pattern.gene/gene ?gene]
+                 [?ep :expr-pattern/gene ?epg]]
+        db (:db/id gene))
+      (map
+       (fn [ep-id]
+        (let [ep (entity db ep-id)]
+          {;;:data-test {:id (:expr-pattern/id ep) 
+  ;;                    :gene (:expr-pattern/gene ep) }
+  ;;                    :rnaseq (:expr-pattern/rnaseq ep) 
+    ;;                  :pattern (:expr-pattern/pattern ep)
+      ;;                :reference (:expr-pattern/reference ep)}
+;;           :data (keys ep)
+            :database nil
+           :description nil
+           :expressed_in nil
+           :expression_pattern {:class "expr_pattern"
+                                :curated_images (curated-images ep) ;; should be array of pack-obj (datomic-rest-api.rest.object/pack-obj "picture )
+                                :id (:expr-pattern/id ep) 
+                                :label (:expr-pattern/id ep)
+                                :taxonomy "all"}
+           :go_term (first (:expr-pattern/go-term ep)) ;; need to see example
+           :life_stage (:expr-pattern/life-stage ep) ;; need to see example
+           :transgene (:expr-pattern/transgene ep) ;; need to see example
+           :type (expr-pattern-type ep)}))))
+    :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
 
 (defn- fourd-expression-movies [gene]
   (let [db (d/entity-db gene)]
@@ -1350,12 +1383,8 @@
     :description "interactive 4D expression movies"}))
 
 (defn- microarray-topology-map-position [gene]
-    {:data
-        (for[expression (:gene/expression gene)]
-          (expression))     
+    {:data nil ;; this resquires segment data and can be found in the file: lib/WormBase/API/Role/Expression.pm
      :description "microarray topography map"})
-
-
 
 (def-rest-widget expression [gene]
   {:name                (name-field gene)
@@ -1795,8 +1824,34 @@
      :description
      "Features associated with this Gene"}))
 
+(defn- feature-image [gene]
+  {:data {:class "genomic_location" ;; To populate this correctly we will need sequence data
+          :id nil
+          :label nil
+          :pos_string nil
+          :taxonomy (if-let [class (:gene/species gene)]
+             (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
+                (clojure.string/lower-case (clojure.string/join [(first genus) "_" species]))))
+          :tracks ["GENES"
+                   "RNASEQ_ASYMMETRIES"
+                   "RNASEQ"
+                   "RNASEQ_SPLICE"
+                   "POLYSOMES"
+                   "MICRO_ORF"
+                   "DNASEI_HYPERSENSITIVE_SITE"
+                   "REGULATORY_REGIONS"
+                   "PROMOTER_REGIONS"
+                   "HISTONE_BINDING_SITES"
+                   "TRANSCRIPTION_FACTOR_BINDING_REGION"
+                   "TRANSCRIPTION_FACTOR_BINDING_SITE"
+                   "BINDING_SITES_PREDICTED" 
+                   "BINDING_SITES_CURATED"
+                   "BINDING_REGIONS"]}
+   :description "The genomic location of the sequence to be displayed by GBrowse"})
+
 (def-rest-widget features [gene]
-  {:name       (name-field gene)
+  {:feature_image (feature-image gene)
+   :name       (name-field gene)
    :features   (associated-features gene)})
 
 ;;
@@ -2000,12 +2055,34 @@
           (map #(process-variation (entity db %))))
      :description "polymorphisms and natural variations contained in the strain"}))
 
+;;(defn- rearrangements-positive [gene]
+;;  (let [db (d/entity-
+;; (->> (q '[:find ?rearrangement 
+;;               :in $ ?gene
+;;               :where [?rag :rearragnement.gene-inside/gene ?gene]
+;;                      [?ra :rearrangement/gene-inside ?rag]]
+;;             db (:db/id gene))
+ ;;         (entity db)
+   ;;       (datomic-rest-api.rest.object/pack-obj "rearrangment")))
+
+(defn- rearrangements-negative [gene]
+ ["negative"]
+)
+
+;;(defn- rearrangements [gene]
+;;  {:data {:positive (rearrangements-positive gene)
+;;          :negative (rearrangements-negative gene) }
+;;   :description "rearrangements involving this gene"})
+
+
 (def-rest-widget genetics [gene]
-  {:name             (name-field gene)
-   :reference_allele (reference-allele gene)
-   :strains          (strains gene)
-   :alleles          (alleles gene)
-   :polymorphisms    (polymorphisms gene)})
+  {;;:reference_allele (reference-allele gene)a
+   :sdfs (polymorphisms gene)})
+;;   :rearrangements   (rearrangements gene) })
+  ;; :strains          (strains gene)
+  ;; :alleles          (alleles gene)
+;;   :polymorphisms    (polymorphisms gene)
+  ;; :name             (name-field gene)})
 
 ;;
 ;; external_links widget

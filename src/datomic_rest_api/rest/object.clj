@@ -215,7 +215,6 @@
   ([class obj & {:keys [label]}]
    (if obj
      {:id       ((keyword class "id") obj)
- ;;     :test     [keys obj]
       :label    (or label
                   (obj-label class obj))
       :class    (if class
