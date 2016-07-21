@@ -1,5 +1,5 @@
 (ns datomic_rest_api.rest.gene-test
-  (:use midje.sweet)
+ ;; (:use midje.sweet)
  ;; (:use [datomic-rest-api.rest.gene])
   (:require [clojure.test :refer :all]
             [environ.core :refer (env)]
@@ -11,19 +11,19 @@
 
 ;;(def base_url "localhost:8008")
 
-(defn first-element [sequence default]
-  (if (nil? sequence)
-    default
-    (first sequence)))
-
-
-(facts "about `first-element`"
-  (fact "it normally returns the first element"
-    (first-element [1 2 3] :default) => 1
-    (first-element '(1 2 3) :default) => 1))
-
-
-
+;;(defn first-element [sequence default]
+;;  (if (nil? sequence)
+;;    default
+;;    (first sequence)))
+;;
+;;
+;;(facts "about `first-element`"
+;;  (fact "it normally returns the first element"
+;;    (first-element [1 2 3] :default) => 1
+;;    (first-element '(1 2 3) :default) => 1))
+;;
+;;
+;;
 ;;(facts "The base url is simply for testing purposes"
 ;;  (fact "Url test"
 ;;  (let [base_url "localhost:8080"
