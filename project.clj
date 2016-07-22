@@ -1,4 +1,4 @@
-(defproject datomic-rest-api "0.0.3-SNAPSHOT"
+(defproject datomic-rest-api "0.0.1"
   :description "REST API for retrieving data from datomic on a per widget basis"
   :min-lein-version "2.0.0"
   :dependencies 
