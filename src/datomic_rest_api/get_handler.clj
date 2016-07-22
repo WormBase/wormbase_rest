@@ -10,13 +10,14 @@
             [ring.util.response :refer (redirect file-response)]
             [cheshire.core :as json :refer [parse-string]]
             [environ.core :refer (env)]
- ;;           [datomic-rest-api.resource.db :refer (get-db)]
+            [mount.core :as mount]
+            [datomic-rest-api.utils.db :refer [datomic-conn]]
             [datomic-rest-api.rest.gene :as gene]
             [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
             [datomic-rest-api.rest.references :refer (get-references)]
             [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
 
-(def uri (env :trace-db))
+;;(def uri (env :trace-db))
 
 (defn app-routes [db]
    (routes
@@ -54,14 +55,15 @@
      (GET "/rest/widget/gene/:id/external_links" {params :params}
          (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))))
 
-(def con nil)
+;;(def con nil)
 
 (defn init []
   (print "Making Connection\n")
-  (def con (d/connect uri)))
+  (mount/start))
+;;  (def con (d/connect uri)))
   
 (defn app [request]
-  (let [db (d/db con)
+  (let [db (d/db datomic-conn)
         handler (app-routes db)]
     (handler request)))
 
