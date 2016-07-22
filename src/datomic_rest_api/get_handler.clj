@@ -17,8 +17,6 @@
             [datomic-rest-api.rest.references :refer (get-references)]
             [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
 
-;;(def uri (env :trace-db))
-
 (defn app-routes [db]
    (routes
      (GET "/" [] "hello")
@@ -55,12 +53,9 @@
      (GET "/rest/widget/gene/:id/external_links" {params :params}
          (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))))
 
-;;(def con nil)
-
 (defn init []
   (print "Making Connection\n")
   (mount/start))
-;;  (def con (d/connect uri)))
   
 (defn app [request]
   (let [db (d/db datomic-conn)
