@@ -1,6 +1,4 @@
 (defproject datomic-rest-api "0.0.3-SNAPSHOT"
-  :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
-                                   :creds :gpg}}
   :description "REST API for retrieving data from datomic on a per widget basis"
   :min-lein-version "2.0.0"
   :dependencies 
