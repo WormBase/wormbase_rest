@@ -5,7 +5,6 @@
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vassoc]]))
 
-
 (def ^:private interactor-role-map
   {:interactor-info.interactor-type/effector           :effector
    :interactor-info.interactor-type/affected           :affected
@@ -204,27 +203,35 @@
                              :affected     pack-affected
                              :direction    direction
                              :phenotype    phenotype
-                             :nearby       0})))
+                             :nearby       "0"})))
               data))
           {}))))
 
-(defn get-interactions [class db id]
+(defn get-interactions [class db id uri]
   (let [obj (obj-get class db id)]
     (if obj
+      (let [edges-core (:edges (obj-interactions class obj false))
+            {:keys [types edges ntypes nodes phenotypes]} (obj-interactions class obj 1)]
       {:status 200
        :content-type "application/json"
        :body (json/generate-string
               {:name id
                :class class
-               :uri "whatevs"
+               :uri uri
                :fields
                {:name (obj-name class db id)
                 :interactions
                 {:description "genetic and predicted interactions"
-                 :data {:edges (vals (:edges (obj-interactions class obj false)))}}}}
-              {:pretty true})})))
+                 :data {:edges (vals edges-core)
+                        :types types
+                        :ntypes ntypes
+                        :phenotypes phenotypes
+                        :edges_all (vals edges)
+                        :class "Gene"
+                        :showall (if (< (count (vals edges)) 100) "1" "0")}}}}
+              {:pretty true})}))))
 
-(defn get-interaction-details [class db id]
+(defn get-interaction-details [class db id uri]
   (let [obj (obj-get class db id)]
     (if obj
       {:status 200
@@ -232,7 +239,7 @@
        :body (json/generate-string
               {:name id
                :class class
-               :uri "whatevs"
+               :uri uri
                :fields
                {:name (obj-name class db id)
                 :data (let [{:keys [types edges ntypes nodes phenotypes]}
