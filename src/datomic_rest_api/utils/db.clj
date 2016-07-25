@@ -8,8 +8,8 @@
 (defn- new-datomic-connection [uri]
     (d/connect uri))
 
-(defn- disconnect [conn]
+(defn- datomic-disconnect [conn]
    (d/release conn))
 
 (defstate datomic-conn :start (new-datomic-connection uri)
-                       :stop (disconnect datomic-conn))
+                       :stop (datomic-disconnect datomic-conn))

@@ -2055,34 +2055,39 @@
           (map #(process-variation (entity db %))))
      :description "polymorphisms and natural variations contained in the strain"}))
 
-;;(defn- rearrangements-positive [gene]
-;;  (let [db (d/entity-
-;; (->> (q '[:find ?rearrangement 
-;;               :in $ ?gene
-;;               :where [?rag :rearragnement.gene-inside/gene ?gene]
-;;                      [?ra :rearrangement/gene-inside ?rag]]
-;;             db (:db/id gene))
- ;;         (entity db)
-   ;;       (datomic-rest-api.rest.object/pack-obj "rearrangment")))
+(defn- rearrangements-positive [gene]
+  (let [db (d/entity-db gene)]
+    (->> (q '[:find ?ra
+               :in $ ?gene
+               :where [?rag :rearrangement.gene-inside/gene ?gene]
+                      [?ra :rearrangement/gene-inside ?rag]]
+             db (:db/id gene))
+          (entity db)
+          (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
 
 (defn- rearrangements-negative [gene]
- ["negative"]
-)
+   (let [db (d/entity-db gene)]
+    (->> (q '[:find ?ra
+               :in $ ?gene
+               :where [?rag :rearrangement.gene-outside/gene ?gene]
+                      [?ra :rearrangement/gene-outside ?rag]]
+             db (:db/id gene))
+          (entity db)
+          (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
 
-;;(defn- rearrangements [gene]
-;;  {:data {:positive (rearrangements-positive gene)
-;;          :negative (rearrangements-negative gene) }
-;;   :description "rearrangements involving this gene"})
+(defn- rearrangements [gene]
+  {:data {:positive (rearrangements-positive gene)
+          :negative (rearrangements-negative gene) }
+   :description "rearrangements involving this gene"})
 
 
 (def-rest-widget genetics [gene]
-  {;;:reference_allele (reference-allele gene)a
-   :sdfs (polymorphisms gene)})
-;;   :rearrangements   (rearrangements gene) })
-  ;; :strains          (strains gene)
-  ;; :alleles          (alleles gene)
-;;   :polymorphisms    (polymorphisms gene)
-  ;; :name             (name-field gene)})
+  {:reference_allele (reference-allele gene)
+   :rearrangements   (rearrangements gene)
+   :strains          (strains gene)
+   :alleles          (alleles gene)
+   :polymorphisms    (polymorphisms gene)
+   :name             (name-field gene)})
 
 ;;
 ;; external_links widget

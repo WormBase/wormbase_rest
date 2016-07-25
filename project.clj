@@ -8,9 +8,8 @@
    [com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
     :exclusions [joda-time]] 
    [datomic-schema "1.3.0"]
-   [wormbase/pseudoace "0.4.9"]
+   [wormbase/pseudoace "0.4.10"]
    [mount "0.1.10"]
-   ;;[com.stuartsierra/component "0.3.1"]
    [hiccup "1.0.5"]
    [ring "1.5.0"]
    [ring/ring-anti-forgery "1.0.1"]

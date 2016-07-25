@@ -49,9 +49,9 @@
      (GET "/rest/widget/gene/:id/feature" {params :params}
          (gene/features db (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
      (GET "/rest/widget/gene/:id/genetics" {params :params}
-         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics")))
+         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics"))) ;; looks good need to find rearrangement that exists. Also need to test if works, when does not exist, with Perl template
      (GET "/rest/widget/gene/:id/external_links" {params :params}
-         (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))))
+         (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links"))))) ;; works
 
 (defn init []
   (print "Making Connection\n")
