@@ -401,7 +401,16 @@
             [?var :variation/gene ?gh]
             [?var :variation/phenotype ?ph]
             [?ph :variation.phenotype/phenotype ?pheno]])
- 
+
+(def q-gene-cons-transgene-phenotype
+   '[:find ?pheno (distinct ?ph)
+     :in $ ?g
+     :where [?cbg :construct.driven-by-gene/gene ?g]
+            [?cons :construct/driven-by-gene ?cbg]
+            [?cons :construct/transgene-construct ?tg]
+            [?tg :transgene/phenotype ?ph]
+            [?ph :transgene.phenotype/phenotype ?pheno]])
+
 (def q-gene-var-not-pheno
    '[:find ?pheno (distinct ?ph)
      :in $ ?g
@@ -551,22 +560,126 @@
    :description
    "phenotype based on interaction"}))
         
-   
+(defn drives-overexpression [gene]
+  (let [db (d/entity-db gene)]
+   {:data  (->> (q '[:find [?cons ...]
+               :in $ ?gene
+               :where  [?cbg :construct.driven-by-gene/gene ?gene]
+                      [?cons :construct/driven-by-gene ?cbg]
+       ;               [?tg :construct/transgene-construct ?cons]
+      ;                [?php :transgene.phenotype/phenotype ?tg]
+       ;               [?ph :transgene/phenotype ?php]]
+]
+             db (:db/id gene))
+            (seq))
+          
+    :description "phenotypes due to overexpression under the promoter of this gene"}))
+
+(defn- phenotype-overexpression [db gene]
+  (let [gene-phenos (into {} (q q-gene-cons-transgene-phenotype
+                               db gene))]
+    (->>
+     (for [pid gene-phenos :let [pheno (entity db pid)]]
+       [(:phenotype/id pheno)
+        {:object
+         {:class "phenotype"
+          :id (:phenotype/id pheno)
+          :label (:phenotype.primary-name/text (:phenotype/primary-name pheno))
+          :taxonomy "all"}
+         :evidence nil
+    }]))))
+;;         (vmap
+;;          "Allele:"
+;;          (if-let [vp (seq (var-phenos pid))]
+;;            (for [v vp
+;;                  :let [holder (entity db v)
+;;                        var ((if not?
+;;                               :variation/_phenotype-not-observed
+;;                               :variation/_phenotype)
+;;                             holder)]]
+;;              {:text
+;;               {:class "variation"
+;;                :id (:variation/id var)
+;;                :label (:variation/public-name var)
+;;                :style (if (= (:variation/seqstatus var)
+;;                              :variation.seqstatus/sequence)
+;;                         "font-weight: bold"
+;;                         0)
+;;                :taxonomy "c_elegans"}
+;;               :evidence
+;;               (vmap
+;;                :Person_evidence
+;;                (seq
+;;                 (for [person (:phenotype-info/person-evidence holder)]
+;;                   {:class "person"
+;;                    :id (:person/id person)
+;;                    :label (:person/standard-name person)
+;;                    :taxonomy "all"}))
+;;
+;;                :Anatomy_term
+;;                (seq
+;;                 (for [anatomy (:phenotype-info/anatomy-term holder)]
+;;                   (datomic-rest-api.rest.object/pack-obj "anatomy-term" (:phenotype-info.anatomy-term/anatomy-term anatomy))))
+;;
+;;                :Curator_confirmed
+;;                (seq
+;;                 (for [person (:phenotype-info/curator-confirmed holder)]
+;;                   {:class "person"
+;;                    :id (:person/id person)
+;;                    :label (:person/standard-name person)
+;;                    :taxonomy "all"}))
+;;
+;;                :Paper_evidence
+;;                (seq
+;;                 (for [paper (:phenotype-info/paper-evidence holder)]
+;;                   (evidence-paper paper)))
+;;
+;;                :Remark
+;;                (seq
+;;                 (map :phenotype-info.remark/text
+;;                      (:phenotype-info/remark holder))))}))
+;;          
+;;          "RNAi:"
+;;          (if-let [rp (seq (rnai-phenos pid))]
+;;            (for [r rp
+;;                  :let [holder (entity db r)
+;;                          rnai ((if not?
+;;                                  :rnai/_phenotype-not-observed
+;;                                  :rnai/_phenotype)
+;;                                holder)]]
+;;              {:text
+;;               {:class "rnai"
+;;                :id (:rnai/id rnai)
+;;                :label (:rnai/id rnai)
+;;                :style 0
+;;                :taxonomy "c_elegans"}
+;;               :evidence
+;;               (vmap
+;;                :Genotype (:rnai/genotype rnai)
+;;                :Remark (seq (map :phenotype-info.remark/text
+;;                                  (:phenotype-info/remark holder)))
+;;                :Strain (:strain/id (:rnai/strain rnai))
+;;                :Paper (if-let [paper (:rnai/reference rnai)]
+;;                         (evidence-paper paper)))})))}])
+;;     (into {}))))
+;; 
          
 (def-rest-widget phenotypes [gene]
   {
    :name      (name-field gene)
-
-   :phenotype
-   {:data
-    {:Phenotype              (phenotype-table (d/entity-db gene) (:db/id gene) false)
-     :Phenotype_not_observed (phenotype-table (d/entity-db gene) (:db/id gene) true)}
-    :description
-    "The phenotype summary of the gene"}
+   :drives_overexpression
+    {:data
+      {:Phenotype (phenotype-overexpression (d/entity-db gene) (:db/id gene))}
+     :description "phenotypes due to overexpression under the promoter of this gene"}
+;   :phenotype
+;   {:data
+;    {:Phenotype              (phenotype-table (d/entity-db gene) (:db/id gene) false)
+;     :Phenotype_not_observed (phenotype-table (d/entity-db gene) (:db/id gene) true)}
+;   :description "The phenotype summary of the gene"}
         
-   :phenotype_by_interaction
-   (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
-         
+;   :phenotype_by_interaction
+;   (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
+   })        
 ;;
 ;; Mapping data widget
 ;;
