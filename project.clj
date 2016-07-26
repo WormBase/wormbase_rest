@@ -3,10 +3,8 @@
   :min-lein-version "2.0.0"
   :dependencies 
   [[org.clojure/clojure "1.8.0"]
-   [com.datomic/datomic-pro "0.9.5385"
-    :exclusions [joda-time]] 
-   [com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
-    :exclusions [joda-time]] 
+   [com.datomic/datomic-free "0.9.5385"
+    :exclusions [joda-time]]
    [datomic-schema "1.3.0"]
    [wormbase/pseudoace "0.4.10"]
    [mount "0.1.10"]
@@ -52,4 +50,9 @@
                              [lein-ancient "0.6.8"]
                              [lein-bikeshed "0.3.0"]
                              [lein-kibit "0.1.2"]
-                             [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]}})
+                             [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]}
+              :datomic-pro {:dependencies [[com.datomic/datomic-pro "0.9.5385"
+                                            :exclusions [joda-time]]]
+                           :exclusions [com.datomic/datomic-free]}
+              :ddb {:dependencies [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
+                                    :exclusions [joda-time]]]}})
