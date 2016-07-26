@@ -1,24 +1,34 @@
 # datomic-to-catalyst
 
+- Provide interface to datomic database to WormBase website. 
 
+##Setting environment variables
+    export TRACE_DB="datomic:ddb://us-east-1/wormbase/WS254"
 
-- Reading and writing ACeDB model files.
-- Generating Datomic schemas based on ACeDB models.
-- Model-driven import of ACeDB data into multiple databases (currently Datomic and MongoDB).
-- Emulating an ACeDB server (currently incomplete).
+##Starting server in development
 
-Installation
+    lein with-profile +datomic-pro,+ddb ring server-headless 8130
 
-sudo yum -y install perl-autodie perl-IPC-System-Simple
+##Deploying to production
 
+###Deploy to Clojars (to be used by other clojar projects)
+```
+lein deploy clojars
+```
 
-##Ace to Datomic
+###Create jar file
+```
+lein with-profile +datomic-pro,+ddb uberjar
+```
 
-This tool is used to import databases from ACeDB to Datomic
+####Test deploying the jar
 
+To see inside the jar
+```
+jar tvf ./target/<jar-name>.jar
+```
 
-   - To get help run the following command
-
-lein run dynamodb-to-catalyst --help
-
-
+To do a test deploy
+```
+sudo java -server -jar <jar-name>.jar
+```
