@@ -29,9 +29,6 @@
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
-  :datomic-pro {:dependencies [[com.datomic/datomic-pro "0.9.5385"
-                                           :exclusions [joda-time]]]
-                           :exclusions [com.datomic/datomic-free]}
   :env {:trace-db "datomic:ddb://us-east-1/wormbase/WS254"
         :trace-port "8120"}
   :main datomic-rest-api.get-handler

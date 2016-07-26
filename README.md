@@ -16,14 +16,14 @@
 lein deploy clojars
 ```
 
-###Create war file
+###Create jar file
 ```
 lein with-profile +datomic-pro,+ddb uberjar
 ```
 
 ####Test deploying the jar
 
-To see inside the war
+To see inside the jar
 ```
 jar tvf ./target/<jar-name>.jar
 ```
