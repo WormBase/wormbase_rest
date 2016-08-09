@@ -18,9 +18,6 @@ build:
 tag_latest:
 	@docker tag ${NAME}:${VERSION} ${NAME}:latest
 
-push:
-	@docker push ${NAME}:${VERSION}
-
 run:
 	@echo AWS_SECRET_ACCESS_KEY is ${AWS_SECRET_ACCESS_KEY}
 	@echo AWS_ACCESS_KEY_ID is ${AWS_ACCESS_KEY_ID}
