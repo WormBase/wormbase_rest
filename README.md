@@ -1,6 +1,6 @@
 # datomic-to-catalyst
 
-- Provide interface to datomic database to WormBase website. 
+- Provide interface to datomic database to WormBase website.
 
 ##Setting environment variables
     export TRACE_DB="datomic:ddb://us-east-1/wormbase/WS254"
@@ -32,3 +32,20 @@ To do a test deploy
 ```
 sudo java -server -jar <jar-name>.jar
 ```
+
+##Docker
+
+Build an uberjar (with ring server support) on the local machine
+to avoid having to download dependencies in the container:
+
+```bash
+make target/app.jar
+```
+
+Build the docker image with jar created above, and run it on the default port (3000)
+```bash
+make build
+make run
+```
+
+TBD: JVM memory options.
