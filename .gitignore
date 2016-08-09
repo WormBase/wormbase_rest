@@ -7,8 +7,7 @@ Build
 !Build/
 Build.bat
 .last_cover_stats
-Makefile
-Makefile.old
+*.old
 MANIFEST.bak
 META.yml
 MYMETA.yml
