@@ -39,7 +39,7 @@ Build an uberjar (with ring server support) on the local machine
 to avoid having to download dependencies in the container:
 
 ```bash
-make target/app.jar
+make clean && make target/app.jar
 ```
 
 Build the docker image with jar created above, and run it on the default port (3000)
