@@ -1,4 +1,4 @@
-FROM clojure:latest
+FROM clojure:lein-2.6.1
 COPY . /usr/src/app
 WORKDIR /usr/src/app
 ARG aws_secret_access_key=
