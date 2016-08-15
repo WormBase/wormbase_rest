@@ -186,6 +186,9 @@
    (:gene/id obj)
    "gene"
 
+   (:clone/id obj)
+   "clone"
+
    (:cds/id obj)
    "cds"
 
@@ -245,12 +248,11 @@
     (for [paper (:evidence/paper-evidence holder)]
       (pack-obj "paper" paper)))
 
-   :Date_last_updated
+   :Date_last_updated 
    (if-let [date (:evidence/date-last-updated holder)]     
-       { :id (str (.format (java.text.SimpleDateFormat. "yyyy-M-d") date))
-         :label (str (.format (java.text.SimpleDateFormat. "yyyy-M-d") date))
-         :class "text"})
-       
+       [{ :id (str (.format (java.text.SimpleDateFormat. "yyyy-M-dd") date))
+         :label (str (.format (java.text.SimpleDateFormat. "yyyy-M-dd") date))
+         :class "text"}])
    :Remark
    (seq
     (:evidence/remark holder))

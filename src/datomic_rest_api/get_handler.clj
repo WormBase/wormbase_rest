@@ -28,10 +28,11 @@
      (GET "/rest/widget/" [] "<html>
                     <ul>
                       <li>/rest/widget/gene/:id/external_links</li>
+                      <li>/rest/widget/gene/:id/overview</li>
                     </ul>
                   </html>")
-;;     (GET "/rest/widget/gene/:id/overview" {params :params}
-;;         (gene/overview db (:id params) (str "rest/widget/gene/" (:id params) "/overview")))
+     (GET "/rest/widget/gene/:id/overview" {params :params}
+         (gene/overview db (:id params) (str "rest/widget/gene/" (:id params) "/overview")))
 ;;     (GET "/rest/widget/gene/:id/history" {params :params}
 ;;         (gene/history db (:id params) (str "rest/widget/gene/" (:id params) "/history")))
 ;;     (GET "/rest/widget/gene/:id/phenotype" {params :params}
