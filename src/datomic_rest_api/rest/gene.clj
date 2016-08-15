@@ -82,7 +82,7 @@
   {:data
    (let [db   (d/entity-db gene)
          cds  (:gene/corresponding-cds gene)
-         data {:defined_by_mutation (not (empty? (:variation.gene/_gene gene)))
+         data {:defined_by_mutation (if (not (empty? (:variation.gene/_gene gene))) 1 0)
                :type (cond
                       ;; This is pretty-much the reverse order of the Perl code
                       ;; because we never over-write anything
@@ -102,7 +102,7 @@
                       :default
                       (some #(transcript-type (:gene.corresponding-transcript/transcript %))
                             (:gene/corresponding-transcript gene)))
-               :associated_sequence (not (empty? cds))
+               :associated_sequence (if (not (empty? cds)) 1 0)
                :confirmed (if (q '[:find ?conf-gene .
                                    :in $ ?conf-gene
                                    :where [?conf-gene :gene/corresponding-cds ?gc]
@@ -160,16 +160,12 @@
     :description "The gene cluster for this gene"})
 
 (defn- gene-other-names [gene]
-   {:data
-    (->> (:gene/other-name gene)
-        (datomic-rest-api.rest.object/get-evidence)
-        (mapcat val))
+   {:data (map #(get % "gene.other-name/text") (:gene/other-name gene))
     :description (format "other names that have been used to refer to %s" (:gene/id gene))})
 
 (defn- gene-status [gene]
-   {:data (:version gene)
- ;;   (if-let [class (:gene/status gene)]
-   ;;    (:status/status class))
+   {:data (if-let [class (:gene/status gene)]
+               (:status/status class))
     :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})
 
 (defn- gene-taxonomy [gene]
@@ -225,10 +221,19 @@
    "parent sequence of this gene"})
 
 (defn- parent-clone [gene]
-  {:data
-   (datomic-rest-api.rest.object/pack-obj (first (:clone/_positive-gene gene)))
+(let [db (d/entity-db gene)]
+  {:data 
+     (->> (q '[:find [?clone ...]
+               :in $ ?gene
+               :where [?cg :clone.positive-gene/gene ?gene]
+                      [?clone :clone/positive-gene ?cg]]
+             db (:db/id gene))
+          (map (fn [cid]
+               (let [clone (entity db cid)]
+                  (datomic-rest-api.rest.object/pack-obj "clone" clone))))
+          (seq))
    :description
-   "parent clone of this gene"})
+   "parent clone of this gene"}))
 
 (defn- cloned-by [gene]
   {:data
@@ -270,7 +275,7 @@
    "curated description of human disease relevance"})
 
 (defn- gene-version [gene]
-  {:data (if (= (:gene/version gene) "") 
+  {:data (if (not= (:gene/version gene) "") 
             (str (:gene/version gene)))
    :description "the current WormBase version of the gene"})
 
