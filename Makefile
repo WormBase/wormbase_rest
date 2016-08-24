@@ -1,6 +1,6 @@
 NAME=wormdocker/datomic-to-catalyst
 VERSION=`git describe`
-DB_URI=datomic:ddb://us-east-1/wormbase/WS254
+DB_URI=datomic:ddb://us-east-1/WS255/wormbase
 CORE_VERSION=HEAD
 DEPLOY_JAR=target/app.jar
 
@@ -12,8 +12,8 @@ build:
 	@docker build -t ${NAME}:${VERSION} \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
 		--build-arg db_uri=${DB_URI} \
-		--build-arg aws_secret_access_key=${AWS_SECRET_ACESS_KEY} \
-		--build-arg aws_access_key_id=${AWS_ACESS_KEY_ID} \
+		--build-arg aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
+		--build-arg aws_access_key_id=${AWS_ACCESS_KEY_ID} \
                 --rm ./
 
 .PHONY: run
