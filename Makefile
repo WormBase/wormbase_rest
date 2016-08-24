@@ -1,6 +1,6 @@
 NAME=wormdocker/datomic-to-catalyst
 VERSION=`git describe`
-DB_URI=datomic:ddb://us-east-1/wormbase/WS254
+DB_URI=datomic:ddb://us-east-1/WS255/wormbase
 CORE_VERSION=HEAD
 DEPLOY_JAR=target/app.jar
 
@@ -23,7 +23,7 @@ run:
 	@docker run \
 		--name datomic-to-catalyst \
 		--publish-all=true \
-		--publish 3000:3000\
+		--publish 3000:3000 \
 		--detach \
 		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \

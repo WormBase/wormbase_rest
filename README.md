@@ -3,7 +3,7 @@
 - Provide interface to datomic database to WormBase website.
 
 ##Setting environment variables
-    export TRACE_DB="datomic:ddb://us-east-1/wormbase/WS254"
+    export TRACE_DB="datomic:ddb://us-east-1/WS255/wormbase"
 
 ##Starting server in development
 

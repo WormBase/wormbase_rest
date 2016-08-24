@@ -147,9 +147,9 @@
    :description "Operon the gene is contained in"})
 
 (defn- gene-cluster [gene]
-  (if-let [data (->> (:gene/main-name/text gene))]
-   {:data (if (empty? data) nil data)
-    :description "The gene cluster for this gene"}))
+   {:data 
+     (if-let [data (->> (:gene/main-name/text gene))] data)
+    :description "The gene cluster for this gene"})
 
 (defn- gene-other-names [gene]
    {:data (if-let [data (map #(get % "gene.other-name/text") (:gene/other-name gene))] 
@@ -263,15 +263,15 @@
    :description "the locus name (also known as the CGC name) of the gene"})
 
 (defn- disease-relevance [gene]
-  (if-let [data
+  {:data (if-let [data
    (->> (:gene/disease-relevance gene)
         (map (fn [rel]
                {:text (:gene.disease-relevance/note rel)
                 :evidence (datomic-rest-api.rest.object/get-evidence rel)}))
         (seq))]
-  {:data (if (empty? data) nil data)
+       data)
    :description
-   "curated description of human disease relevance"}))
+   "curated description of human disease relevance"})
 
 (defn- gene-version [gene]
   (let [data (str (:gene/version gene))]
