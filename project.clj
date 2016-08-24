@@ -29,7 +29,7 @@
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
-  :env {:trace-db "datomic:ddb://us-east-1/wormbase/WS254"
+  :env {:trace-db "datomic:ddb://us-east-1/WS255/wormbase"
         :trace-port "8120"}
   :main datomic-rest-api.get-handler
   :aot [datomic-rest-api.get-handler]
