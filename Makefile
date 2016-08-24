@@ -12,8 +12,8 @@ build:
 	@docker build -t ${NAME}:${VERSION} \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
 		--build-arg db_uri=${DB_URI} \
-		--build-arg aws_secret_access_key=${AWS_SECRET_ACESS_KEY} \
-		--build-arg aws_access_key_id=${AWS_ACESS_KEY_ID} \
+		--build-arg aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
+		--build-arg aws_access_key_id=${AWS_ACCESS_KEY_ID} \
                 --rm ./
 
 .PHONY: run
@@ -23,7 +23,7 @@ run:
 	@docker run \
 		--name datomic-to-catalyst \
 		--publish-all=true \
-		--publish 3000:3000 \
+		--publish 3000:3000\
 		--detach \
 		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
