@@ -1699,7 +1699,7 @@
 ;;
 
 (defn- history-events [gene]
-  {:data
+  (let [data
    (->>
     (:gene/version-change gene)
     (mapcat
@@ -1738,6 +1738,14 @@
              (assoc result :action "Acquires_merge"
                     :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
 
+           (if-let [info (:gene-history-action/split-from h)]
+             (assoc result :action "Split-from"
+                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+           
+           (if-let [info (:gene-history-action/split-into h)]
+             (assoc result :action "Split-into"
+                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+
            (if-let [info (:gene-history-action/imported h)]
              (assoc result :action "Imported"
                     :remark (first info)))
@@ -1749,14 +1757,15 @@
              (assoc result :action "Other_name" :remark name))
 
            (if-let [name (:gene-history-action/sequence-name-change h)]
-             (assoc result :action "Sequence_name" :remark name)))))))
+             (assoc result :action "Sequence_name" :remark name)))))))]
+  {:data  (if (empty? data) nil data)
    :description
-   "the curatorial history of the gene"})
+   "the curatorial history of the gene"}))
 
 
 (defn- old-annot [gene]
   (let [db (d/entity-db gene)]
-    {:data
+    {:data (if-let [data
      (->> (q '[:find [?historic ...]
                :in $ ?gene
                :where (or
@@ -1768,7 +1777,7 @@
                  (let [hobj (datomic-rest-api.rest.object/pack-obj (entity db hid))]
                    {:class (clojure.string/upper-case (:class hobj))
                     :name hobj})))
-          (seq))
+          (seq))] data)
      :description "the historical annotations of this gene"}))
 
 (def-rest-widget history [gene]
