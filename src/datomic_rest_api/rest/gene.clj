@@ -1708,6 +1708,7 @@
  ;;                    :date    (datomic-rest-api.helpers/format-date2 (:gene.version-change/date h))
                      :curator (datomic-rest-api.rest.object/pack-obj "person" (:gene.version-change/person h))
                      :remark  nil
+                     :date    (datomic-rest-api.helpers/format-date (:gene.version-change/date h))
                      :type    "Version_change"
                      :gene    nil
                      :action  "Unknown"}]
