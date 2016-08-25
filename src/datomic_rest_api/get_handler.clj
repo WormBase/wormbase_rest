@@ -30,6 +30,7 @@
                       <li>/rest/widget/gene/:id/external_links</li>
                       <li>/rest/widget/gene/:id/overview</li>
                       <li>/rest/widget/gene/:id/history</li>
+                      <li>/rest/widget/gene/:id/feature</li>
                     </ul>
                   </html>")
      (GET "/rest/widget/gene/:id/overview" {params :params}
@@ -58,8 +59,8 @@
 ;;         (gene/homology db (:id params) (str "rest/widget/gene/" (:id params) "/homology"))) ;; need to wait for homology data to be added to datomic database
 ;;     (GET "/rest/widget/gene/:id/sequences" {params :params}
 ;;         (gene/sequences db (:id params) (str "rest/widget/gene/" (:id params) "/sequences")))
-;;     (GET "/rest/widget/gene/:id/feature" {params :params}
-;;         (gene/features db (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
+       (GET "/rest/widget/gene/:id/feature" {params :params}
+           (gene/features db (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
 ;;     (GET "/rest/widget/gene/:id/genetics" {params :params}
 ;;         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics"))) ;; looks good need to find rearrangement that exists. Also need to test if works, when does not exist, with Perl template
      (GET "/rest/widget/gene/:id/external_links" {params :params}
