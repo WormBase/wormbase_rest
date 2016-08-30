@@ -709,17 +709,16 @@
            :raw_data   (:two-point-data/results tp)
            :genotype   (:two-point-data/genotype tp)
            :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
-                          (if (empty? comment) "" comment ))
+                         (if (empty? comment) "" comment ))
            :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
-                                            (or (:two-point-data/calc-lower-conf tp) "0")
-                                            (or (:two-point-data/calc-upper-conf tp) "0"))
+                               (or (:two-point-data/calc-lower-conf tp) "0")
+                               (or (:two-point-data/calc-upper-conf tp) "0"))
            :point_1    (let [p1 (:two-point-data/gene-1 tp)]
                          (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-1/gene p1))
-                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
+                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
            :point_2    (let [p2 (:two-point-data/gene-2 tp)]
                          (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-2/gene p2))
-                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}
-          ))))
+                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}))))
 
 (defn gene-mapping-posneg
   [db id]
@@ -2000,10 +1999,11 @@
 ;;
 
 (defn- reference-allele [gene]
-  {:data
+  {:data (let [data
    (->> (:gene/reference-allele gene)
         (map :gene.reference-allele/variation)
-        (map (partial datomic-rest-api.rest.object/pack-obj "variation")))
+        (map (partial datomic-rest-api.rest.object/pack-obj "variation")))]
+     (if (empty? data) nil data))
    :description "the reference allele of the gene"})
 
 (defn- is-cgc? [strain]
@@ -2172,6 +2172,7 @@
    :strain
    (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var)))))
 
+
 (defn- alleles [gene]
   (let [db (d/entity-db gene)]
     {:data
@@ -2217,18 +2218,21 @@
           (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
 
 (defn- rearrangements [gene]
-  {:data {:positive (rearrangements-positive gene)
-          :negative (rearrangements-negative gene) }
+  {:data (let [data {:positive (rearrangements-positive gene)
+                     :negative (rearrangements-negative gene) }]
+           (if (or (:positive data) (:negative data)) data nil))
    :description "rearrangements involving this gene"})
 
 
 (def-rest-widget genetics [gene]
-  {:reference_allele (reference-allele gene)
-   :rearrangements   (rearrangements gene)
-   :strains          (strains gene)
+  {
+;   :reference_allele (reference-allele gene)
+;   :rearrangements   (rearrangements gene)
+;   :strains          (strains gene)
    :alleles          (alleles gene)
-   :polymorphisms    (polymorphisms gene)
-   :name             (name-field gene)})
+;   :polymorphisms    (polymorphisms gene)
+ ;  :name             (name-field gene)})
+  })
 
 ;;
 ;; external_links widget
