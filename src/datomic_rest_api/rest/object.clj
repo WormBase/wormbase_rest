@@ -220,8 +220,10 @@
      {:id       ((keyword class "id") obj)
       :label    (or label
                   (obj-label class obj))
-      :class    (if class
-                  (str/replace class "-" "_"))
+      :class  (if class 
+                (if (= class "author") 
+                  "person"
+                  (str/replace class "-" "_")))
       :taxonomy (obj-tax class obj)})))
 
 (defn get-evidence [holder]
