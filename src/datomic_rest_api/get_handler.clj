@@ -42,8 +42,8 @@
 ;;         (get-interactions "gene" db (:id params) (str "rest/widget/gene/" (:id params) "/interactions"))) ;; needed work on nodes all - not quite lining up
 ;;     (GET "/rest/field/gene/:id/interaction_details" {params :params}
 ;;         (get-interaction-details "gene" db (:id params) (str "rest/field/gene/" (:id params) "/interaction_details"))) ;; wormbase is missing data section: why?
-;;     (GET "/rest/widget/gene/:id/mapping_data" {params :params}
-;;         (gene/mapping-data db (:id params) (str "rest/widget/gene/" (:id params) "/mapping_data")))
+     (GET "/rest/widget/gene/:id/mapping_data" {params :params}
+         (gene/mapping-data db (:id params) (str "rest/widget/gene/" (:id params) "/mapping_data")))
 ;;     (GET "/rest/widget/gene/:id/human_diseases" {params :params}
 ;;         (gene/human-diseases db (:id params) (str "rest/widget/gene/" (:id params) "/human_disease")))
 ;;     (GET "/rest/widget/gene/:id/references" {params :params}

@@ -704,20 +704,21 @@
        (map (partial entity db))
        (map
         (fn [tp]
-          {:mapper     (datomic-rest-api.rest.object/pack-obj "person" (first (:two-point-data/mapper tp)))
+          {:mapper     (datomic-rest-api.rest.object/pack-obj "author" (first (:two-point-data/mapper tp)))
            :date       (datomic-rest-api.helpers/format-date (:two-point-data/date tp))
            :raw_data   (:two-point-data/results tp)
            :genotype   (:two-point-data/genotype tp)
-           :comment    (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))
+           :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
+                          (if (empty? comment) "" comment ))
            :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
-                                            (:two-point-data/calc-lower-conf tp)
-                                            (:two-point-data/calc-upper-conf tp))
+                                            (or (:two-point-data/calc-lower-conf tp) "0")
+                                            (or (:two-point-data/calc-upper-conf tp) "0"))
            :point_1    (let [p1 (:two-point-data/gene-1 tp)]
-                         [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-1/gene p1))
-                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))])
+                         (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-1/gene p1))
+                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
            :point_2    (let [p2 (:two-point-data/gene-2 tp)]
-                         [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-2/gene p2))
-                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))])}
+                         (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-2/gene p2))
+                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}
           ))))
 
 (defn gene-mapping-posneg
@@ -748,7 +749,9 @@
                            (map (juxt :label identity))
                            (into {}))
                 result (str/split (:pos-neg-data/results pn) #"\s+")]
-          {:mapper    (datomic-rest-api.rest.object/pack-obj "person" (first (:pos-neg-data/mapper pn)))
+          {:mapper    (datomic-rest-api.rest.object/pack-obj "author" (first (:pos-neg-data/mapper pn)))
+           :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
+                          (if (empty? comment) "" comment ))
            :date      (datomic-rest-api.helpers/format-date (:pos-neg-data/date pn))
            :result    (map #(or (items (str/replace % #"\." ""))
                                 (str % " "))
@@ -774,14 +777,15 @@
        (map (partial entity db))
        (map
         (fn [mp]
-          {:comment  (->> mp
+          {:comment (let [comment (->> mp
                           :multi-pt-data/remark
                           first
-                          :multi-pt-data.remark/text)
-           :mapper   (datomic-rest-api.rest.object/pack-obj "person" (first (:multi-pt-data/mapper mp)))
-           :date     (datomic-rest-api.helpers/format-date3 (str (:multi-pt-data/date mp)))
+                          :multi-pt-data.remark/text)]
+                       (if (empty? comment) "" comment))
+           :mapper   (datomic-rest-api.rest.object/pack-obj "author" (first (:multi-pt-data/mapper mp)))
+           :date     (if (nil? (:multi-pt-data/date mp)) "" (datomic-rest-api.helpers/format-date3 (str (:multi-pt-data/date mp))))
            :genotype (:multi-pt-data/genotype mp)
-           :result   (let [res (loop [node (first (:multi-pt-data/combined mp))
+           :result   (let [res (loop [node (:multi-pt-data/combined mp)
                                       res  []]
                                  (cond
                                   (:multi-counts/gene node)
@@ -792,19 +796,28 @@
                                   :default res))
                            tot (->> (map second res)
                                     (filter identity)
-                                    (reduce +))]
+                                    (reduce +))
+                           sum (atom 0)
+                           open-paren (atom 0)]
                        (->>
                         (mapcat
                          (fn [[obj count]]
-                           [(datomic-rest-api.rest.object/pack-obj obj)
-                            (if count
-                              (str " (" count "/" tot ") "))])
+                           [(if (and (= @open-paren 0) (= count 0) (< @sum tot)) 
+                              (do 
+                                (swap! open-paren inc)
+                                "("))
+                            (datomic-rest-api.rest.object/pack-obj obj)
+                            (if (and (not (= count 0)) (= @open-paren 1))
+                              (do
+                                (reset! open-paren 0)
+                                ")"))
+                            (if (and count (not (= count 0)))
+                              (do
+                               (swap! sum (fn[n] (+ n count)))
+                               (str " (" count "/" tot ") ")))])
                          res)
                         (filter identity)))}
-          
-
           ))))
-    
 
 (def-rest-widget mapping-data [gene]
   {:name      (name-field gene)
