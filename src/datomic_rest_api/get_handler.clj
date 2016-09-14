@@ -81,5 +81,3 @@
       (integer? p) p
       (string? p)  (parse-int p)
        :default default)))
-
-(def trace-port (get-port :trace-port :default 8120)) 
