@@ -6,7 +6,6 @@
             [clojure.data.json :as json]
             [clojure.string :as string]))
 
-;;(def port (env :trace-port))
 ;;(def base_url (reduce str ["http://localhost:" port "/"]))
 
 ;; general test
