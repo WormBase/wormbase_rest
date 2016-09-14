@@ -4,10 +4,10 @@
             [datomic.api :as d]))
 
 (defn- new-datomic-connection [uri]
-    (d/connect uri))
+  (d/connect uri))
 
 (defn- datomic-disconnect [conn]
-   (d/release conn))
+  (d/release conn))
 
 (defstate datomic-conn
   :start (fn []
