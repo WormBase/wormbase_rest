@@ -48,4 +48,19 @@ make build
 make run
 ```
 
+##Elasticbeanstalk
+Elastic beanstalk is used to launch the 
+
+###init
+```bash
+eb init
+```
+
+###local
+
+```bash
+eb local run --profile awright --port 80 --envvars TRACE_DB="datomic:ddb://us-east-1/WS255/wormbase",AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}",AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+```
+
+
 TBD: JVM memory options.
