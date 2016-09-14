@@ -3,13 +3,12 @@
             [environ.core :refer (env)]
             [datomic.api :as d]))
 
-(defn- new-datomic-connection [uri]
-  (d/connect uri))
+(defn- new-datomic-connection []
+  (d/connect (env :trace-db)))
 
 (defn- datomic-disconnect [conn]
   (d/release conn))
 
 (defstate datomic-conn
-  :start (fn []
-           (new-datomic-connection (env :trace-db))
-           :stop (datomic-disconnect datomic-conn)))
+  :start (new-datomic-connection)
+  :stop (datomic-disconnect datomic-conn))
