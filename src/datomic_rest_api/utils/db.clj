@@ -12,4 +12,4 @@
 (defstate datomic-conn
   :start (fn []
            (new-datomic-connection (env :trace-db))
-           :stop (datomic-disconnect datomic-conn))
+           :stop (datomic-disconnect datomic-conn)))
