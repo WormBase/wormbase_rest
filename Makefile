@@ -24,8 +24,6 @@ build:
 
 .PHONY: run
 run:
-	@echo AWS_SECRET_ACCESS_KEY is ${AWS_SECRET_ACCESS_KEY}
-	@echo AWS_ACCESS_KEY_ID is ${AWS_ACCESS_KEY_ID}
 	@docker run \
 		--name datomic-to-catalyst \
 		--publish-all=true \
