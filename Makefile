@@ -7,11 +7,9 @@ DEPLOY_JAR=target/app.jar
 target/app.jar:
 	@./scripts/build-appjar.sh
 
-.PHONY: eb-local-run
-eb-local-run:
-       eb local run \
-	--port 80 \
-	--envvars TRACE_DB="${TRACE_DB}",AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}",AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+.PHONY: eb-docker
+eb-docker:
+	eb local run --port 80 --envvars TRACE_DB="${TRACE_DB}",AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}",AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
 
 .PHONY: build
 build:
