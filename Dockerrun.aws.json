@@ -1,23 +1,12 @@
 {
   "AWSEBDockerrunVersion": 1,
-  "volumes": [
+  "Image": {
+    "Name": "357210185381.dkr.ecr.us-east-1.amazonaws.com/wormbase/datomic-to-catalyst:0.0.1-42-g728b2ed",
+    "Update": "true"
+  },
+  "Ports": [
     {
-      "name": "datomic-to-catalyst-volume",
-      "host": {
-        "sourcePath": "/app"
-      }
-    }
-  ],
-  "containerDefinitions": [
-    {
-      "name": "datomic-to-catalyst-dev",
-      "essential": true,
-      "portMappings": [
-        {
-          "hostPort": 80,
-          "containerPort": 3000
-        }
-      ]
+      "ContainerPort": "3000"
     }
   ]
 }

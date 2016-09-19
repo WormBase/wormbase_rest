@@ -23,3 +23,10 @@ target/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+
+#for EB
+.dockercfg
+
+#docker
+docker/app.jar
