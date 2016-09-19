@@ -1,4 +1,4 @@
-NAME=wormdocker/datomic-to-catalyst
+NAME=wormbase/datomic-to-catalyst
 VERSION=`git describe`
 DB_URI=datomic:ddb://us-east-1/WS255/wormbase
 CORE_VERSION=HEAD
@@ -6,6 +6,10 @@ DEPLOY_JAR=target/app.jar
 
 target/app.jar:
 	@./scripts/build-appjar.sh
+
+.PHONY: eb-docker
+eb-docker:
+	eb local run --port 80 --envvars TRACE_DB="${TRACE_DB}",AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}",AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
 
 .PHONY: build
 build:
@@ -18,8 +22,6 @@ build:
 
 .PHONY: run
 run:
-	@echo AWS_SECRET_ACCESS_KEY is ${AWS_SECRET_ACCESS_KEY}
-	@echo AWS_ACCESS_KEY_ID is ${AWS_ACCESS_KEY_ID}
 	@docker run \
 		--name datomic-to-catalyst \
 		--publish-all=true \
@@ -28,8 +30,8 @@ run:
 		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 		-e TRACE_DB=${DB_URI} \
-		-e TRACE_PORT=3000 \
-		 ${NAME}:${VERSION}
+		-e PORT=3000 \
+		${NAME}:${VERSION}
 .PHONY: clean
 clean:
 	rm -f ${DEPLOY_JAR}

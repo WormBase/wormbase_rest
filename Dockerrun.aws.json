@@ -1,0 +1,23 @@
+{
+  "AWSEBDockerrunVersion": 1,
+  "volumes": [
+    {
+      "name": "datomic-to-catalyst-volume",
+      "host": {
+        "sourcePath": "/app"
+      }
+    }
+  ],
+  "containerDefinitions": [
+    {
+      "name": "datomic-to-catalyst-dev",
+      "essential": true,
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 3000
+        }
+      ]
+    }
+  ]
+}
