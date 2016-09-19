@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-alpine
+FROM openjdk:8-jre-alpinee
 ARG aws_secret_access_key=
 ARG aws_access_key_id=
 ARG uberjar_path=
