@@ -30,6 +30,7 @@
                       <li>/rest/widget/gene/:id/external_links</li>
                       <li>/rest/widget/gene/:id/overview</li>
                       <li>/rest/widget/gene/:id/history</li>
+                      <li>/rest/widget/gene/:id/mapping_data</li>
                     </ul>
                   </html>")
      (GET "/rest/widget/gene/:id/overview" {params :params}
