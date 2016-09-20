@@ -6,6 +6,7 @@ DEPLOY_JAR="app.jar"
 PORT=3000
 VERSION?=$(shell git describe)
 WB_AWS_ACCOUNT_NUM="357210185381"
+AWS_PROFILE="awright"
 
 docker/app.jar:
 	@./scripts/build-appjar.sh
@@ -30,13 +31,13 @@ eb-create:
 		--vpc.id="vpc-8e0087e9" \
 		--vpc.ec2subnets="subnet-a33a2bd5" \
 		--vpc.securitygroups="sg-c92644b3" \
-                --envvars="PORT=\"80\" TRACE_DB=\"${DB_URI}\" AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY}\" AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID}\"" \
+                --envvars="TRACE_DB=\"${DB_URI}\",AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY}\",AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID}\"" \
 		--vpc.publicip \
 		--single
 
 .PHONY: eb-env
 eb-env:
-	eb setenv PORT="80" TRACE_DB="${DB_URI}" AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+	eb setenv TRACE_DB="${DB_URI}" AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
 	-e "datomic-to-catalyst"
 
 .PHONY: eb-local
@@ -47,6 +48,8 @@ eb-local:
 build:
 	@docker build -t ${NAME}:${VERSION} \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
+		--build-arg aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
+		--build-arg aws_access_key_id=${AWS_ACCESS_KEY_ID} \
 		--rm docker/
 
 .PHONY: run
