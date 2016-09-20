@@ -6,6 +6,7 @@ DEPLOY_JAR="app.jar"
 PORT=3000
 VERSION?=$(shell git describe)
 WB_AWS_ACCOUNT_NUM="357210185381"
+AWS_PROFILE="awright"
 
 docker/app.jar:
 	@./scripts/build-appjar.sh
