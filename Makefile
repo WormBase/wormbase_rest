@@ -35,7 +35,6 @@ eb-create:
 		--vpc.id="vpc-8e0087e9" \
 		--vpc.ec2subnets="subnet-a33a2bd5" \
 		--vpc.securitygroups="sg-c92644b3" \
-                --envvars="TRACE_DB=\"${DB_URI}\",AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY}\",AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID}\"" \
 		--vpc.publicip \
 		--single
 
@@ -46,7 +45,7 @@ eb-env:
 
 .PHONY: eb-local
 eb-local: docker-ecr-login
-	eb local run --envvars PORT="${PORT}",TRACE_DB="${DB_URI}",AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}",AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+	eb local run --envvars PORT="${PORT}",TRACE_DB="${DB_URI}"
 
 .PHONY: build
 build:
