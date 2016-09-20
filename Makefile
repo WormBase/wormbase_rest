@@ -6,10 +6,14 @@ DEPLOY_JAR="app.jar"
 PORT=3000
 VERSION?=$(shell git describe)
 WB_AWS_ACCOUNT_NUM="357210185381"
-AWS_PROFILE=${AWS_PROFILE}
 
 docker/app.jar:
 	@./scripts/build-appjar.sh
+
+
+.PHONY: docker-ecr-login
+docker-ecr-login:
+	@eval $(shell aws --profile ${AWS_PROFILE} ecr get-login)
 
 .PHONY: docker-tag
 docker-tag:
@@ -41,7 +45,7 @@ eb-env:
 	-e "datomic-to-catalyst"
 
 .PHONY: eb-local
-eb-local:
+eb-local: docker-ecr-login
 	eb local run --envvars PORT="${PORT}",TRACE_DB="${DB_URI}",AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}",AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
 
 .PHONY: build
