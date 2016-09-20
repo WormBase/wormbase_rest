@@ -28,20 +28,23 @@
      (GET "/rest/widget/" [] "<html>
                     <ul>
                       <li>/rest/widget/gene/:id/external_links</li>
+                      <li>/rest/widget/gene/:id/overview</li>
+                      <li>/rest/widget/gene/:id/history</li>
+                      <li>/rest/widget/gene/:id/mapping_data</li>
                     </ul>
                   </html>")
-;;     (GET "/rest/widget/gene/:id/overview" {params :params}
-;;         (gene/overview db (:id params) (str "rest/widget/gene/" (:id params) "/overview")))
-;;     (GET "/rest/widget/gene/:id/history" {params :params}
-;;         (gene/history db (:id params) (str "rest/widget/gene/" (:id params) "/history")))
+     (GET "/rest/widget/gene/:id/overview" {params :params}
+         (gene/overview db (:id params) (str "rest/widget/gene/" (:id params) "/overview")))
+     (GET "/rest/widget/gene/:id/history" {params :params}
+         (gene/history db (:id params) (str "rest/widget/gene/" (:id params) "/history")))
 ;;     (GET "/rest/widget/gene/:id/phenotype" {params :params}
 ;;         (gene/phenotypes db (:id params) (str "rest/widget/gene/" (:id params) "/phenotype"))) ;; broken because of variation/phenotype
 ;;     (GET "/rest/widget/gene/:id/interactions" {params :params}
 ;;         (get-interactions "gene" db (:id params) (str "rest/widget/gene/" (:id params) "/interactions"))) ;; needed work on nodes all - not quite lining up
 ;;     (GET "/rest/field/gene/:id/interaction_details" {params :params}
 ;;         (get-interaction-details "gene" db (:id params) (str "rest/field/gene/" (:id params) "/interaction_details"))) ;; wormbase is missing data section: why?
-;;     (GET "/rest/widget/gene/:id/mapping_data" {params :params}
-;;         (gene/mapping-data db (:id params) (str "rest/widget/gene/" (:id params) "/mapping_data")))
+     (GET "/rest/widget/gene/:id/mapping_data" {params :params}
+         (gene/mapping-data db (:id params) (str "rest/widget/gene/" (:id params) "/mapping_data")))
 ;;     (GET "/rest/widget/gene/:id/human_diseases" {params :params}
 ;;         (gene/human-diseases db (:id params) (str "rest/widget/gene/" (:id params) "/human_disease")))
 ;;     (GET "/rest/widget/gene/:id/references" {params :params}
@@ -79,5 +82,3 @@
       (integer? p) p
       (string? p)  (parse-int p)
        :default default)))
-
-(def trace-port (get-port :trace-port :default 8120)) 
