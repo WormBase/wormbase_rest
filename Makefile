@@ -1,11 +1,11 @@
-NAME=wormbase/datomic-to-catalyst
-VERSION=`git describe`
-DB_URI=datomic:ddb://us-east-1/WS255/wormbase
-CORE_VERSION=HEAD
-DEPLOY_JAR="app.jar"
-PORT=3000
-VERSION?=$(shell git describe)
-WB_AWS_ACCOUNT_NUM="357210185381"
+NAME := wormbase/datomic-to-catalyst
+VERSION ?= $(shell git describe --abbrev=0 --tags)
+EBX_CONFIG := .ebextensions/.config
+DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " ")
+DEPLOY_JAR := app.jar
+PORT := 3000
+WB_ACC_NUM := 357210185381
+FQ_TAG := ${WB_ACC_NO}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${VERSION}
 
 define print-help
         $(if $(need-help),$(warning $1 -- $2))
