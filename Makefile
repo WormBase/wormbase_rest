@@ -45,7 +45,7 @@ eb-create: $(call print-help,eb-create,\
 	@eb create datomic-to-catalyst \
 		--profile=${AWS_PROFILE} \
 		--region=us-east-1 \
-		--tags="CreatedBy=${AWS_PROFILE},Role=datomic-to-catalyst" \
+		--tags="CreatedBy=${AWS_PROFILE},Role=Rest\ API" \
 		--instance_type="c4.xlarge" \
 		--vpc.id="vpc-8e0087e9" \
 		--vpc.ec2subnets="subnet-a33a2bd5" \
@@ -73,9 +73,11 @@ build: $(call print-help,build,\
 	"Build the docker images from using the current git revision.")
 	@docker build -t ${NAME}:${VERSION} \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
-		--build-arg aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
-		--build-arg aws_access_key_id=${AWS_ACCESS_KEY_ID} \
-		--rm docker/
+		--build-arg \
+			aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
+		--build-arg \
+			aws_access_key_id=${AWS_ACCESS_KEY_ID} \
+		--rm ./docker/
 
 .PHONY: run
 run: $(call print-help,run,"Run the application in docker (locally).")
