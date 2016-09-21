@@ -35,6 +35,16 @@ java -server -jar <jar-name>.jar
 
 ## Docker
 
+Ensure you set the `AWS_EB_PROFILE` environment variable to your AWS
+username before running Makefile commands.
+
+It may be useful to put this in your shell profile, e.g for bash:
+
+```bash
+# when your aws username is the same as your local unix username:
+export AWS_EB_PROFILE="${USER}"
+```
+
 Build an uberjar (with ring server support) on the local machine
 to avoid having to download dependencies in the container:
 
