@@ -5,7 +5,7 @@ DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " ")
 DEPLOY_JAR := app.jar
 PORT := 3000
 WB_ACC_NUM := 357210185381
-FQ_TAG := ${WB_ACC_NO}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${VERSION}
+FQ_TAG := ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${VERSION}
 
 define print-help
         $(if $(need-help),$(warning $1 -- $2))
@@ -30,7 +30,7 @@ docker-tag: $(call print-help,docker-tag,\
 	      and ':latest' alias")
 	@docker tag ${NAME}:${VERSION} ${FQ_TAG}
 	@docker tag ${NAME}:${VERSION} \
-		    ${WB_ACC_NO}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
+		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
 .PHONY: docker-push-ecr
 docker-push-ecr: $(call print-help,docker-push-ecr,\
