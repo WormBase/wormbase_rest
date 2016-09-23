@@ -407,6 +407,20 @@
             [?var :variation/phenotype ?ph]
             [?ph :variation.phenotype/phenotype ?pheno]])
 
+(def q-gene-cons-transgene
+   '[:find ?tg (distinct ?tg)
+     :in $ ?g
+     :where [?cbg :construct.driven-by-gene/gene ?g]
+            [?cons :construct/driven-by-gene ?cbg]
+            [?cons :construct/transgene-construct ?tg]])
+
+(def q-gene-cons-transgene-test
+   '[:find ?cons (distinct ?cons)
+     :in $ ?g
+     :where [?cbg :construct.driven-by-gene/gene ?g]
+            [?cons :construct/driven-by-gene ?cbg]])
+
+
 (def q-gene-cons-transgene-phenotype
    '[:find ?pheno (distinct ?ph)
      :in $ ?g
@@ -564,35 +578,32 @@
         table)
    :description
    "phenotype based on interaction"}))
-        
-(defn drives-overexpression [gene]
-  (let [db (d/entity-db gene)]
-   {:data  (->> (q '[:find [?cons ...]
-               :in $ ?gene
-               :where  [?cbg :construct.driven-by-gene/gene ?gene]
-                      [?cons :construct/driven-by-gene ?cbg]
-       ;               [?tg :construct/transgene-construct ?cons]
-      ;                [?php :transgene.phenotype/phenotype ?tg]
-       ;               [?ph :transgene/phenotype ?php]]
-]
-             db (:db/id gene))
-            (seq))
-          
-    :description "phenotypes due to overexpression under the promoter of this gene"}))
 
-(defn- phenotype-overexpression [db gene]
-  (let [gene-phenos (into {} (q q-gene-cons-transgene-phenotype
-                               db gene))]
-    (->>
-     (for [pid gene-phenos :let [pheno (entity db pid)]]
-       [(:phenotype/id pheno)
-        {:object
-         {:class "phenotype"
-          :id (:phenotype/id pheno)
-          :label (:phenotype.primary-name/text (:phenotype/primary-name pheno))
-          :taxonomy "all"}
-         :evidence nil
-    }]))))
+(defn- phenotype-overexpression
+  [db id]
+  (->> 
+     (q q-gene-var-pheno db id) 
+     (map (partial entity db))
+       (map
+        (fn [tg]
+          {
+;           ; :summa (:transgene.summary/text (:transgene/summary t))
+            :summary "sdfsd"} ))))           
+;            :summary (:transgene/summary tg)}
+;))))
+;;    (->>
+  ;;   (for [pid gene-transgene :let [pheno (entity db pid)]] 
+ ;                          :when ((= (:phenotype-info.caused-by-gene pheno) gene) pheno)]
+   ;       (:transgene/summary gene-trangene)
+;       [(:phenotype/id pheno)
+ ;       {:object
+  ;       {:class "phenotype"
+   ;       :id (:phenotype/id pheno)
+    ;      :label (:phenotype.primary-name/text (:phenotype/primary-name pheno))
+     ;     :taxonomy "all"}
+      ;   :evidence nil
+   ; }]
+   ; ))))
 ;;         (vmap
 ;;          "Allele:"
 ;;          (if-let [vp (seq (var-phenos pid))]
@@ -669,21 +680,44 @@
 ;;     (into {}))))
 ;; 
          
+(defn drives-overexpression [gene]
+  (let [db (d/entity-db gene)]
+    {:data 
+     {:Phenotype  
+             (->> (q '[:find [?tg ...]
+                       :in $ ?gene
+                       :where [?cbg :construct.driven-by-gene/gene ?gene]
+                              [?cons :construct/driven-by-gene ?cbg]
+                              [?cons :construct/transgene-construct ?tg]]
+                     db (:db/id gene))
+                  (map (partial entity db))
+                  (map
+                  (fn [tg]
+                     (let [summary (:transgene.summary/text (:transgene/summary tg))]
+                       (->> (q '[:find [?pheno ...]
+                                 :in $ ?tg
+                                 :where [?tg :transgene/phenotype ?ph]
+                                        [?ph :transgene.phenotype/phenotype ?pheno]]
+                             db (:db/id tg))
+                           (map (partial entity db))
+                           (map
+                           (fn [p]
+                              {
+                               :description (:phenotype/description p)
+                               :summary summary})))))))}
+     :description "phenotypes due to overexpression under the promoter of this gene"}))
+
 (def-rest-widget phenotypes [gene]
   {
    :name      (name-field gene)
-   :drives_overexpression
-    {:data
-      {:Phenotype (phenotype-overexpression (d/entity-db gene) (:db/id gene))}
-     :description "phenotypes due to overexpression under the promoter of this gene"}
+   :drives_overexpression (drives-overexpression gene)
 ;   :phenotype
 ;   {:data
-;    {:Phenotype              (phenotype-table (d/entity-db gene) (:db/id gene) false)
+;    {:Phenotype             (phenotype-table (d/entity-db gene) (:db/id gene) false)
 ;     :Phenotype_not_observed (phenotype-table (d/entity-db gene) (:db/id gene) true)}
-;   :description "The phenotype summary of the gene"}
-        
-;   :phenotype_by_interaction
-;   (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
+;     :description "The phenotype summary of the gene"}
+;   :pyenotype_not_observed (phenotype-not-observed gene)
+;   :phenotype_by_interaction (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
    })        
 ;;
 ;; Mapping data widget

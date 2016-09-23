@@ -31,14 +31,15 @@
                       <li>/rest/widget/gene/:id/overview</li>
                       <li>/rest/widget/gene/:id/history</li>
                       <li>/rest/widget/gene/:id/mapping_data</li>
+                      <li>/rest/widget/gene/:id/phenotype</li>
                     </ul>
                   </html>")
      (GET "/rest/widget/gene/:id/overview" {params :params}
          (gene/overview db (:id params) (str "rest/widget/gene/" (:id params) "/overview")))
      (GET "/rest/widget/gene/:id/history" {params :params}
          (gene/history db (:id params) (str "rest/widget/gene/" (:id params) "/history")))
-;;     (GET "/rest/widget/gene/:id/phenotype" {params :params}
-;;         (gene/phenotypes db (:id params) (str "rest/widget/gene/" (:id params) "/phenotype"))) ;; broken because of variation/phenotype
+     (GET "/rest/widget/gene/:id/phenotype" {params :params}
+         (gene/phenotypes db (:id params) (str "rest/widget/gene/" (:id params) "/phenotype")))
 ;;     (GET "/rest/widget/gene/:id/interactions" {params :params}
 ;;         (get-interactions "gene" db (:id params) (str "rest/widget/gene/" (:id params) "/interactions"))) ;; needed work on nodes all - not quite lining up
 ;;     (GET "/rest/field/gene/:id/interaction_details" {params :params}
