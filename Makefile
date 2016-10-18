@@ -22,7 +22,7 @@ docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
 
 .PHONY: docker-ecr-login
 docker-ecr-login: $(call print-help,docker-ecr-login,"Login to ECR")
-	@eval $(shell aws --profile ${AWS_PROFILE} ecr get-login)
+	@eval $(shell aws ecr get-login)
 
 .PHONY: docker-tag
 docker-tag: $(call print-help,docker-tag,\
@@ -43,9 +43,8 @@ eb-create: $(call print-help,eb-create,\
 	    "Create an ElasticBeanStalk environment using \
 	     the Docker platofrm.")
 	@eb create datomic-to-catalyst \
-		--profile=${AWS_PROFILE} \
 		--region=us-east-1 \
-		--tags="CreatedBy=${AWS_PROFILE},Role=Rest\ API" \
+		--tags="CreatedBy=${AWS_EB_PROFILE},Role=Rest\ API" \
 		--instance_type="c4.xlarge" \
 		--vpc.id="vpc-8e0087e9" \
 		--vpc.ec2subnets="subnet-a33a2bd5" \
