@@ -1753,11 +1753,11 @@
                     :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
 
            (if-let [info (:gene-history-action/split-from h)]
-             (assoc result :action "Split-from"
+             (assoc result :action "Split_from"
                     :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
            
            (if-let [info (:gene-history-action/split-into h)]
-             (assoc result :action "Split-into"
+             (assoc result :action "Split_into"
                     :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
 
            (if-let [info (:gene-history-action/imported h)]
