@@ -30,7 +30,7 @@ jar tvf ./target/<jar-name>.jar
 
 To test:
 ```bash
-java -server -jar <jar-name>.jar
+java -jar <jar-name>.jar
 ```
 
 ## Docker
@@ -77,7 +77,7 @@ tagged and pushed an image to ECR with:
 
 ```bash
 make docker-tag
-make docker-push
+make docker-push-ecr
 ```
 
 _*This assumes you have previously run `make build` and `make run` as
@@ -90,8 +90,18 @@ Now to test the ElasticBeanStalk `eb local run` command, do:
 
 `make eb-local`
 
-### Deploying the application environment to ElasticBeanStalk
+### Deployment
 
-```make eb-create```
+Initial deployment:
+
+```bash
+make eb-create
+```
+
+For subsequent deployments, use the `eb` CLI directly:
+
+```bash
+eb deploy
+```
 
 TBD: JVM memory options.
