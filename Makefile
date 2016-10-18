@@ -33,9 +33,9 @@ docker-tag: $(call print-help,docker-tag,\
 		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
 .PHONY: docker-push-ecr
-docker-push-ecr: $(call print-help,docker-push-ecr,\
-	           "Push the image tagged with the current git revision\
-	 	    to ECR")
+docker-push-ecr: docker-ecr-login $(call print-help,docker-push-ecr,\
+	                           "Push the image tagged with the \
+                                    current git revision to ECR")
 	@docker push ${FQ_TAG}
 
 .PHONY: eb-create
