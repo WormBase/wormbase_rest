@@ -49,10 +49,11 @@
                              [lein-ancient "0.6.8"]
                              [lein-bikeshed "0.3.0"]
                              [lein-kibit "0.1.2"]
-                             [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]}
-              :datomic-free {:dependencies [[com.datomic/datomic-free "0.9.5385"
-                                             :exclusions [joda-time]]]}
-              :datomic-pro {:dependencies [[com.datomic/datomic-pro "0.9.5385"
+                             [lein-ns-dep-graph "0.1.0-SNAPSHOT"]]
+                   :eastwood {:add-linters [:unused-namespaces]}}
+             :datomic-free {:dependencies [[com.datomic/datomic-free "0.9.5385"
                                             :exclusions [joda-time]]]}
-              :ddb {:dependencies [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
-                                    :exclusions [joda-time]]]}})
+             :datomic-pro {:dependencies [[com.datomic/datomic-pro "0.9.5385"
+                                           :exclusions [joda-time]]]}
+             :ddb {:dependencies [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
+                                   :exclusions [joda-time]]]}})
