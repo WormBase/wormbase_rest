@@ -2061,117 +2061,121 @@
       (seq (:molecular-change/amber-uag-or-opal-uga change))))
 
 (defn- process-variation [var]
- (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
-       trans-changes (seq (take 20 (:variation/transcript var)))]
-  (vmap
-   :variation
-   (datomic-rest-api.rest.object/pack-obj "variation" var)
+  (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
+        trans-changes (seq (take 20 (:variation/transcript var)))]
+    (vmap
+     :variation
+     (datomic-rest-api.rest.object/pack-obj "variation" var)
 
-   :type
-   (if (:variation/transposon-insertion var)
-     "transposon insertion"
-     (str/join ", "
-      (or
-       (those
-        (if (:variation/engineered-allele var)
-          "Engineered allele")
-        (if (:variation/allele var)
-          "Allele")
-        (if (:variation/snp var)
-          "SNP")
-        (if (:variation/confirmed-snp var)
-          "Confirmed SNP")
-        (if (:variation/predicted-snp var)
-          "Predicted SNP")
-        (if (:variation/reference-strain-digest var)
-          "RFLP"))
-       ["unknown"])))
+     :type
+     (if (:variation/transposon-insertion var)
+       "transposon insertion"
+       (str/join ", "
+                 (or
+                  (those
+                   (if (:variation/engineered-allele var)
+                     "Engineered allele")
+                   (if (:variation/allele var)
+                     "Allele")
+                   (if (:variation/snp var)
+                     "SNP")
+                   (if (:variation/confirmed-snp var)
+                     "Confirmed SNP")
+                   (if (:variation/predicted-snp var)
+                     "Predicted SNP")
+                   (if (:variation/reference-strain-digest var)
+                     "RFLP"))
+                  ["unknown"])))
 
-   :method_name
-   (if-let [method (:variation/method var)]
-     (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
-             (or (:method.remark/text (first (:method/remark methods))) "")
-             (str/replace (:method/id method) #"_" " ")))
+     :method_name
+     (if-let [method (:variation/method var)]
+       (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
+               (or (:method.remark/text (first (:method/remark methods))) "")
+               (str/replace (:method/id method) #"_" " ")))
 
-   :gene
-   nil ;; don't populate since we're coming from gene...
+     :gene
+     nil ;; don't populate since we're coming from gene...
 
-   :molecular_change
-   (cond
-    (:variation/substitution var)
-    "Substitution"
+     :molecular_change
+     (cond
+       (:variation/substitution var)
+       "Substitution"
 
-    (:variation/insertion var)
-    "Insertion"
+       (:variation/insertion var)
+       "Insertion"
 
-    (:variation/deletion var)
-    "Deletion"
+       (:variation/deletion var)
+       "Deletion"
 
-    (:variation/inversion var)
-    "Inversion"
+       (:variation/inversion var)
+       "Inversion"
 
-    (:variation/tandem-duplication var)
-    "Tandem_duplication"
+       (:variation/tandem-duplication var)
+       "Tandem_duplication"
 
-    :default
-    "Not curated")
+       :default
+       "Not curated")
 
-   :locations
-   (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
-     (str/join ", " (filter
-                     identity
-                     (map {:molecular-change/intron "Intron"
-                           :molecular-change/coding-exon "Coding exon"
-                           :molecular-change/utr-5 "5' UTR"
-                           :molecular-change/utr-3 "3' UTR"}
-                          changes))))
+     :locations
+     (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
+       (str/join ", " (filter
+                       identity
+                       (map {:molecular-change/intron "Intron"
+                             :molecular-change/coding-exon "Coding exon"
+                             :molecular-change/utr-5 "5' UTR"
+                             :molecular-change/utr-3 "3' UTR"}
+                            changes))))
 
-   :effects
-   (let [changes (set (mapcat keys cds-changes))]
-     (str/join ", " (set (filter
-                          identity
-                          (map {:molecular-change/missense "Missense"
-                                :molecular-change/amber-uag "Nonsense"
-                                :molecular-change/ochre-uaa "Nonsense"
-                                :molecular-change/opal-uga "Nonsense"
-                                :molecular-change/ochre-uaa-or-opal-uga "Nonsense"
-                                :molecular-change/amber-uag-or-ochre-uaa "Nonsense"
-                                :molecular-change/amber-uag-or-opal-uga "Nonsense"
-                                :molecular-change/frameshift "Frameshift"
-                                :molecular-change/silent "Silent"}
-                               changes)))))
+     :effects
+     (let [changes (set (mapcat keys cds-changes))]
+       (if-let [effect (str/join ", " (set (filter
+                                            identity
+                                            (map {:molecular-change/missense "Missense"
+                                                  :molecular-change/amber-uag "Nonsense"
+                                                  :molecular-change/ochre-uaa "Nonsense"
+                                                  :molecular-change/opal-uga "Nonsense"
+                                                  :molecular-change/ochre-uaa-or-opal-uga "Nonsense"
+                                                  :molecular-change/amber-uag-or-ochre-uaa "Nonsense"
+                                                  :molecular-change/amber-uag-or-opal-uga "Nonsense"
+                                                  :molecular-change/frameshift "Frameshift"
+                                                  :molecular-change/silent "Silent"}
+                                                 changes))))]
+         (if (empty? effect) nil effect)))
 
-   :aa_change
-   (str/join "<br>"
-     (filter identity
-       (for [cc cds-changes]
-         (cond-let [n]
-            (first (:molecular-change/missense cc))
-            (:molecular-change.missense/text n)
+     :aa_change
+     (if-let [aa_change (str/join "<br>"
+                                  (filter identity
+                                          (for [cc cds-changes]
+                                            (cond-let [n]
+                                                      (first (:molecular-change/missense cc))
+                                                      (:molecular-change.missense/text n)
 
-            (first (nonsense cc))
-            ((first (filter #(= (name %) "text") (keys n))) n)))))
+                                                      (first (nonsense cc))
+                                                      ((first (filter #(= (name %) "text") (keys n))) n)))))]
+       (if (empty? aa_change) nil aa_change))
 
-   :aa_position
-   (str/join "<br>"
-     (filter identity
-       (for [cc cds-changes]
-         (if-let [n (first (:molecular-change/missense cc))]
-           (:molecular-change.missense/int n)))))
+     :aa_position
+     (if-let [aa_position (str/join "<br>"
+                                    (filter identity
+                                            (for [cc cds-changes]
+                                              (if-let [n (first (:molecular-change/missense cc))]
+                                                (:molecular-change.missense/int n)))))]
+       (if (empty? aa_position) nil aa_position))
 
-   :isoform
-   (seq
-    (for [cc cds-changes
-          :when (or (:molecular-change/missense cc)
-                    (nonsense cc))]
-      (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))
+     :isoform
+     (if-let [isoform
+              (seq
+               (for [cc cds-changes
+                     :when (or (:molecular-change/missense cc)
+                               (nonsense cc))]
+                 (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))]
+       (if (empty? isoform) nil isoform))
 
-   :phen_count
-   (count (:variation/phenotype var))
+     :phen_count
+     (count (:variation/phenotype var))
 
-   :strain
-   (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var)))))
-
+     :strain
+     (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var)))))
 
 (defn- alleles [gene]
   (let [db (d/entity-db gene)]
@@ -2180,10 +2184,23 @@
                :in $ ?gene
                :where [?vh :variation.gene/gene ?gene]
                       [?var :variation/gene ?vh]
-                      [?var :variation/allele _]]
+                      [?var :variation/phenotype _]]
              db (:db/id gene))
           (map #(process-variation (entity db %))))
-     :description "alleles contained in the strain"}))
+     :description "alleles and polymorphisms with associated phenotype"}))
+
+(defn- alleles-other [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?var ...]
+               :in $ ?gene
+               :where [?vh :variation.gene/gene ?gene]
+                      [?var :variation/gene ?vh]
+                      [?var :variation/allele _]
+                      (not [?var :variation/phenotype _])]
+             db (:db/id gene))
+          (map #(process-variation (entity db %))))
+     :description "alleles currently with no associated phenotype"}))
 
 (defn- polymorphisms [gene]
   (let [db (d/entity-db gene)]
@@ -2192,10 +2209,11 @@
                :in $ ?gene
                :where [?vh :variation.gene/gene ?gene]
                       [?var :variation/gene ?vh]
-                      (not [?var :variation/allele _])]
+                      (not [?var :variation/allele _])
+                      (not [?var :variation/phenotype _])]
              db (:db/id gene))
           (map #(process-variation (entity db %))))
-     :description "polymorphisms and natural variations contained in the strain"}))
+     :description "polymorphisms and natural variations currently with no associated phenotype"}))
 
 (defn- rearrangements-positive [gene]
   (let [db (d/entity-db gene)]
@@ -2230,7 +2248,8 @@
 ;   :rearrangements   (rearrangements gene)
 ;   :strains          (strains gene)
    :alleles          (alleles gene)
-;   :polymorphisms    (polymorphisms gene)
+   :alleles_other    (alleles-other gene)
+   :polymorphisms    (polymorphisms gene)
  ;  :name             (name-field gene)})
   })
 
