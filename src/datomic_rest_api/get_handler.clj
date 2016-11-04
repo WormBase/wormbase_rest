@@ -52,7 +52,7 @@
 ;;     (GET "/rest/widget/gene/:id/reagents" {params :params}
 ;;         (gene/reagents db (:id params) (str "rest/widget/gene/" (:id params) "/reagents"))) ;; looks correct; needs sort to confirm
 ;;     (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
-;;         (gene/gene-ontology db (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology"))) ;; substancially same structure. not producing the same results 
+;;         (gene/gene-ontology db (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology"))) ;; substancially same structure. not producing the same results
 ;;     (GET "/rest/widget/gene/:id/expression" {params :params}
 ;;         (gene/expression db (:id params) (str "rest/widget/gene/" (:id params) "/expression"))) ;; This one is predominantly done but needs a little checking and sequence data
 ;;     (GET "/rest/widget/gene/:id/homology" {params :params}
@@ -61,15 +61,15 @@
 ;;         (gene/sequences db (:id params) (str "rest/widget/gene/" (:id params) "/sequences")))
 ;;     (GET "/rest/widget/gene/:id/feature" {params :params}
 ;;         (gene/features db (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
-;;     (GET "/rest/widget/gene/:id/genetics" {params :params}
-;;         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics"))) ;; looks good need to find rearrangement that exists. Also need to test if works, when does not exist, with Perl template
+     (GET "/rest/widget/gene/:id/genetics" {params :params}
+         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics"))) ;; looks good need to find rearrangement that exists. Also need to test if works, when does not exist, with Perl template
      (GET "/rest/widget/gene/:id/external_links" {params :params}
          (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))))
 
 (defn init []
   (print "Making Connection\n")
   (mount/start))
-  
+
 (defn app [request]
   (let [db (d/db datomic-conn)
         handler (app-routes db)]
