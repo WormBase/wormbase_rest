@@ -2017,7 +2017,7 @@
    (map (fn [strain]
           (vassoc
            (datomic-rest-api.rest.object/pack-obj "strain" strain)
-           :genotype (first (:strain/genotype strain))
+           :genotype (:strain/genotype strain)
            :transgenes (datomic-rest-api.rest.object/pack-obj "transgene" (first (:transgene/_strain strain)))))
         strains)))
 
@@ -2260,15 +2260,14 @@
 
 
 (def-rest-widget genetics [gene]
-  {
-;   :reference_allele (reference-allele gene)
+  {:reference_allele (reference-allele gene)
 ;   :rearrangements   (rearrangements gene)
-;   :strains          (strains gene)
+   :strains          (strains gene)
    :alleles          (alleles gene)
    :alleles_other    (alleles-other gene)
    :polymorphisms    (polymorphisms gene)
- ;  :name             (name-field gene)})
-  })
+   :name             (name-field gene)
+   })
 
 ;;
 ;; external_links widget
