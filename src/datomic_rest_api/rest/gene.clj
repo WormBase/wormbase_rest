@@ -2184,7 +2184,15 @@
      (count (:variation/phenotype var))
 
      :strain
-     (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var)))))
+     (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var))
+
+     :sources
+     (if-let [sources (if (empty? (:variation/reference var))
+                        (map #(let [packed (datomic-rest-api.rest.object/pack-obj %)]
+                                (into packed {:label
+                                              (str/replace (:label packed) #"_" " ")})) (:variation/analysis var))
+                        (map #(datomic-rest-api.rest.object/pack-obj (:variation.reference/paper %)) (:variation/reference var)))]
+       (if (empty? sources) nil sources)))))
 
 (defn- alleles [gene]
   (let [db (d/entity-db gene)]
