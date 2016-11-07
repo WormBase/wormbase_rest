@@ -2052,13 +2052,32 @@
      :description
      "strains carrying this gene"}))
 
-(defn- nonsense [change]
-  (or (seq (:molecular-change/amber-uag change))
-      (seq (:molecular-change/ochre-uaa change))
-      (seq (:molecular-change/opal-uga change))
-      (seq (:molecular-change/ochre-uaa-or-opal-uga change))
-      (seq (:molecular-change/amber-uag-or-ochre-uaa change))
-      (seq (:molecular-change/amber-uag-or-opal-uga change))))
+(defn- process-aa-change [molecular-change]
+  (cond-let [n]
+            (first (:molecular-change/missense molecular-change))
+            (:molecular-change.missense/text n)
+
+            (:molecular-change/nonsense molecular-change)
+            (:molecular-change.nonsense/text n)))
+
+(defn- process-aa-position [molecular-change]
+  (cond-let [n]
+            (first (:molecular-change/missense molecular-change))
+            (:molecular-change.missense/int n)
+
+            (:molecular-change/nonsense molecular-change)
+            (nth (re-find #"\((\d+)\)" (:molecular-change.nonsense/text n)) 1))
+  )
+
+(defn- process-aa-composite [molecular-change]
+  (let [change (process-aa-change molecular-change)
+        position (process-aa-position molecular-change)]
+    (if (and change position)
+      (let [change-parts (str/split change #"\s+")]
+        (->>
+         [(first change-parts) position (nth change-parts 2)]
+         (map str/capitalize)
+         (str/join ""))))))
 
 (defn- process-variation [var]
   (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
@@ -2118,56 +2137,46 @@
 
      :locations
      (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
-       (str/join ", " (filter
-                       identity
-                       (map {:molecular-change/intron "Intron"
-                             :molecular-change/coding-exon "Coding exon"
-                             :molecular-change/utr-5 "5' UTR"
-                             :molecular-change/utr-3 "3' UTR"}
-                            changes))))
+       (filter
+        identity
+        (map {:molecular-change/intron "Intron"
+              :molecular-change/coding-exon "Coding exon"
+              :molecular-change/utr-5 "5' UTR"
+              :molecular-change/utr-3 "3' UTR"}
+             changes)))
 
      :effects
      (let [changes (set (mapcat keys cds-changes))]
-       (if-let [effect (str/join ", " (set (filter
-                                            identity
-                                            (map {:molecular-change/missense "Missense"
-                                                  :molecular-change/amber-uag "Nonsense"
-                                                  :molecular-change/ochre-uaa "Nonsense"
-                                                  :molecular-change/opal-uga "Nonsense"
-                                                  :molecular-change/ochre-uaa-or-opal-uga "Nonsense"
-                                                  :molecular-change/amber-uag-or-ochre-uaa "Nonsense"
-                                                  :molecular-change/amber-uag-or-opal-uga "Nonsense"
-                                                  :molecular-change/frameshift "Frameshift"
-                                                  :molecular-change/silent "Silent"}
-                                                 changes))))]
+       (if-let [effect (set (filter
+                             identity
+                             (map {:molecular-change/missense "Missense"
+                                   :molecular-change/nonsense "Nonsense"
+                                   :molecular-change/frameshift "Frameshift"
+                                   :molecular-change/silent "Silent"}
+                                  changes)))]
          (if (empty? effect) nil effect)))
 
      :aa_change
-     (if-let [aa_change (str/join "<br>"
-                                  (filter identity
-                                          (for [cc cds-changes]
-                                            (cond-let [n]
-                                                      (first (:molecular-change/missense cc))
-                                                      (:molecular-change.missense/text n)
-
-                                                      (first (nonsense cc))
-                                                      ((first (filter #(= (name %) "text") (keys n))) n)))))]
-       (if (empty? aa_change) nil aa_change))
+     (if-let [aa-changes (->> (map process-aa-change cds-changes)
+                              (filter identity))]
+       (if (empty? aa-changes) nil aa-changes))
 
      :aa_position
-     (if-let [aa_position (str/join "<br>"
-                                    (filter identity
-                                            (for [cc cds-changes]
-                                              (if-let [n (first (:molecular-change/missense cc))]
-                                                (:molecular-change.missense/int n)))))]
-       (if (empty? aa_position) nil aa_position))
+     (if-let [aa-positions (->> (map process-aa-position cds-changes)
+                                (filter identity))]
+       (if (empty? aa-positions) nil aa-positions))
+
+     :composite_change
+     (if-let [aa-changes (->> (map process-aa-composite cds-changes)
+                              (filter identity))]
+       (if (empty? aa-changes) nil aa-changes))
 
      :isoform
      (if-let [isoform
               (seq
                (for [cc cds-changes
                      :when (or (:molecular-change/missense cc)
-                               (nonsense cc))]
+                               (:molecular-change/nonsense cc))]
                  (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))]
        (if (empty? isoform) nil isoform))
 
