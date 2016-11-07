@@ -442,7 +442,10 @@
   {:class "paper"
    :id (:paper/id paper)
    :taxonomy "all"
-   :label (str (datomic-rest-api.rest.object/author-list paper) ", " (:paper/publication-date paper))})
+   :label (str (datomic-rest-api.rest.object/author-list paper) ", " (first (str/split (:paper/publication-date paper) #"-")))})
+
+(defn parse-int [s]
+   (Integer. (re-find  #"\d+" s )))
 
 (defn- phenotype-table [db gene not?]
   (let [var-phenos (into {} (q (if not?
@@ -458,7 +461,8 @@
     (->>
      (for [pid phenos :let [pheno (entity db pid)]]
        [(:phenotype/id pheno)
-        {:object
+        {:entity (keys pheno)
+         :phenotype
          {:class "phenotype"
           :id (:phenotype/id pheno)
           :label (:phenotype.primary-name/text (:phenotype/primary-name pheno))
@@ -478,7 +482,7 @@
                 :id (:variation/id var)
                 :label (:variation/public-name var)
                 :style (if (= (:variation/seqstatus var)
-                              :variation.seqstatus/sequence)
+                              :variation.seqstatus/sequenced)
                          "font-weight: bold"
                          0)
                 :taxonomy "c_elegans"}
@@ -497,7 +501,7 @@
                  (for [anatomy (:phenotype-info/anatomy-term holder)]
                    (datomic-rest-api.rest.object/pack-obj "anatomy-term" (:phenotype-info.anatomy-term/anatomy-term anatomy))))
 
-                :Curator_confirmed
+                :Curator
                 (seq
                  (for [person (:phenotype-info/curator-confirmed holder)]
                    {:class "person"
@@ -526,19 +530,27 @@
               {:text
                {:class "rnai"
                 :id (:rnai/id rnai)
-                :label (:rnai/id rnai)
-                :style 0
+                :label (str (parse-int (:rnai/id rnai)))
                 :taxonomy "c_elegans"}
                :evidence
-               (vmap
-                :Genotype (:rnai/genotype rnai)
-                :Remark (seq (map :phenotype-info.remark/text
+                {
+                :genotype (:rnai/genotype rnai)
+                :remark (seq (map :phenotype-info.remark/text
                                   (:phenotype-info/remark holder)))
-                :Strain (:strain/id (:rnai/strain rnai))
-                :Paper (if-let [paper (:rnai/reference rnai)]
-                         (evidence-paper paper)))})))}])
+                :strain (:strain/id (:rnai/strain rnai))
+                :paper (if-let [paper (:rnai.reference/paper (:rnai/reference rnai))]
+                         (evidence-paper paper))}})))}])
      (into {}))))
-      
+ 
+(defn- phenotype-not-observed [gene]
+   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) true)]
+    {:data (if (empty? data) nil data)
+     :description "The Phenotype not observed summary of the gene"}))
+
+(defn- phenotype [gene]
+   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) false)]
+    {:data (if (empty? data) nil data)
+     :description "The Phenotype summary of the gene"}))
 
 (defn- phenotype-by-interaction [db gid]
   (let [table (q '[:find ?pheno (distinct ?int) ?int-type
@@ -561,9 +573,8 @@
                            [iid
                             {:interaction (datomic-rest-api.rest.object/pack-obj "interaction" int)
                              :citations (map (partial datomic-rest-api.rest.object/pack-obj "paper") (:interaction/paper int))}])))
-                  (into {}))]
-  {:data
-   (map (fn [[pheno pints int-type]]
+                  (into {}))
+        data (map (fn [[pheno pints int-type]]
           {:interaction_type
            (datomic-rest-api.rest.object/humanize-ident int-type)
            
@@ -575,7 +586,8 @@
 
            :citations
            (map #(:citations (ints %)) pints)})
-        table)
+        table)]
+   {:data (if (empty? data) nil data)
    :description
    "phenotype based on interaction"}))
 
@@ -711,14 +723,10 @@
   {
    :name      (name-field gene)
    :drives_overexpression (drives-overexpression gene)
-;   :phenotype
-;   {:data
-;    {:Phenotype             (phenotype-table (d/entity-db gene) (:db/id gene) false)
-;     :Phenotype_not_observed (phenotype-table (d/entity-db gene) (:db/id gene) true)}
-;     :description "The phenotype summary of the gene"}
-;   :pyenotype_not_observed (phenotype-not-observed gene)
-;   :phenotype_by_interaction (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
-   })        
+   :Phenotype             (phenotype gene)
+   :phenotype_not_observed (phenotype-not-observed gene) 
+   :phenotype_by_interaction (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
+
 ;;
 ;; Mapping data widget
 ;;

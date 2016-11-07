@@ -32,6 +32,7 @@
   :main datomic-rest-api.get-handler
   :aot [datomic-rest-api.get-handler]
   :ring {:handler datomic-rest-api.get-handler/app
+         :host "0.0.0.0"
          :init datomic-rest-api.get-handler/init}
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
