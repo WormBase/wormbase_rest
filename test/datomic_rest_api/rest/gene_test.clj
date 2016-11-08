@@ -32,7 +32,8 @@
 
 ; This is a regular test function, which is to be wrapped using my-test-fixture
 (deftest test-alleles-and-polymorphisms
-  (let [alleles (#'gene/alleles (get-gene "WBGene00006759"))
+  (let [reference-allele (#'gene/reference-allele (get-gene "WBGene00006759"))
+        alleles (#'gene/alleles (get-gene "WBGene00006759"))
         alleles-other (#'gene/alleles-other (get-gene "WBGene00006759"))
         polymorphisms (#'gene/polymorphisms (get-gene "WBGene00006759"))
         allele1 (first (filter #(= "WBVar00248722"
@@ -47,6 +48,8 @@
         polymorphism1 (first (filter #(= "WBVar00946163"
                                          (-> (:variation %)
                                              (:id))) (:data alleles-other)))]
+    (testing "reference allele"
+      (is (some #(= "e66" (:label %)) (:data reference-allele))))
     (testing "allele with phenotype"
       (testing "correct variation is returned"
         (is (= "st136" (:label (:variation allele1)))))
@@ -71,7 +74,12 @@
       (testing "contains a correct strain"
         (is (some #(= "RW7080" (:id %)) (:strain allele1))))
       (testing "contains a correct citation"
-        (is (some #(= "Mori, Moerman, & Waterston, 1986" (:label %)) (:sources allele1)))))
+        (is (some #(= "Mori, Moerman, & Waterston, 1986" (:label %)) (:sources allele1))))
+
+      (testing "correct isoform"
+        (is (some #(= "ZK617.1h" (:label %)) (:isoform allele-other1))))
+      (testing "correct location type"
+        (is (some #(= "Coding exon" %) (:locations allele-other1)))))
 
     (testing "molecular change"
       (testing "molecular change with Nonsense mutation"
@@ -84,6 +92,16 @@
           (is (some #(= "Missense" %) (:effects allele-other2))))
         (testing "correct composite change"
           (is (some #(= "A1774T" %) (:composite_change allele-other2))))))))
+
+
+(deftest test-strains
+  (let [strains (#'gene/strains (get-gene "WBGene00006759"))]
+    (testing "strains carrying unc-22 alone"
+      (is (some #(= "BC18" (:id %)) (-> (:data strains)
+                                        (:carrying_gene_alone_and_cgc)))))
+    (testing "strains available from cgc"
+      (is (some #(= "BA836" (:id %)) (-> (:data strains)
+                                         (:available_from_cgc)))))))
 
 
 
