@@ -2234,34 +2234,34 @@
 
 (defn- rearrangements-positive [gene]
   (let [db (d/entity-db gene)]
-    (->> (q '[:find ?ra
+    (->> (q '[:find [?ra ...]
                :in $ ?gene
                :where [?rag :rearrangement.gene-inside/gene ?gene]
                       [?ra :rearrangement/gene-inside ?rag]]
-             db (:db/id gene))
-          (entity db)
-          (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
+            db (:db/id gene))
+         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
 (defn- rearrangements-negative [gene]
    (let [db (d/entity-db gene)]
-    (->> (q '[:find ?ra
+    (->> (q '[:find [?ra ...]
                :in $ ?gene
                :where [?rag :rearrangement.gene-outside/gene ?gene]
                       [?ra :rearrangement/gene-outside ?rag]]
-             db (:db/id gene))
-          (entity db)
-          (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
+            db (:db/id gene))
+         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
 (defn- rearrangements [gene]
-  {:data (let [data {:positive (rearrangements-positive gene)
-                     :negative (rearrangements-negative gene) }]
+  {:data (let [data {:positive (if-let [rearrangements (rearrangements-positive gene)]
+                                 (if (empty? rearrangements) nil rearrangements))
+                     :negative (if-let [rearrangements (rearrangements-negative gene)]
+                                 (if (empty? rearrangements) nil rearrangements))}]
            (if (or (:positive data) (:negative data)) data nil))
    :description "rearrangements involving this gene"})
 
 
 (def-rest-widget genetics [gene]
   {:reference_allele (reference-allele gene)
-;   :rearrangements   (rearrangements gene)
+   :rearrangements   (rearrangements gene)
    :strains          (strains gene)
    :alleles          (alleles gene)
    :alleles_other    (alleles-other gene)

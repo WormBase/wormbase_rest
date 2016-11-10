@@ -103,7 +103,14 @@
       (is (some #(= "BA836" (:id %)) (-> (:data strains)
                                          (:available_from_cgc)))))))
 
-
+(deftest test-rearrangements
+  (let [rearrangements (#'gene/rearrangements (get-gene "WBGene00006759"))]
+    (testing "negative"
+      (is (some #(= "sDf22" (:id %)) (-> (:data rearrangements)
+                                        (:negative)))))
+    (testing "positive"
+      (is (some #(= "nDf28" (:id %)) (-> (:data rearrangements)
+                                         (:positive)))))))
 
 ;;(def uri (env :trace-db))
 ;;(def con (datomic.api/connect uri))
