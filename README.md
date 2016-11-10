@@ -57,6 +57,9 @@ It may be useful to put this in your shell profile, e.g for bash:
 export AWS_EB_PROFILE="${USER}"
 ```
 
+Also ensure `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment 
+variables are set with your credentials before preceeding.
+
 Build an uberjar (with ring server support) on the local machine
 to avoid having to download dependencies in the container:
 
