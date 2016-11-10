@@ -9,6 +9,18 @@
 
     lein with-profile +datomic-pro,+ddb ring server-headless 8130
 
+### running unit tests
+To run tests that watches changes in the repo:
+```bash
+lein with-profile +datomic-pro,+ddb test-refresh
+```
+
+To run all tests:
+```bash
+lein with-profile +datomic-pro,+ddb test
+```
+
+
 ## Deploying to production
 
 ### Deploy to Clojars (to be used by other clojar projects)
