@@ -9,8 +9,8 @@
 
     lein with-profile +datomic-pro,+ddb ring server-headless 8130
 
-### running unit tests
-To run tests that watches changes in the repo:
+### Running unit tests
+To run tests that watch for changes in the repo:
 ```bash
 lein with-profile +datomic-pro,+ddb test-refresh
 ```
