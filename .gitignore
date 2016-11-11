@@ -17,6 +17,8 @@ pm_to_blib
 target/
 .lein-env
 .lein-repl-history
+.lein-plugins/
+.lein-failures
 .nrepl-port
 
 # Elastic Beanstalk Files
@@ -30,3 +32,8 @@ target/
 
 #docker
 docker/app.jar
+
+
+# for Emacs
+*~
+\#*\#
