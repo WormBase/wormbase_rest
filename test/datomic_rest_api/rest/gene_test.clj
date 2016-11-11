@@ -6,6 +6,7 @@
             [clojure.data.json :as json]
             [clojure.string :as string]
             [datomic.api :as d]
+            [mount.core :as mount]
             [datomic-rest-api.utils.db :refer [datomic-conn]]
             [datomic-rest-api.rest.gene :as gene]))
 
@@ -17,10 +18,9 @@
 ; (e.g. create-db), then call the passed function f, then perform
 ; any required teardown (e.g. destroy-db).
 (defn my-test-fixture [f]
-  (def conn (d/connect (env :trace-db)))
+  (mount/start)
   (f)
-  (d/release conn)
-  (ns-unmap *ns* 'conn))
+  (mount/stop))
 
 ; Here we register my-test-fixture to be called once, wrapping ALL tests
 ; in the namespace
@@ -28,7 +28,7 @@
 
 
 (defn get-gene [id]
-  (d/entity (d/db conn) [:gene/id id]))
+  (d/entity (d/db datomic-conn) [:gene/id id]))
 
 ; This is a regular test function, which is to be wrapped using my-test-fixture
 (deftest test-alleles-and-polymorphisms
