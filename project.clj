@@ -3,7 +3,7 @@
   :url "https://github.com/WormBase/datomic-to-catalyst"
   :min-lein-version "2.0.0"
   :sign-releases false
-  :dependencies 
+  :dependencies
   [[org.clojure/clojure "1.8.0"]
    [datomic-schema "1.3.0"]
    [wormbase/pseudoace "0.4.10"]
@@ -11,7 +11,7 @@
    [hiccup "1.0.5"]
    [ring "1.5.0"]
    [ring/ring-anti-forgery "1.0.1"]
-   [ring/ring-jetty-adapter "1.5.0"] 
+   [ring/ring-jetty-adapter "1.5.0"]
    [fogus/ring-edn "0.2.0"]
    [compojure "1.4.0"]
    [clj-http "3.1.0"]
@@ -43,6 +43,7 @@
   :profiles {:dev {:dependencies [;;[midje "1.8.3"]
                               ;;    [datomic-schema-grapher "0.0.1"]
                                   [ring/ring-devel "1.5.0"]]
+                   :source-paths ["dev"]
                    :env {:trace-db "datomic:ddb://us-east-1/WS255/wormbase"}
                    :plugins [;;[lein-midje "3.2"]
                              [jonase/eastwood "0.2.3"]
