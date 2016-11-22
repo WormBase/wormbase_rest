@@ -12,7 +12,7 @@
    :interactor-info.interactor-type/cis-regulatory     :effector
    :interactor-info.interactor-type/trans-regulated    :affected
    :interactor-info.interactor-type/cis-regulated      :affected})
-   
+
 
 (def ^:private interactor-target
   (some-fn
@@ -65,7 +65,7 @@
            affecteds :affected
            others :other
            associated :associated-product}
-          (group-by interactor-role (concat 
+          (group-by interactor-role (concat
                                      (:interaction/interactor-overlapping-cds int)
                                      (:interaction/interactor-overlapping-gene int)
                                      (:interaction/interactor-overlapping-protein int)
@@ -109,7 +109,7 @@
                                    [?int :interaction/interactor-overlapping-gene ?ih]]
     [(gene-neighbour ?gene ?neighbour) (gene-interaction ?gene ?ix)
                                        [?ix :interaction/interactor-overlapping-gene ?ih]
-                                       (not 
+                                       (not
                                         [?ix :interaction/type :interaction.type/predicted])
                                        [?ih :interaction.interactor-overlapping-gene/gene ?neighbour]
                                        [(not= ?gene ?neighbour)]]
@@ -136,12 +136,12 @@
           db int-rules gene)
        (filter (fn [[_ cnt]] (> cnt 1)))
        (map first)))
-            
+
 
 (defn gene-interactions [obj nearby?]
   (let [db (d/entity-db obj)
         id (:db/id obj)]
-    (map 
+    (map
      (partial entity db)
      (concat
       (gene-direct-interactions db id)
@@ -161,8 +161,8 @@
                      ((some-fn :molecule/id :gene/id :rearrangement/id :feature/id) affected))
               (let [ename (:label (pack-obj effector))
                     aname (:label (pack-obj affected))
-                    phenotype (pack-obj 
-                               "phenotype" 
+                    phenotype (pack-obj
+                               "phenotype"
                                (first (:interaction/interaction-phenotype interaction))) ;; warning: could be more than one.
                     key1 (str ename " " aname " " type " " (:label phenotype))   ; interactions with the same endpoints but
                     key2 (str aname " " ename " " type " " (:label phenotype))   ; a different phenotype get a separate row.
@@ -172,12 +172,12 @@
                     pack-affected (pack-obj affected)
                     data (-> data
                              ;; Check how "predicted" flags are supposed to compose
-                             (assoc-in [:nodes (:id pack-effector)] (vassoc pack-effector 
+                             (assoc-in [:nodes (:id pack-effector)] (vassoc pack-effector
                                                                        :predicted (if (= type "Predicted") 1 0)
                                                                        :main (if (= effector obj) 1)))
-                             (assoc-in [:nodes (:id pack-affected)] (vassoc pack-affected 
+                             (assoc-in [:nodes (:id pack-affected)] (vassoc pack-affected
                                                                        :predicted (if (= type "Predicted") 1 0)
-                                                                       :main (if (= affected obj) 1))) 
+                                                                       :main (if (= affected obj) 1)))
                              (assoc-in [:types type] 1)
                              (assoc-in [:ntypes (:class pack-effector)] 1)
                              (assoc-in [:ntypes (:class pack-affected)] 1)
@@ -188,12 +188,12 @@
                   (-> data
                       (update-in [:edges key1 :interactions] conj pack-int)
                       (update-in [:edges key1 :citations] into papers))
-                  
+
                   (get-in data [:edges key2])
                   (-> data
                       (update-in [:edges key2 :interactions] conj pack-int)
                       (update-in [:edges key2 :citations] into papers))
-                  
+
                   :default
                   (assoc-in data [:edges key1]
                             {:interactions [pack-int]

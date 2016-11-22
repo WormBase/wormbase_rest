@@ -16,7 +16,7 @@
   (entity db [(keyword class "id") id]))
 
 (defn obj-tax [class obj]
-  "If entity-map `obj` has a species attribute, return the short name of the 
+  "If entity-map `obj` has a species attribute, return the short name of the
    species, otherwise \"all\"."
   (let [species-ident (keyword class "species")]
     (if-let [species (species-ident obj)]
@@ -149,18 +149,18 @@
           (cond
            (string? interactor)
            interactor
-           
+
            :default
            (:label (pack-obj (entity db interactor)))))
         il)
        (sort)
        (str/join " : "))
       (:interaction/id int))))
-                  
-                  
+
+
 (defmethod obj-label "motif" [_ motif]
   (or (first (:motif/title motif))
-      (:motif/id motif)))        
+      (:motif/id motif)))
 
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
@@ -171,7 +171,7 @@
 
 (defmethod obj-name "gene" [class db id]
   (let [obj (obj-get class db id)]
-    {:data 
+    {:data
      {:id    (:gene/id obj)
        :label (or (:gene/public-name obj)
                 (:gene/id obj))
@@ -194,7 +194,7 @@
 
    (:protein/id obj)
    "protein"
-   
+
    (:feature/id obj)
    "feature"
 
@@ -220,8 +220,8 @@
      {:id       ((keyword class "id") obj)
       :label    (or label
                   (obj-label class obj))
-      :class  (if class 
-                (if (= class "author") 
+      :class  (if class
+                (if (= class "author")
                   "person"
                   (str/replace class "-" "_")))
       :taxonomy (obj-tax class obj)})))
@@ -229,7 +229,7 @@
 (defn get-evidence [holder]
   ;; Some of these need further checking to ensure that handling of multiple
   ;; values matches Perl.
-  
+
   (vmap-if
    :Inferred_automatically
    (seq
@@ -244,14 +244,14 @@
    (seq
     (for [person (:evidence/person-evidence holder)]
       (pack-obj "person" person)))
-   
+
    :Paper_evidence
    (seq
     (for [paper (:evidence/paper-evidence holder)]
       (pack-obj "paper" paper)))
 
-   :Date_last_updated 
-   (if-let [date (:evidence/date-last-updated holder)]     
+   :Date_last_updated
+   (if-let [date (:evidence/date-last-updated holder)]
        [{ :id (str (.format (java.text.SimpleDateFormat. "yyyy-M-dd") date))
          :label (str (.format (java.text.SimpleDateFormat. "yyyy-M-dd") date))
          :class "text"}])
@@ -277,7 +277,7 @@
        {:id acc
         :label (format "%s:%s" (:database/id db) acc)
         :class (:database/id acc)}))
-       
+
 
    :Protein_id_evidence
    (seq
@@ -328,7 +328,7 @@
    :Sequence_evidence
    (if-let [seqs (:evidence/sequence-evidence holder)]
      (map (partial pack-obj "sequence" seqs)))))
-  
+
 
 (defn humanize-ident
   "Reconstruct a more human-readable representation of a Datomic enum key."
