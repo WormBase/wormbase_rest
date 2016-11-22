@@ -18,15 +18,7 @@
             [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
 
 
-(defn rest-field [field-name field-fn]
-  (fn [db class id]
-    (let [wbid-field (str class "/id")]
-      (-> {:name id
-           :class class
-           (keyword field-name) (field-fn (d/entity db [(keyword wbid-field) id]))}
-          (json/generate-string)
-          (ring.util.response/response)
-          (ring.util.response/content-type "application/json")))))
+(declare handle-field-get)
 
 (defn app-routes [db]
    (routes
@@ -77,11 +69,9 @@
          (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics")))
      (GET "/rest/widget/gene/:id/external_links" {params :params}
           (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))
-     (GET "/rest/field/:class/:id/:field-name" [class id field-name]
-          (let [field-namespace (symbol (str "datomic-rest-api.rest." class))
-                field-fn (ns-resolve field-namespace (symbol (str/replace field-name "_" "-")))
-                restified-field-fn (rest-field field-name field-fn)]
-            (restified-field-fn db class id)))))
+     (GET "/rest/field/:class/:id/:field" [class id field]
+          (handle-field-get db class id field))))
+
 
 (defn init []
   (print "Making Connection\n")
@@ -99,3 +89,40 @@
       (integer? p) p
       (string? p)  (parse-int p)
        :default default)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; internal functions and helper ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- wrap-response [data]
+  (-> data
+      (json/generate-string {:pretty true})
+      (ring.util.response/response)
+      (ring.util.response/content-type "application/json")))
+
+;; REST field handler and helper
+
+(defn- wrap-field [field-fn]
+  (fn [db class id]
+    (let [wbid-field (str class "/id")]
+      (field-fn (d/entity db [(keyword wbid-field) id])))))
+
+(def ^{:private true} whitelisted-fields
+  #{"gene/alleles-other"
+    "gene/polymorphisms"})
+
+(defn- handle-field-get [db class id field-name]
+  (if-let [field-fn-name (-> (str/join "/" [class field-name])
+                             (str/replace "_" "-")
+                             (whitelisted-fields))]
+    (let [field-fn (resolve (symbol (str "datomic-rest-api.rest." field-fn-name)))
+          wrapped-field-fn (wrap-field field-fn)]
+      (-> {:name id
+           :class class}
+          (assoc (keyword field-name) (wrapped-field-fn db class id))
+          (wrap-response)))
+    (-> {:message "field not exist or not available to public"}
+        (wrap-response)
+        (ring.util.response/status 404))))
+;; END of REST field
