@@ -17,6 +17,17 @@
             [datomic-rest-api.rest.references :refer (get-references)]
             [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
 
+
+(defn rest-field [field-name field-fn]
+  (fn [db class id]
+    (let [wbid-field (str class "/id")]
+      (-> {:name id
+           :class class
+           (keyword field-name) (field-fn (d/entity db [(keyword wbid-field) id]))}
+          (json/generate-string)
+          (ring.util.response/response)
+          (ring.util.response/content-type "application/json")))))
+
 (defn app-routes [db]
    (routes
      (GET "/" [] "<html>
@@ -65,7 +76,12 @@
      (GET "/rest/widget/gene/:id/genetics" {params :params}
          (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics")))
      (GET "/rest/widget/gene/:id/external_links" {params :params}
-         (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))))
+          (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))
+     (GET "/rest/field/:class/:id/:field-name" [class id field-name]
+          (let [field-namespace (symbol (str "datomic-rest-api.rest." class))
+                field-fn (ns-resolve field-namespace (symbol (str/replace field-name "_" "-")))
+                restified-field-fn (rest-field field-name field-fn)]
+            (restified-field-fn db class id)))))
 
 (defn init []
   (print "Making Connection\n")
