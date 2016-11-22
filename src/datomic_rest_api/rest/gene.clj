@@ -2232,6 +2232,26 @@
           (map #(process-variation (entity db %))))
      :description "polymorphisms and natural variations currently with no associated phenotype"}))
 
+(defn- alleles-count [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (-> {}
+         (assoc :polymorphisms (q '[:find (count ?var) .
+                                    :in $ ?gene
+                                    :where [?vh :variation.gene/gene ?gene]
+                                           [?var :variation/gene ?vh]
+                                           (not [?var :variation/allele _])
+                                           (not [?var :variation/phenotype _])]
+                                  db (:db/id gene)))
+         (assoc :alleles_other (q '[:find (count ?var) .
+                                    :in $ ?gene
+                                    :where [?vh :variation.gene/gene ?gene]
+                                           [?var :variation/gene ?vh]
+                                           [?var :variation/allele _]
+                                           (not [?var :variation/phenotype _])]
+                                  db (:db/id gene))))
+     :description "counts for alleles-other and polymorphisms"}))
+
 (defn- rearrangements-positive [gene]
   (let [db (d/entity-db gene)]
     (->> (q '[:find [?ra ...]
@@ -2264,8 +2284,9 @@
    :rearrangements   (rearrangements gene)
    :strains          (strains gene)
    :alleles          (alleles gene)
-   :alleles_other    (alleles-other gene)
-   :polymorphisms    (polymorphisms gene)
+   :alleles_count    (alleles-count gene)
+;;   :alleles_other    (alleles-other gene)  ;; can be requested through /rest/field/
+;;   :polymorphisms    (polymorphisms gene)  ;; can be requested through /rest/field/
    :name             (name-field gene)
    })
 
