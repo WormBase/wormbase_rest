@@ -26,7 +26,7 @@
                               :locatable.strand/positive
                               [(+ tmin emin -1)
                                (+ tmin emax)]
-                              
+
                               :locatable.strand/negative
                               [(- tmax emax)
                                (- tmax emin -1)])]
@@ -82,7 +82,7 @@
     (noncoding-transcript-structure t tmin tmax)))
 
 (defn get-features [db type parent min max]
-  (->> 
+  (->>
    (features db type (:db/id parent) min max)
    (map
     (fn [[fid min max]]
@@ -99,14 +99,14 @@
          :subfeatures (if (:transcript/id feature)
                         (transcript-structure feature min max))
          ))))))
-        
+
 
 (defn json-features [db {:keys [type id] :strs [start end]}]
   (if-let [parent (entity db [:sequence/id id])]
     (let [start            (parse-int start)
           end              (parse-int end)
-          [parent min max] (root-segment parent 
-                                         (or start 1) 
+          [parent min max] (root-segment parent
+                                         (or start 1)
                                          (or end (seq-length parent)))]
       {:status 200
        :content-type "application/json"
@@ -127,8 +127,8 @@
   (if-let [parent (entity db [:sequence/id id])]
     (let [start            (parse-int start)
           end              (parse-int end)
-          [parent min max] (root-segment parent 
-                                         (or start 1) 
+          [parent min max] (root-segment parent
+                                         (or start 1)
                                          (or end (seq-length parent)))
           features         (get-features db type parent min max)]
       {:status 200
@@ -145,8 +145,8 @@
   (if-let [parent (entity db [:sequence/id id])]
     (let [reg-start        (parse-int start)
           reg-end          (parse-int end)
-          [parent rmin rmax] (root-segment parent 
-                                         (or reg-start 1) 
+          [parent rmin rmax] (root-segment parent
+                                         (or reg-start 1)
                                          (or reg-end (seq-length parent)))
           bin-size         (or (parse-int bin-size)
                                (max 10 (quot (- rmax rmin) 50)))
@@ -170,8 +170,8 @@
                :stats {:max (reduce max counts)
                        :basesPerBin bin-size}}
               {:pretty true})})))
-          
-(def feature-api 
+
+(def feature-api
   (routes
    (GET "/:type/features/:id" {params :params db :db}
         (json-features db params))
