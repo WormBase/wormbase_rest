@@ -11,43 +11,41 @@
             [datomic-rest-api.rest.gene :as gene]))
 
 
-; See https://clojure.github.io/clojure/clojure.test-api.html for details
+;; See https://clojure.github.io/clojure/clojure.test-api.html for details
 
-; my-test-fixture will be passed a fn that will call all your tests
-; (e.g. test-using-db).  Here you perform any required setup
-; (e.g. create-db), then call the passed function f, then perform
-; any required teardown (e.g. destroy-db).
+;; my-test-fixture will be passed a fn that will call all your tests
+;; (e.g. test-using-db).  Here you perform any required setup
+;; (e.g. create-db), then call the passed function f, then perform
+;; any required teardown (e.g. destroy-db).
 (defn my-test-fixture [f]
   (mount/start)
   (f)
   (mount/stop))
 
-; Here we register my-test-fixture to be called once, wrapping ALL tests
-; in the namespace
+;; Here we register my-test-fixture to be called once, wrapping ALL tests
+;; in the namespace
 (use-fixtures :once my-test-fixture)
 
 
 (defn get-gene [id]
   (d/entity (d/db datomic-conn) [:gene/id id]))
 
-; This is a regular test function, which is to be wrapped using my-test-fixture
+(defn find-variation-in [id variations]
+  (first (filter #(= id (-> (:variation %)
+                            (:id)))
+                 (:data variations))))
+
+
+;;This is a regular test function, which is to be wrapped using my-test-fixture
 (deftest test-alleles-and-polymorphisms
   (let [reference-allele (#'gene/reference-allele (get-gene "WBGene00006759"))
         alleles (#'gene/alleles (get-gene "WBGene00006759"))
         alleles-other (#'gene/alleles-other (get-gene "WBGene00006759"))
         polymorphisms (#'gene/polymorphisms (get-gene "WBGene00006759"))
-        allele1 (first (filter #(= "WBVar00248722"
-                                   (-> (:variation %)
-                                       (:id))) (:data alleles)))
-        allele-other1 (first (filter #(= "WBVar00278273"
-                                         (-> (:variation %)
-                                             (:id))) (:data alleles-other)))
-        allele-other2 (first (filter #(= "WBVar01495296"
-                                         (-> (:variation %)
-                                             (:id))) (:data alleles-other)))
-        polymorphism1 (first (filter #(= "WBVar01858901"
-                                         (-> (:variation %)
-                                             (:id))) (:data polymorphisms)))]
+        allele1 (find-variation-in "WBVar00248722" alleles)
+        allele-other1 (find-variation-in "WBVar00278273" alleles-other)
+        allele-other2 (find-variation-in "WBVar01495296" alleles-other)
+        polymorphism1 (find-variation-in "WBVar01858901" polymorphisms)]
     (testing "reference allele"
       (is (some #(= "e66" (:label %)) (:data reference-allele))))
     (testing "allele with phenotype"
