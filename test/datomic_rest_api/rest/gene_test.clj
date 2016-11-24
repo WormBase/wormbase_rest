@@ -45,9 +45,9 @@
         allele-other2 (first (filter #(= "WBVar01495296"
                                          (-> (:variation %)
                                              (:id))) (:data alleles-other)))
-        polymorphism1 (first (filter #(= "WBVar00946163"
+        polymorphism1 (first (filter #(= "WBVar01858901"
                                          (-> (:variation %)
-                                             (:id))) (:data alleles-other)))]
+                                             (:id))) (:data polymorphisms)))]
     (testing "reference allele"
       (is (some #(= "e66" (:label %)) (:data reference-allele))))
     (testing "allele with phenotype"
@@ -64,7 +64,7 @@
 
     (testing "polymorphism without phenotype"
       (testing "correct variation is returned"
-        (is (= "gk626662" (:label (:variation polymorphism1)))))
+        (is (= "WBVar01858901" (:label (:variation polymorphism1)))))
       (testing "phenotype count is 0"
         (is (= (:phen_count polymorphism1) 0))))
 
