@@ -3,13 +3,33 @@
 - Provide interface to datomic database to WormBase website.
 
 ## Setting environment variables
-    export TRACE_DB="datomic:ddb://us-east-1/WS255/wormbase"
+
+```bash
+export WS_VERSION=WS256
+export TRACE_DB="datomic:ddb://us-east-1/WS255/wormbase"
+```
 
 ## Starting server in development
+```bash
+lein with-profile +datomic-pro,+ddb ring server-headless 8130
+```
 
-    lein with-profile +datomic-pro,+ddb ring server-headless 8130
+### Running unit tests
+
+To run tests that watch for changes in the repo:
+```bash
+lein with-profile +datomic-pro,+ddb test-refresh
+```
+
+To run all tests:
+```bash
+lein with-profile +datomic-pro,+ddb test
+```
 
 ## Deploying to production
+
+Set your [AWS Credentials]
+[AWS Credentials]: /WormBase/wormbase-architecture/wiki/AWS-Credentials
 
 ### Deploy to Clojars (to be used by other clojar projects)
 ```bash
@@ -30,22 +50,12 @@ jar tvf ./target/<jar-name>.jar
 
 To test:
 ```bash
-java -server -jar <jar-name>.jar
+java -jar <jar-name>.jar
 ```
 
 ## Docker
 
-Ensure you set the `AWS_EB_PROFILE` environment variable to your AWS
-username before running Makefile commands.
-
-It may be useful to put this in your shell profile, e.g for bash:
-
-```bash
-# when your aws username is the same as your local unix username:
-export AWS_EB_PROFILE="${USER}"
-```
-
-Build an uberjar (with ring server support) on the local machine
+Build an [uberjar] (with ring server support) on the local machine
 to avoid having to download dependencies in the container:
 
 ```bash
@@ -76,8 +86,9 @@ In order for the `make eb-local ` command to work, you must have first
 tagged and pushed an image to ECR with:
 
 ```bash
+make docker-ecr-login
 make docker-tag
-make docker-push
+make docker-push-ecr
 ```
 
 _*This assumes you have previously run `make build` and `make run` as
@@ -90,8 +101,20 @@ Now to test the ElasticBeanStalk `eb local run` command, do:
 
 `make eb-local`
 
-### Deploying the application environment to ElasticBeanStalk
+### Deployment
 
-```make eb-create```
+Initial deployment:
+
+```bash
+make eb-create
+```
+
+For subsequent deployments, use the `eb` CLI directly:
+
+```bash
+eb deploy
+```
 
 TBD: JVM memory options.
+
+[uberjar]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar

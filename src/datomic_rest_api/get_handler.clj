@@ -17,6 +17,9 @@
             [datomic-rest-api.rest.references :refer (get-references)]
             [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
 
+
+(declare handle-field-get)
+
 (defn app-routes [db]
    (routes
      (GET "/" [] "<html>
@@ -31,6 +34,7 @@
                       <li>/rest/widget/gene/:id/overview</li>
                       <li>/rest/widget/gene/:id/history</li>
                       <li>/rest/widget/gene/:id/mapping_data</li>
+                      <li>/rest/widget/gene/:id/genetics</li>
                     </ul>
                   </html>")
      (GET "/rest/widget/gene/:id/overview" {params :params}
@@ -52,7 +56,7 @@
 ;;     (GET "/rest/widget/gene/:id/reagents" {params :params}
 ;;         (gene/reagents db (:id params) (str "rest/widget/gene/" (:id params) "/reagents"))) ;; looks correct; needs sort to confirm
 ;;     (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
-;;         (gene/gene-ontology db (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology"))) ;; substancially same structure. not producing the same results 
+;;         (gene/gene-ontology db (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology"))) ;; substancially same structure. not producing the same results
 ;;     (GET "/rest/widget/gene/:id/expression" {params :params}
 ;;         (gene/expression db (:id params) (str "rest/widget/gene/" (:id params) "/expression"))) ;; This one is predominantly done but needs a little checking and sequence data
 ;;     (GET "/rest/widget/gene/:id/homology" {params :params}
@@ -61,15 +65,18 @@
 ;;         (gene/sequences db (:id params) (str "rest/widget/gene/" (:id params) "/sequences")))
 ;;     (GET "/rest/widget/gene/:id/feature" {params :params}
 ;;         (gene/features db (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
-;;     (GET "/rest/widget/gene/:id/genetics" {params :params}
-;;         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics"))) ;; looks good need to find rearrangement that exists. Also need to test if works, when does not exist, with Perl template
+     (GET "/rest/widget/gene/:id/genetics" {params :params}
+         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics")))
      (GET "/rest/widget/gene/:id/external_links" {params :params}
-         (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))))
+          (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))
+     (GET "/rest/field/:class/:id/:field" [class id field]
+          (handle-field-get db class id field))))
+
 
 (defn init []
   (print "Making Connection\n")
   (mount/start))
-  
+
 (defn app [request]
   (let [db (d/db datomic-conn)
         handler (app-routes db)]
@@ -82,3 +89,40 @@
       (integer? p) p
       (string? p)  (parse-int p)
        :default default)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; internal functions and helper ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- wrap-response [data]
+  (-> data
+      (json/generate-string {:pretty true})
+      (ring.util.response/response)
+      (ring.util.response/content-type "application/json")))
+
+;; REST field handler and helper
+
+(defn- wrap-field [field-fn]
+  (fn [db class id]
+    (let [wbid-field (str class "/id")]
+      (field-fn (d/entity db [(keyword wbid-field) id])))))
+
+(def ^{:private true} whitelisted-fields
+  #{"gene/alleles-other"
+    "gene/polymorphisms"})
+
+(defn- handle-field-get [db class id field-name]
+  (if-let [field-fn-name (-> (str/join "/" [class field-name])
+                             (str/replace "_" "-")
+                             (whitelisted-fields))]
+    (let [field-fn (resolve (symbol (str "datomic-rest-api.rest." field-fn-name)))
+          wrapped-field-fn (wrap-field field-fn)]
+      (-> {:name id
+           :class class}
+          (assoc (keyword field-name) (wrapped-field-fn db class id))
+          (wrap-response)))
+    (-> {:message "field not exist or not available to public"}
+        (wrap-response)
+        (ring.util.response/status 404))))
+;; END of REST field

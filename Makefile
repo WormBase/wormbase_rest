@@ -1,5 +1,6 @@
 NAME := wormbase/datomic-to-catalyst
 VERSION ?= $(shell git describe --abbrev=0 --tags)
+WS_VERSION ?= WS256
 EBX_CONFIG := .ebextensions/.config
 DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " ")
 DEPLOY_JAR := app.jar
@@ -33,16 +34,16 @@ docker-tag: $(call print-help,docker-tag,\
 		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
 .PHONY: docker-push-ecr
-docker-push-ecr: $(call print-help,docker-push-ecr,\
-	           "Push the image tagged with the current git revision\
-	 	    to ECR")
+docker-push-ecr: docker-ecr-login $(call print-help,docker-push-ecr,\
+	                           "Push the image tagged with the \
+                                    current git revision to ECR")
 	@docker push ${FQ_TAG}
 
 .PHONY: eb-create
 eb-create: $(call print-help,eb-create,\
 	    "Create an ElasticBeanStalk environment using \
 	     the Docker platofrm.")
-	@eb create datomic-to-catalyst \
+	@eb create datomic-to-catalyst-${WS_VERSION} \
 		--region=us-east-1 \
 		--tags="CreatedBy=${AWS_EB_PROFILE},Role=Rest\ API" \
 		--instance_type="c4.xlarge" \
