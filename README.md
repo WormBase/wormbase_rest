@@ -3,11 +3,16 @@
 - Provide interface to datomic database to WormBase website.
 
 ## Setting environment variables
-    export TRACE_DB="datomic:ddb://us-east-1/WS255/wormbase"
+
+```bash
+export WS_VERSION=WS256
+export TRACE_DB="datomic:ddb://us-east-1/WS255/wormbase"
+```
 
 ## Starting server in development
-
-    lein with-profile +datomic-pro,+ddb ring server-headless 8130
+```bash
+lein with-profile +datomic-pro,+ddb ring server-headless 8130
+```
 
 ### Running unit tests
 
