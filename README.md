@@ -10,6 +10,7 @@
     lein with-profile +datomic-pro,+ddb ring server-headless 8130
 
 ### Running unit tests
+
 To run tests that watch for changes in the repo:
 ```bash
 lein with-profile +datomic-pro,+ddb test-refresh
@@ -20,8 +21,10 @@ To run all tests:
 lein with-profile +datomic-pro,+ddb test
 ```
 
-
 ## Deploying to production
+
+Set your [AWS Credentials]
+[AWS Credentials]: /WormBase/wormbase-architecture/wiki/AWS-Credentials
 
 ### Deploy to Clojars (to be used by other clojar projects)
 ```bash
@@ -47,20 +50,7 @@ java -jar <jar-name>.jar
 
 ## Docker
 
-Ensure you set the `AWS_EB_PROFILE` environment variable to your AWS
-username before running Makefile commands.
-
-It may be useful to put this in your shell profile, e.g for bash:
-
-```bash
-# when your aws username is the same as your local unix username:
-export AWS_EB_PROFILE="${USER}"
-```
-
-Also ensure `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment 
-variables are set with your credentials before preceeding.
-
-Build an uberjar (with ring server support) on the local machine
+Build an [uberjar] (with ring server support) on the local machine
 to avoid having to download dependencies in the container:
 
 ```bash
@@ -121,3 +111,5 @@ eb deploy
 ```
 
 TBD: JVM memory options.
+
+[uberjar]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
