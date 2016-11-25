@@ -2081,7 +2081,8 @@
 
 (defn- process-variation [var]
   (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
-        trans-changes (seq (take 20 (:variation/transcript var)))]
+        trans-changes (seq (take 20 (:variation/transcript var)))
+        gene-changes (seq (take 20 (:variation/gene var)))]
     (vmap
      :variation
      (datomic-rest-api.rest.object/pack-obj "variation" var)
@@ -2146,13 +2147,18 @@
              changes)))
 
      :effects
-     (let [changes (set (mapcat keys cds-changes))]
+     (let [changes (set (mapcat keys (concat cds-changes gene-changes)))]
        (if-let [effect (set (filter
                              identity
                              (map {:molecular-change/missense "Missense"
                                    :molecular-change/nonsense "Nonsense"
                                    :molecular-change/frameshift "Frameshift"
-                                   :molecular-change/silent "Silent"}
+                                   :molecular-change/silent "Silent"
+                                   :molecular-change/splice-site "Splice site"
+                                   :molecular-change/promoter "Promoter"
+                                   :molecular-change/genomic-neighbourhood "Genomic neighbourhood"
+                                   :molecular-change/regulatory-feature "Regulatory feature"
+                                   :molecular-change/readthrough "Readthrough"}
                                   changes)))]
          (if (empty? effect) nil effect)))
 
