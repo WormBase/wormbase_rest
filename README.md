@@ -9,6 +9,18 @@
 
     lein with-profile +datomic-pro,+ddb ring server-headless 8130
 
+### Running unit tests
+To run tests that watch for changes in the repo:
+```bash
+lein with-profile +datomic-pro,+ddb test-refresh
+```
+
+To run all tests:
+```bash
+lein with-profile +datomic-pro,+ddb test
+```
+
+
 ## Deploying to production
 
 ### Deploy to Clojars (to be used by other clojar projects)
@@ -44,6 +56,9 @@ It may be useful to put this in your shell profile, e.g for bash:
 # when your aws username is the same as your local unix username:
 export AWS_EB_PROFILE="${USER}"
 ```
+
+Also ensure `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment 
+variables are set with your credentials before preceeding.
 
 Build an uberjar (with ring server support) on the local machine
 to avoid having to download dependencies in the container:

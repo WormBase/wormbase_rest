@@ -709,17 +709,16 @@
            :raw_data   (:two-point-data/results tp)
            :genotype   (:two-point-data/genotype tp)
            :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
-                          (if (empty? comment) "" comment ))
+                         (if (empty? comment) "" comment ))
            :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
-                                            (or (:two-point-data/calc-lower-conf tp) "0")
-                                            (or (:two-point-data/calc-upper-conf tp) "0"))
+                               (or (:two-point-data/calc-lower-conf tp) "0")
+                               (or (:two-point-data/calc-upper-conf tp) "0"))
            :point_1    (let [p1 (:two-point-data/gene-1 tp)]
                          (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-1/gene p1))
-                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
+                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
            :point_2    (let [p2 (:two-point-data/gene-2 tp)]
                          (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-2/gene p2))
-                          (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}
-          ))))
+                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}))))
 
 (defn gene-mapping-posneg
   [db id]
@@ -2000,10 +1999,11 @@
 ;;
 
 (defn- reference-allele [gene]
-  {:data
+  {:data (let [data
    (->> (:gene/reference-allele gene)
         (map :gene.reference-allele/variation)
-        (map (partial datomic-rest-api.rest.object/pack-obj "variation")))
+        (map (partial datomic-rest-api.rest.object/pack-obj "variation")))]
+     (if (empty? data) nil data))
    :description "the reference allele of the gene"})
 
 (defn- is-cgc? [strain]
@@ -2017,7 +2017,7 @@
    (map (fn [strain]
           (vassoc
            (datomic-rest-api.rest.object/pack-obj "strain" strain)
-           :genotype (first (:strain/genotype strain))
+           :genotype (:strain/genotype strain)
            :transgenes (datomic-rest-api.rest.object/pack-obj "transgene" (first (:transgene/_strain strain)))))
         strains)))
 
@@ -2052,125 +2052,147 @@
      :description
      "strains carrying this gene"}))
 
-(defn- nonsense [change]
-  (or (seq (:molecular-change/amber-uag change))
-      (seq (:molecular-change/ochre-uaa change))
-      (seq (:molecular-change/opal-uga change))
-      (seq (:molecular-change/ochre-uaa-or-opal-uga change))
-      (seq (:molecular-change/amber-uag-or-ochre-uaa change))
-      (seq (:molecular-change/amber-uag-or-opal-uga change))))
-
-(defn- process-variation [var]
- (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
-       trans-changes (seq (take 20 (:variation/transcript var)))]
-  (vmap
-   :variation
-   (datomic-rest-api.rest.object/pack-obj "variation" var)
-
-   :type
-   (if (:variation/transposon-insertion var)
-     "transposon insertion"
-     (str/join ", "
-      (or
-       (those
-        (if (:variation/engineered-allele var)
-          "Engineered allele")
-        (if (:variation/allele var)
-          "Allele")
-        (if (:variation/snp var)
-          "SNP")
-        (if (:variation/confirmed-snp var)
-          "Confirmed SNP")
-        (if (:variation/predicted-snp var)
-          "Predicted SNP")
-        (if (:variation/reference-strain-digest var)
-          "RFLP"))
-       ["unknown"])))
-
-   :method_name
-   (if-let [method (:variation/method var)]
-     (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
-             (or (:method.remark/text (first (:method/remark methods))) "")
-             (str/replace (:method/id method) #"_" " ")))
-
-   :gene
-   nil ;; don't populate since we're coming from gene...
-
-   :molecular_change
-   (cond
-    (:variation/substitution var)
-    "Substitution"
-
-    (:variation/insertion var)
-    "Insertion"
-
-    (:variation/deletion var)
-    "Deletion"
-
-    (:variation/inversion var)
-    "Inversion"
-
-    (:variation/tandem-duplication var)
-    "Tandem_duplication"
-
-    :default
-    "Not curated")
-
-   :locations
-   (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
-     (str/join ", " (filter
-                     identity
-                     (map {:molecular-change/intron "Intron"
-                           :molecular-change/coding-exon "Coding exon"
-                           :molecular-change/utr-5 "5' UTR"
-                           :molecular-change/utr-3 "3' UTR"}
-                          changes))))
-
-   :effects
-   (let [changes (set (mapcat keys cds-changes))]
-     (str/join ", " (set (filter
-                          identity
-                          (map {:molecular-change/missense "Missense"
-                                :molecular-change/amber-uag "Nonsense"
-                                :molecular-change/ochre-uaa "Nonsense"
-                                :molecular-change/opal-uga "Nonsense"
-                                :molecular-change/ochre-uaa-or-opal-uga "Nonsense"
-                                :molecular-change/amber-uag-or-ochre-uaa "Nonsense"
-                                :molecular-change/amber-uag-or-opal-uga "Nonsense"
-                                :molecular-change/frameshift "Frameshift"
-                                :molecular-change/silent "Silent"}
-                               changes)))))
-
-   :aa_change
-   (str/join "<br>"
-     (filter identity
-       (for [cc cds-changes]
-         (cond-let [n]
-            (first (:molecular-change/missense cc))
+(defn- process-aa-change [molecular-change]
+  (cond-let [n]
+            (first (:molecular-change/missense molecular-change))
             (:molecular-change.missense/text n)
 
-            (first (nonsense cc))
-            ((first (filter #(= (name %) "text") (keys n))) n)))))
+            (:molecular-change/nonsense molecular-change)
+            (:molecular-change.nonsense/text n)))
 
-   :aa_position
-   (str/join "<br>"
-     (filter identity
-       (for [cc cds-changes]
-         (if-let [n (first (:molecular-change/missense cc))]
-           (:molecular-change.missense/int n)))))
+(defn- process-aa-position [molecular-change]
+  (cond-let [n]
+            (first (:molecular-change/missense molecular-change))
+            (:molecular-change.missense/int n)
 
-   :isoform
-   (seq
-    (for [cc cds-changes
-          :when (or (:molecular-change/missense cc)
-                    (nonsense cc))]
-      (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))
+            (:molecular-change/nonsense molecular-change)
+            (nth (re-find #"\((\d+)\)" (:molecular-change.nonsense/text n)) 1))
+  )
 
-   :phen_count
-   (count (:variation/phenotype var))
+(defn- process-aa-composite [molecular-change]
+  (let [change (process-aa-change molecular-change)
+        position (process-aa-position molecular-change)]
+    (if (and change position)
+      (let [change-parts (str/split change #"\s+")]
+        (->>
+         [(first change-parts) position (nth change-parts 2)]
+         (map str/capitalize)
+         (str/join ""))))))
 
-   :strain
-   (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var)))))
+(defn- process-variation [var]
+  (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
+        trans-changes (seq (take 20 (:variation/transcript var)))]
+    (vmap
+     :variation
+     (datomic-rest-api.rest.object/pack-obj "variation" var)
+
+     :type
+     (if (:variation/transposon-insertion var)
+       "transposon insertion"
+       (str/join ", "
+                 (or
+                  (those
+                   (if (:variation/engineered-allele var)
+                     "Engineered allele")
+                   (if (:variation/allele var)
+                     "Allele")
+                   (if (:variation/snp var)
+                     "SNP")
+                   (if (:variation/confirmed-snp var)
+                     "Confirmed SNP")
+                   (if (:variation/predicted-snp var)
+                     "Predicted SNP")
+                   (if (:variation/reference-strain-digest var)
+                     "RFLP"))
+                  ["unknown"])))
+
+     :method_name
+     (if-let [method (:variation/method var)]
+       (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
+               (or (:method.remark/text (first (:method/remark methods))) "")
+               (str/replace (:method/id method) #"_" " ")))
+
+     :gene
+     nil ;; don't populate since we're coming from gene...
+
+     :molecular_change
+     (cond
+       (:variation/substitution var)
+       "Substitution"
+
+       (:variation/insertion var)
+       "Insertion"
+
+       (:variation/deletion var)
+       "Deletion"
+
+       (:variation/inversion var)
+       "Inversion"
+
+       (:variation/tandem-duplication var)
+       "Tandem_duplication"
+
+       :default
+       "Not curated")
+
+     :locations
+     (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
+       (filter
+        identity
+        (map {:molecular-change/intron "Intron"
+              :molecular-change/coding-exon "Coding exon"
+              :molecular-change/utr-5 "5' UTR"
+              :molecular-change/utr-3 "3' UTR"}
+             changes)))
+
+     :effects
+     (let [changes (set (mapcat keys cds-changes))]
+       (if-let [effect (set (filter
+                             identity
+                             (map {:molecular-change/missense "Missense"
+                                   :molecular-change/nonsense "Nonsense"
+                                   :molecular-change/frameshift "Frameshift"
+                                   :molecular-change/silent "Silent"}
+                                  changes)))]
+         (if (empty? effect) nil effect)))
+
+     :aa_change
+     (if-let [aa-changes (->> (map process-aa-change cds-changes)
+                              (filter identity))]
+       (if (empty? aa-changes) nil aa-changes))
+
+     :aa_position
+     (if-let [aa-positions (->> (map process-aa-position cds-changes)
+                                (filter identity))]
+       (if (empty? aa-positions) nil aa-positions))
+
+     :composite_change
+     (if-let [aa-changes (->> (map process-aa-composite cds-changes)
+                              (filter identity))]
+       (if (empty? aa-changes) nil aa-changes))
+
+     :isoform
+     (if-let [isoform
+              (seq
+               (for [cc cds-changes
+                     :when (or (:molecular-change/missense cc)
+                               (:molecular-change/nonsense cc))]
+                 (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))]
+       (if (empty? isoform) nil isoform))
+
+     :phen_count
+     (count (:variation/phenotype var))
+
+     :strain
+     (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var))
+
+     :sources
+     (if-let [sources (if (empty? (:variation/reference var))
+                        (map #(let [packed (datomic-rest-api.rest.object/pack-obj %)]
+                                (into packed {:label
+                                              (str/replace (:label packed) #"_" " ")})) (:variation/analysis var))
+                        (map #(datomic-rest-api.rest.object/pack-obj (:variation.reference/paper %)) (:variation/reference var)))]
+       (if (empty? sources) nil sources)))))
 
 (defn- alleles [gene]
   (let [db (d/entity-db gene)]
@@ -2179,10 +2201,23 @@
                :in $ ?gene
                :where [?vh :variation.gene/gene ?gene]
                       [?var :variation/gene ?vh]
-                      [?var :variation/allele _]]
+                      [?var :variation/phenotype _]]
              db (:db/id gene))
           (map #(process-variation (entity db %))))
-     :description "alleles contained in the strain"}))
+     :description "alleles and polymorphisms with associated phenotype"}))
+
+(defn- alleles-other [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?var ...]
+               :in $ ?gene
+               :where [?vh :variation.gene/gene ?gene]
+                      [?var :variation/gene ?vh]
+                      [?var :variation/allele _]
+                      (not [?var :variation/phenotype _])]
+             db (:db/id gene))
+          (map #(process-variation (entity db %))))
+     :description "alleles currently with no associated phenotype"}))
 
 (defn- polymorphisms [gene]
   (let [db (d/entity-db gene)]
@@ -2191,34 +2226,56 @@
                :in $ ?gene
                :where [?vh :variation.gene/gene ?gene]
                       [?var :variation/gene ?vh]
-                      (not [?var :variation/allele _])]
+                      (not [?var :variation/allele _])
+                      (not [?var :variation/phenotype _])]
              db (:db/id gene))
           (map #(process-variation (entity db %))))
-     :description "polymorphisms and natural variations contained in the strain"}))
+     :description "polymorphisms and natural variations currently with no associated phenotype"}))
+
+(defn- alleles-count [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (-> {}
+         (assoc :polymorphisms (q '[:find (count ?var) .
+                                    :in $ ?gene
+                                    :where [?vh :variation.gene/gene ?gene]
+                                           [?var :variation/gene ?vh]
+                                           (not [?var :variation/allele _])
+                                           (not [?var :variation/phenotype _])]
+                                  db (:db/id gene)))
+         (assoc :alleles_other (q '[:find (count ?var) .
+                                    :in $ ?gene
+                                    :where [?vh :variation.gene/gene ?gene]
+                                           [?var :variation/gene ?vh]
+                                           [?var :variation/allele _]
+                                           (not [?var :variation/phenotype _])]
+                                  db (:db/id gene))))
+     :description "counts for alleles-other and polymorphisms"}))
 
 (defn- rearrangements-positive [gene]
   (let [db (d/entity-db gene)]
-    (->> (q '[:find ?ra
+    (->> (q '[:find [?ra ...]
                :in $ ?gene
                :where [?rag :rearrangement.gene-inside/gene ?gene]
                       [?ra :rearrangement/gene-inside ?rag]]
-             db (:db/id gene))
-          (entity db)
-          (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
+            db (:db/id gene))
+         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
 (defn- rearrangements-negative [gene]
    (let [db (d/entity-db gene)]
-    (->> (q '[:find ?ra
+    (->> (q '[:find [?ra ...]
                :in $ ?gene
                :where [?rag :rearrangement.gene-outside/gene ?gene]
                       [?ra :rearrangement/gene-outside ?rag]]
-             db (:db/id gene))
-          (entity db)
-          (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
+            db (:db/id gene))
+         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
 (defn- rearrangements [gene]
-  {:data {:positive (rearrangements-positive gene)
-          :negative (rearrangements-negative gene) }
+  {:data (let [data {:positive (if-let [rearrangements (rearrangements-positive gene)]
+                                 (if (empty? rearrangements) nil rearrangements))
+                     :negative (if-let [rearrangements (rearrangements-negative gene)]
+                                 (if (empty? rearrangements) nil rearrangements))}]
+           (if (or (:positive data) (:negative data)) data nil))
    :description "rearrangements involving this gene"})
 
 
@@ -2227,8 +2284,11 @@
    :rearrangements   (rearrangements gene)
    :strains          (strains gene)
    :alleles          (alleles gene)
-   :polymorphisms    (polymorphisms gene)
-   :name             (name-field gene)})
+   :alleles_count    (alleles-count gene)
+;;   :alleles_other    (alleles-other gene)  ;; can be requested through /rest/field/
+;;   :polymorphisms    (polymorphisms gene)  ;; can be requested through /rest/field/
+   :name             (name-field gene)
+   })
 
 ;;
 ;; external_links widget

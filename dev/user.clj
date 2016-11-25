@@ -5,8 +5,7 @@
             [clojure.test :as test]
             [clojure.tools.namespace.repl :refer (refresh refresh-all)]
             [datomic.api :as d]
-            [mount.core :as mount]
-            [datomic-rest-api.utils.db :refer (datomic-conn)]))
+            [mount.core :as mount]))
 
 
 
