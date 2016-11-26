@@ -1,4 +1,4 @@
-(defproject wormbase/datomic-rest-api "0.0.5"
+(defproject wormbase/datomic-rest-api "0.0.6"
   :description "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
   :min-lein-version "2.0.0"
@@ -6,7 +6,7 @@
   :dependencies
   [[org.clojure/clojure "1.8.0"]
    [datomic-schema "1.3.0"]
-   [wormbase/pseudoace "0.4.10"]
+   [wormbase/pseudoace "0.4.14"]
    [mount "0.1.10"]
    [hiccup "1.0.5"]
    [ring "1.5.0"]
@@ -44,7 +44,7 @@
                               ;;    [datomic-schema-grapher "0.0.1"]
                                   [ring/ring-devel "1.5.0"]]
                    :source-paths ["dev"]
-                   :env {:trace-db "datomic:ddb://us-east-1/WS255/wormbase"}
+                   :env {:trace-db "datomic:ddb://us-east-1/WS256/wormbase"}
                    :plugins [;;[lein-midje "3.2"]
                              [jonase/eastwood "0.2.3"]
                              [lein-ancient "0.6.8"]

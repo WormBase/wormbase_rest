@@ -86,7 +86,6 @@ In order for the `make eb-local ` command to work, you must have first
 tagged and pushed an image to ECR with:
 
 ```bash
-make docker-ecr-login
 make docker-tag
 make docker-push-ecr
 ```
