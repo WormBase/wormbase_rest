@@ -12,6 +12,7 @@
             [environ.core :refer (env)]
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer [datomic-conn]]
+            [datomic-rest-api.rest.core :refer [wrap-field wrap-widget]]
             [datomic-rest-api.rest.gene :as gene]
             [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
             [datomic-rest-api.rest.references :refer (get-references)]
@@ -19,6 +20,7 @@
 
 
 (declare handle-field-get)
+(declare handle-widget-get)
 
 (defn app-routes [db]
    (routes
@@ -37,38 +39,8 @@
                       <li>/rest/widget/gene/:id/genetics</li>
                     </ul>
                   </html>")
-     (GET "/rest/widget/gene/:id/overview" {params :params}
-         (gene/overview db (:id params) (str "rest/widget/gene/" (:id params) "/overview")))
-     (GET "/rest/widget/gene/:id/history" {params :params}
-         (gene/history db (:id params) (str "rest/widget/gene/" (:id params) "/history")))
-;;     (GET "/rest/widget/gene/:id/phenotype" {params :params}
-;;         (gene/phenotypes db (:id params) (str "rest/widget/gene/" (:id params) "/phenotype"))) ;; broken because of variation/phenotype
-;;     (GET "/rest/widget/gene/:id/interactions" {params :params}
-;;         (get-interactions "gene" db (:id params) (str "rest/widget/gene/" (:id params) "/interactions"))) ;; needed work on nodes all - not quite lining up
-;;     (GET "/rest/field/gene/:id/interaction_details" {params :params}
-;;         (get-interaction-details "gene" db (:id params) (str "rest/field/gene/" (:id params) "/interaction_details"))) ;; wormbase is missing data section: why?
-     (GET "/rest/widget/gene/:id/mapping_data" {params :params}
-         (gene/mapping-data db (:id params) (str "rest/widget/gene/" (:id params) "/mapping_data")))
-;;     (GET "/rest/widget/gene/:id/human_diseases" {params :params}
-;;         (gene/human-diseases db (:id params) (str "rest/widget/gene/" (:id params) "/human_disease")))
-;;     (GET "/rest/widget/gene/:id/references" {params :params}
-;;         (get-references "gene" db (:id params) (str "rest/widget/gene/" (:id params) "/references")))
-;;     (GET "/rest/widget/gene/:id/reagents" {params :params}
-;;         (gene/reagents db (:id params) (str "rest/widget/gene/" (:id params) "/reagents"))) ;; looks correct; needs sort to confirm
-;;     (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
-;;         (gene/gene-ontology db (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology"))) ;; substancially same structure. not producing the same results
-;;     (GET "/rest/widget/gene/:id/expression" {params :params}
-;;         (gene/expression db (:id params) (str "rest/widget/gene/" (:id params) "/expression"))) ;; This one is predominantly done but needs a little checking and sequence data
-;;     (GET "/rest/widget/gene/:id/homology" {params :params}
-;;         (gene/homology db (:id params) (str "rest/widget/gene/" (:id params) "/homology"))) ;; need to wait for homology data to be added to datomic database
-;;     (GET "/rest/widget/gene/:id/sequences" {params :params}
-;;         (gene/sequences db (:id params) (str "rest/widget/gene/" (:id params) "/sequences")))
-;;     (GET "/rest/widget/gene/:id/feature" {params :params}
-;;         (gene/features db (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
-     (GET "/rest/widget/gene/:id/genetics" {params :params}
-         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics")))
-     (GET "/rest/widget/gene/:id/external_links" {params :params}
-          (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))
+     (GET "/rest/widget/:class/:id/:widget" [class id widget :as request]
+          (handle-widget-get db class id widget request))
      (GET "/rest/field/:class/:id/:field" [class id field]
           (handle-field-get db class id field))))
 
@@ -103,26 +75,53 @@
 
 ;; REST field handler and helper
 
-(defn- wrap-field [field-fn]
-  (fn [db class id]
-    (let [wbid-field (str class "/id")]
-      (field-fn (d/entity db [(keyword wbid-field) id])))))
+;; (defn- wrap-field [field-fn]
+;;   (fn [db class id]
+;;     (let [wbid-field (str class "/id")]
+;;       (field-fn (d/entity db [(keyword wbid-field) id])))))
+
+(defn- resolve-endpoint [class endpoint-name whitelist]
+  (if-let [fn-name (-> (str/join "/" [class endpoint-name])
+                       (str/replace "_" "-")
+                       (whitelist))]
+    (resolve (symbol (str "datomic-rest-api.rest." fn-name)))))
+
+(def ^{:private true} whitelisted-widgets
+  #{"gene/overview"
+    "gene/external"
+    "gene/genetics"
+    "gene/history"
+    "gene/mapping-data"})
 
 (def ^{:private true} whitelisted-fields
   #{"gene/alleles-other"
     "gene/polymorphisms"})
 
-(defn- handle-field-get [db class id field-name]
-  (if-let [field-fn-name (-> (str/join "/" [class field-name])
-                             (str/replace "_" "-")
-                             (whitelisted-fields))]
-    (let [field-fn (resolve (symbol (str "datomic-rest-api.rest." field-fn-name)))
-          wrapped-field-fn (wrap-field field-fn)]
+(defn- handle-field-get [db class id field-name request]
+  (if-let [field-fn (resolve-endpoint class field-name whitelisted-fields)]
+    (let [wrapped-field-fn (wrap-field field-fn)
+          data (wrapped-field-fn db class id)]
       (-> {:name id
            :class class}
-          (assoc (keyword field-name) (wrapped-field-fn db class id))
+          (assoc (keyword field-name) data)
           (wrap-response)))
     (-> {:message "field not exist or not available to public"}
         (wrap-response)
         (ring.util.response/status 404))))
 ;; END of REST field
+
+
+(defn- handle-widget-get [db class id widget-name request]
+  (if-let [widget-fn (resolve-endpoint class widget-name whitelisted-widgets)]
+    (let [wrapped-widget-fn (wrap-widget widget-fn)
+          data (wrapped-widget-fn db class id)]
+      (-> {:name id
+           :class class
+           :url (:uri request)
+           :fields data}
+          (wrap-response)))
+    (-> {:message (format "%s widget for %s not exist or not available to public"
+                          (str/capitalize widget-name)
+                          (str/capitalize class))}
+        (wrap-response)
+        (ring.util.response/status 404))))

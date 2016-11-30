@@ -6,27 +6,29 @@
             [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
-            [pseudoace.locatables :refer (root-segment)]))
+            [pseudoace.locatables :refer (root-segment)]
+            [datomic-rest-api.rest.core :refer [def-rest-widget]]
+            ))
 
 ;; Currently gene-specific, make more general in the future?
 
-(defmacro def-rest-widget
-  "Define a handler for a rest widget endpoint.  `body` is executed with `gene-binding`
-   will bound to the gene's entity-map, and should return a map of field values."
-  [name [gene-binding] & body]
-  `(defn ~name [db# id# uri#]
-     (if-let [~gene-binding (entity db# [:gene/id id#])]
-       {:status 200
-        :content-type "application/json"
-        :body (generate-string
-               {:class "gene"
-                :name id#
-                :uri uri#
-                :fields (do ~@body)}
-               {:pretty true})}
-       {:status 404
-        :content-type "text/plain"
-        :body (format "Can't find gene %s" id#)})))
+;; (defmacro def-rest-widget
+;;   "Define a handler for a rest widget endpoint.  `body` is executed with `gene-binding`
+;;    will bound to the gene's entity-map, and should return a map of field values."
+;;   [name [gene-binding] & body]
+;;   `(defn ~name [db# id# uri#]
+;;      (if-let [~gene-binding (entity db# [:gene/id id#])]
+;;        {:status 200
+;;         :content-type "application/json"
+;;         :body (generate-string
+;;                {:class "gene"
+;;                 :name id#
+;;                 :uri uri#
+;;                 :fields (do ~@body)}
+;;                {:pretty true})}
+;;        {:status 404
+;;         :content-type "text/plain"
+;;         :body (format "Can't find gene %s" id#)})))
 
 (defmacro def-rest-widget2
   "Define a handler for a rest widget endpoint.  `body` is executed with `gene-binding`
@@ -2285,7 +2287,7 @@
    :description "rearrangements involving this gene"})
 
 
-(def-rest-widget genetics [gene]
+(defn genetics [gene]
   {:reference_allele (reference-allele gene)
    :rearrangements   (rearrangements gene)
    :strains          (strains gene)
