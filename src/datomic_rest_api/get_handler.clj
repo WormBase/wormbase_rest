@@ -73,13 +73,6 @@
       (ring.util.response/response)
       (ring.util.response/content-type "application/json")))
 
-;; REST field handler and helper
-
-;; (defn- wrap-field [field-fn]
-;;   (fn [db class id]
-;;     (let [wbid-field (str class "/id")]
-;;       (field-fn (d/entity db [(keyword wbid-field) id])))))
-
 (defn- resolve-endpoint [class endpoint-name whitelist]
   (if-let [fn-name (-> (str/join "/" [class endpoint-name])
                        (str/replace "_" "-")
@@ -97,6 +90,8 @@
   #{"gene/alleles-other"
     "gene/polymorphisms"})
 
+;; start of REST handler for widgets and fields
+
 (defn- handle-field-get [db class id field-name request]
   (if-let [field-fn (resolve-endpoint class field-name whitelisted-fields)]
     (let [wrapped-field-fn (wrap-field field-fn)
@@ -108,8 +103,6 @@
     (-> {:message "field not exist or not available to public"}
         (wrap-response)
         (ring.util.response/status 404))))
-;; END of REST field
-
 
 (defn- handle-widget-get [db class id widget-name request]
   (if-let [widget-fn (resolve-endpoint class widget-name whitelisted-widgets)]
@@ -125,3 +118,5 @@
                           (str/capitalize class))}
         (wrap-response)
         (ring.util.response/status 404))))
+
+;; END of REST handler for widgets and fields
