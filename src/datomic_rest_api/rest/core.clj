@@ -4,12 +4,12 @@
             [clojure.string :as str]))
 
 
-(defn wrap-field [field-fn]
+(defn field-adaptor [field-fn]
   (fn [db class id]
     (let [wbid-field (str class "/id")]
       (field-fn (d/entity db [(keyword wbid-field) id])))))
 
-(defn wrap-widget [widget-fn]
+(defn widget-adaptor [widget-fn]
   (fn [db class id]
     (let [wbid-field (str class "/id")]
       (widget-fn (d/entity db [(keyword wbid-field) id])))))

@@ -12,7 +12,7 @@
             [environ.core :refer (env)]
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer [datomic-conn]]
-            [datomic-rest-api.rest.core :refer [wrap-field wrap-widget]]
+            [datomic-rest-api.rest.core :refer [field-adaptor widget-adaptor]]
             [datomic-rest-api.rest.gene :as gene]
             [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
             [datomic-rest-api.rest.references :refer (get-references)]
@@ -67,7 +67,7 @@
 ;; internal functions and helper ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wrap-response [data]
+(defn- json-response [data]
   (-> data
       (json/generate-string {:pretty true})
       (ring.util.response/response)
@@ -94,30 +94,30 @@
 
 (defn- handle-field-get [db class id field-name request]
   (if-let [field-fn (resolve-endpoint class field-name whitelisted-fields)]
-    (let [wrapped-field-fn (wrap-field field-fn)
-          data (wrapped-field-fn db class id)]
+    (let [adapted-field-fn (field-adaptor field-fn)
+          data (adapted-field-fn db class id)]
       (-> {:name id
            :class class
            :url (:uri request)}
           (assoc (keyword field-name) data)
-          (wrap-response)))
+          (json-response)))
     (-> {:message "field not exist or not available to public"}
-        (wrap-response)
+        (json-response)
         (ring.util.response/status 404))))
 
 (defn- handle-widget-get [db class id widget-name request]
   (if-let [widget-fn (resolve-endpoint class widget-name whitelisted-widgets)]
-    (let [wrapped-widget-fn (wrap-widget widget-fn)
-          data (wrapped-widget-fn db class id)]
+    (let [adapted-widget-fn (widget-adaptor widget-fn)
+          data (adapted-widget-fn db class id)]
       (-> {:name id
            :class class
            :url (:uri request)
            :fields data}
-          (wrap-response)))
+          (json-response)))
     (-> {:message (format "%s widget for %s not exist or not available to public"
                           (str/capitalize widget-name)
                           (str/capitalize class))}
-        (wrap-response)
+        (json-response)
         (ring.util.response/status 404))))
 
 ;; END of REST handler for widgets and fields
