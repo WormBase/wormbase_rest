@@ -41,8 +41,8 @@
                   </html>")
      (GET "/rest/widget/:class/:id/:widget" [class id widget :as request]
           (handle-widget-get db class id widget request))
-     (GET "/rest/field/:class/:id/:field" [class id field]
-          (handle-field-get db class id field))))
+     (GET "/rest/field/:class/:id/:field" [class id field :as request]
+          (handle-field-get db class id field request))))
 
 
 (defn init []
@@ -97,7 +97,8 @@
     (let [wrapped-field-fn (wrap-field field-fn)
           data (wrapped-field-fn db class id)]
       (-> {:name id
-           :class class}
+           :class class
+           :url (:uri request)}
           (assoc (keyword field-name) data)
           (wrap-response)))
     (-> {:message "field not exist or not available to public"}
