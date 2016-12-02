@@ -8,11 +8,11 @@
             [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.util.response :refer (redirect file-response)]
-            [cheshire.core :as json :refer [parse-string]]
+            [cheshire.core :as json :refer (parse-string)]
             [environ.core :refer (env)]
             [mount.core :as mount]
-            [datomic-rest-api.utils.db :refer [datomic-conn]]
-            [datomic-rest-api.rest.core :refer [field-adaptor widget-adaptor]]
+            [datomic-rest-api.utils.db :refer (datomic-conn)]
+            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor)]
             [datomic-rest-api.rest.gene :as gene]
             [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
             [datomic-rest-api.rest.references :refer (get-references)]
@@ -39,10 +39,10 @@
                       <li>/rest/widget/gene/:id/genetics</li>
                     </ul>
                   </html>")
-     (GET "/rest/widget/:class/:id/:widget" [class id widget :as request]
-          (handle-widget-get db class id widget request))
-     (GET "/rest/field/:class/:id/:field" [class id field :as request]
-          (handle-field-get db class id field request))))
+     (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
+          (handle-widget-get db schema-name id widget-name request))
+     (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
+          (handle-field-get db schema-name id field-name request))))
 
 
 (defn init []
@@ -73,8 +73,8 @@
       (ring.util.response/response)
       (ring.util.response/content-type "application/json")))
 
-(defn- resolve-endpoint [class endpoint-name whitelist]
-  (if-let [fn-name (-> (str/join "/" [class endpoint-name])
+(defn- resolve-endpoint [schema-name endpoint-name whitelist]
+  (if-let [fn-name (-> (str/join "/" [schema-name endpoint-name])
                        (str/replace "_" "-")
                        (whitelist))]
     (resolve (symbol (str "datomic-rest-api.rest." fn-name)))))
@@ -92,12 +92,12 @@
 
 ;; start of REST handler for widgets and fields
 
-(defn- handle-field-get [db class id field-name request]
-  (if-let [field-fn (resolve-endpoint class field-name whitelisted-fields)]
+(defn- handle-field-get [db schema-name id field-name request]
+  (if-let [field-fn (resolve-endpoint schema-name field-name whitelisted-fields)]
     (let [adapted-field-fn (field-adaptor field-fn)
-          data (adapted-field-fn db class id)]
+          data (adapted-field-fn db schema-name id)]
       (-> {:name id
-           :class class
+           :class schema-name
            :url (:uri request)}
           (assoc (keyword field-name) data)
           (json-response)))
@@ -105,18 +105,18 @@
         (json-response)
         (ring.util.response/status 404))))
 
-(defn- handle-widget-get [db class id widget-name request]
-  (if-let [widget-fn (resolve-endpoint class widget-name whitelisted-widgets)]
+(defn- handle-widget-get [db schema-name id widget-name request]
+  (if-let [widget-fn (resolve-endpoint schema-name widget-name whitelisted-widgets)]
     (let [adapted-widget-fn (widget-adaptor widget-fn)
-          data (adapted-widget-fn db class id)]
+          data (adapted-widget-fn db schema-name id)]
       (-> {:name id
-           :class class
+           :class schema-name
            :url (:uri request)
            :fields data}
           (json-response)))
     (-> {:message (format "%s widget for %s not exist or not available to public"
                           (str/capitalize widget-name)
-                          (str/capitalize class))}
+                          (str/capitalize schema-name))}
         (json-response)
         (ring.util.response/status 404))))
 

@@ -1,6 +1,5 @@
 (ns datomic-rest-api.rest.core
-  (:require [datomic.api :as d :refer (db q touch entity)]
-            [cheshire.core :as c :refer (generate-string)]
+  (:require [datomic.api :as d]
             [clojure.string :as str]))
 
 
