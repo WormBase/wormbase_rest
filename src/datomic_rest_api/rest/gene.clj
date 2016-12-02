@@ -2101,7 +2101,7 @@
        "Not curated")
 
      :locations
-     (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
+     (let [changes (set (mapcat keys (concat cds-changes gene-changes trans-changes)))]
        (filter
         identity
         (map {:molecular-change/intron "Intron"
@@ -2111,7 +2111,7 @@
              changes)))
 
      :effects
-     (let [changes (set (mapcat keys (concat cds-changes gene-changes)))]
+     (let [changes (set (mapcat keys (concat cds-changes gene-changes trans-changes)))]
        (if-let [effect (set (filter
                              identity
                              (map {:molecular-change/missense "Missense"
