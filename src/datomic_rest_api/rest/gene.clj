@@ -420,7 +420,7 @@
        :pato_term pato-term}
       :key pato-id}}))
 
-(defn- get-var-pato-from-holder [holder]
+(defn- get-pato-from-holder [holder]
   (let [sot (for [eq-annotations {"anatomy-term" "anatomy-term"
                                   "life-stage" "life-stage"
                                   "go-term" "go-term"
@@ -437,11 +437,11 @@
     {(str/join "_" (sort (keys var-combo))) (vals var-combo)}))
 
 (defn- get-pato-combinations [db pid rnai-phenos var-phenos not?]
-  (if-let [vp (seq (var-phenos pid))]
-    (let [var-patos (for [v vp
+  (if-let [vp (distinct (concat (rnai-phenos pid) (var-phenos pid)))]
+    (let [patos (for [v vp
                          :let [holder (entity db v)]]
-                     (get-var-pato-from-holder holder))]
-      (apply merge var-patos))))
+                     (get-pato-from-holder holder))]
+      (apply merge patos))))
 
 (defn- phenotype-table-entity [db pheno pato-key entity pid var-phenos rnai-phenos not?]
   {:entity entity
@@ -459,43 +459,45 @@
                    var ((if not?
                           :variation/_phenotype-not-observed
                           :variation/_phenotype)
-                        holder)]]
-         {:text
-          {:class "variation"
-           :id (:variation/id var)
-           :label (:variation/public-name var)
-           :style (if (= (:variation/seqstatus var)
-                         :variation.seqstatus/sequenced)
-                    "font-weight:bold"
-                    0)
-           :taxonomy "c_elegans"}
-          :evidence
-          (vmap
-            :Person_evidence
-            (seq
-              (for [person (:phenotype-info/person-evidence holder)]
-                {:class "person"
-                 :id (:person/id person)
-                 :label (:person/standard-name person)
-                 :taxonomy "all"}))
+                        holder)
+                   var-pato-key  (first (keys (get-pato-from-holder holder)))]]
+         (if (= pato-key var-pato-key)
+           {:text
+            {:class "variation"
+             :id (:variation/id var)
+             :label (:variation/public-name var)
+             :style (if (= (:variation/seqstatus var)
+                           :variation.seqstatus/sequenced)
+                      "font-weight:bold"
+                      0)
+             :taxonomy "c_elegans"}
+            :evidence
+            (vmap
+              :Person_evidence
+              (seq
+                (for [person (:phenotype-info/person-evidence holder)]
+                  {:class "person"
+                   :id (:person/id person)
+                   :label (:person/standard-name person)
+                   :taxonomy "all"}))
 
-            :Curator
-            (seq
-              (for [person (:phenotype-info/curator-confirmed holder)]
-                {:class "person"
-                 :id (:person/id person)
-                 :label (:person/standard-name person)
-                 :taxonomy "all"}))
+              :Curator
+              (seq
+                (for [person (:phenotype-info/curator-confirmed holder)]
+                  {:class "person"
+                   :id (:person/id person)
+                   :label (:person/standard-name person)
+                   :taxonomy "all"}))
 
-            :Paper_evidence
-            (seq
-              (for [paper (:phenotype-info/paper-evidence holder)]
-                (evidence-paper paper)))
+              :Paper_evidence
+              (seq
+                (for [paper (:phenotype-info/paper-evidence holder)]
+                  (evidence-paper paper)))
 
-            :Remark
-            (seq
-              (map :phenotype-info.remark/text
-                   (:phenotype-info/remark holder))))}))
+              :Remark
+              (seq
+                (map :phenotype-info.remark/text
+                     (:phenotype-info/remark holder))))})))
 
      "RNAi:"
      (if-let [rp (seq (rnai-phenos pid))]
@@ -504,18 +506,20 @@
                    rnai ((if not?
                            :rnai/_phenotype-not-observed
                            :rnai/_phenotype)
-                         holder)]]
-         {:text
-          {:class "rnai"
-           :id (:rnai/id rnai)
-           :label (str (parse-int (:rnai/id rnai)))
-           :taxonomy "c_elegans"}
-          :evidence
-          {
-           :genotype (:rnai/genotype rnai)
-           :strain (:strain/id (:rnai/strain rnai))
-           :paper (if-let [paper (:rnai.reference/paper (:rnai/reference rnai))]
-                    (evidence-paper paper))}})))})
+                         holder)
+                   rnai-pato-key  (first (keys (get-pato-from-holder holder)))]]
+         (if (= rnai-pato-key pato-key)
+           {:text
+            {:class "rnai"
+             :id (:rnai/id rnai)
+             :label (str (parse-int (:rnai/id rnai)))
+             :taxonomy "c_elegans"}
+            :evidence
+            {
+             :genotype (:rnai/genotype rnai)
+             :strain (:strain/id (:rnai/strain rnai))
+             :paper (if-let [paper (:rnai.reference/paper (:rnai/reference rnai))]
+                      (evidence-paper paper))}}))))})
 
 (defn- phenotype-table [db gene not?]
   (let [var-phenos (into {} (q (if not?
