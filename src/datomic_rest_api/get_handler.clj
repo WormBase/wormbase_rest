@@ -8,14 +8,19 @@
             [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.util.response :refer (redirect file-response)]
-            [cheshire.core :as json :refer [parse-string]]
+            [cheshire.core :as json :refer (parse-string)]
             [environ.core :refer (env)]
             [mount.core :as mount]
-            [datomic-rest-api.utils.db :refer [datomic-conn]]
+            [datomic-rest-api.utils.db :refer (datomic-conn)]
+            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor)]
             [datomic-rest-api.rest.gene :as gene]
             [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
             [datomic-rest-api.rest.references :refer (get-references)]
             [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
+
+
+(declare handle-field-get)
+(declare handle-widget-get)
 
 (defn app-routes [db]
    (routes
@@ -31,46 +36,20 @@
                       <li>/rest/widget/gene/:id/overview</li>
                       <li>/rest/widget/gene/:id/history</li>
                       <li>/rest/widget/gene/:id/mapping_data</li>
+                      <li>/rest/widget/gene/:id/genetics</li>
                       <li>/rest/widget/gene/:id/phenotype</li>
                     </ul>
                   </html>")
-     (GET "/rest/widget/gene/:id/overview" {params :params}
-         (gene/overview db (:id params) (str "rest/widget/gene/" (:id params) "/overview")))
-     (GET "/rest/widget/gene/:id/history" {params :params}
-         (gene/history db (:id params) (str "rest/widget/gene/" (:id params) "/history")))
-     (GET "/rest/widget/gene/:id/phenotype" {params :params}
-         (gene/phenotypes db (:id params) (str "rest/widget/gene/" (:id params) "/phenotype")))
-;;     (GET "/rest/widget/gene/:id/interactions" {params :params}
-;;         (get-interactions "gene" db (:id params) (str "rest/widget/gene/" (:id params) "/interactions"))) ;; needed work on nodes all - not quite lining up
-;;     (GET "/rest/field/gene/:id/interaction_details" {params :params}
-;;         (get-interaction-details "gene" db (:id params) (str "rest/field/gene/" (:id params) "/interaction_details"))) ;; wormbase is missing data section: why?
-     (GET "/rest/widget/gene/:id/mapping_data" {params :params}
-         (gene/mapping-data db (:id params) (str "rest/widget/gene/" (:id params) "/mapping_data")))
-;;     (GET "/rest/widget/gene/:id/human_diseases" {params :params}
-;;         (gene/human-diseases db (:id params) (str "rest/widget/gene/" (:id params) "/human_disease")))
-;;     (GET "/rest/widget/gene/:id/references" {params :params}
-;;         (get-references "gene" db (:id params) (str "rest/widget/gene/" (:id params) "/references")))
-;;     (GET "/rest/widget/gene/:id/reagents" {params :params}
-;;         (gene/reagents db (:id params) (str "rest/widget/gene/" (:id params) "/reagents"))) ;; looks correct; needs sort to confirm
-;;     (GET "/rest/widget/gene/:id/gene_ontology" {params :params}
-;;         (gene/gene-ontology db (:id params) (str "rest/widget/gene/" (:id params) "/gene_ontology"))) ;; substancially same structure. not producing the same results 
-;;     (GET "/rest/widget/gene/:id/expression" {params :params}
-;;         (gene/expression db (:id params) (str "rest/widget/gene/" (:id params) "/expression"))) ;; This one is predominantly done but needs a little checking and sequence data
-;;     (GET "/rest/widget/gene/:id/homology" {params :params}
-;;         (gene/homology db (:id params) (str "rest/widget/gene/" (:id params) "/homology"))) ;; need to wait for homology data to be added to datomic database
-;;     (GET "/rest/widget/gene/:id/sequences" {params :params}
-;;         (gene/sequences db (:id params) (str "rest/widget/gene/" (:id params) "/sequences")))
-;;     (GET "/rest/widget/gene/:id/feature" {params :params}
-;;         (gene/features db (:id params) (str "rest/widget/gene/" (:id params) "/feature"))) ;; has a few values missing for gbrowse - not sure if needed or possible to get out of datomic
-;;     (GET "/rest/widget/gene/:id/genetics" {params :params}
-;;         (gene/genetics db (:id params) (str "rest/widget/gene/" (:id params) "/genetics"))) ;; looks good need to find rearrangement that exists. Also need to test if works, when does not exist, with Perl template
-     (GET "/rest/widget/gene/:id/external_links" {params :params}
-         (gene/external-links db (:id params) (str "rest/widget/gene/" (:id params) "/external_links")))))
+     (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
+          (handle-widget-get db schema-name id widget-name request))
+     (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
+          (handle-field-get db schema-name id field-name request))))
+
 
 (defn init []
   (print "Making Connection\n")
   (mount/start))
-  
+
 (defn app [request]
   (let [db (d/db datomic-conn)
         handler (app-routes db)]
@@ -83,3 +62,64 @@
       (integer? p) p
       (string? p)  (parse-int p)
        :default default)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; internal functions and helper ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- json-response [data]
+  (-> data
+      (json/generate-string {:pretty true})
+      (ring.util.response/response)
+      (ring.util.response/content-type "application/json")))
+
+(defn- resolve-endpoint [schema-name endpoint-name whitelist]
+  (if-let [fn-name (-> (str/join "/" [schema-name endpoint-name])
+                       (str/replace "_" "-")
+                       (whitelist))]
+    (resolve (symbol (str "datomic-rest-api.rest." fn-name)))))
+
+(def ^{:private true} whitelisted-widgets
+  #{"gene/overview"
+    "gene/external"
+    "gene/genetics"
+    "gene/phenotype"
+    "gene/history"
+    "gene/mapping-data"})
+
+(def ^{:private true} whitelisted-fields
+  #{"gene/alleles-other"
+    "gene/polymorphisms"})
+
+;; start of REST handler for widgets and fields
+
+(defn- handle-field-get [db schema-name id field-name request]
+  (if-let [field-fn (resolve-endpoint schema-name field-name whitelisted-fields)]
+    (let [adapted-field-fn (field-adaptor field-fn)
+          data (adapted-field-fn db schema-name id)]
+      (-> {:name id
+           :class schema-name
+           :url (:uri request)}
+          (assoc (keyword field-name) data)
+          (json-response)))
+    (-> {:message "field not exist or not available to public"}
+        (json-response)
+        (ring.util.response/status 404))))
+
+(defn- handle-widget-get [db schema-name id widget-name request]
+  (if-let [widget-fn (resolve-endpoint schema-name widget-name whitelisted-widgets)]
+    (let [adapted-widget-fn (widget-adaptor widget-fn)
+          data (adapted-widget-fn db schema-name id)]
+      (-> {:name id
+           :class schema-name
+           :url (:uri request)
+           :fields data}
+          (json-response)))
+    (-> {:message (format "%s widget for %s not exist or not available to public"
+                          (str/capitalize widget-name)
+                          (str/capitalize schema-name))}
+        (json-response)
+        (ring.util.response/status 404))))
+
+;; END of REST handler for widgets and fields

@@ -33,4 +33,3 @@
                :query id
                :type "paper"
                :results (map format-paper (take 1000 refs))})})))   ;; Should do some pagination?
-               

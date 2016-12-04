@@ -1,5 +1,7 @@
 NAME := wormbase/datomic-to-catalyst
 VERSION ?= $(shell git describe --abbrev=0 --tags)
+WS_VERSION ?= WS256
+LOWER_WS_VERSION = `echo $(WS_VERSION) | tr A-Z a-z`
 EBX_CONFIG := .ebextensions/.config
 DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " ")
 DEPLOY_JAR := app.jar
@@ -22,7 +24,7 @@ docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
 
 .PHONY: docker-ecr-login
 docker-ecr-login: $(call print-help,docker-ecr-login,"Login to ECR")
-	@eval $(shell aws --profile ${AWS_PROFILE} ecr get-login)
+	@eval $(shell aws ecr get-login)
 
 .PHONY: docker-tag
 docker-tag: $(call print-help,docker-tag,\
@@ -33,24 +35,23 @@ docker-tag: $(call print-help,docker-tag,\
 		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
 .PHONY: docker-push-ecr
-docker-push-ecr: $(call print-help,docker-push-ecr,\
-	           "Push the image tagged with the current git revision\
-	 	    to ECR")
+docker-push-ecr: docker-ecr-login $(call print-help,docker-push-ecr,\
+	                           "Push the image tagged with the \
+                                    current git revision to ECR")
 	@docker push ${FQ_TAG}
 
 .PHONY: eb-create
 eb-create: $(call print-help,eb-create,\
 	    "Create an ElasticBeanStalk environment using \
 	     the Docker platofrm.")
-	@eb create datomic-to-catalyst \
-		--profile=${AWS_PROFILE} \
+	@eb create datomic-to-catalyst-${WS_VERSION} \
 		--region=us-east-1 \
-		--tags="CreatedBy=${AWS_PROFILE},Role=Rest\ API" \
-		--instance_type="c4.xlarge" \
+		--tags="CreatedBy=${AWS_EB_PROFILE},Role=RestAPI" \
+		--instance_type="c3.xlarge" \
+		--cname="datomic-to-catalyst-${LOWER_WS_VERSION}" \
 		--vpc.id="vpc-8e0087e9" \
 		--vpc.ec2subnets="subnet-a33a2bd5" \
 		--vpc.securitygroups="sg-c92644b3" \
-		--vpc.publicip \
 		--single
 
 .PHONY: eb-env

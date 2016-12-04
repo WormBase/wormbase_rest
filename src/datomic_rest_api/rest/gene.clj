@@ -6,45 +6,9 @@
             [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
-            [pseudoace.locatables :refer (root-segment)]))
-
-;; Currently gene-specific, make more general in the future?
-
-(defmacro def-rest-widget
-  "Define a handler for a rest widget endpoint.  `body` is executed with `gene-binding`
-  will bound to the gene's entity-map, and should return a map of field values."
-  [name [gene-binding] & body]
-  `(defn ~name [db# id# uri#]
-     (if-let [~gene-binding (entity db# [:gene/id id#])]
-       {:status 200
-        :content-type "application/json"
-        :body (generate-string
-                {:class "gene"
-                 :name id#
-                 :uri uri#
-                 :fields (do ~@body)}
-                {:pretty true})}
-       {:status 404
-        :content-type "text/plain"
-        :body (format "Can't find gene %s" id#)})))
-
-(defmacro def-rest-widget2
-  "Define a handler for a rest widget endpoint.  `body` is executed with `gene-binding`
-  will bound to the gene's entity-map, and should return a map of field values."
-  [name [gene-binding] & body]
-  `(defn ~name [db# id# uri#]
-     (if-let [~gene-binding (entity db# [:gene/id id#])]
-       {:status 200
-        :content-type "application/json"
-        :body (generate-string
-                {:class "gene"
-                 :name id#
-                 :uri uri#
-                 :reagents (do ~@body)}
-                {:pretty true})}
-       {:status 404
-        :content-type "text/plain"
-        :body (format "Can't find gene %s" id#)})))
+            [pseudoace.locatables :refer (root-segment)]
+            [datomic-rest-api.rest.core :refer [def-rest-widget]]
+            ))
 
 ;;
 ;; "name" field, included on all widgets.
@@ -80,56 +44,56 @@
   (some transcript-types (keys transcript)))
 
 (defn- gene-classification [gene]
-  (let [data
-        (let [db   (d/entity-db gene)
-              cds  (:gene/corresponding-cds gene)
-              data {:defined_by_mutation (if (not (empty? (:variation.gene/_gene gene))) 1 0)
-                    :type (cond
-                            ;; This is pretty-much the reverse order of the Perl code
-                            ;; because we never over-write anything
-                            (q '[:find ?trans .
-                                 :in $ ?gene
-                                 :where [?gene :gene/version-change ?hist]
-                                 [?hist :gene-history-action/transposon-in-origin ?trans]]
-                               db (:db/id gene))
-                            "Transposon in origin"
+ (let [data
+   (let [db   (d/entity-db gene)
+         cds  (:gene/corresponding-cds gene)
+         data {:defined_by_mutation (if (not (empty? (:variation.gene/_gene gene))) 1 0)
+               :type (cond
+                      ;; This is pretty-much the reverse order of the Perl code
+                      ;; because we never over-write anything
+                      (q '[:find ?trans .
+                           :in $ ?gene
+                           :where [?gene :gene/version-change ?hist]
+                                  [?hist :gene-history-action/transposon-in-origin ?trans]]
+                         db (:db/id gene))
+                      "Transposon in origin"
 
-                            (:gene/corresponding-pseudogene gene)
-                            "pseudogene"
+                      (:gene/corresponding-pseudogene gene)
+                      "pseudogene"
 
-                            cds
-                            "protein coding"
+                      cds
+                      "protein coding"
 
-                            :default
-                            (some #(transcript-type (:gene.corresponding-transcript/transcript %))
-                                  (:gene/corresponding-transcript gene)))
-                    :associated_sequence (if (not (empty? cds)) 1 0)
-                    :confirmed (if (q '[:find ?conf-gene .
-                                        :in $ ?conf-gene
-                                        :where [?conf-gene :gene/corresponding-cds ?gc]
-                                        [?gc :gene.corresponding-cds/cds ?cds]
-                                        [?cds :cds/prediction-status :cds.prediction-status/confirmed]]
-                                      db (:db/id gene))
-                                 "Confirmed")}]
-          (assoc data
-                 :prose_description
-                 (str/join " "
-                           (those
-                             (cond
-                               (:associated_sequence data)
-                               "This gene is known only by sequence.")
+                      :default
+                      (some #(transcript-type (:gene.corresponding-transcript/transcript %))
+                            (:gene/corresponding-transcript gene)))
+               :associated_sequence (if (not (empty? cds)) 1 0)
+               :confirmed (if (q '[:find ?conf-gene .
+                                   :in $ ?conf-gene
+                                   :where [?conf-gene :gene/corresponding-cds ?gc]
+                                          [?gc :gene.corresponding-cds/cds ?cds]
+                                          [?cds :cds/prediction-status :cds.prediction-status/confirmed]]
+                                 db (:db/id gene))
+                            "Confirmed")}]
+     (assoc data
+       :prose_description
+       (str/join " "
+         (those
+          (cond
+           (:associated_sequence data)
+           "This gene is known only by sequence.")
 
-                             (cond
-                               (= (:confirmed data) "Confirmed")
-                               "Gene structures have been confirmed by a curator."
+          (cond
+           (= (:confirmed data) "Confirmed")
+           "Gene structures have been confirmed by a curator."
 
-                               (:gene/matching-cdna gene)
-                               "Gene structures have been confirmed by matching cDNA."
+           (:gene/matching-cdna gene)
+           "Gene structures have been confirmed by matching cDNA."
 
-                               :default
-                               "Gene structures have not been confirmed.")))))]
-    {:data (if (empty? data) nil data)
-     :description "gene type and status"}))
+           :default
+           "Gene structures have not been confirmed.")))))]
+  {:data (if (empty? data) nil data)
+   :description "gene type and status"}))
 
 (defn- gene-class [gene]
   {:data
@@ -147,14 +111,14 @@
    :description "Operon the gene is contained in"})
 
 (defn- gene-cluster [gene]
-  {:data
-   (if-let [data (->> (:gene/main-name/text gene))] data)
-   :description "The gene cluster for this gene"})
+   {:data
+     (if-let [data (->> (:gene/main-name/text gene))] data)
+    :description "The gene cluster for this gene"})
 
 (defn- gene-other-names [gene]
-  {:data (if-let [data (map #(get % "gene.other-name/text") (:gene/other-name gene))]
-           data)
-   :description (format "other names that have been used to refer to %s" (:gene/id gene))})
+   {:data (if-let [data (map #(get % "gene.other-name/text") (:gene/other-name gene))]
+             data)
+    :description (format "other names that have been used to refer to %s" (:gene/id gene))})
 
 (defn- gene-status [gene]
   {:data (if-let [class (:gene/status gene)]
@@ -776,23 +740,22 @@
           db id)
        (map (partial entity db))
        (map
-         (fn [tp]
-           {:mapper     (datomic-rest-api.rest.object/pack-obj "author" (first (:two-point-data/mapper tp)))
-            :date       (datomic-rest-api.helpers/format-date (:two-point-data/date tp))
-            :raw_data   (:two-point-data/results tp)
-            :genotype   (:two-point-data/genotype tp)
-            :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
-                          (if (empty? comment) "" comment ))
-            :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
-                                (or (:two-point-data/calc-lower-conf tp) "0")
-                                (or (:two-point-data/calc-upper-conf tp) "0"))
-            :point_1    (let [p1 (:two-point-data/gene-1 tp)]
-                          (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-1/gene p1))
-                                        (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
-            :point_2    (let [p2 (:two-point-data/gene-2 tp)]
-                          (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-2/gene p2))
-                                        (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}
-           ))))
+        (fn [tp]
+          {:mapper     (datomic-rest-api.rest.object/pack-obj "author" (first (:two-point-data/mapper tp)))
+           :date       (datomic-rest-api.helpers/format-date (:two-point-data/date tp))
+           :raw_data   (:two-point-data/results tp)
+           :genotype   (:two-point-data/genotype tp)
+           :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
+                         (if (empty? comment) "" comment ))
+           :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
+                               (or (:two-point-data/calc-lower-conf tp) "0")
+                               (or (:two-point-data/calc-upper-conf tp) "0"))
+           :point_1    (let [p1 (:two-point-data/gene-1 tp)]
+                         (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-1/gene p1))
+                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
+           :point_2    (let [p2 (:two-point-data/gene-2 tp)]
+                         (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-2/gene p2))
+                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}))))
 
 (defn gene-mapping-posneg
   [db id]
@@ -806,31 +769,31 @@
           db id)
        (map (partial entity db))
        (map
-         (fn [pn]
-           (let [items (->> [(datomic-rest-api.rest.object/pack-obj ((some-fn (comp :pos-neg-data.gene-1/gene :pos-neg-data/gene-1)
-                                                                              (comp :pos-neg-data.locus-1/locus :pos-neg-data/locus-1)
-                                                                              :pos-neg-data/allele-1
-                                                                              :pos-neg-data/clone-1
-                                                                              :pos-neg-data/rearrangement-1)
-                                                                     pn))
-                             (datomic-rest-api.rest.object/pack-obj ((some-fn (comp :pos-neg-data.gene-2/gene :pos-neg-data/gene-2)
-                                                                              (comp :pos-neg-data.locus-2/locus :pos-neg-data/locus-2)
-                                                                              :pos-neg-data/allele-2
-                                                                              :pos-neg-data/clone-2
-                                                                              :pos-neg-data/rearrangement-2)
-                                                                     pn))]
-                            (map (juxt :label identity))
-                            (into {}))
-                 result (str/split (:pos-neg-data/results pn) #"\s+")]
-             {:mapper    (datomic-rest-api.rest.object/pack-obj "author" (first (:pos-neg-data/mapper pn)))
-              :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
-                            (if (empty? comment) "" comment ))
-              :date      (datomic-rest-api.helpers/format-date (:pos-neg-data/date pn))
-              :result    (map #(or (items (str/replace % #"\." ""))
-                                   (str % " "))
-                              result)})
+        (fn [pn]
+          (let [items (->> [(datomic-rest-api.rest.object/pack-obj ((some-fn (comp :pos-neg-data.gene-1/gene :pos-neg-data/gene-1)
+                                                (comp :pos-neg-data.locus-1/locus :pos-neg-data/locus-1)
+                                                :pos-neg-data/allele-1
+                                                :pos-neg-data/clone-1
+                                                :pos-neg-data/rearrangement-1)
+                                       pn))
+                            (datomic-rest-api.rest.object/pack-obj ((some-fn (comp :pos-neg-data.gene-2/gene :pos-neg-data/gene-2)
+                                                (comp :pos-neg-data.locus-2/locus :pos-neg-data/locus-2)
+                                                :pos-neg-data/allele-2
+                                                :pos-neg-data/clone-2
+                                                :pos-neg-data/rearrangement-2)
+                                       pn))]
+                           (map (juxt :label identity))
+                           (into {}))
+                result (str/split (:pos-neg-data/results pn) #"\s+")]
+          {:mapper    (datomic-rest-api.rest.object/pack-obj "author" (first (:pos-neg-data/mapper pn)))
+           :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
+                          (if (empty? comment) "" comment ))
+           :date      (datomic-rest-api.helpers/format-date (:pos-neg-data/date pn))
+           :result    (map #(or (items (str/replace % #"\." ""))
+                                (str % " "))
+                           result)})
 
-           ))))
+          ))))
 
 (defn gene-mapping-multipt
   [db id]
@@ -855,42 +818,42 @@
                                         first
                                         :multi-pt-data.remark/text)]
                        (if (empty? comment) "" comment))
-            :mapper   (datomic-rest-api.rest.object/pack-obj "author" (first (:multi-pt-data/mapper mp)))
-            :date     (if (nil? (:multi-pt-data/date mp)) "" (datomic-rest-api.helpers/format-date3 (str (:multi-pt-data/date mp))))
-            :genotype (:multi-pt-data/genotype mp)
-            :result   (let [res (loop [node (:multi-pt-data/combined mp)
-                                       res  []]
-                                  (cond
-                                    (:multi-counts/gene node)
-                                    (let [obj (:multi-counts/gene node)]
-                                      (recur obj (conj res [(:multi-counts.gene/gene obj)
-                                                            (:multi-counts.gene/int obj)])))
+           :mapper   (datomic-rest-api.rest.object/pack-obj "author" (first (:multi-pt-data/mapper mp)))
+           :date     (if (nil? (:multi-pt-data/date mp)) "" (datomic-rest-api.helpers/format-date3 (str (:multi-pt-data/date mp))))
+           :genotype (:multi-pt-data/genotype mp)
+           :result   (let [res (loop [node (:multi-pt-data/combined mp)
+                                      res  []]
+                                 (cond
+                                  (:multi-counts/gene node)
+                                  (let [obj (:multi-counts/gene node)]
+                                    (recur obj (conj res [(:multi-counts.gene/gene obj)
+                                                          (:multi-counts.gene/int obj)])))
 
-                                    :default res))
-                            tot (->> (map second res)
-                                     (filter identity)
-                                     (reduce +))
-                            sum (atom 0)
-                            open-paren (atom 0)]
-                        (->>
-                          (mapcat
-                            (fn [[obj count]]
-                              [(if (and (= @open-paren 0) (= count 0) (< @sum tot))
-                                 (do
-                                   (swap! open-paren inc)
-                                   "("))
-                               (datomic-rest-api.rest.object/pack-obj obj)
-                               (if (and (not (= count 0)) (= @open-paren 1))
-                                 (do
-                                   (reset! open-paren 0)
-                                   ")"))
-                               (if (and count (not (= count 0)))
-                                 (do
-                                   (swap! sum (fn[n] (+ n count)))
-                                   (str " (" count "/" tot ") ")))])
-                            res)
-                          (filter identity)))}
-           ))))
+                                  :default res))
+                           tot (->> (map second res)
+                                    (filter identity)
+                                    (reduce +))
+                           sum (atom 0)
+                           open-paren (atom 0)]
+                       (->>
+                        (mapcat
+                         (fn [[obj count]]
+                           [(if (and (= @open-paren 0) (= count 0) (< @sum tot))
+                              (do
+                                (swap! open-paren inc)
+                                "("))
+                            (datomic-rest-api.rest.object/pack-obj obj)
+                            (if (and (not (= count 0)) (= @open-paren 1))
+                              (do
+                                (reset! open-paren 0)
+                                ")"))
+                            (if (and count (not (= count 0)))
+                              (do
+                               (swap! sum (fn[n] (+ n count)))
+                               (str " (" count "/" tot ") ")))])
+                         res)
+                        (filter identity)))}
+          ))))
 
 (def-rest-widget mapping-data [gene]
   {:name      (name-field gene)
@@ -923,33 +886,33 @@
 
       :experimental_model
       (seq
-        (for [d (:gene/disease-experimental-model gene)]
-          (assoc (datomic-rest-api.rest.object/pack-obj (:gene.disease-experimental-model/do-term d))
-                 :ev (datomic-rest-api.rest.object/get-evidence d))))
+       (for [d (:gene/disease-experimental-model gene)]
+         (assoc (datomic-rest-api.rest.object/pack-obj (:gene.disease-experimental-model/do-term d))
+           :ev (datomic-rest-api.rest.object/get-evidence d))))
 
       :gene
       (seq
-        (q '[:find [?o ...]
-             :in $ ?gene
-             :where [?gene :gene/database ?dbent]
-             [?omim :database/id "OMIM"]
-             [?field :database-field/id "gene"]
-             [?dbent :gene.database/database ?omim]
-             [?dbent :gene.database/field ?field]
-             [?dbent :gene.database/accession ?o]]
-           db (:db/id gene)))
+       (q '[:find [?o ...]
+            :in $ ?gene
+            :where [?gene :gene/database ?dbent]
+                   [?omim :database/id "OMIM"]
+                   [?field :database-field/id "gene"]
+                   [?dbent :gene.database/database ?omim]
+                   [?dbent :gene.database/field ?field]
+                   [?dbent :gene.database/accession ?o]]
+          db (:db/id gene)))
 
       :disease
       (seq
-        (q '[:find [?o ...]
-             :in $ ?gene
-             :where [?gene :gene/database ?dbent]
-             [?omim :database/id "OMIM"]
-             [?field :database-field/id "disease"]
-             [?dbent :gene.database/database ?omim]
-             [?dbent :gene.database/field ?field]
-             [?dbent :gene.database/accession ?o]]
-           db (:db/id gene)))}}))
+       (q '[:find [?o ...]
+            :in $ ?gene
+            :where [?gene :gene/database ?dbent]
+                   [?omim :database/id "OMIM"]
+                   [?field :database-field/id "disease"]
+                   [?dbent :gene.database/database ?omim]
+                   [?dbent :gene.database/field ?field]
+                   [?dbent :gene.database/accession ?o]]
+          db (:db/id gene)))}}))
 
 
 (def-rest-widget human-diseases [gene]
@@ -962,19 +925,18 @@
 ;;
 
 #_(defn locatable-root-segment [loc]
-    (loop [parent (:locatable/parent loc)
-           min    (:locatable/min    loc)
-           max    (:locatable/max    loc)]
-      (if parent
-        (if-let [ss (first (:sequence.subsequence/_sequence parent))]
-          (recur (:sequence/_subsequence ss)
-                 (+ min (:sequence.subsequence/start ss) -1)
-                 (+ max (:sequence.subsequence/start ss) -1))
-          {:sequence (:sequence/id parent)
-           :seq-id   (:db/id parent)
-           :min      min
-           :max      max}))))
-
+  (loop [parent (:locatable/parent loc)
+         min    (:locatable/min    loc)
+         max    (:locatable/max    loc)]
+    (if parent
+      (if-let [ss (first (:sequence.subsequence/_sequence parent))]
+        (recur (:sequence/_subsequence ss)
+               (+ min (:sequence.subsequence/start ss) -1)
+               (+ max (:sequence.subsequence/start ss) -1))
+        {:sequence (:sequence/id parent)
+         :seq-id   (:db/id parent)
+         :min      min
+         :max      max}))))
 
 ;;
 ;; Reagents widget
@@ -994,29 +956,29 @@
               :used_in   (datomic-rest-api.rest.object/pack-obj "transgene" (first (:construct/transgene-construct construct)))
               :use_summary (:construct/summary construct)}]
     (cond-let [use]
-              (:construct/transgene-construct construct)
-              (for [t use]
-                (assoc base :used_in_type "Transgene construct"
-                       :use_summary (:transgene.summary/text (:transgene/summary t))
-                       :used_in     (datomic-rest-api.rest.object/pack-obj "transgene" t)
-                       :use_lab     (or (transgene-labs t)
-                                        (construct-labs construct)
-                                        [])))
+      (:construct/transgene-construct construct)
+      (for [t use]
+        (assoc base :used_in_type "Transgene construct"
+                    :use_summary (:transgene.summary/text (:transgene/summary t))
+                    :used_in     (datomic-rest-api.rest.object/pack-obj "transgene" t)
+                    :use_lab     (or (transgene-labs t)
+                                     (construct-labs construct)
+                                     [])))
 
-              (:construct/transgene-coinjection construct)
-              (for [t use]
-                (assoc base :used_in_type "Transgene coinjection"
-                       :use_summary (:transgene.summary/text (:transgene/summary t))
-                       :used_in     (datomic-rest-api.rest.object/pack-obj "transgene" t)
-                       :use_lab     (or (transgene-labs t)
-                                        (construct-labs construct)
-                                        [])))
+      (:construct/transgene-coinjection construct)
+      (for [t use]
+        (assoc base :used_in_type "Transgene coinjection"
+                    :use_summary (:transgene.summary/text (:transgene/summary t))
+                    :used_in     (datomic-rest-api.rest.object/pack-obj "transgene" t)
+                    :use_lab     (or (transgene-labs t)
+                                     (construct-labs construct)
+                                      [])))
 
-              (:construct/engineered-variation construct)
-              (for [v use]
-                (assoc base :used_in_type "Engineered variation"
-                       :used_in      (datomic-rest-api.rest.object/pack-obj "variation" v)
-                       :use_lab      (construct-labs construct))))))
+      (:construct/engineered-variation construct)
+      (for [v use]
+        (assoc base :used_in_type "Engineered variation"
+                    :used_in      (datomic-rest-api.rest.object/pack-obj "variation" v)
+                    :use_lab      (construct-labs construct))))))
 
 (defn- transgenes [gene]
   (let [db (d/entity-db gene)]
@@ -1103,14 +1065,14 @@
      :description "antibodies generated against protein products or gene fusions"}))
 
 #_(def ^:private child-rule  '[[(child ?parent ?min ?max ?method ?c) [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
-                                [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
-                                [?c :locatable/xbin ?xbin]
-                                [?c :locatable/parent ?parent]
-                                [?c :pcr-product/method ?method]
-                                [?c :locatable/min ?cmin]
-                                [?c :locatable/max ?cmax]
-                                [(<= ?cmin ?max)]
-                                [(>= ?cmax ?min)]]])
+                                                                   [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
+                                                                   [?c :locatable/xbin ?xbin]
+                                                                   [?c :locatable/parent ?parent]
+                                                                   [?c :pcr-product/method ?method]
+                                                                   [?c :locatable/min ?cmin]
+                                                                   [?c :locatable/max ?cmax]
+                                                                   [(<= ?cmin ?max)]
+                                                                   [(>= ?cmax ?min)]]])
 
 (def ^:private child-rule
   '[[(child ?parent ?min ?max ?method ?c) [?parent :sequence/id ?seq-name]
@@ -1136,7 +1098,7 @@
        (->> (q '[:find [?p ...]
                  :in $ % ?seq ?min ?max
                  :where [?method :method/id "Orfeome"]
-                 (or-join [?seq ?min ?max ?method ?p]
+                        (or-join [?seq ?min ?max ?method ?p]
                           (and
                             [?ss-seq :locatable/assembly-parent ?seq]
                             [?ss-seq :locatable/min ?ss-min]
@@ -1167,7 +1129,7 @@
        (->> (q '[:find [?p ...]
                  :in $ % ?seq ?min ?max
                  :where [?method :method/id "GenePairs"]
-                 (or-join [?seq ?min ?max ?method ?p]
+                        (or-join [?seq ?min ?max ?method ?p]
                           (and
                             [?ss-seq :locatable/assembly-parent ?seq]
                             [?ss-seq :locatable/min ?ss-min]
@@ -1197,7 +1159,7 @@
    :description
    "SAGE tags identified"})
 
-(def-rest-widget2 reagents [gene]
+(def-rest-widget reagents [gene]
   {:name               (name-field gene)
    :transgenes         (transgenes gene)
    :transgene_products (transgene-products gene)
@@ -1222,89 +1184,77 @@
       {:anno_id
        (:go-annotation/id anno)
 
-       :extensions
-       (->>
-         (concat
-           (for [{rel :go-annotation.molecule-relation/text
-                  mol :go-annotation.molecule-relation/molecule}
-                 (:go-annotation/molecule-relation anno)]
-             [rel (datomic-rest-api.rest.object/pack-obj "molecule" mol)]))
-         (reduce
-           (fn [m [rel obj]]
-             (assoc m rel obj))
-           nil))
-
-       :with
-       (seq
-         (concat
-           (map (partial datomic-rest-api.rest.object/pack-obj "gene")      (:go-annotation/interaction-gene anno))
-           (map (partial datomic-rest-api.rest.object/pack-obj "go-term")   (:go-annotation/inferred-from-go-term anno))
-           (map (partial datomic-rest-api.rest.object/pack-obj "motif")     (:go-annotation/motif anno))
-           (map (partial datomic-rest-api.rest.object/pack-obj "rnai")      (:go-annotation/rnai-result anno))
-           (map (partial datomic-rest-api.rest.object/pack-obj "variation") (:go-annotation/variation anno))
-           (map (partial datomic-rest-api.rest.object/pack-obj "phenotype") (:go-annotation/phenotype anno))
-           ;; Also DB fields...
-           ))
+      :with
+      (seq
+       (concat
+        (map (partial datomic-rest-api.rest.object/pack-obj "gene")      (:go-annotation/interaction-gene anno))
+        (map (partial datomic-rest-api.rest.object/pack-obj "go-term")   (:go-annotation/inferred-from-go-term anno))
+        (map (partial datomic-rest-api.rest.object/pack-obj "motif")     (:go-annotation/motif anno))
+        (map (partial datomic-rest-api.rest.object/pack-obj "rnai")      (:go-annotation/rnai-result anno))
+        (map (partial datomic-rest-api.rest.object/pack-obj "variation") (:go-annotation/variation anno))
+        (map (partial datomic-rest-api.rest.object/pack-obj "phenotype") (:go-annotation/phenotype anno))
+        ;; Also DB fields...
+        ))
 
 
-       :evidence_code
-       {:text
-        (:go-code/id code)
+      :evidence_code
+      {:text
+       (:go-code/id code)
 
-        :evidence
-        (vmap
-          :Date_last_updated
-          (if-let [d (:go-annotation/date-last-updated anno)]
-            [{:class "text"
-              :id (datomic-rest-api.helpers/format-date3 (str d))
-              :label (datomic-rest-api.helpers/format-date3 (str d))}])
+       :evidence
+       (vmap
+        :Date_last_updated
+        (if-let [d (:go-annotation/date-last-updated anno)]
+          [{:class "text"
+           :id (datomic-rest-api.helpers/format-date3 (str d))
+           :label (datomic-rest-api.helpers/format-date3 (str d))}])
 
-          :Contributed_by
-          [(datomic-rest-api.rest.object/pack-obj "analysis"
-                                                  (:go-annotation/contributed-by anno))]
-          :Reference
-          (if (:go-annotation/reference anno)
-            [(datomic-rest-api.rest.object/pack-obj "paper"
-                                                    (:go-annotation/reference anno))])
+        :Contributed_by
+           [(datomic-rest-api.rest.object/pack-obj "analysis"
+                (:go-annotation/contributed-by anno))]
+        :Reference
+         (if (:go-annotation/reference anno)
+           [(datomic-rest-api.rest.object/pack-obj "paper"
+                  (:go-annotation/reference anno))])
 
-          :GO_reference
-          (if (:go-annotation/go-term-relation anno)
+        :GO_reference
+         (if (:go-annotation/go-term-relation anno)
             (concat
-              (for [{rel :go-annotation.go-term-relation/text
-                     gt :go-annotation.go-term-relation/go-term}
-                    (:go-annotation/go-term-relation anno)]
-                {:class "Gene Ontology Consortium"
-                 :dbt "GO_REF"
-                 :id (:go-term/id gt)
-                 :label (:go-term/id gt) }))))}
+             (for [{rel :go-annotation.go-term-relation/text
+                    gt :go-annotation.go-term-relation/go-term}
+                   (:go-annotation/go-term-relation anno)]
+                    {:class "Gene Ontology Consortium"
+                     :dbt "GO_REF"
+                     :id (:go-term/id gt)
+                     :label (:go-term/id gt) }))))}
 
-       :go_type
-       (if-let [go-type (:go-term/type term)]
-         (division-names go-type))
+      :go_type
+      (if-let [go-type (:go-term/type term)]
+           (division-names go-type))
 
-       :term-test  (:go-annotation/molecule-relation anno)
+      :term-test  (:go-annotation/molecule-relation anno)
 
-       :term
-       (if (:go-annotation/molecule-relation anno)
-         [(vmap
-            :evidence
-            (->>
-              (concat
-                (for [{rel :go-annotation.molecule-relation/text
-                       mol :go-annotation.molecule-relation/molecule}
-                      (:go-annotation/molecule-relation anno)]
-                  [rel (datomic-rest-api.rest.object/pack-obj "molecule" mol)]))
-              (reduce
-                (fn [m [rel obj]]
-                  (assoc m rel obj))
-                nil)))])
+      :term
+      (if (:go-annotation/molecule-relation anno)
+      [(vmap
+       :evidence
+       (->>
+        (concat
+         (for [{rel :go-annotation.molecule-relation/text
+                mol :go-annotation.molecule-relation/molecule}
+               (:go-annotation/molecule-relation anno)]
+           [rel (datomic-rest-api.rest.object/pack-obj "molecule" mol)]))
+        (reduce
+         (fn [m [rel obj]]
+           (assoc m rel obj))
+         nil)))])
 
-       :term_id
-       (datomic-rest-api.rest.object/pack-obj "go-term" term :label (:go-term/id term))
+      :term_id
+      (datomic-rest-api.rest.object/pack-obj "go-term" term :label (:go-term/id term))
 
-       :term_description
-       (datomic-rest-api.rest.object/pack-obj "go-term" term)})
-    annos))
+      :term_description
+      (datomic-rest-api.rest.object/pack-obj "go-term" term)})
+   annos))
 
 (defn- gene-ontology-full [gene]
   (let [db (d/entity-db gene)]
@@ -1341,37 +1291,37 @@
       (fn [[term annos]]
         {:extensions ""
 
-         :term_id
-         (datomic-rest-api.rest.object/pack-obj "go-term" term :label (:go-term/id term))
+       :term_id
+       (datomic-rest-api.rest.object/pack-obj "go-term" term :label (:go-term/id term))
 
-         :term_description
-         (datomic-rest-api.rest.object/pack-obj "go-term" term)}))))
+       :term_description
+       (datomic-rest-api.rest.object/pack-obj "go-term" term)}))))
 
 (defn- gene-ontology-summary [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find ?div ?term ?anno
-            :in $ ?gene
-            :where [?anno :go-annotation/gene ?gene]
-            [?anno :go-annotation/go-term ?term]
-            [?term :go-term/type ?tdiv]
-            [?tdiv :db/ident ?div]]
-          db (:db/id gene))
-       (map
-         (fn [[div term code anno]]
-           {:division div
-            :term     (entity db term)
-            :anno     (entity db anno)}))
-       (group-by :division)
-       (map
-         (fn [[key annos]]
-           [(division-names key)
-            (term-summary-table db annos)]))
-       (into {}))
+ (let [db (d/entity-db gene)]
+  {:data
+   (->>
+    (q '[:find ?div ?term ?anno
+         :in $ ?gene
+         :where [?anno :go-annotation/gene ?gene]
+                [?anno :go-annotation/go-term ?term]
+                [?term :go-term/type ?tdiv]
+                [?tdiv :db/ident ?div]]
+       db (:db/id gene))
+    (map
+     (fn [[div term code anno]]
+       {:division div
+        :term     (entity db term)
+        :anno     (entity db anno)}))
+    (group-by :division)
+    (map
+     (fn [[key annos]]
+       [(division-names key)
+        (term-summary-table db annos)]))
+    (into {}))
 
-     :description
-     "gene ontology associations"}))
+   :description
+   "gene ontology associations"}))
 
 (def-rest-widget gene-ontology [gene]
   {:name                   (name-field gene)
@@ -1413,66 +1363,66 @@
   (let [db (d/entity-db gene)]
     {:data
      (->>
-       (q '[:find [?ep ...]
-            :in $ ?gene
-            :where [?epg :expr-pattern.gene/gene ?gene]
-            [?ep :expr-pattern/gene ?epg]
-            (not
-              [?ep :expr-pattern/microarray _])
-            (not
-              [?ep :expr-pattern/tiling-array _])]
-          db (:db/id gene))
-       (map
-         (fn [ep-id]
-           (let [ep (entity db ep-id)]
-             (vmap
-               :expression_pattern
-               (datomic-rest-api.rest.object/pack-obj "expr-pattern" ep)
+      (q '[:find [?ep ...]
+           :in $ ?gene
+           :where [?epg :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?epg]
+                  (not
+                    [?ep :expr-pattern/microarray _])
+                  (not
+                    [?ep :expr-pattern/tiling-array _])]
+         db (:db/id gene))
+      (map
+       (fn [ep-id]
+         (let [ep (entity db ep-id)]
+           (vmap
+            :expression_pattern
+            (datomic-rest-api.rest.object/pack-obj "expr-pattern" ep)
 
-               :description
-               (if-let [desc (or (:expr-pattern/pattern ep)
-                                 (:expr-pattern/subcellular-localization ep)
-                                 (:expr-pattern.remark/text (:expr-pattern/remark ep)))]
-                 {:text desc
-                  :evidence (vmap
-                              :Reference (datomic-rest-api.rest.object/pack-obj "paper" (first (:expr-pattern/reference ep))))})
+            :description
+            (if-let [desc (or (:expr-pattern/pattern ep)
+                              (:expr-pattern/subcellular-localization ep)
+                              (:expr-pattern.remark/text (:expr-pattern/remark ep)))]
+              {:text desc
+               :evidence (vmap
+                          :Reference (datomic-rest-api.rest.object/pack-obj "paper" (first (:expr-pattern/reference ep))))})
 
-               :type
-               (datomic-rest-api.rest.object/humanize-ident (expr-pattern-type ep))
+            :type
+            (datomic-rest-api.rest.object/humanize-ident (expr-pattern-type ep))
 
-               :expressed_in
-               (map #(datomic-rest-api.rest.object/pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
-                    (:expr-pattern/anatomy-term ep))
+            :expressed_in
+            (map #(datomic-rest-api.rest.object/pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
+                 (:expr-pattern/anatomy-term ep))
 
-               :life_stage
-               (map #(datomic-rest-api.rest.object/pack-obj "life-stage" (:expr-pattern.life-stage/life-stage %))
-                    (:expr-pattern/life-stage ep))
+            :life_stage
+            (map #(datomic-rest-api.rest.object/pack-obj "life-stage" (:expr-pattern.life-stage/life-stage %))
+                 (:expr-pattern/life-stage ep))
 
-               :go_term
-               (if-let [go (:expr-pattern/go-term ep)]
-                 {:text (map #(datomic-rest-api.rest.object/pack-obj "go-term" (:expr-pattern.go-term/go-term %)) go)
-                  :evidence {"Subcellular localization" (:expr-pattern/subcellular-localization ep)}})
+            :go_term
+            (if-let [go (:expr-pattern/go-term ep)]
+              {:text (map #(datomic-rest-api.rest.object/pack-obj "go-term" (:expr-pattern.go-term/go-term %)) go)
+               :evidence {"Subcellular localization" (:expr-pattern/subcellular-localization ep)}})
 
-               :transgene
-               (if (:expr-pattern/transgene ep)
-                 (map
-                   (fn [tg]
-                     (let [packed (datomic-rest-api.rest.object/pack-obj "transgene" tg)
-                           cs     (:transgene/construction-summary tg)]
-                       (if cs
-                         {:text packed
-                          :evidence {:Construction_summary cs}}
-                         packed)))
-                   (:expr-pattern/transgene ep))
-                 (map
-                   (fn [cons]
-                     (let [packed (datomic-rest-api.rest.object/pack-obj "construct" cons)
-                           cs     (:construct/construction-summary cons)]
-                       (if cs
-                         {:text packed
-                          :evidence {:Construction_summary cs}}
-                         packed)))
-                   (:expr-pattern/construct ep)))))
+            :transgene
+            (if (:expr-pattern/transgene ep)
+              (map
+               (fn [tg]
+                 (let [packed (datomic-rest-api.rest.object/pack-obj "transgene" tg)
+                       cs     (:transgene/construction-summary tg)]
+                   (if cs
+                     {:text packed
+                      :evidence {:Construction_summary cs}}
+                     packed)))
+               (:expr-pattern/transgene ep))
+              (map
+               (fn [cons]
+                 (let [packed (datomic-rest-api.rest.object/pack-obj "construct" cons)
+                       cs     (:construct/construction-summary cons)]
+                   (if cs
+                     {:text packed
+                      :evidence {:Construction_summary cs}}
+                     packed)))
+               (:expr-pattern/construct ep)))))
 
            )))
      :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
@@ -1501,90 +1451,90 @@
 
 (defn- anatomy-function [gene]
   (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?af ...]
-            :in $ ?gene
-            :where [?afg :anatomy-function.gene/gene ?gene]
-            [?af :anatomy-function/gene ?afg]]
-          db (:db/id gene))
-       (map
-         (fn [af-id]
-           (let [af (entity db af-id)]
-             {:anatomy-function (datomic-rest-api.rest.object/pack-obj "expression-cluster" af)})))) ;; need to still make this packed object - so far have not seen an exmample of it filled in
-     :description "anatomy functions associatated with this gene"}))
+   {:data
+    (->>
+     (q '[:find [?af ...]
+          :in $ ?gene
+          :where [?afg :anatomy-function.gene/gene ?gene]
+                 [?af :anatomy-function/gene ?afg]]
+        db (:db/id gene))
+      (map
+       (fn [af-id]
+        (let [af (entity db af-id)]
+           {:anatomy-function (datomic-rest-api.rest.object/pack-obj "expression-cluster" af)})))) ;; need to still make this packed object - so far have not seen an exmample of it filled in
+      :description "anatomy functions associatated with this gene"}))
 
 ;; I haven't found an example for this to show that it works
 (defn- curated-images [ep]
-  (let [images (:picture/expr_pattern ep)]
-    (map
+ (let [images (:picture/expr_pattern ep)]
+     (map
       (fn [image]
         (datomic-rest-api.rest.object/pack-obj "picture" image))
       images)))
 
 (defn- expression-profiling-graphs [gene]
   (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?ep ...]
-            :in $ ?gene
-            :where [?epg :expr-pattern.gene/gene ?gene]
-            [?ep :expr-pattern/gene ?epg]]
-          db (:db/id gene))
-       (map
-         (fn [ep-id]
-           (let [ep (entity db ep-id)]
-             {;;:data-test {:id (:expr-pattern/id ep)
-              ;;                    :gene (:expr-pattern/gene ep) }
-              ;;                    :rnaseq (:expr-pattern/rnaseq ep)
-              ;;                  :pattern (:expr-pattern/pattern ep)
-              ;;                :reference (:expr-pattern/reference ep)}
-              ;;           :data (keys ep)
-              :database nil
-              :description nil
-              :expressed_in nil
-              :expression_pattern {:class "expr_pattern"
-                                   :curated_images (curated-images ep) ;; should be array of pack-obj (datomic-rest-api.rest.object/pack-obj "picture )
-                                   :id (:expr-pattern/id ep)
-                                   :label (:expr-pattern/id ep)
-                                   :taxonomy "all"}
-              :go_term (first (:expr-pattern/go-term ep)) ;; need to see example
-              :life_stage (:expr-pattern/life-stage ep) ;; need to see example
-              :transgene (:expr-pattern/transgene ep) ;; need to see example
-              :type (expr-pattern-type ep)}))))
-     :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
+   {:data
+    (->>
+     (q '[:find [?ep ...]
+          :in $ ?gene
+          :where [?epg :expr-pattern.gene/gene ?gene]
+                 [?ep :expr-pattern/gene ?epg]]
+        db (:db/id gene))
+      (map
+       (fn [ep-id]
+        (let [ep (entity db ep-id)]
+          {;;:data-test {:id (:expr-pattern/id ep)
+  ;;                    :gene (:expr-pattern/gene ep) }
+  ;;                    :rnaseq (:expr-pattern/rnaseq ep)
+    ;;                  :pattern (:expr-pattern/pattern ep)
+      ;;                :reference (:expr-pattern/reference ep)}
+;;           :data (keys ep)
+            :database nil
+           :description nil
+           :expressed_in nil
+           :expression_pattern {:class "expr_pattern"
+                                :curated_images (curated-images ep) ;; should be array of pack-obj (datomic-rest-api.rest.object/pack-obj "picture )
+                                :id (:expr-pattern/id ep)
+                                :label (:expr-pattern/id ep)
+                                :taxonomy "all"}
+           :go_term (first (:expr-pattern/go-term ep)) ;; need to see example
+           :life_stage (:expr-pattern/life-stage ep) ;; need to see example
+           :transgene (:expr-pattern/transgene ep) ;; need to see example
+           :type (expr-pattern-type ep)}))))
+    :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
 
 (defn- fourd-expression-movies [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
-       (q '[:find [?ep ...]
-            :in $ ?gene
-            :where [?epg :expr-pattern.gene/gene ?gene]
-            [?ep :expr-pattern/gene ?epg]
-            ;;                 [?ep :expr-pattern/author ?author]
-            ;;                 [(re-find #".*Mohler.*" ?author)]
-            (not
-              [?ep :expr-pattern/microarray _])
-            (not
-              [?ep :expr-pattern/tiling-array _])]
-          db (:db/id gene))
-       (map
-         (fn [ep-id]
-           (let [ep (entity db ep-id)]
-             (vmap
-               :movie
-               (first (:expr-pattern/movieurl ep))
+      (q '[:find [?ep ...]
+           :in $ ?gene
+           :where [?epg :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?epg]
+ ;;                 [?ep :expr-pattern/author ?author]
+ ;;                 [(re-find #".*Mohler.*" ?author)]
+                  (not
+                    [?ep :expr-pattern/microarray _])
+                  (not
+                    [?ep :expr-pattern/tiling-array _])]
+         db (:db/id gene))
+      (map
+       (fn [ep-id]
+         (let [ep (entity db ep-id)]
+           (vmap
+              :movie
+                (first (:expr-pattern/movieurl ep))
 
-               :test
-               (expr-pattern-type ep)
+              :test
+                   (expr-pattern-type ep)
 
-               :details
-               (:expr-pattern/pattern ep)
+              :details
+                (:expr-pattern/pattern ep)
 
-               :object "movie")))))
+              :object "movie")))))
 
-     :description "interactive 4D expression movies"}))
+    :description "interactive 4D expression movies"}))
 
 (defn- microarray-topology-map-position [gene]
   {:data nil ;; this resquires segment data and can be found in the file: lib/WormBase/API/Role/Expression.pm
@@ -1786,68 +1736,68 @@
 
 (defn- history-events [gene]
   (let [data
-        (->>
-          (:gene/version-change gene)
-          (mapcat
-            (fn [h]
-              (let [result {:version (:gene.version-change/version h)
-                            ;;                    :date    (datomic-rest-api.helpers/format-date2 (:gene.version-change/date h))
-                            :curator (datomic-rest-api.rest.object/pack-obj "person" (:gene.version-change/person h))
-                            :remark  nil
-                            :date    (datomic-rest-api.helpers/format-date (:gene.version-change/date h))
-                            :type    "Version_change"
-                            :gene    nil
-                            :action  "Unknown"}]
-                (those
-                  (if (:gene-history-action/created h)
-                    (assoc result :action "Created"))
+   (->>
+    (:gene/version-change gene)
+    (mapcat
+     (fn [h]
+       (let [result {:version (:gene.version-change/version h)
+ ;;                    :date    (datomic-rest-api.helpers/format-date2 (:gene.version-change/date h))
+                     :curator (datomic-rest-api.rest.object/pack-obj "person" (:gene.version-change/person h))
+                     :remark  nil
+                     :date    (datomic-rest-api.helpers/format-date (:gene.version-change/date h))
+                     :type    "Version_change"
+                     :gene    nil
+                     :action  "Unknown"}]
+         (those
+           (if (:gene-history-action/created h)
+             (assoc result :action "Created"))
 
-                  (if (:gene-history-action/killed h)
-                    (assoc result :action "Killed"))
+           (if (:gene-history-action/killed h)
+             (assoc result :action "Killed"))
 
-                  (if (:gene-history-action/suppressed h)
-                    (assoc result :action "Suppressed"))
+           (if (:gene-history-action/suppressed h)
+             (assoc result :action "Suppressed"))
 
-                  (if (:gene-history-action/resurrected h)
-                    (assoc result :action "Resurrected"))
+           (if (:gene-history-action/resurrected h)
+             (assoc result :action "Resurrected"))
 
-                  (if (:gene-history-action/transposon-in-origin h)
-                    (assoc result :action "Transposon_in_origin"))
+           (if (:gene-history-action/transposon-in-origin h)
+             (assoc result :action "Transposon_in_origin"))
 
-                  (if (:gene-history-action/changed-class h)
-                    (assoc result :action "Changed_class"))
+           (if (:gene-history-action/changed-class h)
+             (assoc result :action "Changed_class"))
 
-                  (if-let [info (:gene-history-action/merged-into h)]
-                    (assoc result :action "Merged_into"
-                           :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+           (if-let [info (:gene-history-action/merged-into h)]
+             (assoc result :action "Merged_into"
+                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
 
-                  (if-let [info (:gene-history-action/acquires-merge h)]
-                    (assoc result :action "Acquires_merge"
-                           :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+           (if-let [info (:gene-history-action/acquires-merge h)]
+             (assoc result :action "Acquires_merge"
+                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
 
-                  (if-let [info (:gene-history-action/split-from h)]
-                    (assoc result :action "Split-from"
-                           :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+           (if-let [info (:gene-history-action/split-from h)]
+             (assoc result :action "Split_from"
+                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
 
-                  (if-let [info (:gene-history-action/split-into h)]
-                    (assoc result :action "Split-into"
-                           :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+           (if-let [info (:gene-history-action/split-into h)]
+             (assoc result :action "Split_into"
+                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
 
-                  (if-let [info (:gene-history-action/imported h)]
-                    (assoc result :action "Imported"
-                           :remark (first info)))
+           (if-let [info (:gene-history-action/imported h)]
+             (assoc result :action "Imported"
+                    :remark (first info)))
 
-                  (if-let [name (:gene-history-action/cgc-name-change h)]
-                    (assoc result :action "CGC_name" :remark name))
+           (if-let [name (:gene-history-action/cgc-name-change h)]
+             (assoc result :action "CGC_name" :remark name))
 
-                  (if-let [name (:gene-history-action/other-name-change h)]
-                    (assoc result :action "Other_name" :remark name))
+           (if-let [name (:gene-history-action/other-name-change h)]
+             (assoc result :action "Other_name" :remark name))
 
-                  (if-let [name (:gene-history-action/sequence-name-change h)]
-                    (assoc result :action "Sequence_name" :remark name)))))))]
-    {:data  (if (empty? data) nil data)
-     :description
-     "the curatorial history of the gene"}))
+           (if-let [name (:gene-history-action/sequence-name-change h)]
+             (assoc result :action "Sequence_name" :remark name)))))))]
+  {:data  (if (empty? data) nil data)
+   :description
+   "the curatorial history of the gene"}))
 
 
 (defn- old-annot [gene]
@@ -1905,83 +1855,83 @@
        (map (partial entity db) seqs)
        (sort-by (some-fn :cds/id :transcript/id :pseudogene/id))
        (reduce
-         (fn [{:keys [table remark-map]} sequence]
-           (let [cds (or
-                       (and (:cds/id sequence) sequence)
-                       (:transcript.corresponding-cds/cds (:transcript/corresponding-cds sequence))
-                       (:pseudogene.corresponding-cds/cds (:psuedogene/corresponding-cds sequence)))
-                 protein (:cds.corresponding-protein/protein (:cds/corresponding-protein cds))
-                 seqs (or (seq (map :transcript.corresponding-cds/_cds (:transcript/_corresponding-cds cds)))
-                          [sequence])
-                 status (str (datomic-rest-api.rest.object/humanize-ident (:cds/prediction-status cds))
-                             (if (:cds/matching-cdna cds)
-                               " by cDNA(s)"))
-                 {:keys [remark-map footnotes]}
-                 (reduce (fn [{:keys [remark-map footnotes]} r]
-                           (let [pr (if-let [ev (datomic-rest-api.rest.object/get-evidence r)]
-                                      {:text     (:cds.remark/text r)
-                                       :evidence ev}
-                                      (:cds.remark/text r))]
-                             (if-let [n (get remark-map pr)]
-                               {:remark-map remark-map
-                                :footnotes  (conjv footnotes n)}
-                               (let [n (inc (count remark-map))]
-                                 {:remark-map (assoc remark-map pr n)
-                                  :footnotes  (conjv footnotes n)}))))
-                         {:remark-map remark-map}
-                         (:cds/remark cds))]
-             {:remark-map
-              remark-map
-              :table
-              (conjv table
-                     (vmap
-                       :model
-                       (map datomic-rest-api.rest.object/pack-obj seqs)
+        (fn [{:keys [table remark-map]} sequence]
+          (let [cds (or
+                     (and (:cds/id sequence) sequence)
+                     (:transcript.corresponding-cds/cds (:transcript/corresponding-cds sequence))
+                     (:pseudogene.corresponding-cds/cds (:psuedogene/corresponding-cds sequence)))
+                protein (:cds.corresponding-protein/protein (:cds/corresponding-protein cds))
+                seqs (or (seq (map :transcript.corresponding-cds/_cds (:transcript/_corresponding-cds cds)))
+                         [sequence])
+                status (str (datomic-rest-api.rest.object/humanize-ident (:cds/prediction-status cds))
+                            (if (:cds/matching-cdna cds)
+                              " by cDNA(s)"))
+                {:keys [remark-map footnotes]}
+                (reduce (fn [{:keys [remark-map footnotes]} r]
+                          (let [pr (if-let [ev (datomic-rest-api.rest.object/get-evidence r)]
+                                     {:text     (:cds.remark/text r)
+                                      :evidence ev}
+                                     (:cds.remark/text r))]
+                            (if-let [n (get remark-map pr)]
+                              {:remark-map remark-map
+                               :footnotes  (conjv footnotes n)}
+                              (let [n (inc (count remark-map))]
+                                {:remark-map (assoc remark-map pr n)
+                                 :footnotes  (conjv footnotes n)}))))
+                        {:remark-map remark-map}
+                        (:cds/remark cds))]
+            {:remark-map
+             remark-map
+             :table
+             (conjv table
+              (vmap
+               :model
+               (map datomic-rest-api.rest.object/pack-obj seqs)
 
-                       :protein
-                       (datomic-rest-api.rest.object/pack-obj "protein" protein)
+               :protein
+               (datomic-rest-api.rest.object/pack-obj "protein" protein)
 
-                       :cds
-                       (vmap
-                         :text (vassoc (datomic-rest-api.rest.object/pack-obj "cds" cds) :footnotes footnotes)
-                         :evidence (if (not (empty? status))
-                                     {:status status}))
+               :cds
+               (vmap
+                :text (vassoc (datomic-rest-api.rest.object/pack-obj "cds" cds) :footnotes footnotes)
+                :evidence (if (not (empty? status))
+                            {:status status}))
 
-                       :length_spliced
-                       (if coding?
-                         (if-let [exons (seq (:cds/source-exons cds))]
-                           (->> (map (fn [ex]
-                                       (- (:cds.source-exons/end ex)
-                                          (:cds.source-exons/start ex)
-                                          -1))
-                                     exons)
-                                (reduce +))))
+               :length_spliced
+               (if coding?
+                 (if-let [exons (seq (:cds/source-exons cds))]
+                   (->> (map (fn [ex]
+                               (- (:cds.source-exons/end ex)
+                                  (:cds.source-exons/start ex)
+                                  -1))
+                             exons)
+                        (reduce +))))
 
-                       :length_unspliced
-                       (str/join
-                         "<br>"
-                         (for [s seqs]
-                           (if (and (:locatable/max s) (:locatable/min s))
-                             (- (:locatable/max s) (:locatable/min s))
-                             "-")))
+               :length_unspliced
+               (str/join
+                "<br>"
+                (for [s seqs]
+                  (if (and (:locatable/max s) (:locatable/min s))
+                    (- (:locatable/max s) (:locatable/min s))
+                    "-")))
 
-                       :length_protein
-                       (:protein.peptide/length (:protein/peptide protein))
+               :length_protein
+               (:protein.peptide/length (:protein/peptide protein))
 
-                       :type (if seqs
-                               (if-let [mid (:method/id
-                                              (or (:transcript/method sequence)
-                                                  (:pseudogene/method sequence)
-                                                  (:cds/method sequence)))]
-                                 (str/replace mid #"_" " ")))))}))
-         {})
+               :type (if seqs
+                       (if-let [mid (:method/id
+                                     (or (:transcript/method sequence)
+                                         (:pseudogene/method sequence)
+                                         (:cds/method sequence)))]
+                         (str/replace mid #"_" " ")))))}))
+        {})
        ((fn [{:keys [table remark-map]}]
-          (vmap
-            :table table
-            :remarks (if-not (empty? remark-map)
-                       (into (sorted-map)
-                             (for [[r n] remark-map]
-                               [n r])))))))
+         (vmap
+          :table table
+          :remarks (if-not (empty? remark-map)
+                     (into (sorted-map)
+                           (for [[r n] remark-map]
+                             [n r])))))))
 
 
 
@@ -2073,10 +2023,11 @@
 ;;
 
 (defn- reference-allele [gene]
-  {:data
+  {:data (let [data
    (->> (:gene/reference-allele gene)
         (map :gene.reference-allele/variation)
-        (map (partial datomic-rest-api.rest.object/pack-obj "variation")))
+        (map (partial datomic-rest-api.rest.object/pack-obj "variation")))]
+     (if (empty? data) nil data))
    :description "the reference allele of the gene"})
 
 (defn- is-cgc? [strain]
@@ -2087,163 +2038,191 @@
 
 (defn- strain-list [strains]
   (seq
-    (map (fn [strain]
-           (vassoc
-             (datomic-rest-api.rest.object/pack-obj "strain" strain)
-             :genotype (first (:strain/genotype strain))
-             :transgenes (datomic-rest-api.rest.object/pack-obj "transgene" (first (:transgene/_strain strain)))))
-         strains)))
+   (map (fn [strain]
+          (vassoc
+           (datomic-rest-api.rest.object/pack-obj "strain" strain)
+           :genotype (:strain/genotype strain)
+           :transgenes (datomic-rest-api.rest.object/pack-obj "transgene" (first (:transgene/_strain strain)))))
+        strains)))
 
 (defn- strains [gene]
   (let [strains (:gene/strain gene)]
     {:data
      (vmap
-       :carrying_gene_alone_and_cgc
-       (strain-list (filter #(and (not (seq (:transgene/_strain %)))
-                                  (= (count (:gene/_strain %)) 1)
-                                  (is-cgc? %))
-                            strains))
+      :carrying_gene_alone_and_cgc
+      (strain-list (filter #(and (not (seq (:transgene/_strain %)))
+                                 (= (count (:gene/_strain %)) 1)
+                                 (is-cgc? %))
+                           strains))
 
-       :carrying_gene_alone
-       (strain-list (filter #(and (not (seq (:transgene/_strain %)))
-                                  (= (count (:gene/_strain %)) 1)
-                                  (not (is-cgc? %)))
-                            strains))
+      :carrying_gene_alone
+      (strain-list (filter #(and (not (seq (:transgene/_strain %)))
+                                 (= (count (:gene/_strain %)) 1)
+                                 (not (is-cgc? %)))
+                           strains))
 
-       :available_from_cgc
-       (strain-list (filter #(and (or (seq (:transgene/_strain %))
-                                      (not= (count (:gene/_strain %)) 1))
-                                  (is-cgc? %))
-                            strains))
+      :available_from_cgc
+      (strain-list (filter #(and (or (seq (:transgene/_strain %))
+                                     (not= (count (:gene/_strain %)) 1))
+                                 (is-cgc? %))
+                           strains))
 
-       :others
-       (strain-list (filter #(and (or (seq (:transgene/_strain %))
-                                      (not= (count (:gene/_strain %)) 1))
-                                  (not (is-cgc? %)))
-                            strains)))
+      :others
+      (strain-list (filter #(and (or (seq (:transgene/_strain %))
+                                     (not= (count (:gene/_strain %)) 1))
+                                 (not (is-cgc? %)))
+                           strains)))
 
      :description
      "strains carrying this gene"}))
 
-(defn- nonsense [change]
-  (or (seq (:molecular-change/amber-uag change))
-      (seq (:molecular-change/ochre-uaa change))
-      (seq (:molecular-change/opal-uga change))
-      (seq (:molecular-change/ochre-uaa-or-opal-uga change))
-      (seq (:molecular-change/amber-uag-or-ochre-uaa change))
-      (seq (:molecular-change/amber-uag-or-opal-uga change))))
+(defn- process-aa-change [molecular-change]
+  (cond-let [n]
+            (first (:molecular-change/missense molecular-change))
+            (:molecular-change.missense/text n)
+
+            (:molecular-change/nonsense molecular-change)
+            (:molecular-change.nonsense/text n)))
+
+(defn- process-aa-position [molecular-change]
+  (cond-let [n]
+            (first (:molecular-change/missense molecular-change))
+            (:molecular-change.missense/int n)
+
+            (:molecular-change/nonsense molecular-change)
+            (nth (re-find #"\((\d+)\)" (:molecular-change.nonsense/text n)) 1))
+  )
+
+(defn- process-aa-composite [molecular-change]
+  (let [change (process-aa-change molecular-change)
+        position (process-aa-position molecular-change)]
+    (if (and change position)
+      (let [change-parts (str/split change #"\s+")]
+        (->>
+         [(first change-parts) position (nth change-parts 2)]
+         (map str/capitalize)
+         (str/join ""))))))
 
 (defn- process-variation [var]
   (let [cds-changes (seq (take 20 (:variation/predicted-cds var)))
-        trans-changes (seq (take 20 (:variation/transcript var)))]
+        trans-changes (seq (take 20 (:variation/transcript var)))
+        gene-changes (seq (take 20 (:variation/gene var)))]
     (vmap
-      :variation
-      (datomic-rest-api.rest.object/pack-obj "variation" var)
+     :variation
+     (datomic-rest-api.rest.object/pack-obj "variation" var)
 
-      :type
-      (if (:variation/transposon-insertion var)
-        "transposon insertion"
-        (str/join ", "
-                  (or
-                    (those
-                      (if (:variation/engineered-allele var)
-                        "Engineered allele")
-                      (if (:variation/allele var)
-                        "Allele")
-                      (if (:variation/snp var)
-                        "SNP")
-                      (if (:variation/confirmed-snp var)
-                        "Confirmed SNP")
-                      (if (:variation/predicted-snp var)
-                        "Predicted SNP")
-                      (if (:variation/reference-strain-digest var)
-                        "RFLP"))
-                    ["unknown"])))
+     :type
+     (if (:variation/transposon-insertion var)
+       "transposon insertion"
+       (str/join ", "
+                 (or
+                  (those
+                   (if (:variation/engineered-allele var)
+                     "Engineered allele")
+                   (if (:variation/allele var)
+                     "Allele")
+                   (if (:variation/snp var)
+                     "SNP")
+                   (if (:variation/confirmed-snp var)
+                     "Confirmed SNP")
+                   (if (:variation/predicted-snp var)
+                     "Predicted SNP")
+                   (if (:variation/reference-strain-digest var)
+                     "RFLP"))
+                  ["unknown"])))
 
-      :method_name
-      (if-let [method (:variation/method var)]
-        (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
-                (or (:method.remark/text (first (:method/remark methods))) "")
-                (str/replace (:method/id method) #"_" " ")))
+     :method_name
+     (if-let [method (:variation/method var)]
+       (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
+               (or (:method.remark/text (first (:method/remark methods))) "")
+               (str/replace (:method/id method) #"_" " ")))
 
-      :gene
-      nil ;; don't populate since we're coming from gene...
+     :gene
+     nil ;; don't populate since we're coming from gene...
 
-      :molecular_change
-      (cond
-        (:variation/substitution var)
-        "Substitution"
+     :molecular_change
+     (cond
+       (:variation/substitution var)
+       "Substitution"
 
-        (:variation/insertion var)
-        "Insertion"
+       (:variation/insertion var)
+       "Insertion"
 
-        (:variation/deletion var)
-        "Deletion"
+       (:variation/deletion var)
+       "Deletion"
 
-        (:variation/inversion var)
-        "Inversion"
+       (:variation/inversion var)
+       "Inversion"
 
-        (:variation/tandem-duplication var)
-        "Tandem_duplication"
+       (:variation/tandem-duplication var)
+       "Tandem_duplication"
 
-        :default
-        "Not curated")
+       :default
+       "Not curated")
 
-      :locations
-      (let [changes (set (mapcat keys (concat cds-changes trans-changes)))]
-        (str/join ", " (filter
-                         identity
-                         (map {:molecular-change/intron "Intron"
-                               :molecular-change/coding-exon "Coding exon"
-                               :molecular-change/utr-5 "5' UTR"
-                               :molecular-change/utr-3 "3' UTR"}
-                              changes))))
+     :locations
+     (let [changes (set (mapcat keys (concat cds-changes gene-changes trans-changes)))]
+       (filter
+        identity
+        (map {:molecular-change/intron "Intron"
+              :molecular-change/coding-exon "Coding exon"
+              :molecular-change/utr-5 "5' UTR"
+              :molecular-change/utr-3 "3' UTR"}
+             changes)))
 
-      :effects
-      (let [changes (set (mapcat keys cds-changes))]
-        (str/join ", " (set (filter
-                              identity
-                              (map {:molecular-change/missense "Missense"
-                                    :molecular-change/amber-uag "Nonsense"
-                                    :molecular-change/ochre-uaa "Nonsense"
-                                    :molecular-change/opal-uga "Nonsense"
-                                    :molecular-change/ochre-uaa-or-opal-uga "Nonsense"
-                                    :molecular-change/amber-uag-or-ochre-uaa "Nonsense"
-                                    :molecular-change/amber-uag-or-opal-uga "Nonsense"
-                                    :molecular-change/frameshift "Frameshift"
-                                    :molecular-change/silent "Silent"}
-                                   changes)))))
+     :effects
+     (let [changes (set (mapcat keys (concat cds-changes gene-changes trans-changes)))]
+       (if-let [effect (set (filter
+                             identity
+                             (map {:molecular-change/missense "Missense"
+                                   :molecular-change/nonsense "Nonsense"
+                                   :molecular-change/frameshift "Frameshift"
+                                   :molecular-change/silent "Silent"
+                                   :molecular-change/splice-site "Splice site"
+                                   :molecular-change/promoter "Promoter"
+                                   :molecular-change/genomic-neighbourhood "Genomic neighbourhood"
+                                   :molecular-change/regulatory-feature "Regulatory feature"
+                                   :molecular-change/readthrough "Readthrough"}
+                                  changes)))]
+         (if (empty? effect) nil effect)))
 
-      :aa_change
-      (str/join "<br>"
-                (filter identity
-                        (for [cc cds-changes]
-                          (cond-let [n]
-                                    (first (:molecular-change/missense cc))
-                                    (:molecular-change.missense/text n)
+     :aa_change
+     (if-let [aa-changes (->> (map process-aa-change cds-changes)
+                              (filter identity))]
+       (if (empty? aa-changes) nil aa-changes))
 
-                                    (first (nonsense cc))
-                                    ((first (filter #(= (name %) "text") (keys n))) n)))))
+     :aa_position
+     (if-let [aa-positions (->> (map process-aa-position cds-changes)
+                                (filter identity))]
+       (if (empty? aa-positions) nil aa-positions))
 
-      :aa_position
-      (str/join "<br>"
-                (filter identity
-                        (for [cc cds-changes]
-                          (if-let [n (first (:molecular-change/missense cc))]
-                            (:molecular-change.missense/int n)))))
+     :composite_change
+     (if-let [aa-changes (->> (map process-aa-composite cds-changes)
+                              (filter identity))]
+       (if (empty? aa-changes) nil aa-changes))
 
-      :isoform
-      (seq
-        (for [cc cds-changes
-              :when (or (:molecular-change/missense cc)
-                        (nonsense cc))]
-          (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))
+     :isoform
+     (if-let [isoform
+              (seq
+               (for [cc cds-changes
+                     :when (or (:molecular-change/missense cc)
+                               (:molecular-change/nonsense cc))]
+                 (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))]
+       (if (empty? isoform) nil isoform))
 
-:phen_count
-(count (:variation/phenotype var))
+     :phen_count
+     (count (:variation/phenotype var))
 
-:strain
-(map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var)))))
+     :strain
+     (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var))
+
+     :sources
+     (if-let [sources (if (empty? (:variation/reference var))
+                        (map #(let [packed (datomic-rest-api.rest.object/pack-obj %)]
+                                (into packed {:label
+                                              (str/replace (:label packed) #"_" " ")})) (:variation/analysis var))
+                        (map #(datomic-rest-api.rest.object/pack-obj (:variation.reference/paper %)) (:variation/reference var)))]
+       (if (empty? sources) nil sources)))))
 
 (defn- alleles [gene]
   (let [db (d/entity-db gene)]
@@ -2251,11 +2230,24 @@
      (->> (q '[:find [?var ...]
                :in $ ?gene
                :where [?vh :variation.gene/gene ?gene]
-               [?var :variation/gene ?vh]
-               [?var :variation/allele _]]
+                      [?var :variation/gene ?vh]
+                      [?var :variation/phenotype _]]
              db (:db/id gene))
           (map #(process-variation (entity db %))))
-     :description "alleles contained in the strain"}))
+     :description "alleles and polymorphisms with associated phenotype"}))
+
+(defn- alleles-other [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (->> (q '[:find [?var ...]
+               :in $ ?gene
+               :where [?vh :variation.gene/gene ?gene]
+                      [?var :variation/gene ?vh]
+                      [?var :variation/allele _]
+                      (not [?var :variation/phenotype _])]
+             db (:db/id gene))
+          (map #(process-variation (entity db %))))
+     :description "alleles currently with no associated phenotype"}))
 
 (defn- polymorphisms [gene]
   (let [db (d/entity-db gene)]
@@ -2263,45 +2255,70 @@
      (->> (q '[:find [?var ...]
                :in $ ?gene
                :where [?vh :variation.gene/gene ?gene]
-               [?var :variation/gene ?vh]
-               (not [?var :variation/allele _])]
+                      [?var :variation/gene ?vh]
+                      (not [?var :variation/allele _])
+                      (not [?var :variation/phenotype _])]
              db (:db/id gene))
           (map #(process-variation (entity db %))))
-     :description "polymorphisms and natural variations contained in the strain"}))
+     :description "polymorphisms and natural variations currently with no associated phenotype"}))
+
+(defn- alleles-count [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (-> {}
+         (assoc :polymorphisms (q '[:find (count ?var) .
+                                    :in $ ?gene
+                                    :where [?vh :variation.gene/gene ?gene]
+                                           [?var :variation/gene ?vh]
+                                           (not [?var :variation/allele _])
+                                           (not [?var :variation/phenotype _])]
+                                  db (:db/id gene)))
+         (assoc :alleles_other (q '[:find (count ?var) .
+                                    :in $ ?gene
+                                    :where [?vh :variation.gene/gene ?gene]
+                                           [?var :variation/gene ?vh]
+                                           [?var :variation/allele _]
+                                           (not [?var :variation/phenotype _])]
+                                  db (:db/id gene))))
+     :description "counts for alleles-other and polymorphisms"}))
 
 (defn- rearrangements-positive [gene]
   (let [db (d/entity-db gene)]
-    (->> (q '[:find ?ra
-              :in $ ?gene
-              :where [?rag :rearrangement.gene-inside/gene ?gene]
-              [?ra :rearrangement/gene-inside ?rag]]
+    (->> (q '[:find [?ra ...]
+               :in $ ?gene
+               :where [?rag :rearrangement.gene-inside/gene ?gene]
+                      [?ra :rearrangement/gene-inside ?rag]]
             db (:db/id gene))
-         (entity db)
-         (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
+         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
 (defn- rearrangements-negative [gene]
-  (let [db (d/entity-db gene)]
-    (->> (q '[:find ?ra
-              :in $ ?gene
-              :where [?rag :rearrangement.gene-outside/gene ?gene]
-              [?ra :rearrangement/gene-outside ?rag]]
+   (let [db (d/entity-db gene)]
+    (->> (q '[:find [?ra ...]
+               :in $ ?gene
+               :where [?rag :rearrangement.gene-outside/gene ?gene]
+                      [?ra :rearrangement/gene-outside ?rag]]
             db (:db/id gene))
-         (entity db)
-         (datomic-rest-api.rest.object/pack-obj "rearrangement"))))
+         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
 (defn- rearrangements [gene]
-  {:data {:positive (rearrangements-positive gene)
-          :negative (rearrangements-negative gene) }
+  {:data (let [data {:positive (if-let [rearrangements (rearrangements-positive gene)]
+                                 (if (empty? rearrangements) nil rearrangements))
+                     :negative (if-let [rearrangements (rearrangements-negative gene)]
+                                 (if (empty? rearrangements) nil rearrangements))}]
+           (if (or (:positive data) (:negative data)) data nil))
    :description "rearrangements involving this gene"})
 
 
-(def-rest-widget genetics [gene]
+(defn genetics [gene]
   {:reference_allele (reference-allele gene)
    :rearrangements   (rearrangements gene)
    :strains          (strains gene)
    :alleles          (alleles gene)
-   :polymorphisms    (polymorphisms gene)
-   :name             (name-field gene)})
+   :alleles_count    (alleles-count gene)
+;;   :alleles_other    (alleles-other gene)  ;; can be requested through /rest/field/
+;;   :polymorphisms    (polymorphisms gene)  ;; can be requested through /rest/field/
+   :name             (name-field gene)
+   })
 
 ;;
 ;; external_links widget
