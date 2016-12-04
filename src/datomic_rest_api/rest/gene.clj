@@ -448,46 +448,39 @@
   (Integer. (re-find  #"\d+" s )))
 
 (defn- create-pato-term [id entity-term entity-type pato-term]
- (let [pato-id  (str/join "_" [id pato-term])]
-  {pato-id
-   {:pato_evidence
-    {:entity-term entity-term
-     :entity_type "Anatomy_term"
-     :pato_term pato-term}
-    :key pato-id}}))
+  (let [pato-id  (str/join "_" [id pato-term])]
+    {pato-id
+     {:pato_evidence
+      {:entity-term entity-term
+       :entity_type "Anatomy_term"
+       :pato_term pato-term}
+      :key pato-id}}))
 
 (defn- get-var-pato-from-holder [holder]
-  (let [var-combo
-   (->>
-    (apply merge
-      (flatten
-     (for [eq-annotations {"anatomy-term" "anatomy-term"
-                           "life-stage" "life-stage"
-                           "go-term" "go-term"
-                           "molecule-affected" "molecule"}
-             :let [[eq-key label] eq-annotations]]
-      (for [anatomy (:phenotype-info/anatomy-term holder)]
-        (let [make-key (partial keyword (str "phenotype-info." eq-key))
-              pato-name (first (:pato-term/name (-> anatomy ((make-key "pato-term")))))
-              id (:anatomy-term/id  (-> anatomy ((make-key eq-key))))
-              entity-term (datomic-rest-api.rest.object/pack-obj label (-> anatomy ((make-key label))))
-              pato-term (if (nil? pato-name) "abnormal" pato-name)]
-          (create-pato-term id entity-term (str/capitalize (str/replace eq-key #"-" "_")) pato-term))))))
-     (drop-while empty?)
-      (into {}))]
+  (let [sot (for [eq-annotations {"anatomy-term" "anatomy-term"
+                                  "life-stage" "life-stage"
+                                  "go-term" "go-term"
+                                  "molecule-affected" "molecule"}
+                  :let [[eq-key label] eq-annotations]]
+              (for [anatomy (:phenotype-info/anatomy-term holder)]
+                (let [make-key (partial keyword (str "phenotype-info." eq-key))
+                      pato-name (first (:pato-term/name (-> anatomy ((make-key "pato-term")))))
+                      id (:anatomy-term/id  (-> anatomy ((make-key eq-key))))
+                      entity-term (datomic-rest-api.rest.object/pack-obj label (-> anatomy ((make-key label))))
+                      pato-term (if (nil? pato-name) "abnormal" pato-name)]
+                  (if (nil? id) nil (create-pato-term id entity-term (str/capitalize (str/replace eq-key #"-" "_")) pato-term)))))
+        var-combo (into {} (for [x sot] (apply merge x)))]
     {(str/join "_" (sort (keys var-combo))) (vals var-combo)}))
 
 (defn- get-pato-combinations [db pid rnai-phenos var-phenos not?]
-  (if-let [vp (seq; (merge
-            (var-phenos pid) ;(rnai-phenos pid))
-        )]
-    (let [var-pato (for [v vp
+  (if-let [vp (seq (var-phenos pid))]
+    (let [var-patos (for [v vp
                          :let [holder (entity db v)]]
                      (get-var-pato-from-holder holder))]
-      (reduce merge {} var-pato))))
+      (apply merge var-patos))))
 
-(defn- phenotype-table-entity [db pheno pc pid var-phenos rnai-phenos not?]
-  {:entity (vals pc)
+(defn- phenotype-table-entity [db pheno pato-key entity pid var-phenos rnai-phenos not?]
+  {:entity entity
    :phenotype
    {:class "phenotype"
     :id (:phenotype/id pheno)
@@ -498,7 +491,7 @@
      "Allele:"
      (if-let [vp (seq (var-phenos pid))]
        (for [v vp
-             :let [holder (entity db v)
+             :let [holder (d/entity db v)
                    var ((if not?
                           :variation/_phenotype-not-observed
                           :variation/_phenotype)
@@ -543,7 +536,7 @@
      "RNAi:"
      (if-let [rp (seq (rnai-phenos pid))]
        (for [r rp
-             :let [holder (entity db r)
+             :let [holder (d/entity db r)
                    rnai ((if not?
                            :rnai/_phenotype-not-observed
                            :rnai/_phenotype)
@@ -574,14 +567,11 @@
     (->>
       (for [pid phenos :let [pheno (entity db pid)]]
         (let [pcs (get-pato-combinations db pid rnai-phenos var-phenos not?)]
-          (if (every? seq pcs) ; If contians only nil
-            (phenotype-table-entity db pheno pcs pid var-phenos rnai-phenos not?)
-            ;            (seq pcs)
-            ;            (for [pc pcs]
-            (phenotype-table-entity db pheno pcs pid var-phenos rnai-phenos not?))));)
-      ;  ));)
+          (if (nil? pcs)
+            (phenotype-table-entity db pheno nil nil pid var-phenos rnai-phenos not?)
+            (for [[pato-key entity] pcs]
+              (phenotype-table-entity db pheno pato-key entity pid var-phenos rnai-phenos not?)))))
       (into []))))
-;      (remove nil?)));)
 
 (defn- phenotype-not-observed [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) true)]
