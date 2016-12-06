@@ -186,7 +186,7 @@
         (->> (q '[:find [?clone ...]
                   :in $ ?gene
                   :where [?cg :clone.positive-gene/gene ?gene]
-                  [?clone :clone/positive-gene ?cg]]
+                         [?clone :clone/positive-gene ?cg]]
                 db (:db/id gene))
              (map (fn [cid]
                     (let [clone (entity db cid)]
@@ -249,9 +249,9 @@
                       (q '[:find [?other-gene ...]
                            :in $ ?gene
                            :where [?gene :gene/cgc-name ?cgc]
-                           [?cgc :gene.cgc-name/text ?cgc-name]
-                           [?other-name :gene.other-name/text ?cgc-name]
-                           [?other-gene :gene/other-name ?other-name]]
+                                  [?cgc :gene.cgc-name/text ?cgc-name]
+                                  [?other-name :gene.other-name/text ?cgc-name]
+                                  [?other-gene :gene/other-name ?other-name]]
                          db (:db/id gene))
                       (map #(datomic-rest-api.rest.object/pack-obj "gene" (entity db %)))
                       (seq))]
@@ -265,7 +265,7 @@
         (->> (q '[:find ?merge-partner .
                   :in $ ?gene
                   :where [?gene :gene/version-change ?vc]
-                  [?vc :gene-history-action/merged-into ?merge-partner]]
+                         [?vc :gene-history-action/merged-into ?merge-partner]]
                 db (:db/id gene))
              (entity db)
              (datomic-rest-api.rest.object/pack-obj "gene"))]
@@ -351,56 +351,56 @@
   '[:find ?pheno (distinct ?ph)
     :in $ ?g
     :where [?gh :rnai.gene/gene ?g]
-    [?rnai :rnai/gene ?gh]
-    [?rnai :rnai/phenotype ?ph]
-    [?ph :rnai.phenotype/phenotype ?pheno]])
+           [?rnai :rnai/gene ?gh]
+           [?rnai :rnai/phenotype ?ph]
+           [?ph :rnai.phenotype/phenotype ?pheno]])
 
 (def q-gene-rnai-not-pheno
   '[:find ?pheno (distinct ?ph)
     :in $ ?g
     :where [?gh :rnai.gene/gene ?g]
-    [?rnai :rnai/gene ?gh]
-    [?rnai :rnai/phenotype-not-observed ?ph]
-    [?ph :rnai.phenotype-not-observed/phenotype ?pheno]])
+           [?rnai :rnai/gene ?gh]
+           [?rnai :rnai/phenotype-not-observed ?ph]
+           [?ph :rnai.phenotype-not-observed/phenotype ?pheno]])
 
 (def q-gene-var-pheno
   '[:find ?pheno (distinct ?ph)
     :in $ ?g
     :where [?gh :variation.gene/gene ?g]
-    [?var :variation/gene ?gh]
-    [?var :variation/phenotype ?ph]
-    [?ph :variation.phenotype/phenotype ?pheno]])
+           [?var :variation/gene ?gh]
+           [?var :variation/phenotype ?ph]
+           [?ph :variation.phenotype/phenotype ?pheno]])
 
 (def q-gene-cons-transgene
   '[:find ?tg (distinct ?tg)
     :in $ ?g
     :where [?cbg :construct.driven-by-gene/gene ?g]
-    [?cons :construct/driven-by-gene ?cbg]
-    [?cons :construct/transgene-construct ?tg]])
+           [?cons :construct/driven-by-gene ?cbg]
+           [?cons :construct/transgene-construct ?tg]])
 
 (def q-gene-cons-transgene-test
   '[:find ?cons (distinct ?cons)
     :in $ ?g
     :where [?cbg :construct.driven-by-gene/gene ?g]
-    [?cons :construct/driven-by-gene ?cbg]])
+           [?cons :construct/driven-by-gene ?cbg]])
 
 
 (def q-gene-cons-transgene-phenotype
   '[:find ?pheno (distinct ?ph)
     :in $ ?g
     :where [?cbg :construct.driven-by-gene/gene ?g]
-    [?cons :construct/driven-by-gene ?cbg]
-    [?cons :construct/transgene-construct ?tg]
-    [?tg :transgene/phenotype ?ph]
-    [?ph :transgene.phenotype/phenotype ?pheno]])
+           [?cons :construct/driven-by-gene ?cbg]
+           [?cons :construct/transgene-construct ?tg]
+           [?tg :transgene/phenotype ?ph]
+           [?ph :transgene.phenotype/phenotype ?pheno]])
 
 (def q-gene-var-not-pheno
   '[:find ?pheno (distinct ?ph)
     :in $ ?g
     :where [?gh :variation.gene/gene ?g]
-    [?var :variation/gene ?gh]
-    [?var :variation/phenotype-not-observed ?ph]
-    [?ph :variation.phenotype-not-observed/phenotype ?pheno]])
+           [?var :variation/gene ?gh]
+           [?var :variation/phenotype-not-observed ?ph]
+           [?ph :variation.phenotype-not-observed/phenotype ?pheno]])
 
 (defn- evidence-paper [paper]
   {:class "paper"
@@ -557,10 +557,10 @@
         table (q '[:find ?pheno (distinct ?int) ?int-type
                    :in $ ?gene
                    :where [?ig :interaction.interactor-overlapping-gene/gene ?gene]
-                   [?int :interaction/interactor-overlapping-gene ?ig]
-                   [?int :interaction/interaction-phenotype ?pheno]
-                   [?int :interaction/type ?type-id]
-                   [?type-id :db/ident ?int-type]]
+                          [?int :interaction/interactor-overlapping-gene ?ig]
+                          [?int :interaction/interaction-phenotype ?pheno]
+                          [?int :interaction/type ?type-id]
+                          [?type-id :db/ident ?int-type]]
                  db gid)
         phenos (->> (map first table)
                     (set)
@@ -665,8 +665,8 @@
         (q '[:find [?tg ...]
              :in $ ?gene
              :where [?cbg :construct.driven-by-gene/gene ?gene]
-             [?cons :construct/driven-by-gene ?cbg]
-             [?cons :construct/transgene-construct ?tg]]
+                    [?cons :construct/driven-by-gene ?cbg]
+                    [?cons :construct/transgene-construct ?tg]]
            db (:db/id gene))
         phenotype
         (->> transgenes
@@ -675,7 +675,7 @@
                  (->> (q '[:find [?pheno ...]
                            :in $ ?tg
                            :where [?tg :transgene/phenotype ?ph]
-                           [?ph :transgene.phenotype/phenotype ?pheno]]
+                                  [?ph :transgene.phenotype/phenotype ?pheno]]
                          db tg)
                       (map
                         (fn [p]
@@ -968,7 +968,7 @@
      (->> (q '[:find [?cons ...]
                :in $ ?gene
                :where [?cbg :construct.driven-by-gene/gene ?gene]
-               [?cons :construct/driven-by-gene ?cbg]]
+                      [?cons :construct/driven-by-gene ?cbg]]
              db (:db/id gene))
           (map (partial entity db))
           (mapcat transgene-record)
@@ -981,7 +981,7 @@
      (->> (q '[:find [?cons ...]
                :in $ ?gene
                :where [?cg :construct.gene/gene ?gene]
-               [?cons :construct/gene ?cg]]
+                      [?cons :construct/gene ?cg]]
              db (:db/id gene))
           (map (partial entity db))
           (mapcat transgene-record)
@@ -999,10 +999,10 @@
      (->> (q '[:find [?oligo ...]
                :in $ ?gene [?type ...]
                :where [?gene :gene/corresponding-cds ?gcds]
-               [?gcds :gene.corresponding-cds/cds ?cds]
-               [?ocds :oligo-set.overlaps-cds/cds ?cds]
-               [?oligo :oligo-set/overlaps-cds ?ocds]
-               [?oligo :oligo-set/type ?type]]
+                      [?gcds :gene.corresponding-cds/cds ?cds]
+                      [?ocds :oligo-set.overlaps-cds/cds ?cds]
+                      [?oligo :oligo-set/overlaps-cds ?ocds]
+                      [?oligo :oligo-set/type ?type]]
              db (:db/id gene) (keys probe-types))
           (map (fn [oid]
                  (let [oligo (entity db oid)]
@@ -1021,9 +1021,9 @@
      (->> (q '[:find [?cdna ...]
                :in $ ?gene
                :where [?gene :gene/corresponding-cds ?gcds]
-               [?gcds :gene.corresponding-cds/cds ?cds]
-               [?cds :cds/matching-cdna ?mcdna]
-               [?mcdna :cds.matching-cdna/sequence ?cdna]]
+                      [?gcds :gene.corresponding-cds/cds ?cds]
+                      [?cds :cds/matching-cdna ?mcdna]
+                      [?mcdna :cds.matching-cdna/sequence ?cdna]]
              db (:db/id gene))
           (map #(datomic-rest-api.rest.object/pack-obj "sequence" (entity db %)))
           (seq))
@@ -1035,7 +1035,7 @@
      (->> (q '[:find [?ab ...]
                :in $ ?gene
                :where [?gab :antibody.gene/gene ?gene]
-               [?ab :antibody/gene ?gab]]
+                      [?ab :antibody/gene ?gab]]
              db (:db/id gene))
           (map
             (fn [abid]
@@ -1245,10 +1245,10 @@
        (q '[:find ?div ?term ?code ?anno
             :in $ ?gene
             :where [?anno :go-annotation/gene ?gene]
-            [?anno :go-annotation/go-term ?term]
-            [?anno :go-annotation/go-code ?code]
-            [?term :go-term/type ?tdiv]
-            [?tdiv :db/ident ?div]]
+                   [?anno :go-annotation/go-term ?term]
+                   [?anno :go-annotation/go-code ?code]
+                   [?term :go-term/type ?tdiv]
+                   [?tdiv :db/ident ?div]]
           db (:db/id gene))
        (map
          (fn [[div term code anno]]
@@ -1320,9 +1320,9 @@
      (->> (q '[:find [?at ...]
                :in $ ?gene
                :where [?epg :expr-pattern.gene/gene ?gene]
-               [?ep :expr-pattern/gene ?epg]
-               [?ep :expr-pattern/anatomy-term ?epa]
-               [?epa :expr-pattern.anatomy-term/anatomy-term ?at]]
+                      [?ep :expr-pattern/gene ?epg]
+                      [?ep :expr-pattern/anatomy-term ?epa]
+                      [?epa :expr-pattern.anatomy-term/anatomy-term ?at]]
              db (:db/id gene))
           (map (fn [at-id]
                  (datomic-rest-api.rest.object/pack-obj "anatomy-term" (entity db at-id)))))
@@ -1417,7 +1417,7 @@
        (q '[:find [?ec ...]
             :in $ ?gene
             :where [?ecg :expression-cluster.gene/gene ?gene]
-            [?ec :expression-cluster/gene ?ecg]]
+                   [?ec :expression-cluster/gene ?ecg]]
           db (:db/id gene))
        (map
          (fn [ec-id]
@@ -1552,8 +1552,8 @@
        (q '[:find [?ortho ...]
             :in $ ?gene [?species-id ...]
             :where [?gene :gene/ortholog ?ortho]
-            [?ortho :gene.ortholog/species ?species]
-            [?species :species/id ?species-id]]
+                   [?ortho :gene.ortholog/species ?species]
+                   [?species :species/id ?species-id]]
           db (:db/id gene) species)
        (map (partial pack-ortholog db)))
      :description
@@ -1566,10 +1566,10 @@
        (q '[:find [?ortho ...]    ;; Look into why this can't be done with Datomic "not"
             :in $ ?gene ?not-species
             :where [?gene :gene/ortholog ?ortho]
-            [?ortho :gene.ortholog/species ?species]
-            [?species :species/id ?species-id]
-            [(get ?not-species ?species-id :dummy) ?smember]
-            [(= ?smember :dummy)]]
+                   [?ortho :gene.ortholog/species ?species]
+                   [?species :species/id ?species-id]
+                   [(get ?not-species ?species-id :dummy) ?smember]
+                   [(= ?smember :dummy)]]
           db (:db/id gene) (set species))
        (map (partial pack-ortholog db)))
      :description
@@ -1595,13 +1595,13 @@
        (q '[:find [?motif ...]
             :in $ ?gene
             :where [?gene :gene/corresponding-cds ?gcds]
-            [?gcds :gene.corresponding-cds/cds ?cds]
-            [?cds :cds/corresponding-protein ?cprot]
-            [?cprot :cds.corresponding-protein/protein ?prot]
-            [?homol :locatable/parent ?prot]
-            [?homol :homology/motif ?motif]
-            [?motif :motif/id ?mid]
-            [(.startsWith ^String ?mid "INTERPRO:")]]
+                   [?gcds :gene.corresponding-cds/cds ?cds]
+                   [?cds :cds/corresponding-protein ?cprot]
+                   [?cprot :cds.corresponding-protein/protein ?prot]
+                   [?homol :locatable/parent ?prot]
+                   [?homol :homology/motif ?motif]
+                   [?motif :motif/id ?mid]
+                   [(.startsWith ^String ?mid "INTERPRO:")]]
           db (:db/id gene))
        (map
          (fn [motif-id]
@@ -1618,11 +1618,11 @@
              (->> (q '[:find ?prot ?pep-len
                        :in $ ?gene
                        :where [?gene :gene/corresponding-cds ?gcds]
-                       [?gcds :gene.corresponding-cds/cds ?cds]
-                       [?cds :cds/corresponding-protein ?cprot]
-                       [?cprot :cds.corresponding-protein/protein ?prot]
-                       [?prot :protein/peptide ?pep]
-                       [?pep :protein.peptide/length ?pep-len]]
+                              [?gcds :gene.corresponding-cds/cds ?cds]
+                              [?cds :cds/corresponding-protein ?cprot]
+                              [?cprot :cds.corresponding-protein/protein ?prot]
+                              [?prot :protein/peptide ?pep]
+                              [?pep :protein.peptide/length ?pep-len]]
                      db (:db/id gene))
                   (sort-by second)
                   (last))]   ; longest protein
@@ -1632,10 +1632,10 @@
           (q '[:find ?prot ?score ?min ?max
                :in $ ?ref
                :where [?homol :locatable/parent ?ref]
-               [?homol :homology/protein ?prot]
-               [?homol :locatable/score ?score]
-               [?homol :locatable/min ?min]
-               [?homol :locatable/max ?max]]
+                      [?homol :homology/protein ?prot]
+                      [?homol :locatable/score ?score]
+                      [?homol :locatable/min ?min]
+                      [?homol :locatable/max ?max]]
              db prot)
           (group-by (partial take 2))   ; ?prot and ?score as groupers
           (map
@@ -1935,7 +1935,7 @@
        (q '[:find [?f ...]
             :in $ ?gene
             :where [?fg :feature.associated-with-gene/gene ?gene]
-            [?f :feature/associated-with-gene ?fg]]
+                   [?f :feature/associated-with-gene ?fg]]
           db (:db/id gene))
        (map
          (fn [fid]
@@ -1952,8 +1952,8 @@
                                (q '[:find [?e ...]
                                     :in $ ?f
                                     :where [?ef :expr-pattern.associated-feature/feature ?f]
-                                    [?e :expr-pattern/associated-feature ?ef]
-                                    [?e :expr-pattern/anatomy-term _]]
+                                           [?e :expr-pattern/associated-feature ?ef]
+                                           [?e :expr-pattern/anatomy-term _]]
                                   db fid)
                                (map
                                  (fn [eid]
