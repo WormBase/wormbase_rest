@@ -541,12 +541,12 @@
               (phenotype-table-entity db pheno pato-key entity pid var-phenos rnai-phenos not?)))))
       (into []))))
 
-(defn- phenotype-not-observed [gene]
+(defn- phenotype-not-observed-field [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) true)]
     {:data (if (empty? data) nil data)
      :description "The Phenotype not observed summary of the gene"}))
 
-(defn- phenotype [gene]
+(defn- phenotype-field [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) false)]
     {:data (if (empty? data) nil data)
      :description "The Phenotype summary of the gene"}))
@@ -697,11 +697,11 @@
     {:data (if (empty? phenotype) nil {:Phenotype phenotype})
      :description "phenotypes due to overexpression under the promoter of this gene"}))
 
-(def-rest-widget phenotypes [gene]
+(def-rest-widget phenotype [gene]
   {:name                     (name-field gene)
    :drives_overexpression    (drives-overexpression gene)
-   :Phenotype                (phenotype gene)
-   :phenotype_not_observed   (phenotype-not-observed gene)
+   :phenotype                (phenotype-field gene)
+   :phenotype_not_observed   (phenotype-not-observed-field gene)
    :phenotype_by_interaction (phenotype-by-interaction gene)})
 
 ;;
