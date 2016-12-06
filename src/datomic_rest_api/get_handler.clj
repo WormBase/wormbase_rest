@@ -44,7 +44,7 @@
                       <li>/rest/widget/gene/:id/history</li>
                       <li>/rest/widget/gene/:id/mapping_data</li>
                       <li>/rest/widget/gene/:id/genetics</li>
-                      <li>/rest/widget/gene/:id/phenotype</li>
+                      <li>/rest/widget/gene/:id/phenotypes</li>
                     </ul>
                   </html>")
      (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
