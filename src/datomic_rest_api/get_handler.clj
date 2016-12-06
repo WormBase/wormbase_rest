@@ -28,8 +28,15 @@
                     <h5>Widgets</h5>
                     <ul>
                        <li><a href=\"./rest/widget/\">/rest/widget/</a></li>
+                       <li><a href=\"./rest/field/\">/rest/field/</a></li>
                     <ul>
                   </html>")
+     (GET "/rest/fiedl/" [] "<html>
+                            <ul>
+                              <li>/rest/field/gene/:id/alleles-other</li>
+                              <li>/rest/field/gene/:id/polymorphism</li>
+                            </ul>
+                            </html>")
      (GET "/rest/widget/" [] "<html>
                     <ul>
                       <li>/rest/widget/gene/:id/external_links</li>
@@ -84,7 +91,7 @@
   #{"gene/overview"
     "gene/external"
     "gene/genetics"
-    "gene/phenotype"
+    "gene/phenotypes"
     "gene/history"
     "gene/mapping-data"})
 

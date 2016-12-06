@@ -551,8 +551,10 @@
     {:data (if (empty? data) nil data)
      :description "The Phenotype summary of the gene"}))
 
-(defn- phenotype-by-interaction [db gid]
-  (let [table (q '[:find ?pheno (distinct ?int) ?int-type
+(defn- phenotype-by-interaction [gene]
+  (let [db (d/entity-db gene)
+        gid (:db/id gene)
+        table (q '[:find ?pheno (distinct ?int) ?int-type
                    :in $ ?gene
                    :where [?ig :interaction.interactor-overlapping-gene/gene ?gene]
                    [?int :interaction/interactor-overlapping-gene ?ig]
@@ -590,141 +592,117 @@
      :description
      "phenotype based on interaction"}))
 
-(defn- phenotype-overexpression
-  [db id]
-  (->>
-    (q q-gene-var-pheno db id)
-    (map (partial entity db))
-    (map
-      (fn [tg]
-        {
-         ;           ; :summa (:transgene.summary/text (:transgene/summary t))
-         :summary "sdfsd"} ))))
-;            :summary (:transgene/summary tg)}
-;))))
-;;    (->>
-;;   (for [pid gene-transgene :let [pheno (entity db pid)]]
-;                          :when ((= (:phenotype-info.caused-by-gene pheno) gene) pheno)]
-;       (:transgene/summary gene-trangene)
-;       [(:phenotype/id pheno)
-;       {:object
-;       {:class "phenotype"
-;       :id (:phenotype/id pheno)
-;      :label (:phenotype.primary-name/text (:phenotype/primary-name pheno))
-;     :taxonomy "all"}
-;   :evidence nil
-; }]
-; ))))
-;;         (vmap
-;;          "Allele:"
-;;          (if-let [vp (seq (var-phenos pid))]
-;;            (for [v vp
-;;                  :let [holder (entity db v)
-;;                        var ((if not?
-;;                               :variation/_phenotype-not-observed
-;;                               :variation/_phenotype)
-;;                             holder)]]
-;;              {:text
-;;               {:class "variation"
-;;                :id (:variation/id var)
-;;                :label (:variation/public-name var)
-;;                :style (if (= (:variation/seqstatus var)
-;;                              :variation.seqstatus/sequence)
-;;                         "font-weight: bold"
-;;                         0)
-;;                :taxonomy "c_elegans"}
-;;               :evidence
-;;               (vmap
-;;                :Person_evidence
-;;                (seq
-;;                 (for [person (:phenotype-info/person-evidence holder)]
-;;                   {:class "person"
-;;                    :id (:person/id person)
-;;                    :label (:person/standard-name person)
-;;                    :taxonomy "all"}))
-;;
-;;                :Anatomy_term
-;;                (seq
-;;                 (for [anatomy (:phenotype-info/anatomy-term holder)]
-;;                   (datomic-rest-api.rest.object/pack-obj "anatomy-term" (:phenotype-info.anatomy-term/anatomy-term anatomy))))
-;;
-;;                :Curator_confirmed
-;;                (seq
-;;                 (for [person (:phenotype-info/curator-confirmed holder)]
-;;                   {:class "person"
-;;                    :id (:person/id person)
-;;                    :label (:person/standard-name person)
-;;                    :taxonomy "all"}))
-;;
-;;                :Paper_evidence
-;;                (seq
-;;                 (for [paper (:phenotype-info/paper-evidence holder)]
-;;                   (evidence-paper paper)))
-;;
-;;                :Remark
-;;                (seq
-;;                 (map :phenotype-info.remark/text
-;;                      (:phenotype-info/remark holder))))}))
-;;
-;;          "RNAi:"
-;;          (if-let [rp (seq (rnai-phenos pid))]
-;;            (for [r rp
-;;                  :let [holder (entity db r)
-;;                          rnai ((if not?
-;;                                  :rnai/_phenotype-not-observed
-;;                                  :rnai/_phenotype)
-;;                                holder)]]
-;;              {:text
-;;               {:class "rnai"
-;;                :id (:rnai/id rnai)
-;;                :label (:rnai/id rnai)
-;;                :style 0
-;;                :taxonomy "c_elegans"}
-;;               :evidence
-;;               (vmap
-;;                :Genotype (:rnai/genotype rnai)
-;;                :Remark (seq (map :phenotype-info.remark/text
-;;                                  (:phenotype-info/remark holder)))
-;;                :Strain (:strain/id (:rnai/strain rnai))
-;;                :Paper (if-let [paper (:rnai/reference rnai)]
-;;                         (evidence-paper paper)))})))}])
-;;     (into {}))))
-;;
+(defn get-transgene-evidence [holders phenotypeid transgene]
+  (for [h holders
+        :let [pid (:phenotype/id (:transgene.phenotype/phenotype h))]]
+    (if (= pid phenotypeid)
+      (let [remark (map :phenotype-info.remark/text
+                        (:phenotype-info/remark h))
+            transgeneobj (datomic-rest-api.rest.object/pack-obj
+                           "transgene" transgene)
+            causedbygenes (:phenotype-info/caused-by-gene h)
+            paperevidences (:phenotype-info/paper-evidence h)
+            curators (:phenotype-info/curator-confirmed h)
+            ]
+        {:text
+         [transgeneobj
+          (str "<em>" (:transgene.summary/text (:transgene/summary transgene)) "</em>")
+          remark]
+
+         :evidence
+         {:Phenotype_assay
+          (remove
+            nil?
+            (flatten
+              (for [term ["treatment"
+                          "temperature"
+                          "genotype"]]
+                (let [make-key (partial keyword (str "phenotype-info"))
+                      label (str/capitalize term)]
+                  (if (contains? h (make-key term))
+                    {:taxonomy "all"
+                     :class "tag"
+                     :label label
+                     :id label})))))
+
+          :Curator
+          (for [curator curators]
+            (datomic-rest-api.rest.object/pack-obj "person" curator))
+
+          :EQ_annotations
+          (remove
+            nil?
+            (flatten
+              (for [term ["anatomy-term"
+                          "life-stage"
+                          "go-term"
+                          "molecule-affected"]]
+                (let [make-key (partial keyword (str "phenotype-info"))
+                      label (str/capitalize term)]
+                  (if (contains? h (make-key term))
+                    {:taxonomy "all"
+                     :class "tag"
+                     :label label
+                     :id label})))))
+
+          :Caused_by_gene
+          (for [cbg causedbygenes]
+            (datomic-rest-api.rest.object/pack-obj
+              "gene"
+              (:phenotype-info.caused-by-gene/gene cbg)))
+
+          :Transgene transgeneobj
+
+          :Paper_evidence
+          (for [pe paperevidences]
+            (datomic-rest-api.rest.object/pack-obj "paper" pe))
+
+          :remark remark}}))))
 
 (defn drives-overexpression [gene]
   (let [db (d/entity-db gene)
+        transgenes
+        (q '[:find [?tg ...]
+             :in $ ?gene
+             :where [?cbg :construct.driven-by-gene/gene ?gene]
+             [?cons :construct/driven-by-gene ?cbg]
+             [?cons :construct/transgene-construct ?tg]]
+           db (:db/id gene))
         phenotype
-        (->> (q '[:find [?tg ...]
-                  :in $ ?gene
-                  :where [?cbg :construct.driven-by-gene/gene ?gene]
-                  [?cons :construct/driven-by-gene ?cbg]
-                  [?cons :construct/transgene-construct ?tg]]
-                db (:db/id gene))
-             (map (partial entity db))
+        (->> transgenes
              (map
                (fn [tg]
-                 (let [summary (:transgene.summary/text (:transgene/summary tg))]
-                   (->> (q '[:find [?pheno ...]
-                             :in $ ?tg
-                             :where [?tg :transgene/phenotype ?ph]
-                             [?ph :transgene.phenotype/phenotype ?pheno]]
-                           db (:db/id tg))
-                        (map (partial entity db))
-                        (map
-                          (fn [p]
-                            {
-                             :description (:phenotype/description p)
-                             :summary summary})))))))]
+                 (->> (q '[:find [?pheno ...]
+                           :in $ ?tg
+                           :where [?tg :transgene/phenotype ?ph]
+                           [?ph :transgene.phenotype/phenotype ?pheno]]
+                         db tg)
+                      (map
+                        (fn [p]
+                          (let [pheno (entity db p)
+                                phenotypeid (:phenotype/id pheno)]
+                            {phenotypeid
+                             {:object
+                              (datomic-rest-api.rest.object/pack-obj "phenotype" pheno)
+
+                              :evidence
+                              (flatten
+                                (for [tg transgenes
+                                      :let [transgene (d/entity db tg)
+                                            holders  (:transgene/phenotype transgene)
+                                            evidence (get-transgene-evidence holders phenotypeid transgene)]]
+                                  evidence)) }})))
+                      (into {}))))
+             (into{}))]
     {:data (if (empty? phenotype) nil {:Phenotype phenotype})
      :description "phenotypes due to overexpression under the promoter of this gene"}))
 
 (def-rest-widget phenotypes [gene]
-  {
-   :name      (name-field gene)
-   :drives_overexpression (drives-overexpression gene)
-   :Phenotype             (phenotype gene)
-   :phenotype_not_observed (phenotype-not-observed gene)
-   :phenotype_by_interaction (phenotype-by-interaction (d/entity-db gene) (:db/id gene))})
+  {:name                     (name-field gene)
+   :drives_overexpression    (drives-overexpression gene)
+   :Phenotype                (phenotype gene)
+   :phenotype_not_observed   (phenotype-not-observed gene)
+   :phenotype_by_interaction (phenotype-by-interaction gene)})
 
 ;;
 ;; Mapping data widget

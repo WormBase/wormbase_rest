@@ -70,7 +70,7 @@
      (str (author-lastname (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
-  (str (author-list paper) ", " (:paper/publication-date paper)))
+  (str (author-list paper) ", " (first (str/split (:paper/publication-date paper) #"-"))))
 
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
