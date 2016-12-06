@@ -533,12 +533,13 @@
         phenos (set (concat (keys var-phenos)
                             (keys rnai-phenos)))]
     (->>
-      (for [pid phenos :let [pheno (entity db pid)]]
-        (let [pcs (get-pato-combinations db pid rnai-phenos var-phenos not?)]
-          (if (nil? pcs)
-            (phenotype-table-entity db pheno nil nil pid var-phenos rnai-phenos not?)
-            (for [[pato-key entity] pcs]
-              (phenotype-table-entity db pheno pato-key entity pid var-phenos rnai-phenos not?)))))
+      (flatten
+        (for [pid phenos :let [pheno (entity db pid)]]
+          (let [pcs (get-pato-combinations db pid rnai-phenos var-phenos not?)]
+            (if (nil? pcs)
+              (phenotype-table-entity db pheno nil nil pid var-phenos rnai-phenos not?)
+              (for [[pato-key entity] pcs]
+                (phenotype-table-entity db pheno pato-key entity pid var-phenos rnai-phenos not?))))))
       (into []))))
 
 (defn- phenotype-not-observed-field [gene]
