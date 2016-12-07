@@ -534,7 +534,8 @@
                             (keys rnai-phenos)))]
     (->>
       (flatten
-        (for [pid phenos :let [pheno (entity db pid)]]
+        (for [pid phenos
+              :let [pheno (entity db pid)]]
           (let [pcs (get-pato-combinations db pid rnai-phenos var-phenos not?)]
             (if (nil? pcs)
               (phenotype-table-entity db pheno nil nil pid var-phenos rnai-phenos not?)

@@ -31,7 +31,7 @@
                        <li><a href=\"./rest/field/\">/rest/field/</a></li>
                     <ul>
                   </html>")
-     (GET "/rest/fiedl/" [] "<html>
+     (GET "/rest/field/" [] "<html>
                             <ul>
                               <li>/rest/field/gene/:id/alleles-other</li>
                               <li>/rest/field/gene/:id/polymorphism</li>
