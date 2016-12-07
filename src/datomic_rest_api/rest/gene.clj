@@ -443,6 +443,36 @@
                      (get-pato-from-holder holder))]
       (apply merge patos))))
 
+(defn var-evidence [holder]
+  (vmap
+    :Person_evidence
+    (seq
+      (for [person (:phenotype-info/person-evidence holder)]
+        {:class "person"
+         :id (:person/id person)
+         :label (:person/standard-name person)
+         :taxonomy "all"}))
+
+    :Curator
+    (seq
+      (for [person (:phenotype-info/curator-confirmed holder)]
+        {:class "person"
+         :id (:person/id person)
+         :label (:person/standard-name person)
+         :taxonomy "all"}))
+
+    :Paper_evidence
+    (seq
+      (for [paper (:phenotype-info/paper-evidence holder)]
+        (evidence-paper paper)))
+
+    :Remark
+    (seq
+      (map :phenotype-info.remark/text
+           (:phenotype-info/remark holder)))))
+
+
+
 (defn- phenotype-table-entity [db pheno pato-key entity pid var-phenos rnai-phenos not?]
   {:entity entity
    :phenotype
@@ -471,33 +501,7 @@
                       "font-weight:bold"
                       0)
              :taxonomy "c_elegans"}
-            :evidence
-            (vmap
-              :Person_evidence
-              (seq
-                (for [person (:phenotype-info/person-evidence holder)]
-                  {:class "person"
-                   :id (:person/id person)
-                   :label (:person/standard-name person)
-                   :taxonomy "all"}))
-
-              :Curator
-              (seq
-                (for [person (:phenotype-info/curator-confirmed holder)]
-                  {:class "person"
-                   :id (:person/id person)
-                   :label (:person/standard-name person)
-                   :taxonomy "all"}))
-
-              :Paper_evidence
-              (seq
-                (for [paper (:phenotype-info/paper-evidence holder)]
-                  (evidence-paper paper)))
-
-              :Remark
-              (seq
-                (map :phenotype-info.remark/text
-                     (:phenotype-info/remark holder))))})))
+            :evidence (var-evidence holder)})))
 
      "RNAi:"
      (if-let [rp (seq (rnai-phenos pid))]
@@ -515,11 +519,17 @@
              :label (str (parse-int (:rnai/id rnai)))
              :taxonomy "c_elegans"}
             :evidence
-            {
-             :genotype (:rnai/genotype rnai)
-             :strain (:strain/id (:rnai/strain rnai))
-             :paper (if-let [paper (:rnai.reference/paper (:rnai/reference rnai))]
-                      (evidence-paper paper))}}))))})
+            (merge
+              {:genotype
+               (:rnai/genotype rnai)
+
+               :strain
+               (:strain/id (:rnai/strain rnai))
+
+               :paper
+               (if-let [paper (:rnai.reference/paper (:rnai/reference rnai))]
+                 (evidence-paper paper))}
+              (var-evidence holder))}))))})
 
 (defn- phenotype-table [db gene not?]
   (let [var-phenos (into {} (q (if not?
