@@ -1514,7 +1514,11 @@
                      (map (fn [[analysis fpkm stage]]
                             {:value fpkm
                              :life_stage (pack-obj stage)
-                             :project_info (pack-obj (first (:analysis/project analysis)))
+                             :project_info (-> (first (:analysis/project analysis))
+                                               (pack-obj)
+                                               (into {:experiment (-> (:analysis/id analysis)
+                                                                      (str/split #"\.")
+                                                                      (last))}))
                              :label (pack-obj analysis)})))
         controls (->> result-tuples
                       (filter (fn [[analysis]] (control-analysis? analysis)))
@@ -1530,8 +1534,20 @@
                       (group-by (fn [control]
                                   (:id (:life_stage control))))
                       (map (fn [[_ controls]]
-                             (apply merge controls))))]
+                             (apply merge controls))))
+        studies (->> result-tuples
+                     (filter (fn [[analysis]] (not (control-analysis? analysis))))
+                     (map (fn [[analysis]]
+                            (first (:analysis/project analysis))))
+                     (set)
+                     (map (fn [project]
+                            {(keyword (:analysis/id project)) {:title (:analysis/title project)
+                                                               :tag (pack-obj project)
+                                                               :indep_variable (map humanize-ident (:analysis/independent-variable project))
+                                                               :description (:analysis/description project)}}))
+                     (apply merge))]
     {:data {:controls controls
+            :by_study studies
             :table {:fpkm {:data results}}}
      :description "Fragments Per Kilobase of transcript per Million mapped reads (FPKM) expression data"}))
 
