@@ -2,7 +2,7 @@
   (:require [cheshire.core :as c :refer (generate-string)]
             [pseudoace.binning :refer (reg2bins xbin bins)]
             [datomic-rest-api.helpers :refer(format-date)]
-            [datomic-rest-api.rest.object :refer (humanize-ident get-evidence author-list)]
+            [datomic-rest-api.rest.object :as rest-api-obj :refer (humanize-ident get-evidence author-list pack-obj)]
             [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
@@ -1479,6 +1479,61 @@
 (defn- microarray-topology-map-position [gene]
     {:data nil ;; this resquires segment data and can be found in the file: lib/WormBase/API/Role/Expression.pm
      :description "microarray topography map"})
+
+(defn- control-analysis? [analysis]
+  (if-let [matched (re-matches #".+control_(mean|median)"
+                               (:analysis/id analysis))]
+    (let [[_ stat-type] matched]
+      stat-type)))
+
+(defn- pack-analysis [analysis]
+  (let [record {:label (pack-obj analysis)
+                :project_info (pack-obj (:analysis/project analysis))
+                :comment (:analysis/description analysis)}]
+    (if-let [stat-type (control-analysis? analysis)]
+      (into record {:control true
+                    :stat_type stat-type})
+      (into record {:control false})))
+  )
+
+(defn- fpkm-expression-summary-ls [gene]
+  (let [db (d/entity-db gene)
+        result-tuples (->> (q '[:find ?analysis ?fpkm ?stage
+                                :in $ ?gene
+                                :where [?gene :gene/rnaseq ?rnaseq]
+                                       [?rnaseq :gene.rnaseq/stage ?stage]
+                                       [?rnaseq :gene.rnaseq/fpkm ?fpkm]
+                                       [?rnaseq :evidence/from-analysis ?analysis]]
+                              db (:db/id gene))
+                           (map (fn [[analysis-id fpkm stage-id]]
+                                  (let [analysis (entity db analysis-id)
+                                        stage (entity db stage-id)]
+                                    [analysis fpkm stage]))))
+        results (->> result-tuples
+                     (filter (fn [[analysis]] (not (control-analysis? analysis))))
+                     (map (fn [[analysis fpkm stage]]
+                            {:value fpkm
+                             :life_stage (pack-obj stage)
+                             :project_info (pack-obj (first (:analysis/project analysis)))
+                             :label (pack-obj analysis)})))
+        controls (->> result-tuples
+                      (filter (fn [[analysis]] (control-analysis? analysis)))
+                      (map (fn [[analysis fpkm stage]]
+                             (let [stat-type (->> (control-analysis? analysis)
+                                                  (str "control ")
+                                                  (keyword))]
+                               {stat-type {:text fpkm
+                                           :evidence {:comment (:analysis/description analysis)}}
+                                :life_stage (if (re-find #"total_over_all_stages" (:analysis/id analysis))
+                                              (rest-api-obj/pack-text "total_over_all_stages")  ;refer to WormBase/website#4540
+                                              (pack-obj stage))})))
+                      (group-by (fn [control]
+                                  (:id (:life_stage control))))
+                      (map (fn [[_ controls]]
+                             (apply merge controls))))]
+    {:data {:controls controls
+            :table {:fpkm {:data results}}}
+     :description "Fragments Per Kilobase of transcript per Million mapped reads (FPKM) expression data"}))
 
 (def-rest-widget expression [gene]
   {:name                (name-field gene)

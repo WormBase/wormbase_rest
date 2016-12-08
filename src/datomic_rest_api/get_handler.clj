@@ -88,7 +88,8 @@
 
 (def ^{:private true} whitelisted-fields
   #{"gene/alleles-other"
-    "gene/polymorphisms"})
+    "gene/polymorphisms"
+    "gene/fpkm-expression-summary-ls"})
 
 ;; start of REST handler for widgets and fields
 
