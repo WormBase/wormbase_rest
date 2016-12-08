@@ -214,7 +214,7 @@
 (defn pack-obj
   "Retrieve a 'packed' (web-API) representation of entity-map `obj`."
   ([obj]
-     (pack-obj (obj-class obj) obj))
+   (pack-obj (obj-class obj) obj))
   ([class obj & {:keys [label]}]
    (if obj
      {:id       ((keyword class "id") obj)
@@ -329,6 +329,12 @@
    (if-let [seqs (:evidence/sequence-evidence holder)]
      (map (partial pack-obj "sequence" seqs)))))
 
+(defn pack-text [text]
+  "normalize text to behave like a pack object"
+  {:id text
+   :label (str/replace text #"_" " ")
+   :class text
+   :taxonomy nil})
 
 (defn humanize-ident
   "Reconstruct a more human-readable representation of a Datomic enum key."
