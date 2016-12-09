@@ -6,7 +6,7 @@
 
 ```bash
 export WS_VERSION=WS256
-export TRACE_DB="datomic:ddb://us-east-1/WS255/wormbase"
+export TRACE_DB="datomic:ddb://us-east-1/WS256/wormbase"
 ```
 
 ## Starting server in development
