@@ -39,6 +39,10 @@
            (:phenotype.primary-name/text))
       (:phenotype/id obj)))
 
+(defmethod obj-label "molecule" [_ obj]
+   (or (first (:molecule/public-name obj))
+      (:molecule/id obj)))
+
 (defmethod obj-label "variation" [_ obj]
   (or (:variation/public-name obj)
       (:variation/id obj)))
@@ -211,7 +215,7 @@
    "anatomy-term"
 
    (:molecule/id obj)
-   "molecule-affected"
+   "molecule"
 
    (:life-stage/id obj)
    "life-stage"

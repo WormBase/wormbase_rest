@@ -406,7 +406,11 @@
   {:class "paper"
    :id (:paper/id paper)
    :taxonomy "all"
-   :label (str (datomic-rest-api.rest.object/author-list paper) ", " (first (str/split (:paper/publication-date paper) #"-")))})
+   :label (str (datomic-rest-api.rest.object/author-list paper)
+               ", "
+               (if (= nil (:paper/publication-date paper))
+                 ""
+                 (first (str/split (:paper/publication-date paper) #"-"))))})
 
 (defn parse-int [s]
   (Integer. (re-find  #"\d+" s )))
@@ -443,7 +447,15 @@
                      (get-pato-from-holder holder))]
       (apply merge patos))))
 
-(defn var-evidence [holder]
+(def not-nil? (complement nil?))
+
+(defn create-tag [label]
+  {:taxonomy "all"
+   :class "tag"
+   :label label
+   :id  label})
+
+(defn var-evidence [holder variation pheno]
   (vmap
     :Person_evidence
     (seq
@@ -469,9 +481,143 @@
     :Remark
     (seq
       (map :phenotype-info.remark/text
-           (:phenotype-info/remark holder)))))
+           (:phenotype-info/remark holder)))
+
+    :Recessive
+    (if (contains? holder :phenotype-info/recessive) "")
+
+    :Quantity_description
+    (seq
+      (map :phenotype-info.quantity-description/text
+           (:phenotype-info/quantity-description holder)))
+
+    :Penetrance
+    nil
+
+    :Dominant
+    (if
+      (contains? holder :phenotype-info/dominant) "")
+
+    :Semi_dominant
+    (if
+      (contains? holder :phenotype-info/semi-dominant)
+      (let [sd (:phenotype-info/semi-dominant holder)]
+        (remove
+          nil?
+           [(if
+             (contains? sd :evidence/person-evidence)
+             (create-tag "Person_evidence"))
+           (if
+             (contains? sd :evidence/curator-confirmed)
+             (create-tag "Curator_confirmed"))
+           (if
+             (contains? sd :evidence/paper-evidence)
+             (create-tag "Paper_evidence"))])))
+
+    :Low
+    (seq
+      (map :phenotype-info.low/text
+          (:phenotype-info/low holder)))
+
+    :High
+    (seq
+      (map :phenotype-info.high/text
+          (:phenotype-info/high holder)))
+
+    :Complete
+    (seq
+      (map :phenotype-info.complete/text
+          (:phenotype-info/complete holder)))
+
+    :range
+    (if (not-nil? (:phenotype-info/range holder))
+      (str/join
+        " - "
+        [(str
+          (:phenotype-info.range/int-a
+            (:phentype-info/range holder)))
+        (str
+          (:phenotype-info.range/int-b
+            (:phentype-info/range holder)))]))
+
+    :Maternal
+    (if
+      (contains? holder :phenotype-info/maternal)
+      (create-tag
+        (humanize-ident
+          (:phenotype-info.maternal/value
+            (:phenotype-info/maternal holder)))))
+
+    :Variation_effect
+    (if (contains? holder :phenotype-info/variation-effect)
+      (first ; we should actually display all of them but catalyst template not displaying nested array
+        (for [ve (:phenotype-info/variation-effect holder)]
+        (remove
+          nil?
+          [(create-tag
+             (humanize-ident (:phenotype-info.variation-effect/value ve)))
+           (if
+             (contains? ve :evidence/person-evidence)
+             (create-tag "Person_evidence"))
+           (if
+             (contains? ve :evidence/curator-confirmed)
+             (create-tag "Curator_confirmed"))
+           (if
+             (contains? ve :evidence/paper-evidence)
+             (create-tag "Paper_evidence"))]))))
+
+    :Affected_by
+    (if
+      (contains? holder :phenotype-info/molecule)
+      (for [m (:phenotype-info/molecule holder)]
+        (datomic-rest-api.rest.object/pack-obj (:phenotype-info.molecule/molecule m))))
+
+    :Ease_of_scoring
+    (if
+      (contains? holder :phenotype-info/ease-of-scoring)
+      (create-tag
+        (humanize-ident
+          (:phenotype-info.ease-of-scoring/value
+            (:phenotype-info/ease-of-scoring holder)))))
+
+    :Phenotype_assay
+    (if
+      (contains? pheno :phenotype/assay)
+      ((:phenotype.assay/text
+         (:phenotype/assay pheno))))
 
 
+    :Male_mating_efficiency
+    (if
+      (contains? variation :variation/male-mating-efficiency)
+      (humanize-ident
+        (:variation.male-mating-efficiency/value
+          (:variation/male-mating-efficiency variation))))
+
+
+    :Temperature_sensitive
+    (if
+      (or
+        (contains? holder :phenotype-info/heat-sensitive)
+        (contains? holder :phenotype-info/cold-sensitive))
+        (conj
+          (if (contains? holder :phenotype-info/heat-sensitive)
+            (create-tag "Heat-sensitive"))
+          (if (contains? holder :phenotype-info/cold-sensitive)
+            (create-tag "Cold-sensitive"))))
+
+    :Strain
+    nil
+
+    :Treatment
+    nil
+
+    :Temperature
+    nil
+
+    :Ease_of_scoring
+    nil
+    ))
 
 (defn- phenotype-table-entity [db pheno pato-key entity pid var-phenos rnai-phenos not?]
   {:entity entity
@@ -493,15 +639,25 @@
                    var-pato-key  (first (keys (get-pato-from-holder holder)))]]
          (if (= pato-key var-pato-key)
            {:text
-            {:class "variation"
-             :id (:variation/id var)
-             :label (:variation/public-name var)
-             :style (if (= (:variation/seqstatus var)
-                           :variation.seqstatus/sequenced)
-                      "font-weight:bold"
-                      0)
-             :taxonomy "c_elegans"}
-            :evidence (var-evidence holder)})))
+            {:class
+             "variation"
+
+             :id
+             (:variation/id var)
+
+             :label
+             (:variation/public-name var)
+
+             :style
+             (if (= (:variation/seqstatus var)
+                    :variation.seqstatus/sequenced)
+               "font-weight:bold"
+               0)
+
+             :taxonomy
+             "c_elegans"
+             }
+            :evidence (var-evidence holder var pheno)})))
 
      "RNAi:"
      (if-let [rp (seq (rnai-phenos pid))]
@@ -520,16 +676,16 @@
              :taxonomy "c_elegans"}
             :evidence
             (merge
-              {:genotype
+              {:Genotype
                (:rnai/genotype rnai)
 
-               :strain
+               :Strain
                (:strain/id (:rnai/strain rnai))
 
                :paper
                (if-let [paper (:rnai.reference/paper (:rnai/reference rnai))]
                  (evidence-paper paper))}
-              (var-evidence holder))}))))})
+              (var-evidence holder rnai pheno))}))))})
 
 (defn- phenotype-table [db gene not?]
   (let [var-phenos (into {} (q (if not?
