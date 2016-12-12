@@ -583,9 +583,8 @@
     :Phenotype_assay
     (if
       (contains? pheno :phenotype/assay)
-      ((:phenotype.assay/text
-         (:phenotype/assay pheno))))
-
+      (let [holder (:phenotype/assay pheno)]
+        (:phenotype.assay/text holder)))
 
     :Male_mating_efficiency
     (if
