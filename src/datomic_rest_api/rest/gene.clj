@@ -491,9 +491,6 @@
       (map :phenotype-info.quantity-description/text
            (:phenotype-info/quantity-description holder)))
 
-    :Penetrance
-    nil
-
     :Dominant
     (if
       (contains? holder :phenotype-info/dominant) "")
@@ -514,31 +511,43 @@
              (contains? sd :evidence/paper-evidence)
              (create-tag "Paper_evidence"))])))
 
-    :Low
-    (seq
-      (map :phenotype-info.low/text
-          (:phenotype-info/low holder)))
+    :Penetrance
+    (first
+      (remove nil?
+	      (flatten
+	       (conj
+		(if
+		 (contains? holder :phenotype-info/low)
+		 (for [low-holder (:phenotype-info/low holder)
+		       :let [text (:phenotype-info.low/text low-holder)]]
+				  (if (= text "") nil text)))
+		(if
+		 (contains? holder :phenotype-info/high)
+		 (for [high-holder (:phenotype-info/high holder)
+		       :let [text (:phenotype-info.high/text high-holder)]]
+				   (if (= text "") nil text)))
+		(if
+		 (contains? holder :phenotype-info/complete)
+		 (for [complete-holder (:phenotype-info/complete holder)
+		       :let [text (:phenotype-info.complete/text complete-holder)]]
+				       (if (= text "") nil text)))))))
 
-    :High
-    (seq
-      (map :phenotype-info.high/text
-          (:phenotype-info/high holder)))
-
-    :Complete
-    (seq
-      (map :phenotype-info.complete/text
-          (:phenotype-info/complete holder)))
-
-    :range
+    :Penetrance-range
     (if (not-nil? (:phenotype-info/range holder))
-      (str/join
-        " - "
-        [(str
-          (:phenotype-info.range/int-a
-            (:phentype-info/range holder)))
-        (str
-          (:phenotype-info.range/int-b
-            (:phentype-info/range holder)))]))
+      (let [range-holder (:phenotype-info/range holder)]
+        (if
+          (contains? range-holder :phenotype-info.range/int-b)
+          (let [range (str/join
+            "-"
+            [(str
+               (:phenotype-info.range/int-a range-holder))
+             (str
+               (:phenotype-info.range/int-b range-holder))])]
+            (if
+              (= range "100-100")
+              "100%"
+              range))
+          (:phenotype-info.range/int-a range-holder))))
 
     :Maternal
     (if
@@ -547,6 +556,25 @@
         (humanize-ident
           (:phenotype-info.maternal/value
             (:phenotype-info/maternal holder)))))
+
+    :Paternal
+    (if
+      (contains? holder :phenotype-info/paternal)
+      (create-tag
+        (humanize-ident
+          (:phenotype-info.paternal/value
+            (:phenotype-info/paternal holder)))))
+
+    :Haplo_insufficient
+    (if
+      (contains? holder :phenotype-info/haplo-insufficient)
+      (create-tag
+        (humanize-ident
+          (:phenotype-info.paternal/value
+            (:phenotype-info/haplo-insufficient holder)))))
+
+
+
 
     :Variation_effect
     (if (contains? holder :phenotype-info/variation-effect)
@@ -609,10 +637,18 @@
     nil
 
     :Treatment
-    nil
+    (if
+      (contains? holder :phenotype-info/treatment)
+      (first (for [treatment-holder (:phenotype-info/treatment holder)
+    	:let [text (:phenotype-info.treatment/text treatment-holder)]]
+        (if (= text "") nil text))))
 
     :Temperature
-    nil
+    (if
+      (contains? holder :phenotype-info/temperature)
+      (first (for [temp-holder (:phenotype-info/temperature holder)
+    	:let [text (:phenotype-info.temperature/text temp-holder)]]
+        (if (= text "") nil text))))
 
     :Ease_of_scoring
     nil
