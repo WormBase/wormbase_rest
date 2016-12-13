@@ -1486,16 +1486,6 @@
     (let [[_ stat-type] matched]
       stat-type)))
 
-(defn- pack-analysis [analysis]
-  (let [record {:label (pack-obj analysis)
-                :project_info (pack-obj (:analysis/project analysis))
-                :comment (:analysis/description analysis)}]
-    (if-let [stat-type (control-analysis? analysis)]
-      (into record {:control true
-                    :stat_type stat-type})
-      (into record {:control false})))
-  )
-
 (defn- fpkm-expression-summary-ls [gene]
   (let [db (d/entity-db gene)
         result-tuples (->> (q '[:find ?analysis ?fpkm ?stage
