@@ -419,7 +419,7 @@
   (let [pato-id  (str/join "_" [id pato-term])]
     {pato-id
      {:pato_evidence
-      {:entity-term entity-term
+      {:entity_term entity-term
        :entity_type "Anatomy_term"
        :pato_term pato-term}
       :key pato-id}}))
