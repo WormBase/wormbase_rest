@@ -415,12 +415,12 @@
 (defn parse-int [s]
   (Integer. (re-find  #"\d+" s )))
 
-(defn- create-pato-term [id entity-term entity-type pato-term]
-  (let [pato-id  (str/join "_" [id pato-term])]
+(defn- create-pato-term [id label entity-term entity-type pato-term]
+  (let [pato-id  (str/join "_" [id label pato-term])]
     {pato-id
      {:pato_evidence
       {:entity_term entity-term
-       :entity_type "Anatomy_term"
+       :entity_type label
        :pato_term pato-term}
       :key pato-id}}))
 
@@ -430,13 +430,13 @@
                                   "go-term" "go-term"
                                   "molecule-affected" "molecule"}
                   :let [[eq-key label] eq-annotations]]
-              (for [anatomy (:phenotype-info/anatomy-term holder)]
+              (for [eq-term ((keyword "phenotype-info" eq-key) holder)]
                 (let [make-key (partial keyword (str "phenotype-info." eq-key))
-                      pato-name (first (:pato-term/name (-> anatomy ((make-key "pato-term")))))
-                      id (:anatomy-term/id  (-> anatomy ((make-key eq-key))))
-                      entity-term (datomic-rest-api.rest.object/pack-obj label (-> anatomy ((make-key label))))
+                      pato-name (first (:pato-term/name (-> eq-term ((make-key "pato-term")))))
+                      id ((keyword eq-key "id")  (-> eq-term ((make-key eq-key))))
+                      entity-term (datomic-rest-api.rest.object/pack-obj label (-> eq-term ((make-key label))))
                       pato-term (if (nil? pato-name) "abnormal" pato-name)]
-                  (if (nil? id) nil (create-pato-term id entity-term (str/capitalize (str/replace eq-key #"-" "_")) pato-term)))))
+                  (if (nil? id) nil (create-pato-term id label entity-term (str/capitalize (str/replace eq-key #"-" "_")) pato-term)))))
         var-combo (into {} (for [x sot] (apply merge x)))]
     {(str/join "_" (sort (keys var-combo))) (vals var-combo)}))
 
@@ -573,7 +573,7 @@
           (:phenotype-info.paternal/value
             (:phenotype-info/haplo-insufficient holder)))))
 
-
+     :keysh (keys holder)
 
 
     :Variation_effect
@@ -594,7 +594,7 @@
              (contains? ve :evidence/paper-evidence)
              (create-tag "Paper_evidence"))]))))
 
-    :Affected_by_molucule
+    :Affected_by_molecule
     (if
       (contains? holder :phenotype-info/molecule)
       (for [m (:phenotype-info/molecule holder)]
