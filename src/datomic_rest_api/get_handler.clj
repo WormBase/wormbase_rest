@@ -28,8 +28,15 @@
                     <h5>Widgets</h5>
                     <ul>
                        <li><a href=\"./rest/widget/\">/rest/widget/</a></li>
+                       <li><a href=\"./rest/field/\">/rest/field/</a></li>
                     <ul>
                   </html>")
+     (GET "/rest/field/" [] "<html>
+                            <ul>
+                              <li>/rest/field/gene/:id/alleles-other</li>
+                              <li>/rest/field/gene/:id/polymorphism</li>
+                            </ul>
+                            </html>")
      (GET "/rest/widget/" [] "<html>
                     <ul>
                       <li>/rest/widget/gene/:id/external_links</li>
@@ -37,6 +44,7 @@
                       <li>/rest/widget/gene/:id/history</li>
                       <li>/rest/widget/gene/:id/mapping_data</li>
                       <li>/rest/widget/gene/:id/genetics</li>
+                      <li>/rest/widget/gene/:id/phenotype</li>
                     </ul>
                   </html>")
      (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
@@ -83,6 +91,7 @@
   #{"gene/overview"
     "gene/external"
     "gene/genetics"
+    "gene/phenotype"
     "gene/history"
     "gene/mapping-data"})
 

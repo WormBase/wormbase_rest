@@ -39,6 +39,10 @@
            (:phenotype.primary-name/text))
       (:phenotype/id obj)))
 
+(defmethod obj-label "molecule" [_ obj]
+   (or (first (:molecule/public-name obj))
+      (:molecule/id obj)))
+
 (defmethod obj-label "variation" [_ obj]
   (or (:variation/public-name obj)
       (:variation/id obj)))
@@ -70,7 +74,7 @@
      (str (author-lastname (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
-  (str (author-list paper) ", " (:paper/publication-date paper)))
+  (str (author-list paper) ", " (first (str/split (:paper/publication-date paper) #"-"))))
 
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
@@ -99,6 +103,9 @@
 
 (defmethod obj-label "life-stage" [_ ls]
   (:life-stage/public-name ls))
+
+(defmethod obj-label "molecule-affected" [_ ls]
+  (:moluecule/public-name ls))
 
 (defmethod obj-label "protein" [_ prot]
   (or (first (:protein/gene-name prot))
@@ -206,6 +213,15 @@
 
    (:anatomy-term/id obj)
    "anatomy-term"
+
+   (:molecule/id obj)
+   "molecule"
+
+   (:life-stage/id obj)
+   "life-stage"
+
+   (:go-term/id obj)
+   "go-term"
 
    :default
    (if-let [k (first (filter #(= (name %) "id") (keys obj)))]

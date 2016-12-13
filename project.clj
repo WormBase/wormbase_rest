@@ -1,4 +1,4 @@
-(defproject wormbase/datomic-rest-api "0.0.6"
+(defproject wormbase/datomic-rest-api "0.0.13"
   :description "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
   :min-lein-version "2.0.0"
@@ -32,6 +32,7 @@
   :main datomic-rest-api.get-handler
   :aot [datomic-rest-api.get-handler]
   :ring {:handler datomic-rest-api.get-handler/app
+         :host "0.0.0.0"
          :init datomic-rest-api.get-handler/init}
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
