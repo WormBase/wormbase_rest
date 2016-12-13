@@ -594,11 +594,17 @@
              (contains? ve :evidence/paper-evidence)
              (create-tag "Paper_evidence"))]))))
 
-    :Affected_by
+    :Affected_by_molucule
     (if
       (contains? holder :phenotype-info/molecule)
       (for [m (:phenotype-info/molecule holder)]
         (datomic-rest-api.rest.object/pack-obj (:phenotype-info.molecule/molecule m))))
+
+    :Affected_by_pathogen
+    (if
+      (contains? holder :phenotype-info/pathogen)
+      (for [m (:phenotype-info/pathogen holder)]
+        (datomic-rest-api.rest.object/pack-obj (:phenotype-info.molecule/species m))))
 
     :Ease_of_scoring
     (if
