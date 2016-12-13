@@ -573,9 +573,6 @@
           (:phenotype-info.paternal/value
             (:phenotype-info/haplo-insufficient holder)))))
 
-     :keysh (keys holder)
-
-
     :Variation_effect
     (if (contains? holder :phenotype-info/variation-effect)
       (first ; we should actually display all of them but catalyst template not displaying nested array
