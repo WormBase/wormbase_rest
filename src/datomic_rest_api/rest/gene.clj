@@ -1784,9 +1784,10 @@
                                                                :indep_variable (map humanize-ident (:analysis/independent-variable project))
                                                                :description (:analysis/description project)}}))
                      (apply merge))]
-    {:data {:controls controls
-            :by_study studies
-            :table {:fpkm {:data results}}}
+    {:data (if (empty? results) nil
+               {:controls controls
+                :by_study studies
+                :table {:fpkm {:data results}}})
      :description "Fragments Per Kilobase of transcript per Million mapped reads (FPKM) expression data"}))
 
 (def-rest-widget expression [gene]
