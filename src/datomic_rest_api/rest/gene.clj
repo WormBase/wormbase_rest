@@ -1779,7 +1779,7 @@
                             (first (:analysis/project analysis))))
                      (set)
                      (map (fn [project]
-                            {(keyword (:analysis/id project)) {:title (:analysis/title project)
+                            {(keyword (:analysis/id project)) {:title (first (:analysis/title project))
                                                                :tag (pack-obj project)
                                                                :indep_variable (map humanize-ident (:analysis/independent-variable project))
                                                                :description (:analysis/description project)}}))
