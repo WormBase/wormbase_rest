@@ -85,7 +85,8 @@
   (if-let [fn-name (-> (str/join "/" [schema-name endpoint-name])
                        (str/replace "_" "-")
                        (whitelist))]
-    (resolve (symbol (str "datomic-rest-api.rest.widgets." fn-name)))))
+    (or (resolve (symbol (str "datomic-rest-api.rest.widgets." fn-name)))
+        (resolve (symbol (str "datomic-rest-api.rest.fields." fn-name))))))
 
 (def ^{:private true} whitelisted-widgets
   #{"gene/overview"
