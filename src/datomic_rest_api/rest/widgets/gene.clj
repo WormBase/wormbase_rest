@@ -44,20 +44,20 @@
 ;;   :polymorphisms    (polymorphisms gene)  ;; can be requested through /rest/field/
    :name             (name-field gene)})
 
-;; (def-rest-widget mapping-data [gene]
-;;   {:name      (name-field gene)
+(def-rest-widget mapping-data [gene]
+  {:name      (name-field gene)
 
-;;    :two_pt_data
-;;    {:data (seq (gene-mapping-twopt (d/entity-db gene) (:db/id gene)))
-;;     :description "Two point mapping data for this gene"}
+   :two_pt_data
+   {:data (seq (gene-mapping-twopt gene))
+    :description "Two point mapping data for this gene"}
 
-;;    :pos_neg_data
-;;    {:data (seq (gene-mapping-posneg (d/entity-db gene) (:db/id gene)))
-;;     :description "Positive/Negative mapping data for this gene"}
+   :pos_neg_data
+   {:data (seq (gene-mapping-posneg gene))
+    :description "Positive/Negative mapping data for this gene"}
 
-;;    :multi_pt_data
-;;    {:data (seq (gene-mapping-multipt (d/entity-db gene) (:db/id gene)))
-;;     :description "Multi point mapping data for this gene"}})
+   :multi_pt_data
+   {:data (seq (gene-mapping-multipt gene))
+    :description "Multi point mapping data for this gene"}})
 
 ;; (def-rest-widget human-diseases [gene]
 ;;   {:name                    (name-field gene)
