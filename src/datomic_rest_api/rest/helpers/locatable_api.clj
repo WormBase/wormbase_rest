@@ -1,4 +1,4 @@
-(ns datomic-rest-api.rest.locatable-api
+(ns datomic-rest-api.rest.helpers.locatable-api
   (:use pseudoace.utils
         datomic-rest-api.rest.object
         pseudoace.locatables

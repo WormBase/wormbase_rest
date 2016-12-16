@@ -1,4 +1,4 @@
-(ns datomic-rest-api.helpers
+(ns datomic-rest-api.rest.helpers.date
   (:import java.text.SimpleDateFormat))
 
 (defn format-date
