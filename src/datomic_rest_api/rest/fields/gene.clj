@@ -1,4 +1,4 @@
-(ns datomic-rest-api.rest.gene
+(ns datomic-rest-api.rest.fields.gene
   (:require [cheshire.core :as c :refer (generate-string)]
             [pseudoace.binning :refer (reg2bins xbin bins)]
             [datomic-rest-api.helpers :refer(format-date)]
@@ -14,7 +14,7 @@
 ;; "name" field, included on all widgets.
 ;;
 
-(defn- name-field [gene]
+(defn name-field [gene]
   (let [data (datomic-rest-api.rest.object/pack-obj "gene" gene)]
     {:data (if (empty? data) nil data)
      :description (format "The name and WormBase internal ID of %s" (:gene/id gene))}))
@@ -40,10 +40,10 @@
    :transcript/stRNA             "stRNA"
    :transcript/tRNA              "tRNA"})
 
-(defn- transcript-type [transcript]
+(defn transcript-type [transcript]
   (some transcript-types (keys transcript)))
 
-(defn- gene-classification [gene]
+(defn gene-classification [gene]
  (let [data
    (let [db   (d/entity-db gene)
          cds  (:gene/corresponding-cds gene)
@@ -95,14 +95,14 @@
   {:data (if (empty? data) nil data)
    :description "gene type and status"}))
 
-(defn- gene-class [gene]
+(defn gene-class [gene]
   {:data
    (if-let [class (:gene/gene-class gene)]
      {:tag (datomic-rest-api.rest.object/pack-obj "gene-class" class)
       :description (str (first (:gene-class/description class)))})
    :description "The gene class for this gene"})
 
-(defn- gene-operon [gene]
+(defn gene-operon [gene]
   {:data
    (if-let [operon (->> (:operon.contains-gene/_gene gene)
                         (first)
@@ -110,29 +110,29 @@
      (datomic-rest-api.rest.object/pack-obj "operon" operon))
    :description "Operon the gene is contained in"})
 
-(defn- gene-cluster [gene]
+(defn gene-cluster [gene]
    {:data
      (if-let [data (->> (:gene/main-name/text gene))] data)
     :description "The gene cluster for this gene"})
 
-(defn- gene-other-names [gene]
+(defn gene-other-names [gene]
    {:data (if-let [data (map #(get % "gene.other-name/text") (:gene/other-name gene))]
              data)
     :description (format "other names that have been used to refer to %s" (:gene/id gene))})
 
-(defn- gene-status [gene]
+(defn gene-status [gene]
   {:data (if-let [class (:gene/status gene)]
            (:status/status class))
    :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})
 
-(defn- gene-taxonomy [gene]
+(defn gene-taxonomy [gene]
   {:data (if-let [class (:gene/species gene)]
            (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
              {:genus genus :species species}
              {:genus (:gene/species gene)}))
    :description "the genus and species of the current object"})
 
-(defn- concise-description [gene]
+(defn concise-description [gene]
   {:data
    (if-let [desc (or (first (:gene/concise-description gene))
                      (first (:gene/automated-description gene))
@@ -148,7 +148,7 @@
      {:text nil :evidence nil})
    :description "A manually curated description of the gene's function"})
 
-(defn- curatorial-remarks [gene]
+(defn curatorial-remarks [gene]
   (let [data
         (->> (:gene/remark gene)
              (map (fn [rem]
@@ -158,13 +158,13 @@
     {:data (if (empty? data) nil data)
      :description "curatorial remarks for the Gene"}))
 
-(defn- legacy-info [gene]
+(defn legacy-info [gene]
   {:data
    (if-let [data (seq (map :gene.legacy-information/text (:gene/legacy-information gene)))] data)
    :description
    "legacy information from the CSHL Press C. elegans I/II books"})
 
-(defn- named-by [gene]
+(defn named-by [gene]
   {:data
    (if-let [data (->> (:gene/cgc-name gene)
                       (datomic-rest-api.rest.object/get-evidence)
@@ -173,14 +173,14 @@
    :description
    "the source where the approved name was first described"})
 
-(defn- parent-sequence [gene]
+(defn parent-sequence [gene]
   {:data
    (if-let [data (datomic-rest-api.rest.object/pack-obj (:locatable/parent gene))]
      data)
    :description
    "parent sequence of this gene"})
 
-(defn- parent-clone [gene]
+(defn parent-clone [gene]
   (let [db (d/entity-db gene)
         data
         (->> (q '[:find [?clone ...]
@@ -196,7 +196,7 @@
      :description
      "parent clone of this gene"}))
 
-(defn- cloned-by [gene]
+(defn cloned-by [gene]
   {:data
    (if-let [ev (datomic-rest-api.rest.object/get-evidence (first (:gene/cloned-by gene)))]
      {:cloned_by (key (first ev))
@@ -205,28 +205,28 @@
    :description
    "the person or laboratory who cloned this gene"})
 
-(defn- transposon [gene]
+(defn transposon [gene]
   {:data
    (if-let [data (datomic-rest-api.rest.object/pack-obj (first (:gene/corresponding-transposon gene)))]
      data)
    :description
    "Corresponding transposon for this gene"})
 
-(defn- sequence-name [gene]
+(defn sequence-name [gene]
   {:data
    (or (:gene/sequence-name gene)
        "unknown")
    :description
    "the primary corresponding sequence name of the gene, if known"})
 
-(defn- locus-name [gene]
+(defn locus-name [gene]
   {:data
    (if-let [cgc (:gene/cgc-name gene)]
      (datomic-rest-api.rest.object/pack-obj "gene" gene :label (:gene.cgc-name/text cgc))
      "not assigned")
    :description "the locus name (also known as the CGC name) of the gene"})
 
-(defn- disease-relevance [gene]
+(defn disease-relevance [gene]
   {:data (if-let [data
                   (->> (:gene/disease-relevance gene)
                        (map (fn [rel]
@@ -237,12 +237,12 @@
    :description
    "curated description of human disease relevance"})
 
-(defn- gene-version [gene]
+(defn gene-version [gene]
   (let [data (str (:gene/version gene))]
     {:data (if (empty? data) nil data)
      :description "the current WormBase version of the gene"}))
 
-(defn- also-refers-to [gene]
+(defn also-refers-to [gene]
   (let [db (d/entity-db gene)]
     {:data (if-let [data
                     (->>
@@ -259,7 +259,7 @@
      :description
      "other genes that this locus name may refer to"}))
 
-(defn- merged-into [gene]
+(defn merged-into [gene]
   (let [db (d/entity-db gene)
         data
         (->> (q '[:find ?merge-partner .
@@ -281,7 +281,7 @@
                  :evidence (datomic-rest-api.rest.object/get-evidence data)}))
          (seq))))
 
-(defn- structured-description [gene]
+(defn structured-description [gene]
   (let [data (vmap
                :Provisional_description
                (let [cds (->> (:gene/concise-description gene)
@@ -318,30 +318,7 @@
      :description
      "structured descriptions of gene function"}))
 
-(def-rest-widget overview [gene]
-  {:name                     (name-field gene)
-   :version                  (gene-version gene)
-   :classification           (gene-classification gene)
-   :also_refers_to           (also-refers-to gene)
-   :merged_into              (merged-into gene)
-   :gene_class               (gene-class gene)
-   :concise_description      (concise-description gene)
-   :remarks                  (curatorial-remarks gene)
-   :operon                   (gene-operon gene)
-   :gene_cluster             (gene-cluster gene)
-   :other_names              (gene-other-names gene)
-   :taxonomy                 (gene-taxonomy gene)
-   :status                   (gene-status gene)
-   :legacy_information       (legacy-info gene)
-   :named_by                 (named-by gene)
-   :parent_sequence          (parent-sequence gene)
-   :clone                    (parent-clone gene)
-   :cloned_by                (cloned-by gene)
-   :transposon               (transposon gene)
-   :sequence_name            (sequence-name gene)
-   :locus_name               (locus-name gene)
-   :human_disease_relevance  (disease-relevance gene)
-   :structured_description   (structured-description gene)})
+
 
 ;;
 ;; Phenotypes widget
@@ -747,17 +724,17 @@
                 (phenotype-table-entity db pheno pato-key entity pid var-phenos rnai-phenos not?))))))
       (into []))))
 
-(defn- phenotype-not-observed-field [gene]
+(defn phenotype-not-observed-field [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) true)]
     {:data (if (empty? data) nil data)
      :description "The Phenotype not observed summary of the gene"}))
 
-(defn- phenotype-field [gene]
+(defn phenotype-field [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) false)]
     {:data (if (empty? data) nil data)
      :description "The Phenotype summary of the gene"}))
 
-(defn- phenotype-by-interaction [gene]
+(defn phenotype-by-interaction [gene]
   (let [db (d/entity-db gene)
         gid (:db/id gene)
         table (q '[:find ?pheno (distinct ?int) ?int-type
@@ -903,12 +880,7 @@
     {:data (if (empty? phenotype) nil {:Phenotype phenotype})
      :description "phenotypes due to overexpression under the promoter of this gene"}))
 
-(def-rest-widget phenotype [gene]
-  {:name                     (name-field gene)
-   :drives_overexpression    (drives-overexpression gene)
-   :phenotype                (phenotype-field gene)
-   :phenotype_not_observed   (phenotype-not-observed-field gene)
-   :phenotype_by_interaction (phenotype-by-interaction gene)})
+
 
 ;;
 ;; Mapping data widget
@@ -1043,27 +1015,14 @@
                         (filter identity)))}
           ))))
 
-(def-rest-widget mapping-data [gene]
-  {:name      (name-field gene)
 
-   :two_pt_data
-   {:data (seq (gene-mapping-twopt (d/entity-db gene) (:db/id gene)))
-    :description "Two point mapping data for this gene"}
-
-   :pos_neg_data
-   {:data (seq (gene-mapping-posneg (d/entity-db gene) (:db/id gene)))
-    :description "Positive/Negative mapping data for this gene"}
-
-   :multi_pt_data
-   {:data (seq (gene-mapping-multipt (d/entity-db gene) (:db/id gene)))
-    :description "Multi point mapping data for this gene"}})
 
 
 ;;
 ;; Human diseases widget
 ;;
 
-(defn- disease-models [gene]
+(defn disease-models [gene]
   (let [db (d/entity-db gene)]
     {:data
      {:potential_model
@@ -1103,10 +1062,7 @@
           db (:db/id gene)))}}))
 
 
-(def-rest-widget human-diseases [gene]
-  {:name                    (name-field gene)
-   :human_disease_relevance (disease-relevance gene)
-   :human_diseases          (disease-models gene)})
+
 
 ;;
 ;; Assembly-twiddling stuff (should be in own namespace?)
@@ -1168,7 +1124,7 @@
                     :used_in      (datomic-rest-api.rest.object/pack-obj "variation" v)
                     :use_lab      (construct-labs construct))))))
 
-(defn- transgenes [gene]
+(defn transgenes [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?cons ...]
@@ -1181,7 +1137,7 @@
           (seq))
      :description "transgenes expressed by this gene"}))
 
-(defn- transgene-products [gene]
+(defn transgene-products [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?cons ...]
@@ -1199,7 +1155,7 @@
    :oligo-set.type/washu-gsc-microarray-probe  "GSC"
    :oligo-set.type/agilent-microarray-probe    "Agilent"})
 
-(defn- microarray-probes [gene]
+(defn microarray-probes [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?oligo ...]
@@ -1221,7 +1177,7 @@
           (seq))
      :description "microarray probes"}))
 
-(defn- matching-cdnas [gene]
+(defn matching-cdnas [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?cdna ...]
@@ -1235,7 +1191,7 @@
           (seq))
      :description "cDNAs matching this gene"}))
 
-(defn- antibodies [gene]
+(defn antibodies [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?ab ...]
@@ -1274,7 +1230,7 @@
      [(<= ?cmin ?max)]
      [(>= ?cmax ?min)]]])
 
-(defn- orfeome-primers [gene]
+(defn orfeome-primers [gene]
   (let [db  (d/entity-db gene)
         [parent start end] (root-segment gene)]
     {:data
@@ -1309,7 +1265,7 @@
             (seq)))
      :description "ORFeome Project primers and sequences"}))
 
-(defn- primer-pairs [gene]
+(defn primer-pairs [gene]
   (let [db                 (d/entity-db gene)
         [parent start end] (root-segment gene)]
     {:data
@@ -1340,23 +1296,14 @@
             (seq)))
      :description "Primer pairs"}))
 
-(defn- sage-tags [gene]
+(defn sage-tags [gene]
   {:data
    (seq (map #(datomic-rest-api.rest.object/pack-obj "sage-tag" (:sage-tag/_gene %)) (:sage-tag.gene/_gene gene)))
 
    :description
    "SAGE tags identified"})
 
-(def-rest-widget reagents [gene]
-  {:name               (name-field gene)
-   :transgenes         (transgenes gene)
-   :transgene_products (transgene-products gene)
-   :microarray_probes  (microarray-probes gene)
-   :matching_cdnas     (matching-cdnas gene)
-   :antibodies         (antibodies gene)
-   :orfeome_primers    (orfeome-primers gene)
-   :primer_pairs       (primer-pairs gene)
-   :sage_tags          (sage-tags gene)})
+
 ;;
 ;; New style GO widget
 ;;
@@ -1444,7 +1391,7 @@
       (datomic-rest-api.rest.object/pack-obj "go-term" term)})
    annos))
 
-(defn- gene-ontology-full [gene]
+(defn gene-ontology-full [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1485,7 +1432,7 @@
        :term_description
        (datomic-rest-api.rest.object/pack-obj "go-term" term)}))))
 
-(defn- gene-ontology-summary [gene]
+(defn gene-ontology-summary [gene]
  (let [db (d/entity-db gene)]
   {:data
    (->>
@@ -1511,16 +1458,13 @@
    :description
    "gene ontology associations"}))
 
-(def-rest-widget gene-ontology [gene]
-  {:name                   (name-field gene)
-   :gene_ontology_summary  (gene-ontology-summary gene)
-   :gene_ontology          (gene-ontology-full gene)})
+
 
 ;;
 ;; Expression widget
 ;;
 
-(defn- anatomy-terms [gene]
+(defn anatomy-terms [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?at ...]
@@ -1547,7 +1491,7 @@
                          :expr-pattern/epic
                          :expr-pattern/cis-regulatory-element]))
 
-(defn- expression-patterns [gene]
+(defn expression-patterns [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1616,7 +1560,7 @@
      :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
 
 
-(defn- expression-clusters [gene]
+(defn expression-clusters [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1633,11 +1577,11 @@
      :description
      "expression cluster data"}))
 
-(defn- anatomic-expression-patterns [gene]
+(defn anatomic-expression-patterns [gene]
   {:data  {}
    :description "expression patterns for the gene"})
 
-(defn- anatomy-function [gene]
+(defn anatomy-function [gene]
   (let [db (d/entity-db gene)]
    {:data
     (->>
@@ -1660,7 +1604,7 @@
         (datomic-rest-api.rest.object/pack-obj "picture" image))
       images)))
 
-(defn- expression-profiling-graphs [gene]
+(defn expression-profiling-graphs [gene]
   (let [db (d/entity-db gene)]
    {:data
     (->>
@@ -1692,7 +1636,7 @@
            :type (expr-pattern-type ep)}))))
     :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
 
-(defn- fourd-expression-movies [gene]
+(defn fourd-expression-movies [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1724,7 +1668,7 @@
 
     :description "interactive 4D expression movies"}))
 
-(defn- microarray-topology-map-position [gene]
+(defn microarray-topology-map-position [gene]
   {:data nil ;; this resquires segment data and can be found in the file: lib/WormBase/API/Role/Expression.pm
    :description "microarray topography map"})
 
@@ -1734,7 +1678,7 @@
     (let [[_ stat-type] matched]
       stat-type)))
 
-(defn- fpkm-expression-summary-ls [gene]
+(defn fpkm-expression-summary-ls [gene]
   (let [db (d/entity-db gene)
         result-tuples (->> (q '[:find ?analysis ?fpkm ?stage
                                 :in $ ?gene
@@ -1790,16 +1734,7 @@
                 :table {:fpkm {:data results}}})
      :description "Fragments Per Kilobase of transcript per Million mapped reads (FPKM) expression data"}))
 
-(def-rest-widget expression [gene]
-  {:name                (name-field gene)
-   :anatomy_terms       (anatomy-terms gene)
-   :expression_patterns (expression-patterns gene)
-   :expression_cluster  (expression-clusters gene)
-   :expression_profiling_graphs (expression-profiling-graphs gene)
-   :anatomic_expression_patterns (anatomic-expression-patterns gene)
-   :microarray_topology_map_position (microarray-topology-map-position gene)
-   :fourd_expression_movies (fourd-expression-movies gene)
-   :anatomy_function (anatomy-function gene)})
+
 
 ;;
 ;; Homology widget
@@ -1843,7 +1778,7 @@
      :description
      "precalculated ortholog assignments for this gene"}))
 
-(defn- homology-paralogs [gene]
+(defn homology-paralogs [gene]
   {:data
    (map
      (fn [para]
@@ -1856,7 +1791,7 @@
    :description
    "precalculated ortholog assignments for this gene"})
 
-(defn- protein-domains [gene]
+(defn protein-domains [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1880,7 +1815,7 @@
      :description
      "protein domains of the gene"}))
 
-(defn- best-blastp-matches [gene]
+(defn best-blastp-matches [gene]
   (let [db    (d/entity-db gene)]
     (if-let [[prot length]
              (->> (q '[:find ?prot ?pep-len
@@ -1971,20 +1906,13 @@
    "Trichinella spiralis"
    "Trichuris suis"])
 
-(def-rest-widget homology [gene]
-  {:name                (name-field gene)
-   :nematode_orthologs  (homology-orthologs gene nematode-species)
-   :human_orthologs     (homology-orthologs gene ["Homo sapiens"])
-   :other_orthologs     (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
-   :paralogs            (homology-paralogs gene)
-   :best_blastp_matches (best-blastp-matches gene)
-   :protein_domains     (protein-domains gene)})
+
 
 ;;
 ;; History widget
 ;;
 
-(defn- history-events [gene]
+(defn history-events [gene]
   (let [data
    (->>
     (:gene/version-change gene)
@@ -2050,7 +1978,7 @@
    "the curatorial history of the gene"}))
 
 
-(defn- old-annot [gene]
+(defn old-annot [gene]
   (let [db (d/entity-db gene)]
     {:data (if-let [data
                     (->> (q '[:find [?historic ...]
@@ -2067,17 +1995,14 @@
                          (seq))] data)
      :description "the historical annotations of this gene"}))
 
-(def-rest-widget history [gene]
-  {:name      (name-field gene)
-   :history   (history-events gene)
-   :old_annot (old-annot gene)})
+
 
 
 ;;
 ;; Sequence widget
 ;;
 
-(defn- gene-models [gene]      ;; Probably needs more testing for non-coding/pseudogene/etc. cases.
+(defn gene-models [gene]      ;; Probably needs more testing for non-coding/pseudogene/etc. cases.
   (let [db      (d/entity-db gene)
         coding? (:gene/corresponding-cds gene)
         seqs (q '[:find [?seq ...]
@@ -2188,15 +2113,13 @@
      :description
      "gene models for this gene"}))
 
-(def-rest-widget sequences [gene]
-  {:name         (name-field gene)
-   :gene_models  (gene-models gene)})
+
 
 ;;
 ;; Sequence Features widget
 ;;
 
-(defn- associated-features [gene]
+(defn associated-features [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -2238,7 +2161,7 @@
      :description
      "Features associated with this Gene"}))
 
-(defn- feature-image [gene]
+(defn feature-image [gene]
   {:data {:class "genomic_location" ;; To populate this correctly we will need sequence data
           :id nil
           :label nil
@@ -2263,16 +2186,13 @@
                    "BINDING_REGIONS"]}
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
-(def-rest-widget features [gene]
-  {:feature_image (feature-image gene)
-   :name       (name-field gene)
-   :features   (associated-features gene)})
+
 
 ;;
 ;; Genetics widget
 ;;
 
-(defn- reference-allele [gene]
+(defn reference-allele [gene]
   {:data (let [data
    (->> (:gene/reference-allele gene)
         (map :gene.reference-allele/variation)
@@ -2295,7 +2215,7 @@
            :transgenes (datomic-rest-api.rest.object/pack-obj "transgene" (first (:transgene/_strain strain)))))
         strains)))
 
-(defn- strains [gene]
+(defn strains [gene]
   (let [strains (:gene/strain gene)]
     {:data
      (vmap
@@ -2474,7 +2394,7 @@
                         (map #(datomic-rest-api.rest.object/pack-obj (:variation.reference/paper %)) (:variation/reference var)))]
        (if (empty? sources) nil sources)))))
 
-(defn- alleles [gene]
+(defn alleles [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?var ...]
@@ -2486,7 +2406,7 @@
           (map #(process-variation (entity db %))))
      :description "alleles and polymorphisms with associated phenotype"}))
 
-(defn- alleles-other [gene]
+(defn alleles-other [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?var ...]
@@ -2499,7 +2419,7 @@
           (map #(process-variation (entity db %))))
      :description "alleles currently with no associated phenotype"}))
 
-(defn- polymorphisms [gene]
+(defn polymorphisms [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?var ...]
@@ -2512,7 +2432,7 @@
           (map #(process-variation (entity db %))))
      :description "polymorphisms and natural variations currently with no associated phenotype"}))
 
-(defn- alleles-count [gene]
+(defn alleles-count [gene]
   (let [db (d/entity-db gene)]
     {:data
      (-> {}
@@ -2532,7 +2452,7 @@
                                   db (:db/id gene))))
      :description "counts for alleles-other and polymorphisms"}))
 
-(defn- rearrangements-positive [gene]
+(defn rearrangements-positive [gene]
   (let [db (d/entity-db gene)]
     (->> (q '[:find [?ra ...]
                :in $ ?gene
@@ -2541,7 +2461,7 @@
             db (:db/id gene))
          (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
-(defn- rearrangements-negative [gene]
+(defn rearrangements-negative [gene]
    (let [db (d/entity-db gene)]
     (->> (q '[:find [?ra ...]
                :in $ ?gene
@@ -2550,7 +2470,7 @@
             db (:db/id gene))
          (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
 
-(defn- rearrangements [gene]
+(defn rearrangements [gene]
   {:data (let [data {:positive (if-let [rearrangements (rearrangements-positive gene)]
                                  (if (empty? rearrangements) nil rearrangements))
                      :negative (if-let [rearrangements (rearrangements-negative gene)]
@@ -2559,22 +2479,13 @@
    :description "rearrangements involving this gene"})
 
 
-(defn genetics [gene]
-  {:reference_allele (reference-allele gene)
-   :rearrangements   (rearrangements gene)
-   :strains          (strains gene)
-   :alleles          (alleles gene)
-   :alleles_count    (alleles-count gene)
-;;   :alleles_other    (alleles-other gene)  ;; can be requested through /rest/field/
-;;   :polymorphisms    (polymorphisms gene)  ;; can be requested through /rest/field/
-   :name             (name-field gene)
-   })
+
 
 ;;
 ;; external_links widget
 ;;
 
-(defn- xrefs [gene]
+(defn xrefs [gene]
   {:data
    (reduce
      (fn [refs db]
@@ -2591,7 +2502,3 @@
      (:gene/database gene))
    :description
    "external databases and IDs containing additional information on the object"})
-
-(def-rest-widget external-links [gene]
-  {:name  (name-field gene)
-   :xrefs (xrefs gene)})

@@ -13,7 +13,7 @@
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer (datomic-conn)]
             [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor)]
-            [datomic-rest-api.rest.gene :as gene]
+            [datomic-rest-api.rest.widgets.gene :as gene]
             [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
             [datomic-rest-api.rest.references :refer (get-references)]
             [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
@@ -85,11 +85,11 @@
   (if-let [fn-name (-> (str/join "/" [schema-name endpoint-name])
                        (str/replace "_" "-")
                        (whitelist))]
-    (resolve (symbol (str "datomic-rest-api.rest." fn-name)))))
+    (resolve (symbol (str "datomic-rest-api.rest.widgets." fn-name)))))
 
 (def ^{:private true} whitelisted-widgets
   #{"gene/overview"
-    "gene/external"
+    "gene/external-links"
     "gene/genetics"
     "gene/phenotype"
     "gene/history"
