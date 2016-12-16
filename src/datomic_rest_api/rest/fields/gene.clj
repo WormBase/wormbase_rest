@@ -1,8 +1,8 @@
-(ns datomic-rest-api.rest.gene
+(ns datomic-rest-api.rest.fields.gene
   (:require [cheshire.core :as c :refer (generate-string)]
             [pseudoace.binning :refer (reg2bins xbin bins)]
-            [datomic-rest-api.helpers :refer(format-date)]
-            [datomic-rest-api.rest.object :as rest-api-obj :refer (humanize-ident get-evidence author-list pack-obj)]
+            [datomic-rest-api.rest.helpers.date :as date-helper]
+            [datomic-rest-api.rest.helpers.object :as rest-api-obj :refer (humanize-ident get-evidence author-list pack-obj)]
             [datomic.api :as d :refer (db q touch entity)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
@@ -14,8 +14,8 @@
 ;; "name" field, included on all widgets.
 ;;
 
-(defn- name-field [gene]
-  (let [data (datomic-rest-api.rest.object/pack-obj "gene" gene)]
+(defn name-field [gene]
+  (let [data (pack-obj "gene" gene)]
     {:data (if (empty? data) nil data)
      :description (format "The name and WormBase internal ID of %s" (:gene/id gene))}))
 
@@ -40,10 +40,10 @@
    :transcript/stRNA             "stRNA"
    :transcript/tRNA              "tRNA"})
 
-(defn- transcript-type [transcript]
+(defn transcript-type [transcript]
   (some transcript-types (keys transcript)))
 
-(defn- gene-classification [gene]
+(defn gene-classification [gene]
  (let [data
    (let [db   (d/entity-db gene)
          cds  (:gene/corresponding-cds gene)
@@ -95,44 +95,44 @@
   {:data (if (empty? data) nil data)
    :description "gene type and status"}))
 
-(defn- gene-class [gene]
+(defn gene-class [gene]
   {:data
    (if-let [class (:gene/gene-class gene)]
-     {:tag (datomic-rest-api.rest.object/pack-obj "gene-class" class)
+     {:tag (pack-obj "gene-class" class)
       :description (str (first (:gene-class/description class)))})
    :description "The gene class for this gene"})
 
-(defn- gene-operon [gene]
+(defn gene-operon [gene]
   {:data
    (if-let [operon (->> (:operon.contains-gene/_gene gene)
                         (first)
                         (:operon/_contains_gene))]
-     (datomic-rest-api.rest.object/pack-obj "operon" operon))
+     (pack-obj "operon" operon))
    :description "Operon the gene is contained in"})
 
-(defn- gene-cluster [gene]
+(defn gene-cluster [gene]
    {:data
      (if-let [data (->> (:gene/main-name/text gene))] data)
     :description "The gene cluster for this gene"})
 
-(defn- gene-other-names [gene]
+(defn gene-other-names [gene]
    {:data (if-let [data (map #(get % "gene.other-name/text") (:gene/other-name gene))]
              data)
     :description (format "other names that have been used to refer to %s" (:gene/id gene))})
 
-(defn- gene-status [gene]
+(defn gene-status [gene]
   {:data (if-let [class (:gene/status gene)]
            (:status/status class))
    :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})
 
-(defn- gene-taxonomy [gene]
+(defn gene-taxonomy [gene]
   {:data (if-let [class (:gene/species gene)]
            (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
              {:genus genus :species species}
              {:genus (:gene/species gene)}))
    :description "the genus and species of the current object"})
 
-(defn- concise-description [gene]
+(defn concise-description [gene]
   {:data
    (if-let [desc (or (first (:gene/concise-description gene))
                      (first (:gene/automated-description gene))
@@ -143,44 +143,44 @@
                           (first)
                           (:transcript/brief-identification)))]
      {:text (some (fn [[k v]] (if (= (name k) "text") v)) desc)
-      :evidence (or (datomic-rest-api.rest.object/get-evidence desc)
-                    (datomic-rest-api.rest.object/get-evidence (first (:gene/provisional-description gene))))}
+      :evidence (or (get-evidence desc)
+                    (get-evidence (first (:gene/provisional-description gene))))}
      {:text nil :evidence nil})
    :description "A manually curated description of the gene's function"})
 
-(defn- curatorial-remarks [gene]
+(defn curatorial-remarks [gene]
   (let [data
         (->> (:gene/remark gene)
              (map (fn [rem]
                     {:text (:gene.remark/text rem)
-                     :evidence (datomic-rest-api.rest.object/get-evidence rem)}))
+                     :evidence (get-evidence rem)}))
              (seq))]
     {:data (if (empty? data) nil data)
      :description "curatorial remarks for the Gene"}))
 
-(defn- legacy-info [gene]
+(defn legacy-info [gene]
   {:data
    (if-let [data (seq (map :gene.legacy-information/text (:gene/legacy-information gene)))] data)
    :description
    "legacy information from the CSHL Press C. elegans I/II books"})
 
-(defn- named-by [gene]
+(defn named-by [gene]
   {:data
    (if-let [data (->> (:gene/cgc-name gene)
-                      (datomic-rest-api.rest.object/get-evidence)
+                      (get-evidence)
                       (mapcat val))]
      data)
    :description
    "the source where the approved name was first described"})
 
-(defn- parent-sequence [gene]
+(defn parent-sequence [gene]
   {:data
-   (if-let [data (datomic-rest-api.rest.object/pack-obj (:locatable/parent gene))]
+   (if-let [data (pack-obj (:locatable/parent gene))]
      data)
    :description
    "parent sequence of this gene"})
 
-(defn- parent-clone [gene]
+(defn parent-clone [gene]
   (let [db (d/entity-db gene)
         data
         (->> (q '[:find [?clone ...]
@@ -190,59 +190,59 @@
                 db (:db/id gene))
              (map (fn [cid]
                     (let [clone (entity db cid)]
-                      (datomic-rest-api.rest.object/pack-obj "clone" clone))))
+                      (pack-obj "clone" clone))))
              (seq))]
     {:data (if (empty? data) nil data)
      :description
      "parent clone of this gene"}))
 
-(defn- cloned-by [gene]
+(defn cloned-by [gene]
   {:data
-   (if-let [ev (datomic-rest-api.rest.object/get-evidence (first (:gene/cloned-by gene)))]
+   (if-let [ev (get-evidence (first (:gene/cloned-by gene)))]
      {:cloned_by (key (first ev))
       :tag       (key (first ev))
       :source    (first (val (first ev)))})
    :description
    "the person or laboratory who cloned this gene"})
 
-(defn- transposon [gene]
+(defn transposon [gene]
   {:data
-   (if-let [data (datomic-rest-api.rest.object/pack-obj (first (:gene/corresponding-transposon gene)))]
+   (if-let [data (pack-obj (first (:gene/corresponding-transposon gene)))]
      data)
    :description
    "Corresponding transposon for this gene"})
 
-(defn- sequence-name [gene]
+(defn sequence-name [gene]
   {:data
    (or (:gene/sequence-name gene)
        "unknown")
    :description
    "the primary corresponding sequence name of the gene, if known"})
 
-(defn- locus-name [gene]
+(defn locus-name [gene]
   {:data
    (if-let [cgc (:gene/cgc-name gene)]
-     (datomic-rest-api.rest.object/pack-obj "gene" gene :label (:gene.cgc-name/text cgc))
+     (pack-obj "gene" gene :label (:gene.cgc-name/text cgc))
      "not assigned")
    :description "the locus name (also known as the CGC name) of the gene"})
 
-(defn- disease-relevance [gene]
+(defn disease-relevance [gene]
   {:data (if-let [data
                   (->> (:gene/disease-relevance gene)
                        (map (fn [rel]
                               {:text (:gene.disease-relevance/note rel)
-                               :evidence (datomic-rest-api.rest.object/get-evidence rel)}))
+                               :evidence (get-evidence rel)}))
                        (seq))]
            data)
    :description
    "curated description of human disease relevance"})
 
-(defn- gene-version [gene]
+(defn gene-version [gene]
   (let [data (str (:gene/version gene))]
     {:data (if (empty? data) nil data)
      :description "the current WormBase version of the gene"}))
 
-(defn- also-refers-to [gene]
+(defn also-refers-to [gene]
   (let [db (d/entity-db gene)]
     {:data (if-let [data
                     (->>
@@ -253,13 +253,13 @@
                                   [?other-name :gene.other-name/text ?cgc-name]
                                   [?other-gene :gene/other-name ?other-name]]
                          db (:db/id gene))
-                      (map #(datomic-rest-api.rest.object/pack-obj "gene" (entity db %)))
+                      (map #(pack-obj "gene" (entity db %)))
                       (seq))]
              data)
      :description
      "other genes that this locus name may refer to"}))
 
-(defn- merged-into [gene]
+(defn merged-into [gene]
   (let [db (d/entity-db gene)
         data
         (->> (q '[:find ?merge-partner .
@@ -268,7 +268,7 @@
                          [?vc :gene-history-action/merged-into ?merge-partner]]
                 db (:db/id gene))
              (entity db)
-             (datomic-rest-api.rest.object/pack-obj "gene"))]
+             (pack-obj "gene"))]
     {:data (if (empty? data) nil data)
      :description "the gene this one has merged into"}))
 
@@ -278,10 +278,10 @@
     (->> (key gene)
          (map (fn [data]
                 {:text     (txt-key data)
-                 :evidence (datomic-rest-api.rest.object/get-evidence data)}))
+                 :evidence (get-evidence data)}))
          (seq))))
 
-(defn- structured-description [gene]
+(defn structured-description [gene]
   (let [data (vmap
                :Provisional_description
                (let [cds (->> (:gene/concise-description gene)
@@ -292,7 +292,7 @@
                          :let [txt (:gene.provisional-description/text p)]
                          :when (not (cds txt))]
                      {:text txt
-                      :evidence (datomic-rest-api.rest.object/get-evidence p)})))
+                      :evidence (get-evidence p)})))
 
                :Other_description
                (get-structured-description gene "other-description")
@@ -318,30 +318,7 @@
      :description
      "structured descriptions of gene function"}))
 
-(def-rest-widget overview [gene]
-  {:name                     (name-field gene)
-   :version                  (gene-version gene)
-   :classification           (gene-classification gene)
-   :also_refers_to           (also-refers-to gene)
-   :merged_into              (merged-into gene)
-   :gene_class               (gene-class gene)
-   :concise_description      (concise-description gene)
-   :remarks                  (curatorial-remarks gene)
-   :operon                   (gene-operon gene)
-   :gene_cluster             (gene-cluster gene)
-   :other_names              (gene-other-names gene)
-   :taxonomy                 (gene-taxonomy gene)
-   :status                   (gene-status gene)
-   :legacy_information       (legacy-info gene)
-   :named_by                 (named-by gene)
-   :parent_sequence          (parent-sequence gene)
-   :clone                    (parent-clone gene)
-   :cloned_by                (cloned-by gene)
-   :transposon               (transposon gene)
-   :sequence_name            (sequence-name gene)
-   :locus_name               (locus-name gene)
-   :human_disease_relevance  (disease-relevance gene)
-   :structured_description   (structured-description gene)})
+
 
 ;;
 ;; Phenotypes widget
@@ -406,7 +383,7 @@
   {:class "paper"
    :id (:paper/id paper)
    :taxonomy "all"
-   :label (str (datomic-rest-api.rest.object/author-list paper)
+   :label (str (rest-api-obj/author-list paper)
                ", "
                (if (= nil (:paper/publication-date paper))
                  ""
@@ -434,7 +411,7 @@
                 (let [make-key (partial keyword (str "phenotype-info." eq-key))
                       pato-name (first (:pato-term/name (-> eq-term ((make-key "pato-term")))))
                       id ((keyword eq-key "id")  (-> eq-term ((make-key eq-key))))
-                      entity-term (datomic-rest-api.rest.object/pack-obj label (-> eq-term ((make-key label))))
+                      entity-term (pack-obj label (-> eq-term ((make-key label))))
                       pato-term (if (nil? pato-name) "abnormal" pato-name)]
                   (if (nil? id) nil (create-pato-term id label entity-term (str/capitalize (str/replace eq-key #"-" "_")) pato-term)))))
         var-combo (into {} (for [x sot] (apply merge x)))]
@@ -595,13 +572,13 @@
     (if
       (contains? holder :phenotype-info/molecule)
       (for [m (:phenotype-info/molecule holder)]
-        (datomic-rest-api.rest.object/pack-obj (:phenotype-info.molecule/molecule m))))
+        (pack-obj (:phenotype-info.molecule/molecule m))))
 
     :Affected_by_pathogen
     (if
       (contains? holder :phenotype-info/pathogen)
       (for [m (:phenotype-info/pathogen holder)]
-        (datomic-rest-api.rest.object/pack-obj (:phenotype-info.molecule/species m))))
+        (pack-obj (:phenotype-info.molecule/species m))))
 
     :Ease_of_scoring
     (if
@@ -747,17 +724,17 @@
                 (phenotype-table-entity db pheno pato-key entity pid var-phenos rnai-phenos not?))))))
       (into []))))
 
-(defn- phenotype-not-observed-field [gene]
+(defn phenotype-not-observed-field [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) true)]
     {:data (if (empty? data) nil data)
      :description "The Phenotype not observed summary of the gene"}))
 
-(defn- phenotype-field [gene]
+(defn phenotype-field [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) false)]
     {:data (if (empty? data) nil data)
      :description "The Phenotype summary of the gene"}))
 
-(defn- phenotype-by-interaction [gene]
+(defn phenotype-by-interaction [gene]
   (let [db (d/entity-db gene)
         gid (:db/id gene)
         table (q '[:find ?pheno (distinct ?int) ?int-type
@@ -771,19 +748,19 @@
         phenos (->> (map first table)
                     (set)
                     (map (fn [pid]
-                           [pid (datomic-rest-api.rest.object/pack-obj "phenotype" (entity db pid))]))
+                           [pid (pack-obj "phenotype" (entity db pid))]))
                     (into {}))
         ints (->> (mapcat second table)
                   (set)
                   (map (fn [iid]
                          (let [int (entity db iid)]
                            [iid
-                            {:interaction (datomic-rest-api.rest.object/pack-obj "interaction" int)
-                             :citations (map (partial datomic-rest-api.rest.object/pack-obj "paper") (:interaction/paper int))}])))
+                            {:interaction (pack-obj "interaction" int)
+                             :citations (map (partial pack-obj "paper") (:interaction/paper int))}])))
                   (into {}))
         data (map (fn [[pheno pints int-type]]
                     {:interaction_type
-                     (datomic-rest-api.rest.object/humanize-ident int-type)
+                     (rest-api-obj/humanize-ident int-type)
 
                      :phenotype
                      (phenos pheno)
@@ -804,8 +781,7 @@
     (if (= pid phenotypeid)
       (let [remark (map :phenotype-info.remark/text
                         (:phenotype-info/remark h))
-            transgeneobj (datomic-rest-api.rest.object/pack-obj
-                           "transgene" transgene)
+            transgeneobj (pack-obj "transgene" transgene)
             causedbygenes (:phenotype-info/caused-by-gene h)
             paperevidences (:phenotype-info/paper-evidence h)
             curators (:phenotype-info/curator-confirmed h)
@@ -833,7 +809,7 @@
 
           :Curator
           (for [curator curators]
-            (datomic-rest-api.rest.object/pack-obj "person" curator))
+            (pack-obj "person" curator))
 
           :EQ_annotations
           (remove
@@ -853,15 +829,13 @@
 
           :Caused_by_gene
           (for [cbg causedbygenes]
-            (datomic-rest-api.rest.object/pack-obj
-              "gene"
-              (:phenotype-info.caused-by-gene/gene cbg)))
+            (pack-obj "gene" (:phenotype-info.caused-by-gene/gene cbg)))
 
           :Transgene transgeneobj
 
           :Paper_evidence
           (for [pe paperevidences]
-            (datomic-rest-api.rest.object/pack-obj "paper" pe))
+            (pack-obj "paper" pe))
 
           :remark remark}}))))
 
@@ -889,7 +863,7 @@
                                 phenotypeid (:phenotype/id pheno)]
                             {phenotypeid
                              {:object
-                              (datomic-rest-api.rest.object/pack-obj "phenotype" pheno)
+                              (pack-obj "phenotype" pheno)
 
                               :evidence
                               (flatten
@@ -903,12 +877,7 @@
     {:data (if (empty? phenotype) nil {:Phenotype phenotype})
      :description "phenotypes due to overexpression under the promoter of this gene"}))
 
-(def-rest-widget phenotype [gene]
-  {:name                     (name-field gene)
-   :drives_overexpression    (drives-overexpression gene)
-   :phenotype                (phenotype-field gene)
-   :phenotype_not_observed   (phenotype-not-observed-field gene)
-   :phenotype_by_interaction (phenotype-by-interaction gene)})
+
 
 ;;
 ;; Mapping data widget
@@ -916,76 +885,79 @@
 
 ;; Needs better support for non-gene things.
 
-(defn gene-mapping-twopt
-  [db id]
-  (->> (q '[:find [?tp ...]
-            :in $ ?gene
-            :where (or-join [?gene ?tp]
-                            (and [?tpg1 :two-point-data.gene-1/gene ?gene]
-                                 [?tp :two-point-data/gene-1 ?tpg1])
-                            (and [?tpg2 :two-point-data.gene-2/gene ?gene]
-                                 [?tp :two-point-data/gene-2 ?tpg2]))]
-          db id)
-       (map (partial entity db))
-       (map
-        (fn [tp]
-          {:mapper     (datomic-rest-api.rest.object/pack-obj "author" (first (:two-point-data/mapper tp)))
-           :date       (datomic-rest-api.helpers/format-date (:two-point-data/date tp))
-           :raw_data   (:two-point-data/results tp)
-           :genotype   (:two-point-data/genotype tp)
-           :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
-                         (if (empty? comment) "" comment ))
-           :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
-                               (or (:two-point-data/calc-lower-conf tp) "0")
-                               (or (:two-point-data/calc-upper-conf tp) "0"))
-           :point_1    (let [p1 (:two-point-data/gene-1 tp)]
-                         (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-1/gene p1))
-                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
-           :point_2    (let [p2 (:two-point-data/gene-2 tp)]
-                         (remove nil? [(datomic-rest-api.rest.object/pack-obj "gene" (:two-point-data.gene-2/gene p2))
-                                       (datomic-rest-api.rest.object/pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}))))
+(defn gene-mapping-twopt [gene]
+  (let [db (d/entity-db gene)
+        id (:db/id gene)]
+    (->> (q '[:find [?tp ...]
+              :in $ ?gene
+              :where (or-join [?gene ?tp]
+                              (and [?tpg1 :two-point-data.gene-1/gene ?gene]
+                                   [?tp :two-point-data/gene-1 ?tpg1])
+                              (and [?tpg2 :two-point-data.gene-2/gene ?gene]
+                                   [?tp :two-point-data/gene-2 ?tpg2]))]
+            db id)
+         (map (partial entity db))
+         (map
+          (fn [tp]
+            {:mapper     (pack-obj "author" (first (:two-point-data/mapper tp)))
+             :date       (date-helper/format-date (:two-point-data/date tp))
+             :raw_data   (:two-point-data/results tp)
+             :genotype   (:two-point-data/genotype tp)
+             :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
+                           (if (empty? comment) "" comment ))
+             :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
+                                 (or (:two-point-data/calc-lower-conf tp) "0")
+                                 (or (:two-point-data/calc-upper-conf tp) "0"))
+             :point_1    (let [p1 (:two-point-data/gene-1 tp)]
+                           (remove nil? [(pack-obj "gene" (:two-point-data.gene-1/gene p1))
+                                         (pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
+             :point_2    (let [p2 (:two-point-data/gene-2 tp)]
+                           (remove nil? [(pack-obj "gene" (:two-point-data.gene-2/gene p2))
+                                         (pack-obj "variation" (:two-point-data.gene-2/variation p2))]))})))))
 
-(defn gene-mapping-posneg
-  [db id]
-  (->> (q '[:find [?pn ...]
+(defn gene-mapping-posneg [gene]
+  (let [db (d/entity-db gene)
+        id (:db/id gene)]
+    (->> (q '[:find [?pn ...]
             :in $ ?gene
             :where (or-join [?gene ?pn]
                             (and [?png1 :pos-neg-data.gene-1/gene ?gene]
                                  [?pn :pos-neg-data/gene-1 ?png1])
                             (and [?png2 :pos-neg-data.gene-2/gene ?gene]
                                  [?pn :pos-neg-data/gene-2 ?png2]))]
-          db id)
-       (map (partial entity db))
-       (map
-        (fn [pn]
-          (let [items (->> [(datomic-rest-api.rest.object/pack-obj ((some-fn (comp :pos-neg-data.gene-1/gene :pos-neg-data/gene-1)
-                                                (comp :pos-neg-data.locus-1/locus :pos-neg-data/locus-1)
-                                                :pos-neg-data/allele-1
-                                                :pos-neg-data/clone-1
-                                                :pos-neg-data/rearrangement-1)
-                                       pn))
-                            (datomic-rest-api.rest.object/pack-obj ((some-fn (comp :pos-neg-data.gene-2/gene :pos-neg-data/gene-2)
-                                                (comp :pos-neg-data.locus-2/locus :pos-neg-data/locus-2)
-                                                :pos-neg-data/allele-2
-                                                :pos-neg-data/clone-2
-                                                :pos-neg-data/rearrangement-2)
-                                       pn))]
-                           (map (juxt :label identity))
-                           (into {}))
-                result (str/split (:pos-neg-data/results pn) #"\s+")]
-          {:mapper    (datomic-rest-api.rest.object/pack-obj "author" (first (:pos-neg-data/mapper pn)))
-           :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
-                          (if (empty? comment) "" comment ))
-           :date      (datomic-rest-api.helpers/format-date (:pos-neg-data/date pn))
-           :result    (map #(or (items (str/replace % #"\." ""))
-                                (str % " "))
-                           result)})
+            db id)
+         (map (partial entity db))
+         (map
+          (fn [pn]
+            (let [items (->> [(pack-obj ((some-fn (comp :pos-neg-data.gene-1/gene :pos-neg-data/gene-1)
+                                                  (comp :pos-neg-data.locus-1/locus :pos-neg-data/locus-1)
+                                                  :pos-neg-data/allele-1
+                                                  :pos-neg-data/clone-1
+                                                  :pos-neg-data/rearrangement-1)
+                                         pn))
+                              (pack-obj ((some-fn (comp :pos-neg-data.gene-2/gene :pos-neg-data/gene-2)
+                                                  (comp :pos-neg-data.locus-2/locus :pos-neg-data/locus-2)
+                                                  :pos-neg-data/allele-2
+                                                  :pos-neg-data/clone-2
+                                                  :pos-neg-data/rearrangement-2)
+                                         pn))]
+                             (map (juxt :label identity))
+                             (into {}))
+                  result (str/split (:pos-neg-data/results pn) #"\s+")]
+              {:mapper    (pack-obj "author" (first (:pos-neg-data/mapper pn)))
+               :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
+                             (if (empty? comment) "" comment ))
+               :date      (date-helper/format-date (:pos-neg-data/date pn))
+               :result    (map #(or (items (str/replace % #"\." ""))
+                                    (str % " "))
+                               result)})
 
-          ))))
+          )))))
 
-(defn gene-mapping-multipt
-  [db id]
-  (->> (q '[:find [?mp ...]
+(defn gene-mapping-multipt [gene]
+  (let [db (d/entity-db gene)
+        id (:db/id gene)]
+    (->> (q '[:find [?mp ...]
             :in $ % ?gene
             :where (mc-obj ?mc ?gene)
             (or
@@ -998,85 +970,72 @@
             [(mc-obj ?mc ?gene) (mc-obj ?mc2 ?gene)
              [?mc :multi-counts/gene ?mc2]]]
           id)
-       (map (partial entity db))
-       (map
-         (fn [mp]
-           {:comment (let [comment (->> mp
-                                        :multi-pt-data/remark
-                                        first
-                                        :multi-pt-data.remark/text)]
-                       (if (empty? comment) "" comment))
-           :mapper   (datomic-rest-api.rest.object/pack-obj "author" (first (:multi-pt-data/mapper mp)))
-           :date     (if (nil? (:multi-pt-data/date mp)) "" (datomic-rest-api.helpers/format-date3 (str (:multi-pt-data/date mp))))
-           :genotype (:multi-pt-data/genotype mp)
-           :result   (let [res (loop [node (:multi-pt-data/combined mp)
-                                      res  []]
-                                 (cond
-                                  (:multi-counts/gene node)
-                                  (let [obj (:multi-counts/gene node)]
-                                    (recur obj (conj res [(:multi-counts.gene/gene obj)
-                                                          (:multi-counts.gene/int obj)])))
+         (map (partial entity db))
+         (map
+          (fn [mp]
+            {:comment (let [comment (->> mp
+                                         :multi-pt-data/remark
+                                         first
+                                         :multi-pt-data.remark/text)]
+                        (if (empty? comment) "" comment))
+             :mapper   (pack-obj "author" (first (:multi-pt-data/mapper mp)))
+             :date     (if (nil? (:multi-pt-data/date mp)) "" (date-helper/format-date3 (str (:multi-pt-data/date mp))))
+             :genotype (:multi-pt-data/genotype mp)
+             :result   (let [res (loop [node (:multi-pt-data/combined mp)
+                                        res  []]
+                                   (cond
+                                     (:multi-counts/gene node)
+                                     (let [obj (:multi-counts/gene node)]
+                                       (recur obj (conj res [(:multi-counts.gene/gene obj)
+                                                             (:multi-counts.gene/int obj)])))
 
-                                  :default res))
-                           tot (->> (map second res)
-                                    (filter identity)
-                                    (reduce +))
-                           sum (atom 0)
+                                     :default res))
+                             tot (->> (map second res)
+                                      (filter identity)
+                                      (reduce +))
+                             sum (atom 0)
                            open-paren (atom 0)]
-                       (->>
-                        (mapcat
-                         (fn [[obj count]]
-                           [(if (and (= @open-paren 0) (= count 0) (< @sum tot))
-                              (do
-                                (swap! open-paren inc)
-                                "("))
-                            (datomic-rest-api.rest.object/pack-obj obj)
-                            (if (and (not (= count 0)) (= @open-paren 1))
-                              (do
-                                (reset! open-paren 0)
-                                ")"))
-                            (if (and count (not (= count 0)))
-                              (do
-                               (swap! sum (fn[n] (+ n count)))
-                               (str " (" count "/" tot ") ")))])
-                         res)
-                        (filter identity)))}
-          ))))
+                         (->>
+                          (mapcat
+                           (fn [[obj count]]
+                             [(if (and (= @open-paren 0) (= count 0) (< @sum tot))
+                                (do
+                                  (swap! open-paren inc)
+                                  "("))
+                              (pack-obj obj)
+                              (if (and (not (= count 0)) (= @open-paren 1))
+                                (do
+                                  (reset! open-paren 0)
+                                  ")"))
+                              (if (and count (not (= count 0)))
+                                (do
+                                  (swap! sum (fn[n] (+ n count)))
+                                  (str " (" count "/" tot ") ")))])
+                           res)
+                          (filter identity)))}
+            )))))
 
-(def-rest-widget mapping-data [gene]
-  {:name      (name-field gene)
 
-   :two_pt_data
-   {:data (seq (gene-mapping-twopt (d/entity-db gene) (:db/id gene)))
-    :description "Two point mapping data for this gene"}
-
-   :pos_neg_data
-   {:data (seq (gene-mapping-posneg (d/entity-db gene) (:db/id gene)))
-    :description "Positive/Negative mapping data for this gene"}
-
-   :multi_pt_data
-   {:data (seq (gene-mapping-multipt (d/entity-db gene) (:db/id gene)))
-    :description "Multi point mapping data for this gene"}})
 
 
 ;;
 ;; Human diseases widget
 ;;
 
-(defn- disease-models [gene]
+(defn disease-models [gene]
   (let [db (d/entity-db gene)]
     {:data
      {:potential_model
       (seq
         (for [d (:gene/disease-potential-model gene)]
-          (assoc (datomic-rest-api.rest.object/pack-obj (:gene.disease-potential-model/do-term d))
-                 :ev (datomic-rest-api.rest.object/get-evidence d))))
+          (assoc (pack-obj (:gene.disease-potential-model/do-term d))
+                 :ev (get-evidence d))))
 
       :experimental_model
       (seq
        (for [d (:gene/disease-experimental-model gene)]
-         (assoc (datomic-rest-api.rest.object/pack-obj (:gene.disease-experimental-model/do-term d))
-           :ev (datomic-rest-api.rest.object/get-evidence d))))
+         (assoc (pack-obj (:gene.disease-experimental-model/do-term d))
+           :ev (get-evidence d))))
 
       :gene
       (seq
@@ -1103,10 +1062,7 @@
           db (:db/id gene)))}}))
 
 
-(def-rest-widget human-diseases [gene]
-  {:name                    (name-field gene)
-   :human_disease_relevance (disease-relevance gene)
-   :human_diseases          (disease-models gene)})
+
 
 ;;
 ;; Assembly-twiddling stuff (should be in own namespace?)
@@ -1131,24 +1087,24 @@
 ;;
 
 (defn- construct-labs [construct]
-  (seq (map #(datomic-rest-api.rest.object/pack-obj "laboratory" (:construct.laboratory/laboratory %))
+  (seq (map #(pack-obj "laboratory" (:construct.laboratory/laboratory %))
             (:construct/laboratory construct))))
 
 (defn- transgene-labs [tg]
-  (seq (map #(datomic-rest-api.rest.object/pack-obj "laboratory" (:transgene.laboratory/laboratory %))
+  (seq (map #(pack-obj "laboratory" (:transgene.laboratory/laboratory %))
             (:transgene/laboratory tg))))
 
 
 (defn- transgene-record [construct]
-  (let [base {:construct (datomic-rest-api.rest.object/pack-obj "construct" construct)
-              :used_in   (datomic-rest-api.rest.object/pack-obj "transgene" (first (:construct/transgene-construct construct)))
+  (let [base {:construct (pack-obj "construct" construct)
+              :used_in   (pack-obj "transgene" (first (:construct/transgene-construct construct)))
               :use_summary (:construct/summary construct)}]
     (cond-let [use]
       (:construct/transgene-construct construct)
       (for [t use]
         (assoc base :used_in_type "Transgene construct"
                     :use_summary (:transgene.summary/text (:transgene/summary t))
-                    :used_in     (datomic-rest-api.rest.object/pack-obj "transgene" t)
+                    :used_in     (pack-obj "transgene" t)
                     :use_lab     (or (transgene-labs t)
                                      (construct-labs construct)
                                      [])))
@@ -1157,7 +1113,7 @@
       (for [t use]
         (assoc base :used_in_type "Transgene coinjection"
                     :use_summary (:transgene.summary/text (:transgene/summary t))
-                    :used_in     (datomic-rest-api.rest.object/pack-obj "transgene" t)
+                    :used_in     (pack-obj "transgene" t)
                     :use_lab     (or (transgene-labs t)
                                      (construct-labs construct)
                                       [])))
@@ -1165,10 +1121,10 @@
       (:construct/engineered-variation construct)
       (for [v use]
         (assoc base :used_in_type "Engineered variation"
-                    :used_in      (datomic-rest-api.rest.object/pack-obj "variation" v)
+                    :used_in      (pack-obj "variation" v)
                     :use_lab      (construct-labs construct))))))
 
-(defn- transgenes [gene]
+(defn transgenes [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?cons ...]
@@ -1181,7 +1137,7 @@
           (seq))
      :description "transgenes expressed by this gene"}))
 
-(defn- transgene-products [gene]
+(defn transgene-products [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?cons ...]
@@ -1199,7 +1155,7 @@
    :oligo-set.type/washu-gsc-microarray-probe  "GSC"
    :oligo-set.type/agilent-microarray-probe    "Agilent"})
 
-(defn- microarray-probes [gene]
+(defn microarray-probes [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?oligo ...]
@@ -1212,7 +1168,7 @@
              db (:db/id gene) (keys probe-types))
           (map (fn [oid]
                  (let [oligo (entity db oid)]
-                   (assoc (datomic-rest-api.rest.object/pack-obj "oligo-set" oligo)
+                   (assoc (pack-obj "oligo-set" oligo)
                           :class "pcr_oligo"
                           :label (format
                                    "%s [%s]"
@@ -1221,7 +1177,7 @@
           (seq))
      :description "microarray probes"}))
 
-(defn- matching-cdnas [gene]
+(defn matching-cdnas [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?cdna ...]
@@ -1231,11 +1187,11 @@
                       [?cds :cds/matching-cdna ?mcdna]
                       [?mcdna :cds.matching-cdna/sequence ?cdna]]
              db (:db/id gene))
-          (map #(datomic-rest-api.rest.object/pack-obj "sequence" (entity db %)))
+          (map #(pack-obj "sequence" (entity db %)))
           (seq))
      :description "cDNAs matching this gene"}))
 
-(defn- antibodies [gene]
+(defn antibodies [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?ab ...]
@@ -1246,9 +1202,9 @@
           (map
             (fn [abid]
               (let [ab (entity db abid)]
-                {:antibody (datomic-rest-api.rest.object/pack-obj "antibody" ab)
+                {:antibody (pack-obj "antibody" ab)
                  :summary (:antibody.summary/text (:antibody/summary ab))
-                 :laboratory (map (partial datomic-rest-api.rest.object/pack-obj "laboratory") (:antibody/location ab))})))
+                 :laboratory (map (partial pack-obj "laboratory") (:antibody/location ab))})))
           (seq))
      :description "antibodies generated against protein products or gene fusions"}))
 
@@ -1274,7 +1230,7 @@
      [(<= ?cmin ?max)]
      [(>= ?cmax ?min)]]])
 
-(defn- orfeome-primers [gene]
+(defn orfeome-primers [gene]
   (let [db  (d/entity-db gene)
         [parent start end] (root-segment gene)]
     {:data
@@ -1309,7 +1265,7 @@
             (seq)))
      :description "ORFeome Project primers and sequences"}))
 
-(defn- primer-pairs [gene]
+(defn primer-pairs [gene]
   (let [db                 (d/entity-db gene)
         [parent start end] (root-segment gene)]
     {:data
@@ -1340,23 +1296,14 @@
             (seq)))
      :description "Primer pairs"}))
 
-(defn- sage-tags [gene]
+(defn sage-tags [gene]
   {:data
-   (seq (map #(datomic-rest-api.rest.object/pack-obj "sage-tag" (:sage-tag/_gene %)) (:sage-tag.gene/_gene gene)))
+   (seq (map #(pack-obj "sage-tag" (:sage-tag/_gene %)) (:sage-tag.gene/_gene gene)))
 
    :description
    "SAGE tags identified"})
 
-(def-rest-widget reagents [gene]
-  {:name               (name-field gene)
-   :transgenes         (transgenes gene)
-   :transgene_products (transgene-products gene)
-   :microarray_probes  (microarray-probes gene)
-   :matching_cdnas     (matching-cdnas gene)
-   :antibodies         (antibodies gene)
-   :orfeome_primers    (orfeome-primers gene)
-   :primer_pairs       (primer-pairs gene)
-   :sage_tags          (sage-tags gene)})
+
 ;;
 ;; New style GO widget
 ;;
@@ -1375,12 +1322,12 @@
       :with
       (seq
        (concat
-        (map (partial datomic-rest-api.rest.object/pack-obj "gene")      (:go-annotation/interaction-gene anno))
-        (map (partial datomic-rest-api.rest.object/pack-obj "go-term")   (:go-annotation/inferred-from-go-term anno))
-        (map (partial datomic-rest-api.rest.object/pack-obj "motif")     (:go-annotation/motif anno))
-        (map (partial datomic-rest-api.rest.object/pack-obj "rnai")      (:go-annotation/rnai-result anno))
-        (map (partial datomic-rest-api.rest.object/pack-obj "variation") (:go-annotation/variation anno))
-        (map (partial datomic-rest-api.rest.object/pack-obj "phenotype") (:go-annotation/phenotype anno))
+        (map (partial pack-obj "gene")      (:go-annotation/interaction-gene anno))
+        (map (partial pack-obj "go-term")   (:go-annotation/inferred-from-go-term anno))
+        (map (partial pack-obj "motif")     (:go-annotation/motif anno))
+        (map (partial pack-obj "rnai")      (:go-annotation/rnai-result anno))
+        (map (partial pack-obj "variation") (:go-annotation/variation anno))
+        (map (partial pack-obj "phenotype") (:go-annotation/phenotype anno))
         ;; Also DB fields...
         ))
 
@@ -1394,15 +1341,15 @@
         :Date_last_updated
         (if-let [d (:go-annotation/date-last-updated anno)]
           [{:class "text"
-           :id (datomic-rest-api.helpers/format-date3 (str d))
-           :label (datomic-rest-api.helpers/format-date3 (str d))}])
+           :id (date-helper/format-date3 (str d))
+           :label (date-helper/format-date3 (str d))}])
 
         :Contributed_by
-           [(datomic-rest-api.rest.object/pack-obj "analysis"
+           [(pack-obj "analysis"
                 (:go-annotation/contributed-by anno))]
         :Reference
          (if (:go-annotation/reference anno)
-           [(datomic-rest-api.rest.object/pack-obj "paper"
+           [(pack-obj "paper"
                   (:go-annotation/reference anno))])
 
         :GO_reference
@@ -1431,20 +1378,20 @@
          (for [{rel :go-annotation.molecule-relation/text
                 mol :go-annotation.molecule-relation/molecule}
                (:go-annotation/molecule-relation anno)]
-           [rel (datomic-rest-api.rest.object/pack-obj "molecule" mol)]))
+           [rel (pack-obj "molecule" mol)]))
         (reduce
          (fn [m [rel obj]]
            (assoc m rel obj))
          nil)))])
 
       :term_id
-      (datomic-rest-api.rest.object/pack-obj "go-term" term :label (:go-term/id term))
+      (pack-obj "go-term" term :label (:go-term/id term))
 
       :term_description
-      (datomic-rest-api.rest.object/pack-obj "go-term" term)})
+      (pack-obj "go-term" term)})
    annos))
 
-(defn- gene-ontology-full [gene]
+(defn gene-ontology-full [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1480,12 +1427,12 @@
         {:extensions ""
 
        :term_id
-       (datomic-rest-api.rest.object/pack-obj "go-term" term :label (:go-term/id term))
+       (pack-obj "go-term" term :label (:go-term/id term))
 
        :term_description
-       (datomic-rest-api.rest.object/pack-obj "go-term" term)}))))
+       (pack-obj "go-term" term)}))))
 
-(defn- gene-ontology-summary [gene]
+(defn gene-ontology-summary [gene]
  (let [db (d/entity-db gene)]
   {:data
    (->>
@@ -1511,16 +1458,13 @@
    :description
    "gene ontology associations"}))
 
-(def-rest-widget gene-ontology [gene]
-  {:name                   (name-field gene)
-   :gene_ontology_summary  (gene-ontology-summary gene)
-   :gene_ontology          (gene-ontology-full gene)})
+
 
 ;;
 ;; Expression widget
 ;;
 
-(defn- anatomy-terms [gene]
+(defn anatomy-terms [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?at ...]
@@ -1531,7 +1475,7 @@
                       [?epa :expr-pattern.anatomy-term/anatomy-term ?at]]
              db (:db/id gene))
           (map (fn [at-id]
-                 (datomic-rest-api.rest.object/pack-obj "anatomy-term" (entity db at-id)))))
+                 (pack-obj "anatomy-term" (entity db at-id)))))
      :description "anatomy terms from expression patterns for the gene"}))
 
 (defn- expr-pattern-type [ep]
@@ -1547,7 +1491,7 @@
                          :expr-pattern/epic
                          :expr-pattern/cis-regulatory-element]))
 
-(defn- expression-patterns [gene]
+(defn expression-patterns [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1565,7 +1509,7 @@
          (let [ep (entity db ep-id)]
            (vmap
             :expression_pattern
-            (datomic-rest-api.rest.object/pack-obj "expr-pattern" ep)
+            (pack-obj "expr-pattern" ep)
 
             :description
             (if-let [desc (or (:expr-pattern/pattern ep)
@@ -1573,29 +1517,29 @@
                               (:expr-pattern.remark/text (:expr-pattern/remark ep)))]
               {:text desc
                :evidence (vmap
-                          :Reference (datomic-rest-api.rest.object/pack-obj "paper" (first (:expr-pattern/reference ep))))})
+                          :Reference (pack-obj "paper" (first (:expr-pattern/reference ep))))})
 
             :type
-            (datomic-rest-api.rest.object/humanize-ident (expr-pattern-type ep))
+            (rest-api-obj/humanize-ident (expr-pattern-type ep))
 
             :expressed_in
-            (map #(datomic-rest-api.rest.object/pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
+            (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
                  (:expr-pattern/anatomy-term ep))
 
             :life_stage
-            (map #(datomic-rest-api.rest.object/pack-obj "life-stage" (:expr-pattern.life-stage/life-stage %))
+            (map #(pack-obj "life-stage" (:expr-pattern.life-stage/life-stage %))
                  (:expr-pattern/life-stage ep))
 
             :go_term
             (if-let [go (:expr-pattern/go-term ep)]
-              {:text (map #(datomic-rest-api.rest.object/pack-obj "go-term" (:expr-pattern.go-term/go-term %)) go)
+              {:text (map #(pack-obj "go-term" (:expr-pattern.go-term/go-term %)) go)
                :evidence {"Subcellular localization" (:expr-pattern/subcellular-localization ep)}})
 
             :transgene
             (if (:expr-pattern/transgene ep)
               (map
                (fn [tg]
-                 (let [packed (datomic-rest-api.rest.object/pack-obj "transgene" tg)
+                 (let [packed (pack-obj "transgene" tg)
                        cs     (:transgene/construction-summary tg)]
                    (if cs
                      {:text packed
@@ -1604,7 +1548,7 @@
                (:expr-pattern/transgene ep))
               (map
                (fn [cons]
-                 (let [packed (datomic-rest-api.rest.object/pack-obj "construct" cons)
+                 (let [packed (pack-obj "construct" cons)
                        cs     (:construct/construction-summary cons)]
                    (if cs
                      {:text packed
@@ -1616,7 +1560,7 @@
      :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
 
 
-(defn- expression-clusters [gene]
+(defn expression-clusters [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1628,16 +1572,16 @@
        (map
          (fn [ec-id]
            (let [ec (entity db ec-id)]
-             {:expression_cluster (datomic-rest-api.rest.object/pack-obj "expression-cluster" ec)
+             {:expression_cluster (pack-obj "expression-cluster" ec)
               :description     (apply str (:expression-cluster/description ec))}))))
      :description
      "expression cluster data"}))
 
-(defn- anatomic-expression-patterns [gene]
+(defn anatomic-expression-patterns [gene]
   {:data  {}
    :description "expression patterns for the gene"})
 
-(defn- anatomy-function [gene]
+(defn anatomy-function [gene]
   (let [db (d/entity-db gene)]
    {:data
     (->>
@@ -1649,7 +1593,7 @@
       (map
        (fn [af-id]
         (let [af (entity db af-id)]
-           {:anatomy-function (datomic-rest-api.rest.object/pack-obj "expression-cluster" af)})))) ;; need to still make this packed object - so far have not seen an exmample of it filled in
+           {:anatomy-function (pack-obj "expression-cluster" af)})))) ;; need to still make this packed object - so far have not seen an exmample of it filled in
       :description "anatomy functions associatated with this gene"}))
 
 ;; I haven't found an example for this to show that it works
@@ -1657,10 +1601,10 @@
  (let [images (:picture/expr_pattern ep)]
      (map
       (fn [image]
-        (datomic-rest-api.rest.object/pack-obj "picture" image))
+        (pack-obj "picture" image))
       images)))
 
-(defn- expression-profiling-graphs [gene]
+(defn expression-profiling-graphs [gene]
   (let [db (d/entity-db gene)]
    {:data
     (->>
@@ -1682,7 +1626,7 @@
            :description nil
            :expressed_in nil
            :expression_pattern {:class "expr_pattern"
-                                :curated_images (curated-images ep) ;; should be array of pack-obj (datomic-rest-api.rest.object/pack-obj "picture )
+                                :curated_images (curated-images ep) ;; should be array of pack-obj (pack-obj "picture )
                                 :id (:expr-pattern/id ep)
                                 :label (:expr-pattern/id ep)
                                 :taxonomy "all"}
@@ -1692,7 +1636,7 @@
            :type (expr-pattern-type ep)}))))
     :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
 
-(defn- fourd-expression-movies [gene]
+(defn fourd-expression-movies [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1724,7 +1668,7 @@
 
     :description "interactive 4D expression movies"}))
 
-(defn- microarray-topology-map-position [gene]
+(defn microarray-topology-map-position [gene]
   {:data nil ;; this resquires segment data and can be found in the file: lib/WormBase/API/Role/Expression.pm
    :description "microarray topography map"})
 
@@ -1734,7 +1678,7 @@
     (let [[_ stat-type] matched]
       stat-type)))
 
-(defn- fpkm-expression-summary-ls [gene]
+(defn fpkm-expression-summary-ls [gene]
   (let [db (d/entity-db gene)
         result-tuples (->> (q '[:find ?analysis ?fpkm ?stage
                                 :in $ ?gene
@@ -1790,16 +1734,7 @@
                 :table {:fpkm {:data results}}})
      :description "Fragments Per Kilobase of transcript per Million mapped reads (FPKM) expression data"}))
 
-(def-rest-widget expression [gene]
-  {:name                (name-field gene)
-   :anatomy_terms       (anatomy-terms gene)
-   :expression_patterns (expression-patterns gene)
-   :expression_cluster  (expression-clusters gene)
-   :expression_profiling_graphs (expression-profiling-graphs gene)
-   :anatomic_expression_patterns (anatomic-expression-patterns gene)
-   :microarray_topology_map_position (microarray-topology-map-position gene)
-   :fourd_expression_movies (fourd-expression-movies gene)
-   :anatomy_function (anatomy-function gene)})
+
 
 ;;
 ;; Homology widget
@@ -1807,11 +1742,11 @@
 
 (defn- pack-ortholog [db oid]
   (let [ortho (entity db oid)]
-    {:ortholog (datomic-rest-api.rest.object/pack-obj "gene" (:gene.ortholog/gene ortho))
+    {:ortholog (pack-obj "gene" (:gene.ortholog/gene ortho))
      :species (if-let [[_ genus species] (re-matches #"^(\w)\w*\s+(.*)"
                                                      (:species/id (:gene.ortholog/species ortho)))]
                 {:genus genus :species species})
-     :method (map (partial datomic-rest-api.rest.object/pack-obj) (:evidence/from-analysis ortho))}))
+     :method (map (partial pack-obj) (:evidence/from-analysis ortho))}))
 
 (defn- homology-orthologs [gene species]
   (let [db (d/entity-db gene)]
@@ -1843,20 +1778,20 @@
      :description
      "precalculated ortholog assignments for this gene"}))
 
-(defn- homology-paralogs [gene]
+(defn homology-paralogs [gene]
   {:data
    (map
      (fn [para]
-       {:ortholog (datomic-rest-api.rest.object/pack-obj "gene" (:gene.paralog/gene para))
+       {:ortholog (pack-obj "gene" (:gene.paralog/gene para))
         :species (if-let [[_ genus species] (re-matches #"^(\w)\w*\s+(.*)"
                                                         (:species/id (:gene.paralog/species para)))]
                    {:genus genus :species species})
-        :method (map (partial datomic-rest-api.rest.object/pack-obj) (:evidence/from-analysis para))})
+        :method (map (partial pack-obj) (:evidence/from-analysis para))})
      (:gene/paralog gene))
    :description
    "precalculated ortholog assignments for this gene"})
 
-(defn- protein-domains [gene]
+(defn protein-domains [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -1875,12 +1810,12 @@
          (fn [motif-id]
            (let [motif (entity db motif-id)]
              [(first (:motif/title motif))
-              (datomic-rest-api.rest.object/pack-obj "motif" motif)])))
+              (pack-obj "motif" motif)])))
        (into {}))
      :description
      "protein domains of the gene"}))
 
-(defn- best-blastp-matches [gene]
+(defn best-blastp-matches [gene]
   (let [db    (d/entity-db gene)]
     (if-let [[prot length]
              (->> (q '[:find ?prot ?pep-len
@@ -1925,7 +1860,7 @@
                  :taxonomy (if-let [[_ g spec] (re-matches #"(.).* +(.+)" (or (:species/id species) ""))]
                              {:genus   g
                               :species spec})
-                 :hit (datomic-rest-api.rest.object/pack-obj protein)
+                 :hit (pack-obj protein)
                  :description
                  (or
                    (:protein/description protein)
@@ -1971,30 +1906,23 @@
    "Trichinella spiralis"
    "Trichuris suis"])
 
-(def-rest-widget homology [gene]
-  {:name                (name-field gene)
-   :nematode_orthologs  (homology-orthologs gene nematode-species)
-   :human_orthologs     (homology-orthologs gene ["Homo sapiens"])
-   :other_orthologs     (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
-   :paralogs            (homology-paralogs gene)
-   :best_blastp_matches (best-blastp-matches gene)
-   :protein_domains     (protein-domains gene)})
+
 
 ;;
 ;; History widget
 ;;
 
-(defn- history-events [gene]
+(defn history-events [gene]
   (let [data
    (->>
     (:gene/version-change gene)
     (mapcat
      (fn [h]
        (let [result {:version (:gene.version-change/version h)
- ;;                    :date    (datomic-rest-api.helpers/format-date2 (:gene.version-change/date h))
-                     :curator (datomic-rest-api.rest.object/pack-obj "person" (:gene.version-change/person h))
+ ;;                    :date    (date-helper/format-date2 (:gene.version-change/date h))
+                     :curator (pack-obj "person" (:gene.version-change/person h))
                      :remark  nil
-                     :date    (datomic-rest-api.helpers/format-date (:gene.version-change/date h))
+                     :date    (date-helper/format-date (:gene.version-change/date h))
                      :type    "Version_change"
                      :gene    nil
                      :action  "Unknown"}]
@@ -2019,19 +1947,19 @@
 
            (if-let [info (:gene-history-action/merged-into h)]
              (assoc result :action "Merged_into"
-                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+                    :gene (pack-obj "gene" info)))
 
            (if-let [info (:gene-history-action/acquires-merge h)]
              (assoc result :action "Acquires_merge"
-                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+                    :gene (pack-obj "gene" info)))
 
            (if-let [info (:gene-history-action/split-from h)]
              (assoc result :action "Split_from"
-                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+                    :gene (pack-obj "gene" info)))
 
            (if-let [info (:gene-history-action/split-into h)]
              (assoc result :action "Split_into"
-                    :gene (datomic-rest-api.rest.object/pack-obj "gene" info)))
+                    :gene (pack-obj "gene" info)))
 
            (if-let [info (:gene-history-action/imported h)]
              (assoc result :action "Imported"
@@ -2050,7 +1978,7 @@
    "the curatorial history of the gene"}))
 
 
-(defn- old-annot [gene]
+(defn old-annot [gene]
   (let [db (d/entity-db gene)]
     {:data (if-let [data
                     (->> (q '[:find [?historic ...]
@@ -2061,23 +1989,20 @@
                                        [?gene :gene/corresponding-transcript-history ?historic])]
                             db (:db/id gene))
                          (map (fn [hid]
-                                (let [hobj (datomic-rest-api.rest.object/pack-obj (entity db hid))]
+                                (let [hobj (pack-obj (entity db hid))]
                                   {:class (clojure.string/upper-case (:class hobj))
                                    :name hobj})))
                          (seq))] data)
      :description "the historical annotations of this gene"}))
 
-(def-rest-widget history [gene]
-  {:name      (name-field gene)
-   :history   (history-events gene)
-   :old_annot (old-annot gene)})
+
 
 
 ;;
 ;; Sequence widget
 ;;
 
-(defn- gene-models [gene]      ;; Probably needs more testing for non-coding/pseudogene/etc. cases.
+(defn gene-models [gene]      ;; Probably needs more testing for non-coding/pseudogene/etc. cases.
   (let [db      (d/entity-db gene)
         coding? (:gene/corresponding-cds gene)
         seqs (q '[:find [?seq ...]
@@ -2113,12 +2038,12 @@
                 protein (:cds.corresponding-protein/protein (:cds/corresponding-protein cds))
                 seqs (or (seq (map :transcript.corresponding-cds/_cds (:transcript/_corresponding-cds cds)))
                          [sequence])
-                status (str (datomic-rest-api.rest.object/humanize-ident (:cds/prediction-status cds))
+                status (str (rest-api-obj/humanize-ident (:cds/prediction-status cds))
                             (if (:cds/matching-cdna cds)
                               " by cDNA(s)"))
                 {:keys [remark-map footnotes]}
                 (reduce (fn [{:keys [remark-map footnotes]} r]
-                          (let [pr (if-let [ev (datomic-rest-api.rest.object/get-evidence r)]
+                          (let [pr (if-let [ev (get-evidence r)]
                                      {:text     (:cds.remark/text r)
                                       :evidence ev}
                                      (:cds.remark/text r))]
@@ -2136,14 +2061,14 @@
              (conjv table
               (vmap
                :model
-               (map datomic-rest-api.rest.object/pack-obj seqs)
+               (map pack-obj seqs)
 
                :protein
-               (datomic-rest-api.rest.object/pack-obj "protein" protein)
+               (pack-obj "protein" protein)
 
                :cds
                (vmap
-                :text (vassoc (datomic-rest-api.rest.object/pack-obj "cds" cds) :footnotes footnotes)
+                :text (vassoc (pack-obj "cds" cds) :footnotes footnotes)
                 :evidence (if (not (empty? status))
                             {:status status}))
 
@@ -2188,15 +2113,13 @@
      :description
      "gene models for this gene"}))
 
-(def-rest-widget sequences [gene]
-  {:name         (name-field gene)
-   :gene_models  (gene-models gene)})
+
 
 ;;
 ;; Sequence Features widget
 ;;
 
-(defn- associated-features [gene]
+(defn associated-features [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->>
@@ -2209,12 +2132,12 @@
          (fn [fid]
            (let [feature (entity db fid)]
              (vmap
-               :name (datomic-rest-api.rest.object/pack-obj "feature" feature)
+               :name (pack-obj "feature" feature)
                :description (first (:feature/description feature))
                :method (-> (:feature/method feature)
                            (:method/id))
                :interaction (->> (:interaction.feature-interactor/_feature feature)
-                                 (map #(datomic-rest-api.rest.object/pack-obj "interaction" (:interaction/_feature-interactor %)))
+                                 (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
                                  (seq))
                :expr_pattern (->>
                                (q '[:find [?e ...]
@@ -2226,19 +2149,19 @@
                                (map
                                  (fn [eid]
                                    (let [expr (entity db eid)]
-                                     {:text (map #(datomic-rest-api.rest.object/pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
+                                     {:text (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
                                                  (:expr-pattern/anatomy-term expr))
-                                      :evidence {:by (datomic-rest-api.rest.object/pack-obj "expr-pattern" expr)}})))
+                                      :evidence {:by (pack-obj "expr-pattern" expr)}})))
                                (seq))
                :bound_by (->> (:feature/bound-by-product-of feature)
-                              (map #(datomic-rest-api.rest.object/pack-obj "gene" (:feature.bound-by-product-of/gene %)))
+                              (map #(pack-obj "gene" (:feature.bound-by-product-of/gene %)))
                               (seq))
-               :tf  (datomic-rest-api.rest.object/pack-obj "transcription-factor" (:feature/transcription-factor feature))))))
+               :tf  (pack-obj "transcription-factor" (:feature/transcription-factor feature))))))
        (seq))
      :description
      "Features associated with this Gene"}))
 
-(defn- feature-image [gene]
+(defn feature-image [gene]
   {:data {:class "genomic_location" ;; To populate this correctly we will need sequence data
           :id nil
           :label nil
@@ -2263,20 +2186,17 @@
                    "BINDING_REGIONS"]}
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
-(def-rest-widget features [gene]
-  {:feature_image (feature-image gene)
-   :name       (name-field gene)
-   :features   (associated-features gene)})
+
 
 ;;
 ;; Genetics widget
 ;;
 
-(defn- reference-allele [gene]
+(defn reference-allele [gene]
   {:data (let [data
    (->> (:gene/reference-allele gene)
         (map :gene.reference-allele/variation)
-        (map (partial datomic-rest-api.rest.object/pack-obj "variation")))]
+        (map (partial pack-obj "variation")))]
      (if (empty? data) nil data))
    :description "the reference allele of the gene"})
 
@@ -2290,12 +2210,12 @@
   (seq
    (map (fn [strain]
           (vassoc
-           (datomic-rest-api.rest.object/pack-obj "strain" strain)
+           (pack-obj "strain" strain)
            :genotype (:strain/genotype strain)
-           :transgenes (datomic-rest-api.rest.object/pack-obj "transgene" (first (:transgene/_strain strain)))))
+           :transgenes (pack-obj "transgene" (first (:transgene/_strain strain)))))
         strains)))
 
-(defn- strains [gene]
+(defn strains [gene]
   (let [strains (:gene/strain gene)]
     {:data
      (vmap
@@ -2359,7 +2279,7 @@
         gene-changes (seq (take 20 (:variation/gene var)))]
     (vmap
      :variation
-     (datomic-rest-api.rest.object/pack-obj "variation" var)
+     (pack-obj "variation" var)
 
      :type
      (if (:variation/transposon-insertion var)
@@ -2457,24 +2377,24 @@
                (for [cc cds-changes
                      :when (or (:molecular-change/missense cc)
                                (:molecular-change/nonsense cc))]
-                 (datomic-rest-api.rest.object/pack-obj "cds" (:variation.predicted-cds/cds cc))))]
+                 (pack-obj "cds" (:variation.predicted-cds/cds cc))))]
        (if (empty? isoform) nil isoform))
 
      :phen_count
      (count (:variation/phenotype var))
 
      :strain
-     (map #(datomic-rest-api.rest.object/pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var))
+     (map #(pack-obj "strain" (:variation.strain/strain %)) (:variation/strain var))
 
      :sources
      (if-let [sources (if (empty? (:variation/reference var))
-                        (map #(let [packed (datomic-rest-api.rest.object/pack-obj %)]
+                        (map #(let [packed (pack-obj %)]
                                 (into packed {:label
                                               (str/replace (:label packed) #"_" " ")})) (:variation/analysis var))
-                        (map #(datomic-rest-api.rest.object/pack-obj (:variation.reference/paper %)) (:variation/reference var)))]
+                        (map #(pack-obj (:variation.reference/paper %)) (:variation/reference var)))]
        (if (empty? sources) nil sources)))))
 
-(defn- alleles [gene]
+(defn alleles [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?var ...]
@@ -2486,7 +2406,7 @@
           (map #(process-variation (entity db %))))
      :description "alleles and polymorphisms with associated phenotype"}))
 
-(defn- alleles-other [gene]
+(defn alleles-other [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?var ...]
@@ -2499,7 +2419,7 @@
           (map #(process-variation (entity db %))))
      :description "alleles currently with no associated phenotype"}))
 
-(defn- polymorphisms [gene]
+(defn polymorphisms [gene]
   (let [db (d/entity-db gene)]
     {:data
      (->> (q '[:find [?var ...]
@@ -2512,7 +2432,7 @@
           (map #(process-variation (entity db %))))
      :description "polymorphisms and natural variations currently with no associated phenotype"}))
 
-(defn- alleles-count [gene]
+(defn alleles-count [gene]
   (let [db (d/entity-db gene)]
     {:data
      (-> {}
@@ -2532,25 +2452,25 @@
                                   db (:db/id gene))))
      :description "counts for alleles-other and polymorphisms"}))
 
-(defn- rearrangements-positive [gene]
+(defn rearrangements-positive [gene]
   (let [db (d/entity-db gene)]
     (->> (q '[:find [?ra ...]
                :in $ ?gene
                :where [?rag :rearrangement.gene-inside/gene ?gene]
                       [?ra :rearrangement/gene-inside ?rag]]
             db (:db/id gene))
-         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
+         (map #(pack-obj (entity db %))))))
 
-(defn- rearrangements-negative [gene]
+(defn rearrangements-negative [gene]
    (let [db (d/entity-db gene)]
     (->> (q '[:find [?ra ...]
                :in $ ?gene
                :where [?rag :rearrangement.gene-outside/gene ?gene]
                       [?ra :rearrangement/gene-outside ?rag]]
             db (:db/id gene))
-         (map #(datomic-rest-api.rest.object/pack-obj (entity db %))))))
+         (map #(pack-obj (entity db %))))))
 
-(defn- rearrangements [gene]
+(defn rearrangements [gene]
   {:data (let [data {:positive (if-let [rearrangements (rearrangements-positive gene)]
                                  (if (empty? rearrangements) nil rearrangements))
                      :negative (if-let [rearrangements (rearrangements-negative gene)]
@@ -2559,22 +2479,13 @@
    :description "rearrangements involving this gene"})
 
 
-(defn genetics [gene]
-  {:reference_allele (reference-allele gene)
-   :rearrangements   (rearrangements gene)
-   :strains          (strains gene)
-   :alleles          (alleles gene)
-   :alleles_count    (alleles-count gene)
-;;   :alleles_other    (alleles-other gene)  ;; can be requested through /rest/field/
-;;   :polymorphisms    (polymorphisms gene)  ;; can be requested through /rest/field/
-   :name             (name-field gene)
-   })
+
 
 ;;
 ;; external_links widget
 ;;
 
-(defn- xrefs [gene]
+(defn xrefs [gene]
   {:data
    (reduce
      (fn [refs db]
@@ -2591,7 +2502,3 @@
      (:gene/database gene))
    :description
    "external databases and IDs containing additional information on the object"})
-
-(def-rest-widget external-links [gene]
-  {:name  (name-field gene)
-   :xrefs (xrefs gene)})

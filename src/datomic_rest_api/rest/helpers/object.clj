@@ -1,4 +1,4 @@
-(ns datomic-rest-api.rest.object
+(ns datomic-rest-api.rest.helpers.object
   (:use pseudoace.utils)
   (:import java.text.SimpleDateFormat)
   (:require [datomic.api :as d :refer (db history q touch entity)]

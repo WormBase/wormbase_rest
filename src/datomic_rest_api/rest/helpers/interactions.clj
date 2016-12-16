@@ -1,4 +1,4 @@
-(ns datomic-rest-api.rest.interactions
+(ns datomic-rest-api.rest.helpers.interactions
   (:use datomic-rest-api.rest.object)
   (:require [cheshire.core :as json]
             [datomic.api :as d :refer (db history q touch entity)]
