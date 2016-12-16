@@ -1,119 +1,119 @@
 (ns datomic-rest-api.rest.widgets.gene
   (:require [datomic-rest-api.rest.core :refer [def-rest-widget]]
-            [datomic-rest-api.rest.fields.gene :refer :all]))
+            [datomic-rest-api.rest.fields.gene :as gene-fields]))
 
 (def-rest-widget overview [gene]
-  {:name                     (name-field gene)
-   :version                  (gene-version gene)
-   :classification           (gene-classification gene)
-   :also_refers_to           (also-refers-to gene)
-   :merged_into              (merged-into gene)
-   :gene_class               (gene-class gene)
-   :concise_description      (concise-description gene)
-   :remarks                  (curatorial-remarks gene)
-   :operon                   (gene-operon gene)
-   :gene_cluster             (gene-cluster gene)
-   :other_names              (gene-other-names gene)
-   :taxonomy                 (gene-taxonomy gene)
-   :status                   (gene-status gene)
-   :legacy_information       (legacy-info gene)
-   :named_by                 (named-by gene)
-   :parent_sequence          (parent-sequence gene)
-   :clone                    (parent-clone gene)
-   :cloned_by                (cloned-by gene)
-   :transposon               (transposon gene)
-   :sequence_name            (sequence-name gene)
-   :locus_name               (locus-name gene)
-   :human_disease_relevance  (disease-relevance gene)
-   :structured_description   (structured-description gene)})
+  {:name                     (gene-fields/name-field gene)
+   :version                  (gene-fields/gene-version gene)
+   :classification           (gene-fields/gene-classification gene)
+   :also_refers_to           (gene-fields/also-refers-to gene)
+   :merged_into              (gene-fields/merged-into gene)
+   :gene_class               (gene-fields/gene-class gene)
+   :concise_description      (gene-fields/concise-description gene)
+   :remarks                  (gene-fields/curatorial-remarks gene)
+   :operon                   (gene-fields/gene-operon gene)
+   :gene_cluster             (gene-fields/gene-cluster gene)
+   :other_names              (gene-fields/gene-other-names gene)
+   :taxonomy                 (gene-fields/gene-taxonomy gene)
+   :status                   (gene-fields/gene-status gene)
+   :legacy_information       (gene-fields/legacy-info gene)
+   :named_by                 (gene-fields/named-by gene)
+   :parent_sequence          (gene-fields/parent-sequence gene)
+   :clone                    (gene-fields/parent-clone gene)
+   :cloned_by                (gene-fields/cloned-by gene)
+   :transposon               (gene-fields/transposon gene)
+   :sequence_name            (gene-fields/sequence-name gene)
+   :locus_name               (gene-fields/locus-name gene)
+   :human_disease_relevance  (gene-fields/disease-relevance gene)
+   :structured_description   (gene-fields/structured-description gene)})
 
 (def-rest-widget phenotype [gene]
-  {:name                     (name-field gene)
-   :drives_overexpression    (drives-overexpression gene)
-   :phenotype                (phenotype-field gene)
-   :phenotype_not_observed   (phenotype-not-observed-field gene)
-   :phenotype_by_interaction (phenotype-by-interaction gene)})
+  {:name                     (gene-fields/name-field gene)
+   :drives_overexpression    (gene-fields/drives-overexpression gene)
+   :phenotype                (gene-fields/phenotype-field gene)
+   :phenotype_not_observed   (gene-fields/phenotype-not-observed-field gene)
+   :phenotype_by_interaction (gene-fields/phenotype-by-interaction gene)})
 
 (def-rest-widget genetics [gene]
-  {:reference_allele (reference-allele gene)
-   :rearrangements   (rearrangements gene)
-   :strains          (strains gene)
-   :alleles          (alleles gene)
-   :alleles_count    (alleles-count gene)
-;;   :alleles_other    (alleles-other gene)  ;; can be requested through /rest/field/
-;;   :polymorphisms    (polymorphisms gene)  ;; can be requested through /rest/field/
-   :name             (name-field gene)})
+  {:reference_allele (gene-fields/reference-allele gene)
+   :rearrangements   (gene-fields/rearrangements gene)
+   :strains          (gene-fields/strains gene)
+   :alleles          (gene-fields/alleles gene)
+   :alleles_count    (gene-fields/alleles-count gene)
+;;   :alleles_other    (gene-fields/alleles-other gene)  ;; can be requested through /rest/field/
+;;   :polymorphisms    (gene-fields/polymorphisms gene)  ;; can be requested through /rest/field/
+   :name             (gene-fields/name-field gene)})
 
 (def-rest-widget mapping-data [gene]
-  {:name      (name-field gene)
+  {:name      (gene-fields/name-field gene)
 
    :two_pt_data
-   {:data (seq (gene-mapping-twopt gene))
+   {:data (seq (gene-fields/gene-mapping-twopt gene))
     :description "Two point mapping data for this gene"}
 
    :pos_neg_data
-   {:data (seq (gene-mapping-posneg gene))
+   {:data (seq (gene-fields/gene-mapping-posneg gene))
     :description "Positive/Negative mapping data for this gene"}
 
    :multi_pt_data
-   {:data (seq (gene-mapping-multipt gene))
+   {:data (seq (gene-fields/gene-mapping-multipt gene))
     :description "Multi point mapping data for this gene"}})
 
 ;; (def-rest-widget human-diseases [gene]
-;;   {:name                    (name-field gene)
-;;    :human_disease_relevance (disease-relevance gene)
-;;    :human_diseases          (disease-models gene)})
+;;   {:name                    (gene-fields/name-field gene)
+;;    :human_disease_relevance (gene-fields/disease-relevance gene)
+;;    :human_diseases          (gene-fields/disease-models gene)})
 
 ;; (def-rest-widget reagents [gene]
-;;   {:name               (name-field gene)
-;;    :transgenes         (transgenes gene)
-;;    :transgene_products (transgene-products gene)
-;;    :microarray_probes  (microarray-probes gene)
-;;    :matching_cdnas     (matching-cdnas gene)
-;;    :antibodies         (antibodies gene)
-;;    :orfeome_primers    (orfeome-primers gene)
-;;    :primer_pairs       (primer-pairs gene)
-;;    :sage_tags          (sage-tags gene)})
+;;   {:name               (gene-fields/name-field gene)
+;;    :transgenes         (gene-fields/transgenes gene)
+;;    :transgene_products (gene-fields/transgene-products gene)
+;;    :microarray_probes  (gene-fields/microarray-probes gene)
+;;    :matching_cdnas     (gene-fields/matching-cdnas gene)
+;;    :antibodies         (gene-fields/antibodies gene)
+;;    :orfeome_primers    (gene-fields/orfeome-primers gene)
+;;    :primer_pairs       (gene-fields/primer-pairs gene)
+;;    :sage_tags          (gene-fields/sage-tags gene)})
 
 ;; (def-rest-widget gene-ontology [gene]
-;;   {:name                   (name-field gene)
-;;    :gene_ontology_summary  (gene-ontology-summary gene)
-;;    :gene_ontology          (gene-ontology-full gene)})
+;;   {:name                   (gene-fields/name-field gene)
+;;    :gene_ontology_summary  (gene-fields/gene-ontology-summary gene)
+;;    :gene_ontology          (gene-fields/gene-ontology-full gene)})
 
 ;; (def-rest-widget expression [gene]
-;;   {:name                (name-field gene)
-;;    :anatomy_terms       (anatomy-terms gene)
-;;    :expression_patterns (expression-patterns gene)
-;;    :expression_cluster  (expression-clusters gene)
-;;    :expression_profiling_graphs (expression-profiling-graphs gene)
-;;    :anatomic_expression_patterns (anatomic-expression-patterns gene)
-;;    :microarray_topology_map_position (microarray-topology-map-position gene)
-;;    :fourd_expression_movies (fourd-expression-movies gene)
-;;    :anatomy_function (anatomy-function gene)})
+;;   {:name                (gene-fields/name-field gene)
+;;    :anatomy_terms       (gene-fields/anatomy-terms gene)
+;;    :expression_patterns (gene-fields/expression-patterns gene)
+;;    :expression_cluster  (gene-fields/expression-clusters gene)
+;;    :expression_profiling_graphs (gene-fields/expression-profiling-graphs gene)
+;;    :anatomic_expression_patterns (gene-fields/anatomic-expression-patterns gene)
+;;    :microarray_topology_map_position (gene-fields/microarray-topology-map-position gene)
+;;    :fourd_expression_movies (gene-fields/fourd-expression-movies gene)
+;;    :anatomy_function (gene-fields/anatomy-function gene)})
 
 ;; (def-rest-widget homology [gene]
-;;   {:name                (name-field gene)
-;;    :nematode_orthologs  (homology-orthologs gene nematode-species)
-;;    :human_orthologs     (homology-orthologs gene ["Homo sapiens"])
-;;    :other_orthologs     (homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
-;;    :paralogs            (homology-paralogs gene)
-;;    :best_blastp_matches (best-blastp-matches gene)
-;;    :protein_domains     (protein-domains gene)})
+;;   {:name                (gene-fields/name-field gene)
+;;    :nematode_orthologs  (gene-fields/homology-orthologs gene nematode-species)
+;;    :human_orthologs     (gene-fields/homology-orthologs gene ["Homo sapiens"])
+;;    :other_orthologs     (gene-fields/homology-orthologs-not gene (conj nematode-species "Homo sapiens"))
+;;    :paralogs            (gene-fields/homology-paralogs gene)
+;;    :best_blastp_matches (gene-fields/best-blastp-matches gene)
+;;    :protein_domains     (gene-fields/protein-domains gene)})
 
 (def-rest-widget history [gene]
-  {:name      (name-field gene)
-   :history   (history-events gene)
-   :old_annot (old-annot gene)})
+  {:name      (gene-fields/name-field gene)
+   :history   (gene-fields/history-events gene)
+   :old_annot (gene-fields/old-annot gene)})
 
 ;; (def-rest-widget sequences [gene]
-;;   {:name         (name-field gene)
-;;    :gene_models  (gene-models gene)})
+;;   {:name         (gene-fields/name-field gene)
+;;    :gene_models  (gene-fields/gene-models gene)})
 
 ;; (def-rest-widget features [gene]
-;;   {:feature_image (feature-image gene)
-;;    :name       (name-field gene)
-;;    :features   (associated-features gene)})
+;;   {:feature_image (gene-fields/feature-image gene)
+;;    :name       (gene-fields/name-field gene)
+;;    :features   (gene-fields/associated-features gene)})
 
 (def-rest-widget external-links [gene]
-  {:name  (name-field gene)
-   :xrefs (xrefs gene)})
+  {:name  (gene-fields/name-field gene)
+   :xrefs (gene-fields/xrefs gene)})
