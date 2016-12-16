@@ -13,10 +13,7 @@
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer (datomic-conn)]
             [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor)]
-            [datomic-rest-api.rest.widgets.gene :as gene]
-            [datomic-rest-api.rest.interactions :refer (get-interactions get-interaction-details)]
-            [datomic-rest-api.rest.references :refer (get-references)]
-            [datomic-rest-api.rest.locatable-api :refer (feature-api)]))
+            [datomic-rest-api.rest.widgets.gene :as gene]))
 
 
 (declare handle-field-get)
