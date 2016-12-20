@@ -886,134 +886,141 @@
 ;; Needs better support for non-gene things.
 
 (defn gene-mapping-twopt [gene]
-  (let [db (d/entity-db gene)
-        id (:db/id gene)]
-    (->> (q '[:find [?tp ...]
-              :in $ ?gene
-              :where (or-join [?gene ?tp]
-                              (and [?tpg1 :two-point-data.gene-1/gene ?gene]
-                                   [?tp :two-point-data/gene-1 ?tpg1])
-                              (and [?tpg2 :two-point-data.gene-2/gene ?gene]
-                                   [?tp :two-point-data/gene-2 ?tpg2]))]
-            db id)
-         (map (partial entity db))
-         (map
-          (fn [tp]
-            {:mapper     (pack-obj "author" (first (:two-point-data/mapper tp)))
-             :date       (date-helper/format-date (:two-point-data/date tp))
-             :raw_data   (:two-point-data/results tp)
-             :genotype   (:two-point-data/genotype tp)
-             :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
-                           (if (empty? comment) "" comment ))
-             :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
-                                 (or (:two-point-data/calc-lower-conf tp) "0")
-                                 (or (:two-point-data/calc-upper-conf tp) "0"))
-             :point_1    (let [p1 (:two-point-data/gene-1 tp)]
-                           (remove nil? [(pack-obj "gene" (:two-point-data.gene-1/gene p1))
-                                         (pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
-             :point_2    (let [p2 (:two-point-data/gene-2 tp)]
-                           (remove nil? [(pack-obj "gene" (:two-point-data.gene-2/gene p2))
-                                         (pack-obj "variation" (:two-point-data.gene-2/variation p2))]))})))))
+  {:data (let [db (d/entity-db gene)
+               id (:db/id gene)]
+           (->> (q '[:find [?tp ...]
+                     :in $ ?gene
+                     :where (or-join [?gene ?tp]
+                                     (and [?tpg1 :two-point-data.gene-1/gene ?gene]
+                                          [?tp :two-point-data/gene-1 ?tpg1])
+                                     (and [?tpg2 :two-point-data.gene-2/gene ?gene]
+                                          [?tp :two-point-data/gene-2 ?tpg2]))]
+                   db id)
+                (map (partial entity db))
+                (map
+                 (fn [tp]
+                   {:mapper     (pack-obj "author" (first (:two-point-data/mapper tp)))
+                    :date       (date-helper/format-date (:two-point-data/date tp))
+                    :raw_data   (:two-point-data/results tp)
+                    :genotype   (:two-point-data/genotype tp)
+                    :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
+                                  (if (empty? comment) "" comment ))
+                    :distance   (format "%s (%s-%s)" (or (:two-point-data/calc-distance tp) "0.0")
+                                        (or (:two-point-data/calc-lower-conf tp) "0")
+                                        (or (:two-point-data/calc-upper-conf tp) "0"))
+                    :point_1    (let [p1 (:two-point-data/gene-1 tp)]
+                                  (remove nil? [(pack-obj "gene" (:two-point-data.gene-1/gene p1))
+                                                (pack-obj "variation" (:two-point-data.gene-1/variation p1))]))
+                    :point_2    (let [p2 (:two-point-data/gene-2 tp)]
+                                  (remove nil? [(pack-obj "gene" (:two-point-data.gene-2/gene p2))
+                                                (pack-obj "variation" (:two-point-data.gene-2/variation p2))]))}))
+                (seq)))
+   :description "Two point mapping data for this gene"}
+  )
 
 (defn gene-mapping-posneg [gene]
-  (let [db (d/entity-db gene)
-        id (:db/id gene)]
-    (->> (q '[:find [?pn ...]
-            :in $ ?gene
-            :where (or-join [?gene ?pn]
-                            (and [?png1 :pos-neg-data.gene-1/gene ?gene]
-                                 [?pn :pos-neg-data/gene-1 ?png1])
-                            (and [?png2 :pos-neg-data.gene-2/gene ?gene]
-                                 [?pn :pos-neg-data/gene-2 ?png2]))]
-            db id)
-         (map (partial entity db))
-         (map
-          (fn [pn]
-            (let [items (->> [(pack-obj ((some-fn (comp :pos-neg-data.gene-1/gene :pos-neg-data/gene-1)
-                                                  (comp :pos-neg-data.locus-1/locus :pos-neg-data/locus-1)
-                                                  :pos-neg-data/allele-1
-                                                  :pos-neg-data/clone-1
-                                                  :pos-neg-data/rearrangement-1)
-                                         pn))
-                              (pack-obj ((some-fn (comp :pos-neg-data.gene-2/gene :pos-neg-data/gene-2)
-                                                  (comp :pos-neg-data.locus-2/locus :pos-neg-data/locus-2)
-                                                  :pos-neg-data/allele-2
-                                                  :pos-neg-data/clone-2
-                                                  :pos-neg-data/rearrangement-2)
-                                         pn))]
-                             (map (juxt :label identity))
-                             (into {}))
-                  result (str/split (:pos-neg-data/results pn) #"\s+")]
-              {:mapper    (pack-obj "author" (first (:pos-neg-data/mapper pn)))
-               :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
-                             (if (empty? comment) "" comment ))
-               :date      (date-helper/format-date (:pos-neg-data/date pn))
-               :result    (map #(or (items (str/replace % #"\." ""))
-                                    (str % " "))
-                               result)})
-
-          )))))
+  {:data (let [db (d/entity-db gene)
+               id (:db/id gene)]
+           (->> (q '[:find [?pn ...]
+                     :in $ ?gene
+                     :where (or-join [?gene ?pn]
+                                     (and [?png1 :pos-neg-data.gene-1/gene ?gene]
+                                          [?pn :pos-neg-data/gene-1 ?png1])
+                                     (and [?png2 :pos-neg-data.gene-2/gene ?gene]
+                                          [?pn :pos-neg-data/gene-2 ?png2]))]
+                   db id)
+                (map (partial entity db))
+                (map
+                 (fn [pn]
+                   (let [items (->> [(pack-obj ((some-fn (comp :pos-neg-data.gene-1/gene :pos-neg-data/gene-1)
+                                                         (comp :pos-neg-data.locus-1/locus :pos-neg-data/locus-1)
+                                                         :pos-neg-data/allele-1
+                                                         :pos-neg-data/clone-1
+                                                         :pos-neg-data/rearrangement-1)
+                                                pn))
+                                     (pack-obj ((some-fn (comp :pos-neg-data.gene-2/gene :pos-neg-data/gene-2)
+                                                         (comp :pos-neg-data.locus-2/locus :pos-neg-data/locus-2)
+                                                         :pos-neg-data/allele-2
+                                                         :pos-neg-data/clone-2
+                                                         :pos-neg-data/rearrangement-2)
+                                                pn))]
+                                    (map (juxt :label identity))
+                                    (into {}))
+                         result (str/split (:pos-neg-data/results pn) #"\s+")]
+                     {:mapper    (pack-obj "author" (first (:pos-neg-data/mapper pn)))
+                      :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
+                                    (if (empty? comment) "" comment ))
+                      :date      (date-helper/format-date (:pos-neg-data/date pn))
+                      :result    (map #(or (items (str/replace % #"\." ""))
+                                           (str % " "))
+                                      result)})))
+                (seq)))
+   :description "Positive/Negative mapping data for this gene"}
+  )
 
 (defn gene-mapping-multipt [gene]
-  (let [db (d/entity-db gene)
-        id (:db/id gene)]
-    (->> (q '[:find [?mp ...]
-            :in $ % ?gene
-            :where (mc-obj ?mc ?gene)
-            (or
-              [?mp :multi-pt-data/a-non-b ?mc]
-              [?mp :multi-pt-data/b-non-a ?mc]
-              [?mp :multi-pt-data/combined ?mc])]
-          db
-          '[[(mc-obj ?mc ?gene) [?mcg :multi-counts.gene/gene ?gene]
-             [?mc :multi-counts/gene ?mcg]]
-            [(mc-obj ?mc ?gene) (mc-obj ?mc2 ?gene)
-             [?mc :multi-counts/gene ?mc2]]]
-          id)
-         (map (partial entity db))
-         (map
-          (fn [mp]
-            {:comment (let [comment (->> mp
-                                         :multi-pt-data/remark
-                                         first
-                                         :multi-pt-data.remark/text)]
-                        (if (empty? comment) "" comment))
-             :mapper   (pack-obj "author" (first (:multi-pt-data/mapper mp)))
-             :date     (if (nil? (:multi-pt-data/date mp)) "" (date-helper/format-date3 (str (:multi-pt-data/date mp))))
-             :genotype (:multi-pt-data/genotype mp)
-             :result   (let [res (loop [node (:multi-pt-data/combined mp)
-                                        res  []]
-                                   (cond
-                                     (:multi-counts/gene node)
-                                     (let [obj (:multi-counts/gene node)]
-                                       (recur obj (conj res [(:multi-counts.gene/gene obj)
-                                                             (:multi-counts.gene/int obj)])))
+  {:data (let [db (d/entity-db gene)
+               id (:db/id gene)]
+           (->> (q '[:find [?mp ...]
+                     :in $ % ?gene
+                     :where (mc-obj ?mc ?gene)
+                     (or
+                      [?mp :multi-pt-data/a-non-b ?mc]
+                      [?mp :multi-pt-data/b-non-a ?mc]
+                      [?mp :multi-pt-data/combined ?mc])]
+                   db
+                   '[[(mc-obj ?mc ?gene) [?mcg :multi-counts.gene/gene ?gene]
+                      [?mc :multi-counts/gene ?mcg]]
+                     [(mc-obj ?mc ?gene) (mc-obj ?mc2 ?gene)
+                      [?mc :multi-counts/gene ?mc2]]]
+                   id)
+                (map (partial entity db))
+                (map
+                 (fn [mp]
+                   {:comment (let [comment (->> mp
+                                                :multi-pt-data/remark
+                                                first
+                                                :multi-pt-data.remark/text)]
+                               (if (empty? comment) "" comment))
+                    :mapper   (pack-obj "author" (first (:multi-pt-data/mapper mp)))
+                    :date     (if (nil? (:multi-pt-data/date mp)) "" (date-helper/format-date3 (str (:multi-pt-data/date mp))))
+                    :genotype (:multi-pt-data/genotype mp)
+                    :result   (let [res (loop [node (:multi-pt-data/combined mp)
+                                               res  []]
+                                          (cond
+                                            (:multi-counts/gene node)
+                                            (let [obj (:multi-counts/gene node)]
+                                              (recur obj (conj res [(:multi-counts.gene/gene obj)
+                                                                    (:multi-counts.gene/int obj)])))
 
-                                     :default res))
-                             tot (->> (map second res)
-                                      (filter identity)
-                                      (reduce +))
-                             sum (atom 0)
-                           open-paren (atom 0)]
-                         (->>
-                          (mapcat
-                           (fn [[obj count]]
-                             [(if (and (= @open-paren 0) (= count 0) (< @sum tot))
-                                (do
-                                  (swap! open-paren inc)
-                                  "("))
-                              (pack-obj obj)
-                              (if (and (not (= count 0)) (= @open-paren 1))
-                                (do
-                                  (reset! open-paren 0)
-                                  ")"))
-                              (if (and count (not (= count 0)))
-                                (do
-                                  (swap! sum (fn[n] (+ n count)))
-                                  (str " (" count "/" tot ") ")))])
-                           res)
-                          (filter identity)))}
-            )))))
+                                            :default res))
+                                    tot (->> (map second res)
+                                             (filter identity)
+                                             (reduce +))
+                                    sum (atom 0)
+                                    open-paren (atom 0)]
+                                (->>
+                                 (mapcat
+                                  (fn [[obj count]]
+                                    [(if (and (= @open-paren 0) (= count 0) (< @sum tot))
+                                       (do
+                                         (swap! open-paren inc)
+                                         "("))
+                                     (pack-obj obj)
+                                     (if (and (not (= count 0)) (= @open-paren 1))
+                                       (do
+                                         (reset! open-paren 0)
+                                         ")"))
+                                     (if (and count (not (= count 0)))
+                                       (do
+                                         (swap! sum (fn[n] (+ n count)))
+                                         (str " (" count "/" tot ") ")))])
+                                  res)
+                                 (filter identity)))}
+                   ))
+                (seq)))
+   :description "Multi point mapping data for this gene"}
+  )
 
 
 

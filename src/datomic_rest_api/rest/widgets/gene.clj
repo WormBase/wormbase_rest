@@ -46,18 +46,9 @@
 
 (def-rest-widget mapping-data [gene]
   {:name      (gene-fields/name-field gene)
-
-   :two_pt_data
-   {:data (seq (gene-fields/gene-mapping-twopt gene))
-    :description "Two point mapping data for this gene"}
-
-   :pos_neg_data
-   {:data (seq (gene-fields/gene-mapping-posneg gene))
-    :description "Positive/Negative mapping data for this gene"}
-
-   :multi_pt_data
-   {:data (seq (gene-fields/gene-mapping-multipt gene))
-    :description "Multi point mapping data for this gene"}})
+   :two_pt_data (gene-fields/gene-mapping-twopt gene)
+   :pos_neg_data (gene-fields/gene-mapping-posneg gene)
+   :multi_pt_data (gene-fields/gene-mapping-multipt gene)})
 
 ;; (def-rest-widget human-diseases [gene]
 ;;   {:name                    (gene-fields/name-field gene)
