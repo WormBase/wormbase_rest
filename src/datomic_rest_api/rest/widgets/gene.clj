@@ -1,5 +1,5 @@
 (ns datomic-rest-api.rest.widgets.gene
-  (:require [datomic-rest-api.rest.core :refer [def-rest-widget]]
+  (:require [datomic-rest-api.rest.core :refer [def-rest-widget register-independent-field]]
             [datomic-rest-api.rest.fields.gene :as gene-fields]))
 
 (def-rest-widget overview
@@ -108,3 +108,8 @@
 (def-rest-widget external-links
   {:name  gene-fields/name-field
    :xrefs gene-fields/xrefs})
+
+
+(register-independent-field "fpkm_expression_summary_ls" gene-fields/fpkm-expression-summary-ls)
+(register-independent-field "alleles-other" gene-fields/alleles-other)
+(register-independent-field "polymorphisms" gene-fields/polymorphisms)

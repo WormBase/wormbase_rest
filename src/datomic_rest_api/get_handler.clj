@@ -12,7 +12,7 @@
             [environ.core :refer (env)]
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer (datomic-conn)]
-            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor whitelist)]
+            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint)]
             [datomic-rest-api.rest.widgets.gene :as gene]))
 
 
@@ -78,10 +78,6 @@
       (ring.util.response/response)
       (ring.util.response/content-type "application/json")))
 
-(defn- resolve-endpoint [scope schema-name endpoint-name]
-  (-> (str/join "." [scope schema-name endpoint-name])
-      (@whitelist)))
-
 ;; start of REST handler for widgets and fields
 (defn- json-response [data]
   (-> data
@@ -115,8 +111,7 @@
           (json-response)))
     (-> {:message (format "%s widget for %s not exist or not available to public"
                           (str/capitalize widget-name)
-                          (str/capitalize schema-name))
-         :a (str/join "." ["widget" schema-name widget-name])}
+                          (str/capitalize schema-name))}
         (json-response)
         (ring.util.response/status 404))))
 
