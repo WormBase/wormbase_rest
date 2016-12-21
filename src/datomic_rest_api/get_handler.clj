@@ -10,9 +10,10 @@
             [ring.util.response :refer (redirect file-response)]
             [cheshire.core :as json :refer (parse-string)]
             [environ.core :refer (env)]
+            [hiccup.core :refer (html)]
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer (datomic-conn)]
-            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint)]
+            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
             [datomic-rest-api.rest.widgets.gene :as gene]))
 
 
@@ -20,34 +21,22 @@
 (declare handle-widget-get)
 
 (defn app-routes [db]
-   (routes
-     (GET "/" [] "<html>
-                    <h5>Widgets</h5>
-                    <ul>
-                       <li><a href=\"./rest/widget/\">/rest/widget/</a></li>
-                       <li><a href=\"./rest/field/\">/rest/field/</a></li>
-                    <ul>
-                  </html>")
-     (GET "/rest/field/" [] "<html>
-                            <ul>
-                              <li>/rest/field/gene/:id/alleles-other</li>
-                              <li>/rest/field/gene/:id/polymorphism</li>
-                            </ul>
-                            </html>")
-     (GET "/rest/widget/" [] "<html>
-                    <ul>
-                      <li>/rest/widget/gene/:id/external_links</li>
-                      <li>/rest/widget/gene/:id/overview</li>
-                      <li>/rest/widget/gene/:id/history</li>
-                      <li>/rest/widget/gene/:id/mapping_data</li>
-                      <li>/rest/widget/gene/:id/genetics</li>
-                      <li>/rest/widget/gene/:id/phenotype</li>
-                    </ul>
-                  </html>")
-     (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
-          (handle-widget-get db schema-name id widget-name request))
-     (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
-          (handle-field-get db schema-name id field-name request))))
+  (routes
+   (GET "/" []
+        (html [:h5 "index"]
+              [:ul
+               [:li [:a {:href "/rest/field/"} "/rest/field/"]]
+               [:li [:a {:href "/rest/widget/"} "/rest/widget/"]]]))
+   (GET "/rest/field/" []
+        (html [:ul (->> (endpoint-urls "field")
+                        (map #(vector :li %)))]))
+   (GET "/rest/widget/" []
+        (html [:ul (->> (endpoint-urls "widget")
+                        (map #(vector :li %)))]))
+   (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
+        (handle-widget-get db schema-name id widget-name request))
+   (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
+        (handle-field-get db schema-name id field-name request))))
 
 
 (defn init []

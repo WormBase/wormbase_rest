@@ -17,7 +17,7 @@
 
 ;; helpers for managing whitelisted endpoints
 
-(def ^{:private true} whitelist (atom {}))
+(defonce ^{:private true} whitelist (atom {}))
 
 (defn- endpoint-key [scope schema-name endpoint-name]
   (-> (str/join "." [scope schema-name endpoint-name])
@@ -56,5 +56,17 @@
 (defmacro def-rest-widget
   [name body]
   `(register-widget (str (quote ~name)) ~body))
+
+
+(defn endpoint-urls [scope]
+  (->> (keys @whitelist)
+       (map #(str/split % #"\."))
+       (map #(zipmap [:scope :schema :name] %))
+       (filter #(= scope (:scope %)))
+       (map #(str/join "/" ["rest"
+                            (:scope %)
+                            (:schema %)
+                            :id
+                            (:name %)]))))
 
 ;; helpers for managing whitelisted endpoints
