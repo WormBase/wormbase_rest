@@ -13,6 +13,10 @@
     (let [wbid-field (str class "/id")]
       (widget-fn (d/entity db [(keyword wbid-field) id])))))
 
+
+
+;; helpers for managing whitelisted endpoints
+
 (def ^{:private true} whitelist (atom {}))
 
 (defn- endpoint-key [scope schema-name endpoint-name]
@@ -39,6 +43,8 @@
             {}
             field-map)))
 
+;; registered widgets and fields will be whitelisted
+
 (defn register-widget [widget-name field-map]
   (do (register-endpoint "widget" (rest-widget-fn field-map) widget-name)
       (doseq [[key field-fn] field-map]
@@ -50,3 +56,5 @@
 (defmacro def-rest-widget
   [name body]
   `(register-widget (str (quote ~name)) ~body))
+
+;; helpers for managing whitelisted endpoints

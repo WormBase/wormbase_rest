@@ -72,11 +72,6 @@
 ;; internal functions and helper ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- json-response [data]
-  (-> data
-      (json/generate-string {:pretty true})
-      (ring.util.response/response)
-      (ring.util.response/content-type "application/json")))
 
 ;; start of REST handler for widgets and fields
 (defn- json-response [data]

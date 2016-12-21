@@ -111,5 +111,5 @@
 
 
 (register-independent-field "fpkm_expression_summary_ls" gene-fields/fpkm-expression-summary-ls)
-(register-independent-field "alleles-other" gene-fields/alleles-other)
+(register-independent-field "alleles_other" gene-fields/alleles-other)
 (register-independent-field "polymorphisms" gene-fields/polymorphisms)
