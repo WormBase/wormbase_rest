@@ -10,9 +10,10 @@
             [ring.util.response :refer (redirect file-response)]
             [cheshire.core :as json :refer (parse-string)]
             [environ.core :refer (env)]
+            [hiccup.core :refer (html)]
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer (datomic-conn)]
-            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor)]
+            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
             [datomic-rest-api.rest.widgets.gene :as gene]))
 
 
@@ -20,34 +21,22 @@
 (declare handle-widget-get)
 
 (defn app-routes [db]
-   (routes
-     (GET "/" [] "<html>
-                    <h5>Widgets</h5>
-                    <ul>
-                       <li><a href=\"./rest/widget/\">/rest/widget/</a></li>
-                       <li><a href=\"./rest/field/\">/rest/field/</a></li>
-                    <ul>
-                  </html>")
-     (GET "/rest/field/" [] "<html>
-                            <ul>
-                              <li>/rest/field/gene/:id/alleles-other</li>
-                              <li>/rest/field/gene/:id/polymorphism</li>
-                            </ul>
-                            </html>")
-     (GET "/rest/widget/" [] "<html>
-                    <ul>
-                      <li>/rest/widget/gene/:id/external_links</li>
-                      <li>/rest/widget/gene/:id/overview</li>
-                      <li>/rest/widget/gene/:id/history</li>
-                      <li>/rest/widget/gene/:id/mapping_data</li>
-                      <li>/rest/widget/gene/:id/genetics</li>
-                      <li>/rest/widget/gene/:id/phenotype</li>
-                    </ul>
-                  </html>")
-     (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
-          (handle-widget-get db schema-name id widget-name request))
-     (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
-          (handle-field-get db schema-name id field-name request))))
+  (routes
+   (GET "/" []
+        (html [:h5 "index"]
+              [:ul
+               [:li [:a {:href "/rest/field/"} "/rest/field/"]]
+               [:li [:a {:href "/rest/widget/"} "/rest/widget/"]]]))
+   (GET "/rest/field/" []
+        (html [:ul (->> (endpoint-urls "field")
+                        (map #(vector :li %)))]))
+   (GET "/rest/widget/" []
+        (html [:ul (->> (endpoint-urls "widget")
+                        (map #(vector :li %)))]))
+   (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
+        (handle-widget-get db schema-name id widget-name request))
+   (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
+        (handle-field-get db schema-name id field-name request))))
 
 
 (defn init []
@@ -72,36 +61,18 @@
 ;; internal functions and helper ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+;; start of REST handler for widgets and fields
 (defn- json-response [data]
   (-> data
       (json/generate-string {:pretty true})
       (ring.util.response/response)
       (ring.util.response/content-type "application/json")))
 
-(defn- resolve-endpoint [schema-name endpoint-name whitelist]
-  (if-let [fn-name (-> (str/join "/" [schema-name endpoint-name])
-                       (str/replace "_" "-")
-                       (whitelist))]
-    (or (resolve (symbol (str "datomic-rest-api.rest.widgets." fn-name)))
-        (resolve (symbol (str "datomic-rest-api.rest.fields." fn-name))))))
-
-(def ^{:private true} whitelisted-widgets
-  #{"gene/overview"
-    "gene/external-links"
-    "gene/genetics"
-    "gene/phenotype"
-    "gene/history"
-    "gene/mapping-data"})
-
-(def ^{:private true} whitelisted-fields
-  #{"gene/alleles-other"
-    "gene/polymorphisms"
-    "gene/fpkm-expression-summary-ls"})
-
 ;; start of REST handler for widgets and fields
 
 (defn- handle-field-get [db schema-name id field-name request]
-  (if-let [field-fn (resolve-endpoint schema-name field-name whitelisted-fields)]
+  (if-let [field-fn (resolve-endpoint "field" schema-name field-name)]
     (let [adapted-field-fn (field-adaptor field-fn)
           data (adapted-field-fn db schema-name id)]
       (-> {:name id
@@ -109,12 +80,12 @@
            :url (:uri request)}
           (assoc (keyword field-name) data)
           (json-response)))
-    (-> {:message "field not exist or not available to public"}
+    (-> {:message "field not exist or not available to public "}
         (json-response)
         (ring.util.response/status 404))))
 
 (defn- handle-widget-get [db schema-name id widget-name request]
-  (if-let [widget-fn (resolve-endpoint schema-name widget-name whitelisted-widgets)]
+  (if-let [widget-fn (resolve-endpoint "widget" schema-name widget-name)]
     (let [adapted-widget-fn (widget-adaptor widget-fn)
           data (adapted-widget-fn db schema-name id)]
       (-> {:name id
