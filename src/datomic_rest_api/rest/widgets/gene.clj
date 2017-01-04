@@ -66,10 +66,10 @@
 ;;    :primer_pairs       gene-fields/primer-pairs
 ;;    :sage_tags          gene-fields/sage-tags})
 
-;; (def-rest-widget gene-ontology
-;;   {:name                   gene-fields/name-field
-;;    :gene_ontology_summary  gene-fields/gene-ontology-summary
-;;    :gene_ontology          gene-fields/gene-ontology-full})
+(def-rest-widget gene-ontology
+  {:name                   gene-fields/name-field
+   :gene_ontology_summary  gene-fields/gene-ontology-summary
+   :gene_ontology          gene-fields/gene-ontology-full})
 
 ;; (def-rest-widget expression
 ;;   {:name                gene-fields/name-field

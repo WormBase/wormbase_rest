@@ -1320,6 +1320,14 @@
    :go-term.type/cellular-component "Cellular_component"
    :go-term.type/biological-process "Biological_process"})
 
+(defn- go-anno-xref [anno-db]
+  (let [db-id (:database/id (:go-annotation.database/database anno-db))
+        obj-id (:go-annotation.database/text anno-db)]
+    {:id obj-id
+     :class db-id
+     :dbt (:database-field/id (:go-annotation.database/database-field anno-db))
+     :label (str/join ":" [db-id obj-id])}))
+
 (defn- term-table-full [db annos]
   (map
     (fn [{:keys [term code anno]}]
@@ -1335,8 +1343,7 @@
         (map (partial pack-obj "rnai")      (:go-annotation/rnai-result anno))
         (map (partial pack-obj "variation") (:go-annotation/variation anno))
         (map (partial pack-obj "phenotype") (:go-annotation/phenotype anno))
-        ;; Also DB fields...
-        ))
+        (map go-anno-xref (:go-annotation/database anno))))
 
 
       :evidence_code
@@ -1431,7 +1438,7 @@
     (group-by :term annos)
     (map
       (fn [[term annos]]
-        {:extensions ""
+        {:extensions nil
 
        :term_id
        (pack-obj "go-term" term :label (:go-term/id term))
