@@ -1320,6 +1320,37 @@
    :go-term.type/cellular-component "Cellular_component"
    :go-term.type/biological-process "Biological_process"})
 
+(defn- go-anno-extensions [anno]
+  (->>
+   (concat
+    (for [{rel :go-annotation.molecule-relation/text
+           mol :go-annotation.molecule-relation/molecule}
+          (:go-annotation/molecule-relation anno)]
+      [rel (pack-obj mol)])
+    (for [{rel :go-annotation.anatomy-relation/text
+           at :go-annotation.anatomy-relation/anatomy-term}
+          (:go-annotation/anatomy-relation anno)]
+      [rel (pack-obj at)])
+    (for [{rel :go-annotation.gene-relation/text
+           at :go-annotation.gene-relation/gene}
+          (:go-annotation/gene-relation anno)]
+      [rel (pack-obj at)])
+    (for [{rel :go-annotation.life-stage-relation/text
+           at :go-annotation.life-stage-relation/life-stage}
+          (:go-annotation/life-stage-relation anno)]
+      [rel (pack-obj at)])
+    (for [{rel :go-annotation.go-term-relation/text
+           gt :go-annotation.go-term-relation/go-term}
+          (:go-annotation/go-term-relation anno)]
+      [rel {:class "Gene Ontology Consortium"
+            :dbt "GO_REF"
+            :id (:go-term/id gt)
+            :label (:go-term/id gt)}]))
+   (reduce (fn [results [rel obj]]
+             (let [objs (concat [obj] (results rel))]
+               (assoc results rel objs))) {})
+   ))
+
 (defn- go-anno-xref [anno-db]
   (let [db-id (:database/id (:go-annotation.database/database anno-db))
         obj-id (:go-annotation.database/text anno-db)]
@@ -1345,7 +1376,6 @@
         (map (partial pack-obj "phenotype") (:go-annotation/phenotype anno))
         (map go-anno-xref (:go-annotation/database anno))))
 
-
       :evidence_code
       {:text
        (:go-code/id code)
@@ -1369,34 +1399,13 @@
         :GO_reference
          (if (:go-annotation/go-term-relation anno)
             (concat
-             (for [{rel :go-annotation.go-term-relation/text
-                    gt :go-annotation.go-term-relation/go-term}
-                   (:go-annotation/go-term-relation anno)]
-                    {:class "Gene Ontology Consortium"
-                     :dbt "GO_REF"
-                     :id (:go-term/id gt)
-                     :label (:go-term/id gt) }))))}
+             )))}
 
       :go_type
       (if-let [go-type (:go-term/type term)]
            (division-names go-type))
 
-      :term-test  (:go-annotation/molecule-relation anno)
-
-      :term
-      (if (:go-annotation/molecule-relation anno)
-      [(vmap
-       :evidence
-       (->>
-        (concat
-         (for [{rel :go-annotation.molecule-relation/text
-                mol :go-annotation.molecule-relation/molecule}
-               (:go-annotation/molecule-relation anno)]
-           [rel (pack-obj "molecule" mol)]))
-        (reduce
-         (fn [m [rel obj]]
-           (assoc m rel obj))
-         nil)))])
+      :term {:evidence (go-anno-extensions anno)}
 
       :term_id
       (pack-obj "go-term" term :label (:go-term/id term))
@@ -1438,7 +1447,7 @@
     (group-by :term annos)
     (map
       (fn [[term annos]]
-        {:extensions nil
+        {:extensions (concat (map go-anno-extensions annos))
 
        :term_id
        (pack-obj "go-term" term :label (:go-term/id term))
