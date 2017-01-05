@@ -24,6 +24,7 @@
    [clj-time "0.12.0"]
    [cheshire "5.6.1"]
    [secretary "1.2.3"]
+ ;  [conman "0.6.2"]
    [environ "1.0.3"]]
   :source-paths ["src"]
   :plugins [[lein-cljsbuild "1.1.3"]
