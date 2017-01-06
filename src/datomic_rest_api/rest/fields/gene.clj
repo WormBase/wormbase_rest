@@ -7,8 +7,9 @@
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
             [pseudoace.locatables :refer (root-segment)]
-            [datomic-rest-api.rest.core :refer [def-rest-widget]]
-            ))
+            [datomic-rest-api.utils.db :refer (get-default-sequence-database)]
+            [datomic-rest-api.mixins.species :as mixins.species :refer (parse-species-name)]
+            [datomic-rest-api.rest.core :refer [def-rest-widget]]))
 
 ;;
 ;; "name" field, included on all widgets.
@@ -2168,16 +2169,10 @@
      :description
      "Features associated with this Gene"}))
 
-(defn- parsed-species-name [species]
-  (let [species_name_parts (str/split species #" ")
-        g (str/lower-case (first (first species_name_parts)))
-        species (second species_name_parts)]
-    (str/join "_" [g species])))
-
 (defn- get-segments [gene]
-  (let [species (parsed-species-name (:species/id (:gene/species gene)))
-        a "ss"]
-    species))
+  (let [g-species (mixins.species/parse-species-name (:species/id (:gene/species gene)))
+        sequence-database (datomic-rest-api.utils.db/get-default-sequence-database g-species)]
+    sequence-database))
 
 (defn- longest-segment [segments]
  segments)

@@ -24,7 +24,10 @@
    [clj-time "0.12.0"]
    [cheshire "5.6.1"]
    [secretary "1.2.3"]
- ;  [conman "0.6.2"]
+   [mysql/mysql-connector-java "6.0.2"]
+   [russellwhitaker/immuconf "0.3.0"] ;;for configuration files
+   [com.velisco/clj-ftp "0.3.8"] ;; for ftp
+   [conman "0.6.2"] ;; for connection pools with sequence database
    [environ "1.0.3"]]
   :source-paths ["src"]
   :plugins [[lein-cljsbuild "1.1.3"]
@@ -54,7 +57,8 @@
                              [lein-kibit "0.1.2"]
                              [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
-                   :eastwood {:add-linters [:unused-namespaces]}}
+                   :eastwood {:add-linters [:unused-namespaces]}
+		   :ring {:nrepl {:start? true :port 8131}}}
              :datomic-free {:dependencies [[com.datomic/datomic-free "0.9.5385"
                                             :exclusions [joda-time]]]}
              :datomic-pro {:dependencies [[com.datomic/datomic-pro "0.9.5385"

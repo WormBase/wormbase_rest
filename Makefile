@@ -1,6 +1,6 @@
 NAME := wormbase/datomic-to-catalyst
 VERSION ?= $(shell git describe --abbrev=0 --tags)
-WS_VERSION ?= WS256
+WS_VERSION ?= WS257
 LOWER_WS_VERSION = `echo $(WS_VERSION) | tr A-Z a-z`
 EBX_CONFIG := .ebextensions/.config
 DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " ")
@@ -17,6 +17,11 @@ need-help := $(filter help,$(MAKECMDGOALS))
 
 help: ; @echo $(if $(need-help),,\
 	Type \'$(MAKE)$(dash-f) help\' to get help)
+
+.PHONY: get-assembly-json
+get-assembly-json: $(call print-hep,get-assembly-json,\
+	                   "Grab the latest assembly json over ftp")
+	@curl ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}/species/ASSEMBLIES.${WS_VERSION}.json > resources/assemblies/ASSEMBLIES.${WS_VERSION}.json
 
 docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
 		       "Build the jar file")

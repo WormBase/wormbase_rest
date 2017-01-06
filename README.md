@@ -117,3 +117,10 @@ eb deploy
 TBD: JVM memory options.
 
 [uberjar]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
+
+##Sequence database list
+
+```bash
+export DB_VERSION=WSXXX;
+curl ftp://ftp.wormbase.org/pub/wormbase/releases/$DB_VERSION/species/ASSEMBLIES.$DB_VERSION.json > ASSEMBLIES.$DB_VERSION.json;
+```
