@@ -25,8 +25,7 @@
    [cheshire "5.6.1"]
    [secretary "1.2.3"]
    [mysql/mysql-connector-java "6.0.2"]
-   [russellwhitaker/immuconf "0.3.0"] ;;for configuration files
-   [com.velisco/clj-ftp "0.3.8"] ;; for ftp
+   [russellwhitaker/immuconf "0.3.0"]
    [conman "0.6.2"] ;; for connection pools with sequence database
    [environ "1.0.3"]]
   :source-paths ["src"]
