@@ -64,6 +64,7 @@ eb-setenv: $(call print-help,eb-env,\
 	     "Set enviroment variables for the \
 	      ElasticBeanStalk environment")
 	eb setenv TRACE_DB="${DB_URI}" \
+		  WS_VERSION="${WS_VERSION}" \
 		  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
 		  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
 		  -e "datomic-to-catalyst"
@@ -72,7 +73,7 @@ eb-setenv: $(call print-help,eb-env,\
 eb-local: docker-ecr-login $(call print-help,eb-local,\
 			     "Runs the ElasticBeanStalk/docker \
 			      build and run locally.")
-	eb local run --envvars PORT="${PORT}",TRACE_DB="${DB_URI}"
+	eb local run --envvars PORT="${PORT}",TRACE_DB="${DB_URI}",WS_VERSION="${WS_VERSION}"
 
 .PHONY: build
 build: $(call print-help,build,\
@@ -95,6 +96,7 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 		-e TRACE_DB=${DB_URI} \
+		-e WS_VERSION=${WS_VERSION} \
 		-e PORT=${PORT} \
 		${NAME}:${VERSION}
 

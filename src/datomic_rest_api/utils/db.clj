@@ -2,7 +2,6 @@
   (:require [mount.core :refer [defstate]]
             [conman.core :as conman]
             [environ.core :refer (env)]
-            [miner.ftp :as ftp]
             [clojure.string :as str]
             [clojure.data.json :as json]
             [datomic.api :as d]))
