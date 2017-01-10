@@ -1320,34 +1320,31 @@
    :go-term.type/cellular-component "Cellular_component"
    :go-term.type/biological-process "Biological_process"})
 
+(defn- go-anno-extension-fn [relation-type-tag target-tag]
+  (fn [relation]
+    [(relation-type-tag relation)
+     (pack-obj (target-tag relation))]))
+
 (defn- go-anno-extensions [anno]
   (->>
    (concat
-    (for [{rel :go-annotation.molecule-relation/text
-           target :go-annotation.molecule-relation/molecule}
-          (:go-annotation/molecule-relation anno)]
-      [rel (pack-obj target)])
-    (for [{rel :go-annotation.anatomy-relation/text
-           target :go-annotation.anatomy-relation/anatomy-term}
-          (:go-annotation/anatomy-relation anno)]
-      [rel (pack-obj target)])
-    (for [{rel :go-annotation.gene-relation/text
-           target :go-annotation.gene-relation/gene}
-          (:go-annotation/gene-relation anno)]
-      [rel (pack-obj target)])
-    (for [{rel :go-annotation.life-stage-relation/text
-           target :go-annotation.life-stage-relation/life-stage}
-          (:go-annotation/life-stage-relation anno)]
-      [rel (pack-obj target)])
-    (for [{rel :go-annotation.go-term-relation/text
-           gt :go-annotation.go-term-relation/go-term}
-          (:go-annotation/go-term-relation anno)]
-      [rel {:class "Gene Ontology Consortium"
-            :dbt "GO_REF"
-            :id (:go-term/id gt)
-            :label (:go-term/id gt)}]))
-   (map (fn [[rel obj]]
-          {rel [obj]}))))
+    (map (go-anno-extension-fn :go-annotation.molecule-relation/text
+                               :go-annotation.molecule-relation/molecule)
+         (:go-annotation/molecule-relation anno))
+    (map (go-anno-extension-fn :go-annotation.anatomy-relation/text
+                               :go-annotation.anatomy-relation/anatomy-term)
+         (:go-annotation/anatomy-relation anno))
+    (map (go-anno-extension-fn :go-annotation.gene-relation/text
+                               :go-annotation.gene-relation/gene)
+         (:go-annotation/gene-relation anno))
+    (map (go-anno-extension-fn :go-annotation.life-stage-relation/text
+                               :go-annotation.life-stage-relation/life-stage)
+         (:go-annotation/life-stage-relation anno))
+    (map (go-anno-extension-fn :go-annotation.go-term-relation/text
+                               :go-annotation.go-term-relation/go-term)
+         (:go-annotation/go-term-relation anno)))
+   (map (fn [[relation_type target]]
+          {relation_type [target]}))))
 
 (defn- go-anno-xref [anno-db]
   (let [db-id (:database/id (:go-annotation.database/database anno-db))
