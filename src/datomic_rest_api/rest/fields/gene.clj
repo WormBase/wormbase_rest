@@ -1429,9 +1429,9 @@
        (map
          (fn [[div term code anno]]
            {:division div
-            :term     (entity db term)
-            :code     (entity db code)
-            :anno     (entity db anno)}))
+            :term     (d/entity db term)
+            :code     (d/entity db code)
+            :anno     (d/entity db anno)}))
        (group-by :division)
        (map
          (fn [[key annos]]
@@ -1479,8 +1479,8 @@
     (map
      (fn [[div term anno]]
        {:division div
-        :term (entity db term)
-        :anno (entity db anno)}))
+        :term (d/entity db term)
+        :anno (d/entity db anno)}))
     (group-by :division)
     (map
      (fn [[key annos]]
