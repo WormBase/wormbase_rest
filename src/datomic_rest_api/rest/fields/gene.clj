@@ -1320,11 +1320,45 @@
    :go-term.type/cellular-component "Cellular_component"
    :go-term.type/biological-process "Biological_process"})
 
+(defn- go-anno-extension-fn [relation-type-tag target-tag]
+  (fn [relation]
+    [(relation-type-tag relation)
+     (pack-obj (target-tag relation))]))
+
+(defn- go-anno-extensions [anno]
+  (->>
+   (concat
+    (map (go-anno-extension-fn :go-annotation.molecule-relation/text
+                               :go-annotation.molecule-relation/molecule)
+         (:go-annotation/molecule-relation anno))
+    (map (go-anno-extension-fn :go-annotation.anatomy-relation/text
+                               :go-annotation.anatomy-relation/anatomy-term)
+         (:go-annotation/anatomy-relation anno))
+    (map (go-anno-extension-fn :go-annotation.gene-relation/text
+                               :go-annotation.gene-relation/gene)
+         (:go-annotation/gene-relation anno))
+    (map (go-anno-extension-fn :go-annotation.life-stage-relation/text
+                               :go-annotation.life-stage-relation/life-stage)
+         (:go-annotation/life-stage-relation anno))
+    (map (go-anno-extension-fn :go-annotation.go-term-relation/text
+                               :go-annotation.go-term-relation/go-term)
+         (:go-annotation/go-term-relation anno)))
+   (map (fn [[relation_type target]]
+          {relation_type [target]}))))
+
+(defn- go-anno-xref [anno-db]
+  (let [db-id (:database/id (:go-annotation.database/database anno-db))
+        obj-id (:go-annotation.database/text anno-db)]
+    {:id obj-id
+     :class db-id
+     :dbt (:database-field/id (:go-annotation.database/database-field anno-db))
+     :label (str/join ":" [db-id obj-id])}))
+
 (defn- term-table-full [db annos]
   (map
-    (fn [{:keys [term code anno]}]
-      {:anno_id
-       (:go-annotation/id anno)
+   (fn [{:keys [term code anno]}]
+     {:anno_id
+      (:go-annotation/id anno)
 
       :with
       (seq
@@ -1335,9 +1369,7 @@
         (map (partial pack-obj "rnai")      (:go-annotation/rnai-result anno))
         (map (partial pack-obj "variation") (:go-annotation/variation anno))
         (map (partial pack-obj "phenotype") (:go-annotation/phenotype anno))
-        ;; Also DB fields...
-        ))
-
+        (map go-anno-xref (:go-annotation/database anno))))
 
       :evidence_code
       {:text
@@ -1348,48 +1380,29 @@
         :Date_last_updated
         (if-let [d (:go-annotation/date-last-updated anno)]
           [{:class "text"
-           :id (date-helper/format-date3 (str d))
-           :label (date-helper/format-date3 (str d))}])
+            :id (date-helper/format-date3 (str d))
+            :label (date-helper/format-date3 (str d))}])
 
         :Contributed_by
-           [(pack-obj "analysis"
-                (:go-annotation/contributed-by anno))]
+        [(pack-obj "analysis"
+                   (:go-annotation/contributed-by anno))]
         :Reference
-         (if (:go-annotation/reference anno)
-           [(pack-obj "paper"
-                  (:go-annotation/reference anno))])
+        (if (:go-annotation/reference anno)
+          [(pack-obj "paper"
+                     (:go-annotation/reference anno))])
 
         :GO_reference
-         (if (:go-annotation/go-term-relation anno)
-            (concat
-             (for [{rel :go-annotation.go-term-relation/text
-                    gt :go-annotation.go-term-relation/go-term}
-                   (:go-annotation/go-term-relation anno)]
-                    {:class "Gene Ontology Consortium"
-                     :dbt "GO_REF"
-                     :id (:go-term/id gt)
-                     :label (:go-term/id gt) }))))}
+        (if (:go-annotation/go-term-relation anno)
+          (concat
+           )))}
 
       :go_type
       (if-let [go-type (:go-term/type term)]
-           (division-names go-type))
+        (division-names go-type))
 
-      :term-test  (:go-annotation/molecule-relation anno)
-
-      :term
-      (if (:go-annotation/molecule-relation anno)
-      [(vmap
-       :evidence
-       (->>
-        (concat
-         (for [{rel :go-annotation.molecule-relation/text
-                mol :go-annotation.molecule-relation/molecule}
-               (:go-annotation/molecule-relation anno)]
-           [rel (pack-obj "molecule" mol)]))
-        (reduce
-         (fn [m [rel obj]]
-           (assoc m rel obj))
-         nil)))])
+      :term (if-let [extensions (->> (go-anno-extensions anno)
+                                     (apply (partial merge-with concat)))]
+              {:evidence extensions})
 
       :term_id
       (pack-obj "go-term" term :label (:go-term/id term))
@@ -1413,9 +1426,9 @@
        (map
          (fn [[div term code anno]]
            {:division div
-            :term     (entity db term)
-            :code     (entity db code)
-            :anno     (entity db anno)}))
+            :term     (d/entity db term)
+            :code     (d/entity db code)
+            :anno     (d/entity db anno)}))
        (group-by :division)
        (map
          (fn [[key annos]]
@@ -1428,16 +1441,26 @@
 
 (defn- term-summary-table [db annos]
   (->>
-    (group-by :term annos)
-    (map
-      (fn [[term annos]]
-        {:extensions ""
+   (group-by :term annos)
+   (map
+    (fn [[term term-annos]]
+      (let [extensions (->> (map :anno term-annos)
+                            (map go-anno-extensions)
+                            (apply concat)
+                            (apply (partial merge-with concat)))]
+        {:extensions extensions
 
-       :term_id
-       (pack-obj "go-term" term :label (:go-term/id term))
+         :term_id
+         (pack-obj "go-term" term :label (:go-term/id term))
 
-       :term_description
-       (pack-obj "go-term" term)}))))
+         :term_description
+         (if (not-empty extensions)
+           [(pack-obj term) {:evidence extensions}]
+           [(pack-obj term)])
+
+         })
+      ))
+   ))
 
 (defn gene-ontology-summary [gene]
  (let [db (d/entity-db gene)]
@@ -1451,10 +1474,10 @@
                 [?tdiv :db/ident ?div]]
        db (:db/id gene))
     (map
-     (fn [[div term code anno]]
+     (fn [[div term anno]]
        {:division div
-        :term     (entity db term)
-        :anno     (entity db anno)}))
+        :term (d/entity db term)
+        :anno (d/entity db anno)}))
     (group-by :division)
     (map
      (fn [[key annos]]
