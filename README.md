@@ -116,4 +116,8 @@ eb deploy
 
 TBD: JVM memory options.
 
-[uberjar]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
+[uberjar](http://stackoverflow.com/questions/11947037/what-is-an-uber-jar)
+
+
+##Known Issues
+[mount compile fail](https://github.com/WormBase/datomic-to-catalyst/issues/44)
