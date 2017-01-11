@@ -7,7 +7,7 @@
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
             [pseudoace.locatables :refer (root-segment)]
-            [datomic-rest-api.utils.db :refer (get-default-sequence-database)]
+            [datomic-rest-api.db.sequence :refer (get-default-sequence-database sequence-features)]
             [datomic-rest-api.mixins.species :as mixins.species :refer (parse-species-name)]
             [datomic-rest-api.rest.core :refer [def-rest-widget]]))
 
@@ -2171,16 +2171,21 @@
 
 (defn- get-segments [gene]
   (let [g-species (mixins.species/parse-species-name (:species/id (:gene/species gene)))
-        sequence-database (datomic-rest-api.utils.db/get-default-sequence-database g-species)]
-    sequence-database))
+        sequence-database (datomic-rest-api.db.sequence/get-default-sequence-database g-species)
+        features (datomic-rest-api.db.sequence/sequence-features sequence-database (:gene/id gene))
+        ]
+    features
+    
+    ))
 
 (defn- longest-segment [segments]
+  (sort-by (- :start :stop) segments)
  segments)
 
 (defn- get-segment [gene]
-  (let [segments (get-segments gene)
-        segment (longest-segment segments)]
-    segment))
+  (let [segments (get-segments gene)]
+   ;     segment (longest-segment segments)]
+    segments))
 
 
 (defn- segment-to-position [gene longest_segment]
@@ -2210,7 +2215,7 @@
               "BINDING_REGIONS"]})
 
 (defn feature-image [gene]
-  {:data (let [segment (get-segments gene)
+  {:data (let [segment (get-segment gene)
 ;;               segment (longest-segment gene)
 ;;               position (if (empty? segment)
 ;;                          nil

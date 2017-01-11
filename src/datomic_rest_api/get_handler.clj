@@ -12,7 +12,7 @@
             [environ.core :refer (env)]
             [hiccup.core :refer (html)]
             [mount.core :as mount]
-            [datomic-rest-api.utils.db :refer (datomic-conn)]
+            [datomic-rest-api.db :refer (datomic-conn)]
             [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
             [datomic-rest-api.rest.widgets.gene :as gene]))
 
