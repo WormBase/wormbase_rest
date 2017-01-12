@@ -30,7 +30,6 @@
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
   :main datomic-rest-api.get-handler
-  :aot [datomic-rest-api.get-handler]
   :ring {:handler datomic-rest-api.get-handler/app
          :host "0.0.0.0"
          :init datomic-rest-api.get-handler/init}
