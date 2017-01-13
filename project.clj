@@ -29,8 +29,9 @@
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
-  :main datomic-rest-api.get-handler
+  :main ^:skip-aot datomic-rest-api.get-handler
   :aot [datomic-rest-api.get-handler]
+  :uberjar {:aot :all}
   :ring {:handler datomic-rest-api.get-handler/app
          :host "0.0.0.0"
          :init datomic-rest-api.get-handler/init}
