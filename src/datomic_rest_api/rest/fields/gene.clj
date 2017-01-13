@@ -7,7 +7,7 @@
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
             [pseudoace.locatables :refer (root-segment)]
- ;           [datomic-rest-api.db.sequence :refer (get-default-sequence-database sequence-features)]
+            [datomic-rest-api.db.sequence :refer (get-default-sequence-database sequence-features)]
             [datomic-rest-api.mixins.species :as mixins.species :refer (parse-species-name)]
             [datomic-rest-api.rest.core :refer [def-rest-widget]]))
 
@@ -2194,13 +2194,9 @@
 
 (defn- get-segments [gene]
   (let [g-species (mixins.species/parse-species-name (:species/id (:gene/species gene)))
- ;       sequence-database (datomic-rest-api.db.sequence/get-default-sequence-database g-species)
-  ;      features (datomic-rest-api.db.sequence/sequence-features sequence-database (:gene/id gene))
-        ]
-    g-species
-;    features
-    
-    ))
+        sequence-database (datomic-rest-api.db.sequence/get-default-sequence-database g-species)
+        features (datomic-rest-api.db.sequence/sequence-features sequence-database (:gene/id gene))]
+    features))
 
 (defn- longest-segment [segments]
   (sort-by (- :start :stop) segments)
