@@ -12,7 +12,7 @@
             [environ.core :refer (env)]
             [hiccup.core :refer (html)]
             [mount.core :as mount]
-            [datomic-rest-api.utils.db :refer (datomic-conn)]
+            [datomic-rest-api.db.main :refer (datomic-conn)]
             [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
 
             ;; widget definition file are required for their "side-effect", ie. register with whitelist

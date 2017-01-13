@@ -8,8 +8,9 @@
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
             [pseudoace.locatables :refer (root-segment)]
-            [datomic-rest-api.rest.core :refer [def-rest-widget]]
-            ))
+            [datomic-rest-api.db.sequence :refer (get-default-sequence-database sequence-features)]
+            [datomic-rest-api.mixins.species :as mixins.species :refer (parse-species-name)]
+            [datomic-rest-api.rest.core :refer [def-rest-widget]]))
 
 ;;
 ;; "name" field, included on all widgets.
@@ -2133,32 +2134,58 @@
      :description
      "Features associated with this Gene"}))
 
+(defn- get-segments [gene]
+  (let [g-species (mixins.species/parse-species-name (:species/id (:gene/species gene)))
+        sequence-database (datomic-rest-api.db.sequence/get-default-sequence-database g-species)
+        features (datomic-rest-api.db.sequence/sequence-features sequence-database (:gene/id gene))]
+    features))
+
+(defn- longest-segment [segments]
+  (sort-by (- :start :stop) segments)
+ segments)
+
+(defn- get-segment [gene]
+  (let [segments (get-segments gene)]
+   ;     segment (longest-segment segments)]
+    segments))
+
+
+(defn- segment-to-position [gene longest_segment]
+    {:class "genomic_location" ;; To populate this correctly we will need sequence data
+     :id nil
+     :label nil
+     :longest_feature longest_segment
+     :gene_keys (seq (keys gene))
+     :pos_string nil
+     :taxonomy (if-let [class (:gene/species gene)]
+                 (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
+                   (clojure.string/lower-case (clojure.string/join [(first genus) "_" species]))))
+     :tracks ["GENES"
+              "RNASEQ_ASYMMETRIES"
+              "RNASEQ"
+              "RNASEQ_SPLICE"
+              "POLYSOMES"
+              "MICRO_ORF"
+              "DNASEI_HYPERSENSITIVE_SITE"
+              "REGULATORY_REGIONS"
+              "PROMOTER_REGIONS"
+              "HISTONE_BINDING_SITES"
+              "TRANSCRIPTION_FACTOR_BINDING_REGION"
+              "TRANSCRIPTION_FACTOR_BINDING_SITE"
+              "BINDING_SITES_PREDICTED"
+              "BINDING_SITES_CURATED"
+              "BINDING_REGIONS"]})
+
 (defn feature-image [gene]
-  {:data {:class "genomic_location" ;; To populate this correctly we will need sequence data
-          :id nil
-          :label nil
-          :pos_string nil
-          :taxonomy (if-let [class (:gene/species gene)]
-                      (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
-                        (clojure.string/lower-case (clojure.string/join [(first genus) "_" species]))))
-          :tracks ["GENES"
-                   "RNASEQ_ASYMMETRIES"
-                   "RNASEQ"
-                   "RNASEQ_SPLICE"
-                   "POLYSOMES"
-                   "MICRO_ORF"
-                   "DNASEI_HYPERSENSITIVE_SITE"
-                   "REGULATORY_REGIONS"
-                   "PROMOTER_REGIONS"
-                   "HISTONE_BINDING_SITES"
-                   "TRANSCRIPTION_FACTOR_BINDING_REGION"
-                   "TRANSCRIPTION_FACTOR_BINDING_SITE"
-                   "BINDING_SITES_PREDICTED"
-                   "BINDING_SITES_CURATED"
-                   "BINDING_REGIONS"]}
+  {:data (let [segment (get-segment gene)
+;;               segment (longest-segment gene)
+;;               position (if (empty? segment)
+;;                          nil
+;;                          (segment-to-position gene segment))
+               ]
+;;           (if (empty? position) nil position))
+           (if (empty? segment) nil segment))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
-
-
 
 ;;
 ;; Genetics widget
