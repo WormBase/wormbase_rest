@@ -1345,7 +1345,7 @@
                                :go-annotation.go-term-relation/go-term)
          (:go-annotation/go-term-relation anno)))
    (map (fn [[relation_type target]]
-          {relation_type [target]}))))
+          {relation_type #{target}}))))
 
 (defn- go-anno-xref [anno-db]
   (let [db-id (:database/id (:go-annotation.database/database anno-db))
@@ -1448,7 +1448,7 @@
       (let [extensions (->> (map :anno term-annos)
                             (map go-anno-extensions)
                             (apply concat)
-                            (apply (partial merge-with concat)))]
+                            (apply (partial merge-with clojure.set/union)))]
         {:extensions extensions
 
          :term_id
