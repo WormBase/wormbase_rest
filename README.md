@@ -116,7 +116,7 @@ eb deploy
 
 TBD: JVM memory options.
 
-[uberjar]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
+[uberjar](http://stackoverflow.com/questions/11947037/what-is-an-uber-jar)
 
 ##Sequence database list
 
