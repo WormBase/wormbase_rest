@@ -14,7 +14,10 @@
             [mount.core :as mount]
             [datomic-rest-api.utils.db :refer (datomic-conn)]
             [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
-            [datomic-rest-api.rest.widgets.gene :as gene]))
+
+            ;; widget definition file are required for their "side-effect", ie. register with whitelist
+            [datomic-rest-api.rest.widgets.gene]
+            [datomic-rest-api.rest.widgets.transcript]))
 
 
 (declare handle-field-get)
