@@ -1364,12 +1364,12 @@
       :with
       (seq
        (concat
-        (map (partial pack-obj "gene")      (:go-annotation/interaction-gene anno))
-        (map (partial pack-obj "go-term")   (:go-annotation/inferred-from-go-term anno))
-        (map (partial pack-obj "motif")     (:go-annotation/motif anno))
-        (map (partial pack-obj "rnai")      (:go-annotation/rnai-result anno))
-        (map (partial pack-obj "variation") (:go-annotation/variation anno))
-        (map (partial pack-obj "phenotype") (:go-annotation/phenotype anno))
+        (map pack-obj (:go-annotation/interacting-gene anno))
+        (map pack-obj (:go-annotation/inferred-from-go-term anno))
+        (map pack-obj (:go-annotation/motif anno))
+        (map pack-obj (:go-annotation/rnai-result anno))
+        (map pack-obj (:go-annotation/variation anno))
+        (map pack-obj (:go-annotation/phenotype anno))
         (map go-anno-xref (:go-annotation/database anno))))
 
       :evidence_code
