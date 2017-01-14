@@ -45,7 +45,7 @@
                               ;;    [datomic-schema-grapher "0.0.1"]
                                   [ring/ring-devel "1.5.1"]]
                    :source-paths ["dev"]
-                   :env {:trace-db "datomic:ddb://us-east-1/WS256/wormbase"}
+                   :env {:trace-db "datomic:ddb://us-east-1/WS257/wormbase"}
                    :plugins [;;[lein-midje "3.2"]
                              [jonase/eastwood "0.2.3"]
                              [lein-ancient "0.6.8"]
