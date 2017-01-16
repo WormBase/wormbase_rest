@@ -1,5 +1,6 @@
 (ns datomic-rest-api.db.sequence
-  (:require [hugsql.core :as hugsql]
+  (:require ;[hugsql.core :as hugsql]
+            [clojure.java.jdbc :as j]
             [environ.core :refer (env)]
             [clojure.string :as str]
             [clojure.data.json :as json]))
@@ -25,7 +26,7 @@
          (assembly "bioproject")
          (database-version)]))))
 
-(def sequence-db-urls
+(def sequence-dbs
   (into
     {}
     (flatten
@@ -38,16 +39,33 @@
                              (assembly "bioproject")
                              (database-version)])]
               {(keyword db-name)
-               (str
-                 "jdbc:mysql://10.0.0.181:3306/"
-                 db-name
-                 "?user=wormbase&password=sea3l3ganz&useSSL=false&useLocalSessionState=true")})))))))
-;                "?useSSL=false&useLocalSessionState=true")})))))))
+;                {:subprotocol "mysql"
+;                 :subname  (str "//10.0.0.181:3306/" db-name "?username=wormbase&password=&useSSL=false&useLocalSessionState=true")
+;                 :username "wormbase"
+;                 :password "sea3l3ganz"}})))))))
+              {:classname "com.mysql.jdbc.Driver"
+               :connection-uri (str "jdbc:mysql://10.0.0.181:3306/" db-name "?username=wormbase&password=sea3l3ganz&useSSL=false&useLocalSessionState=true")
+               
+               }})))))))
 
-(hugsql/def-db-fns "datomic_rest_api/db/sql/sequence.sql")
+;               {:dbtype "mysql"
+;                :classname "com.mysql.cj.jdbc.Driver"
+;                :dbname db-name
+;                :host "10.0.0.181"
+;                :port 3306
+;                :ssl false
+;                :localSessionState true
+;;                :subname (str "//10.0.0.181:3306/" db-name "?useSSL=false&useLocalSessionState=true")
+;                :user "wormbase"
+;                :password "sea3l3ganz"}})))))))
+;
+;
+(defn gene-features [db-spec gene-name]
+  (println "test")
+(println db-spec)
+  (let [data (j/query db-spec ["SELECT f.id,f.object,f.typeid,f.seqid,f.start,f.end,f.strand FROM feature as f JOIN name as n ON n.id=f.id WHERE n.name = ?" gene-name])]
+      data))
 
-(defn sequence-features [sequence-database gene-id]
- (let [db-url  ((keyword sequence-database) sequence-db-urls)]
-    db-url
-;    (features db {:name gene-id})
-))
+
+;(hugsql/def-sqlvec-fns "datomic_rest_api/db/sql/sequence.sql")
+;(hugsql/def-db-fns "datomic_rest_api/db/sql/sequence.sql")

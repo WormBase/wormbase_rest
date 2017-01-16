@@ -25,6 +25,7 @@
    [cheshire "5.6.1"]
    [secretary "1.2.3"]
    [mysql/mysql-connector-java "6.0.2"]
+   [org.clojure/java.jdbc "0.7.0-alpha1"]
    [com.layerware/hugsql "0.4.7"]
    [environ "1.0.3"]]
   :source-paths ["src"]

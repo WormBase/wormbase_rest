@@ -1,4 +1,4 @@
-(ns datomic-rest-api.mixins.species
+(ns datomic-rest-api.helpers.species
   (:require [clojure.string :as str]))
 
 (defn parse-species-name [species]
