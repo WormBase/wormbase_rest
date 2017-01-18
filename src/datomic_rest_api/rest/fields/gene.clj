@@ -123,7 +123,7 @@
 
 (defn gene-status [gene]
   {:data (if-let [class (:gene/status gene)]
-           (:status/status class))
+           (humanize-ident (:gene.status/status class)))
    :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})
 
 (defn gene-taxonomy [gene]
