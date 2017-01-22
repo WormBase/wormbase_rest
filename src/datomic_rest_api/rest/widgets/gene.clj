@@ -100,10 +100,10 @@
 ;;   {:name         gene-fields/name-field
 ;;    :gene_models  gene-fields/gene-models})
 
- (def-rest-widget features
-   {:feature_image gene-fields/feature-image
-    :name          gene-fields/name-field
-    :features      gene-fields/associated-features})
+(def-rest-widget feature
+  {:feature_image gene-fields/feature-image
+   :name          gene-fields/name-field
+   :features      gene-fields/associated-features})
 
 (def-rest-widget external-links
   {:name  gene-fields/name-field

@@ -78,7 +78,9 @@
 
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
-      (:feature/id feature)))
+      (if (nil? (:feature/other-name feature))
+        (:feature/id feature)
+        (first (:feature/other-name feature)))))
 
 (defmethod obj-label "anatomy-term" [_ term]
   (or (:anatomy-term.term/text (:anatomy-term/term term))

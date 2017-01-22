@@ -2087,51 +2087,56 @@
      :description
      "gene models for this gene"}))
 
-
-
 ;;
 ;; Sequence Features widget
 ;;
 
 (defn associated-features [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?f ...]
-            :in $ ?gene
-            :where [?fg :feature.associated-with-gene/gene ?gene]
-                   [?f :feature/associated-with-gene ?fg]]
-          db (:db/id gene))
-       (map
-         (fn [fid]
-           (let [feature (entity db fid)]
-             (vmap
-               :name (pack-obj "feature" feature)
-               :description (first (:feature/description feature))
-               :method (-> (:feature/method feature)
-                           (:method/id))
-               :interaction (->> (:interaction.feature-interactor/_feature feature)
-                                 (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
-                                 (seq))
-               :expr_pattern (->>
-                               (q '[:find [?e ...]
-                                    :in $ ?f
-                                    :where [?ef :expr-pattern.associated-feature/feature ?f]
-                                           [?e :expr-pattern/associated-feature ?ef]
-                                           [?e :expr-pattern/anatomy-term _]]
-                                  db fid)
-                               (map
-                                 (fn [eid]
-                                   (let [expr (entity db eid)]
-                                     {:text (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
-                                                 (:expr-pattern/anatomy-term expr))
-                                      :evidence {:by (pack-obj "expr-pattern" expr)}})))
-                               (seq))
-               :bound_by (->> (:feature/bound-by-product-of feature)
-                              (map #(pack-obj "gene" (:feature.bound-by-product-of/gene %)))
-                              (seq))
-               :tf  (pack-obj "transcription-factor" (:feature/transcription-factor feature))))))
-       (seq))
+  (let [db (d/entity-db gene)
+        data  (->>
+                (q '[:find [?f ...]
+                     :in $ ?gene
+                     :where [?fg :feature.associated-with-gene/gene ?gene]
+                            [?f :feature/associated-with-gene ?fg]]
+                   db (:db/id gene))
+                (map
+                  (fn [fid]
+                    (let [feature (entity db fid)
+                          method (-> (:locatable/method feature)
+                                     (:method/id))
+                          interaction  (->> (:interaction.feature-interactor/_feature feature)
+                                            (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
+                                            (seq))
+                          expr-pattern (->>
+                                         (q '[:find [?e ...]
+                                              :in $ ?f
+                                              :where [?ef :expr-pattern.associated-feature/feature ?f]
+                                              [?e :expr-pattern/associated-feature ?ef]
+                                              [?e :expr-pattern/anatomy-term _]]
+                                            db fid)
+                                         (map
+                                           (fn [eid]
+                                             (let [expr (entity db eid)]
+                                               {:text (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
+                                                           (:expr-pattern/anatomy-term expr))
+                                                :evidence {:by (pack-obj "expr-pattern" expr)}})))
+                                         (seq))
+                          bounded-by (->> (:feature/bound-by-product-of feature)
+                                          (map #(pack-obj "gene" (:feature.bound-by-product-of/gene %)))
+                                          (seq))
+                          tf (if (contains? feature :feature/associated-with-transcription-factor)
+                               (pack-obj "transcription-factor" (:feature.associated-with-transcription-factor/transcription-factor
+                                                                  (first (:feature/associated-with-transcription-factor feature))))
+                               nil)]
+                      {:name (pack-obj "feature" feature)
+                       :description (first (:feature/description feature))
+                       :method (if (nil? method) nil (str/replace method #"_" " "))
+                       :interaction (if (nil? interaction) [] interaction)
+                       :expr_pattern (if (nil? expr-pattern) [] expr-pattern)
+                       :bounded_by (if (nil? bounded-by) [] bounded-by)
+                       :tf tf })))
+                (seq))]
+    {:data (if (nil? data) nil data)
      :description
      "Features associated with this Gene"}))
 
@@ -2142,22 +2147,40 @@
     features))
 
 (defn- longest-segment [segments]
-  (sort-by (- :start :stop) segments)
- segments)
+  (first
+      (sort-by #(- (:start %) (:end %)) segments)))
 
 (defn- get-segment [gene]
-  (let [segments (get-segments gene)]
-   ;     segment (longest-segment segments)]
-    segments))
+  (let [segments (get-segments gene)
+        segment (longest-segment segments)]
+    segment))
 
-
-(defn- segment-to-position [gene longest_segment]
+(defn- segment-to-position [gene segment gbrowse]
+  (let [start (if (< (:start segment) (:end segment))
+                (:start segment)
+                (:end segment))
+        stop (if (> (:start segment) (:end segment))
+               (:start segment)
+               (:end segment))
+        padded-start (- start 2000)
+        padded-stop (+ stop 2000)
+        browser-start (if (= gbrowse true)
+                        (- padded-start
+                           (int
+                             (* 0.2
+                                  (double (- padded-stop padded-start)))))
+                        padded-start)
+        browser-stop (if (= gbrowse true)
+                       (+ padded-stop
+                         (int
+                           (* 0.05
+                              (double (- padded-stop padded-start)))))
+                       padded-stop)
+        id (str (:seqname segment) ":" browser-start ".." browser-stop) ]
     {:class "genomic_location" ;; To populate this correctly we will need sequence data
-     :id nil
-     :label nil
-     :longest_feature longest_segment
-     :gene_keys (seq (keys gene))
-     :pos_string nil
+     :id id
+     :label id
+     :pos_string id
      :taxonomy (if-let [class (:gene/species gene)]
                  (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
                    (clojure.string/lower-case (clojure.string/join [(first genus) "_" species]))))
@@ -2175,17 +2198,15 @@
               "TRANSCRIPTION_FACTOR_BINDING_SITE"
               "BINDING_SITES_PREDICTED"
               "BINDING_SITES_CURATED"
-              "BINDING_REGIONS"]})
+              "BINDING_REGIONS"]}))
 
 (defn feature-image [gene]
   {:data (let [segment (get-segment gene)
-;;               segment (longest-segment gene)
-;;               position (if (empty? segment)
-;;                          nil
-;;                          (segment-to-position gene segment))
+               position (if (empty? segment)
+                          nil
+                          (segment-to-position gene segment true))
                ]
-;;           (if (empty? position) nil position))
-           (if (empty? segment) nil segment))
+           (if (empty? position) nil position))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 ;;
@@ -2260,8 +2281,7 @@
             (:molecular-change.missense/int n)
 
             (:molecular-change/nonsense molecular-change)
-            (nth (re-find #"\((\d+)\)" (:molecular-change.nonsense/text n)) 1))
-  )
+            (nth (re-find #"\((\d+)\)" (:molecular-change.nonsense/text n)) 1)))
 
 (defn- process-aa-composite [molecular-change]
   (let [change (process-aa-change molecular-change)
