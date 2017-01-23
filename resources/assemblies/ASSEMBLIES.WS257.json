@@ -1,0 +1,250 @@
+{
+   "b_malayi" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS251",
+            "assembly_accession" : null,
+            "assembly_name" : "B_malayi-4.0",
+            "bioproject" : "PRJNA10729",
+            "bioproject_description" : "University of Pittsburgh B. malayi genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "University of Pittsburgh, Pittsburgh, PA"
+            ],
+            "strain" : "FR3"
+         }
+      ],
+      "full_name" : "Brugia malayi"
+   },
+   "c_angaria" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS232",
+            "assembly_accession" : null,
+            "assembly_name" : "ps1010rel8",
+            "bioproject" : "PRJNA51225",
+            "bioproject_description" : "California Institute of Technology C. angaria genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Caltech, Pasadena CA"
+            ],
+            "strain" : "PS1010"
+         }
+      ],
+      "full_name" : "Caenorhabditis angaria"
+   },
+   "c_brenneri" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS227",
+            "assembly_accession" : "GCA_000143925.2",
+            "assembly_name" : "C_brenneri-6.0.1b",
+            "bioproject" : "PRJNA20035",
+            "bioproject_description" : "C.brenneri Sequencing Consortium genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Washington University, St. Louis MO"
+            ],
+            "strain" : "PB2801"
+         }
+      ],
+      "full_name" : "Caenorhabditis brenneri"
+   },
+   "c_briggsae" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS254",
+            "assembly_accession" : null,
+            "assembly_name" : "CB4",
+            "bioproject" : "PRJNA10731",
+            "bioproject_description" : "C. briggsae Sequencing Consortium genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "University of Maryland, College Park MD",
+               "Washington University, St. Louis MO"
+            ],
+            "strain" : "AF16"
+         }
+      ],
+      "full_name" : "Caenorhabditis briggsae"
+   },
+   "c_elegans" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS235",
+            "assembly_accession" : "GCA_000002985.3",
+            "assembly_name" : "WBcel235",
+            "bioproject" : "PRJNA13758",
+            "bioproject_description" : "C.elegans Sequencing Consortium genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Washington University, St. Louis MO",
+               "Wellcome Trust Sanger Institute, Cambridge UK"
+            ],
+            "strain" : "N2"
+         },
+         {
+            "appeared_in" : "WS250",
+            "assembly_accession" : null,
+            "assembly_name" : "C_elegans_hawaii-v1",
+            "bioproject" : "PRJNA275000",
+            "bioproject_description" : "University of Washington C. elegans CB4856 genome project",
+            "is_canonical" : false,
+            "laboratory" : [
+               "University of Washington, Seattle, WA"
+            ],
+            "strain" : "CB4856"
+         }
+      ],
+      "full_name" : "Caenorhabditis elegans"
+   },
+   "c_japonica" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS227",
+            "assembly_accession" : "GCA_000147155.1",
+            "assembly_name" : "C_japonica-7.0.1",
+            "bioproject" : "PRJNA12591",
+            "bioproject_description" : "C.japonica Sequencing Consortium genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Washington University, St. Louis MO"
+            ],
+            "strain" : "DF5080"
+         }
+      ],
+      "full_name" : "Caenorhabditis japonica"
+   },
+   "c_remanei" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS185",
+            "assembly_accession" : "GCA_000149515.1",
+            "assembly_name" : "C_remanei-15.0.1",
+            "bioproject" : "PRJNA53967",
+            "bioproject_description" : "C.remanei Sequencing Consortium genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Washington University, St. Louis MO"
+            ],
+            "strain" : "PB4641"
+         },
+         {
+            "appeared_in" : "WS250",
+            "assembly_accession" : null,
+            "assembly_name" : "C_remanei_Oregon_v1",
+            "bioproject" : "PRJNA248909",
+            "bioproject_description" : "University of Oregon University C. remanei PX356 genome project",
+            "is_canonical" : false,
+            "laboratory" : [
+               "University of Texas, Arlington TX"
+            ],
+            "strain" : "PX356"
+         }
+      ],
+      "full_name" : "Caenorhabditis remanei"
+   },
+   "c_sinica" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS230",
+            "assembly_accession" : null,
+            "assembly_name" : "Caenorhabditis_sp_5-JU800-1.0",
+            "bioproject" : "PRJNA194557",
+            "bioproject_description" : "University of Edinburgh Caenorhabditis sinica genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Institute of Evolutionary Biology, University of Edinburgh, Edinburgh, UK"
+            ],
+            "strain" : "JU800"
+         }
+      ],
+      "full_name" : "Caenorhabditis sinica"
+   },
+   "c_tropicalis" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS226",
+            "assembly_accession" : "GCA_000186765.1",
+            "assembly_name" : "Caenorhabditis_sp11_JU1373-3.0.1",
+            "bioproject" : "PRJNA53597",
+            "bioproject_description" : "Genome Institute at Washington University Caenorhabditis sp. 11 genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Washington University, St. Louis MO"
+            ],
+            "strain" : "JU1373"
+         }
+      ],
+      "full_name" : "Caenorhabditis tropicalis"
+   },
+   "o_volvulus" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS241",
+            "assembly_accession" : null,
+            "assembly_name" : "O_volvulus_Cameroon_v3",
+            "bioproject" : "PRJEB513",
+            "bioproject_description" : "Wellcome Trust Sanger Institute O. volvulus genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Wellcome Trust Sanger Institute, Cambridge, UK"
+            ],
+            "strain" : "O_volvulus_Cameroon_isolate"
+         }
+      ],
+      "full_name" : "Onchocerca volvulus"
+   },
+   "p_pacificus" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS221",
+            "assembly_accession" : null,
+            "assembly_name" : "P_pacificus-v2",
+            "bioproject" : "PRJNA12644",
+            "bioproject_description" : "Max Planck Institute for Developmental Biology P. pacificus genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Washington University, St. Louis MO",
+               "MPI, Tuebingen, Germany"
+            ],
+            "strain" : "PS312"
+         }
+      ],
+      "full_name" : "Pristionchus pacificus"
+   },
+   "p_redivivus" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS240",
+            "assembly_accession" : "GCA_000341325.1",
+            "assembly_name" : "Pred3",
+            "bioproject" : "PRJNA186477",
+            "bioproject_description" : "California Institute of Technology P. redivivus genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Caltech, Pasadena CA"
+            ],
+            "strain" : "MT8872"
+         }
+      ],
+      "full_name" : "Panagrellus redivivus"
+   },
+   "s_ratti" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS247",
+            "assembly_accession" : null,
+            "assembly_name" : "S_ratti_ED321_v5_0_4",
+            "bioproject" : "PRJEB125",
+            "bioproject_description" : "Wellcome Trust Sanger Institute S. ratti genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Wellcome Trust Sanger Institute, Cambridge UK"
+            ],
+            "strain" : "ED321"
+         }
+      ],
+      "full_name" : "Strongyloides ratti"
+   }
+}

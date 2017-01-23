@@ -8,8 +8,10 @@
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
             [pseudoace.locatables :refer (root-segment)]
-            [datomic-rest-api.rest.core :refer [def-rest-widget]]
-            ))
+            [datomic-rest-api.db.sequence :refer (get-default-sequence-database)]
+            [datomic-rest-api.helpers.sequence :refer (sequence-features)]
+            [datomic-rest-api.helpers.species :as helpers.species :refer (parse-species-name)]
+            [datomic-rest-api.rest.core :refer [def-rest-widget]]))
 
 ;;
 ;; "name" field, included on all widgets.
@@ -2085,80 +2087,118 @@
      :description
      "gene models for this gene"}))
 
-
-
 ;;
 ;; Sequence Features widget
 ;;
 
 (defn associated-features [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?f ...]
-            :in $ ?gene
-            :where [?fg :feature.associated-with-gene/gene ?gene]
-                   [?f :feature/associated-with-gene ?fg]]
-          db (:db/id gene))
-       (map
-         (fn [fid]
-           (let [feature (entity db fid)]
-             (vmap
-               :name (pack-obj "feature" feature)
-               :description (first (:feature/description feature))
-               :method (-> (:feature/method feature)
-                           (:method/id))
-               :interaction (->> (:interaction.feature-interactor/_feature feature)
-                                 (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
-                                 (seq))
-               :expr_pattern (->>
-                               (q '[:find [?e ...]
-                                    :in $ ?f
-                                    :where [?ef :expr-pattern.associated-feature/feature ?f]
-                                           [?e :expr-pattern/associated-feature ?ef]
-                                           [?e :expr-pattern/anatomy-term _]]
-                                  db fid)
-                               (map
-                                 (fn [eid]
-                                   (let [expr (entity db eid)]
-                                     {:text (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
-                                                 (:expr-pattern/anatomy-term expr))
-                                      :evidence {:by (pack-obj "expr-pattern" expr)}})))
-                               (seq))
-               :bound_by (->> (:feature/bound-by-product-of feature)
-                              (map #(pack-obj "gene" (:feature.bound-by-product-of/gene %)))
-                              (seq))
-               :tf  (pack-obj "transcription-factor" (:feature/transcription-factor feature))))))
-       (seq))
+  (let [db (d/entity-db gene)
+        data  (->>
+                (q '[:find [?f ...]
+                     :in $ ?gene
+                     :where [?fg :feature.associated-with-gene/gene ?gene]
+                            [?f :feature/associated-with-gene ?fg]]
+                   db (:db/id gene))
+                (map
+                  (fn [fid]
+                    (let [feature (entity db fid)
+                          method (-> (:locatable/method feature)
+                                     (:method/id))
+                          interaction  (->> (:interaction.feature-interactor/_feature feature)
+                                            (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
+                                            (seq))
+                          expr-pattern (->>
+                                         (q '[:find [?e ...]
+                                              :in $ ?f
+                                              :where [?ef :expr-pattern.associated-feature/feature ?f]
+                                              [?e :expr-pattern/associated-feature ?ef]
+                                              [?e :expr-pattern/anatomy-term _]]
+                                            db fid)
+                                         (map
+                                           (fn [eid]
+                                             (let [expr (entity db eid)]
+                                               {:text (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
+                                                           (:expr-pattern/anatomy-term expr))
+                                                :evidence {:by (pack-obj "expr-pattern" expr)}})))
+                                         (seq))
+                          bounded-by (->> (:feature/bound-by-product-of feature)
+                                          (map #(pack-obj "gene" (:feature.bound-by-product-of/gene %)))
+                                          (seq))
+                          tf (if (contains? feature :feature/associated-with-transcription-factor)
+                               (pack-obj "transcription-factor" (:feature.associated-with-transcription-factor/transcription-factor
+                                                                  (first (:feature/associated-with-transcription-factor feature))))
+                               nil)]
+                      {:name (pack-obj "feature" feature)
+                       :description (first (:feature/description feature))
+                       :method (if (nil? method) nil (str/replace method #"_" " "))
+                       :interaction (if (nil? interaction) [] interaction)
+                       :expr_pattern (if (nil? expr-pattern) [] expr-pattern)
+                       :bounded_by (if (nil? bounded-by) [] bounded-by)
+                       :tf tf })))
+                (seq))]
+    {:data (if (nil? data) nil data)
      :description
      "Features associated with this Gene"}))
 
+(defn- get-segments [gene]
+  (let [g-species (helpers.species/parse-species-name (:species/id (:gene/species gene)))
+        sequence-database (datomic-rest-api.db.sequence/get-default-sequence-database g-species)
+        features (datomic-rest-api.helpers.sequence/sequence-features sequence-database (:gene/id gene))]
+    features))
+
+(defn- longest-segment [segments]
+  (first
+      (sort-by #(- (:start %) (:end %)) segments)))
+
+(defn- get-segment [gene]
+  (let [segments (get-segments gene)
+        segment (longest-segment segments)]
+    segment))
+
+(defn- segment-to-position [gene segment gbrowse]
+  (let [[start, stop] (->> segment  ((juxt :start :end))  (sort-by +))
+        padded-start (- start 2000)
+        padded-stop (+ stop 2000)
+        calc-browser-pos (fn  [x-op x y mult-offset]
+                            (if gbrowse
+                              (->> (reduce - (sort-by - [x y]))
+                                   (double)
+                                   (* mult-offset)
+                                   (int)
+                                   (x-op x))
+                              y))
+        browser-start (calc-browser-pos - padded-start padded-stop 0.2)
+        browser-stop (calc-browser-pos + padded-stop padded-start 0.5)
+        id (str (:seqname segment) ":" browser-start ".." browser-stop)]
+    {:class "genomic_location" ;; To populate this correctly we will need sequence data
+     :id id
+     :label id
+     :pos_string id
+     :taxonomy (if-let [class (:gene/species gene)]
+                 (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
+                   (str/lower-case (str/join [(first genus) "_" species]))))
+     :tracks ["GENES"
+              "RNASEQ_ASYMMETRIES"
+              "RNASEQ"
+              "RNASEQ_SPLICE"
+              "POLYSOMES"
+              "MICRO_ORF"
+              "DNASEI_HYPERSENSITIVE_SITE"
+              "REGULATORY_REGIONS"
+              "PROMOTER_REGIONS"
+              "HISTONE_BINDING_SITES"
+              "TRANSCRIPTION_FACTOR_BINDING_REGION"
+              "TRANSCRIPTION_FACTOR_BINDING_SITE"
+              "BINDING_SITES_PREDICTED"
+              "BINDING_SITES_CURATED"
+              "BINDING_REGIONS"]}))
+
 (defn feature-image [gene]
-  {:data {:class "genomic_location" ;; To populate this correctly we will need sequence data
-          :id nil
-          :label nil
-          :pos_string nil
-          :taxonomy (if-let [class (:gene/species gene)]
-                      (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
-                        (clojure.string/lower-case (clojure.string/join [(first genus) "_" species]))))
-          :tracks ["GENES"
-                   "RNASEQ_ASYMMETRIES"
-                   "RNASEQ"
-                   "RNASEQ_SPLICE"
-                   "POLYSOMES"
-                   "MICRO_ORF"
-                   "DNASEI_HYPERSENSITIVE_SITE"
-                   "REGULATORY_REGIONS"
-                   "PROMOTER_REGIONS"
-                   "HISTONE_BINDING_SITES"
-                   "TRANSCRIPTION_FACTOR_BINDING_REGION"
-                   "TRANSCRIPTION_FACTOR_BINDING_SITE"
-                   "BINDING_SITES_PREDICTED"
-                   "BINDING_SITES_CURATED"
-                   "BINDING_REGIONS"]}
+  {:data (let [segment (get-segment gene)
+               position (if ((comp not empty?) segment)
+                 (segment-to-position gene segment true))]
+           (if (empty? position) nil position))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
-
-
 
 ;;
 ;; Genetics widget
@@ -2232,8 +2272,7 @@
             (:molecular-change.missense/int n)
 
             (:molecular-change/nonsense molecular-change)
-            (nth (re-find #"\((\d+)\)" (:molecular-change.nonsense/text n)) 1))
-  )
+            (nth (re-find #"\((\d+)\)" (:molecular-change.nonsense/text n)) 1)))
 
 (defn- process-aa-composite [molecular-change]
   (let [change (process-aa-change molecular-change)

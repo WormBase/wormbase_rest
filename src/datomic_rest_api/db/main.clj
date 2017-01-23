@@ -1,4 +1,4 @@
-(ns datomic-rest-api.utils.db
+(ns datomic-rest-api.db.main
   (:require [mount.core :refer [defstate]]
             [environ.core :refer (env)]
             [datomic.api :as d]))
