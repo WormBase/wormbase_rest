@@ -2195,7 +2195,7 @@
 
 (defn feature-image [gene]
   {:data (let [segment (get-segment gene)
-               position (if  (comp not empty? segment)
+               position (if ((comp not empty?) segment)
                  (segment-to-position gene segment true))]
            (if (empty? position) nil position))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
