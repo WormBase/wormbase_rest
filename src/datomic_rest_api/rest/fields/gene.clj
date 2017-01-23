@@ -2156,26 +2156,19 @@
     segment))
 
 (defn- segment-to-position [gene segment gbrowse]
-  (let [start (if (< (:start segment) (:end segment))
-                (:start segment)
-                (:end segment))
-        stop (if (> (:start segment) (:end segment))
-               (:start segment)
-               (:end segment))
+  (let [[start, stop]  (->> segment  ((juxt :start :end))  (sort-by +))
         padded-start (- start 2000)
         padded-stop (+ stop 2000)
-        browser-start (if (= gbrowse true)
-                        (- padded-start
-                           (int
-                             (* 0.2
-                                  (double (- padded-stop padded-start)))))
-                        padded-start)
-        browser-stop (if (= gbrowse true)
-                       (+ padded-stop
-                         (int
-                           (* 0.05
-                              (double (- padded-stop padded-start)))))
-                       padded-stop)
+        calc-browser-pos  (fn  [x-op x y mult-offset]
+                            (if gbrowse
+                              (->>  (reduce -  (sort-by -  [x y]))
+                                   (double)
+                                   (* mult-offset)
+                                   (int)
+                                   (x-op x))
+                              y))
+        browser-start  (calc-browser-pos - padded-start padded-stop 0.2)
+        browser-stop  (calc-browser-pos + padded-stop padded-start 0.5)
         id (str (:seqname segment) ":" browser-start ".." browser-stop) ]
     {:class "genomic_location" ;; To populate this correctly we will need sequence data
      :id id
@@ -2183,7 +2176,7 @@
      :pos_string id
      :taxonomy (if-let [class (:gene/species gene)]
                  (if-let [[_ genus species] (re-matches #"^(.*)\s(.*)$" (:species/id class))]
-                   (clojure.string/lower-case (clojure.string/join [(first genus) "_" species]))))
+                   (str/lower-case (str/join [(first genus) "_" species]))))
      :tracks ["GENES"
               "RNASEQ_ASYMMETRIES"
               "RNASEQ"
@@ -2202,10 +2195,8 @@
 
 (defn feature-image [gene]
   {:data (let [segment (get-segment gene)
-               position (if (empty? segment)
-                          nil
-                          (segment-to-position gene segment true))
-               ]
+               position (if  (comp not empty? segment)
+                 (segment-to-position gene segment true))]
            (if (empty? position) nil position))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
