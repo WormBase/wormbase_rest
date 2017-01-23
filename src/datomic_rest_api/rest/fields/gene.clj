@@ -2156,20 +2156,20 @@
     segment))
 
 (defn- segment-to-position [gene segment gbrowse]
-  (let [[start, stop]  (->> segment  ((juxt :start :end))  (sort-by +))
+  (let [[start, stop] (->> segment  ((juxt :start :end))  (sort-by +))
         padded-start (- start 2000)
         padded-stop (+ stop 2000)
-        calc-browser-pos  (fn  [x-op x y mult-offset]
+        calc-browser-pos (fn  [x-op x y mult-offset]
                             (if gbrowse
-                              (->>  (reduce -  (sort-by -  [x y]))
+                              (->> (reduce - (sort-by - [x y]))
                                    (double)
                                    (* mult-offset)
                                    (int)
                                    (x-op x))
                               y))
-        browser-start  (calc-browser-pos - padded-start padded-stop 0.2)
-        browser-stop  (calc-browser-pos + padded-stop padded-start 0.5)
-        id (str (:seqname segment) ":" browser-start ".." browser-stop) ]
+        browser-start (calc-browser-pos - padded-start padded-stop 0.2)
+        browser-stop (calc-browser-pos + padded-stop padded-start 0.5)
+        id (str (:seqname segment) ":" browser-start ".." browser-stop)]
     {:class "genomic_location" ;; To populate this correctly we will need sequence data
      :id id
      :label id

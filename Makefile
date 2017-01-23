@@ -1,6 +1,6 @@
 NAME := wormbase/datomic-to-catalyst
 VERSION ?= $(shell git describe --abbrev=0 --tags)
-WS_VERSION ?= WS257
+WS_VERSION := WS257
 LOWER_WS_VERSION = `echo $(WS_VERSION) | tr A-Z a-z`
 EBX_CONFIG := .ebextensions/.config
 DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " ")
