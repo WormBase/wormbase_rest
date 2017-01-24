@@ -3,11 +3,9 @@
    [cheshire.core :as json :refer (parse-string)]
    [clojure.string :as str]
    [compojure.core :refer (routes GET POST ANY context wrap-routes)]
-   [compojure.route :as route]
    [datomic-rest-api.db.main :refer (datomic-conn)]
    ;; widget definition file are required for their "side-effect", ie. register with whitelist
    [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
-   [datomic-rest-api.rest.widgets.transcript]
    [datomic.api :as d :refer (db history q touch entity)]
    [hiccup.core :refer (html)]
    [mount.core :as mount]
