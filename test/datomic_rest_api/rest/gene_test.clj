@@ -1,12 +1,8 @@
 (ns datomic_rest_api.rest.gene-test
- ;; (:use midje.sweet)
   (:require [clojure.test :refer :all]
-            [environ.core :refer (env)]
-            [clojure.data.json :as json]
-            [clojure.string :as string]
             [datomic.api :as d]
             [mount.core :as mount]
-            [datomic-rest-api.utils.db :refer [datomic-conn]]
+            [datomic-rest-api.db.main :refer [datomic-conn]]
             [datomic-rest-api.rest.fields.gene :as gene]))
 
 

@@ -1,17 +1,16 @@
+;; TODO: split up and refactor this whole namespace.
 (ns datomic-rest-api.rest.fields.gene
-  (:require [cheshire.core :as c :refer (generate-string)]
-            [pseudoace.binning :refer (reg2bins xbin bins)]
-            [datomic-rest-api.rest.helpers.date :as date-helper]
-            [datomic-rest-api.rest.helpers.object :as rest-api-obj :refer (humanize-ident get-evidence author-list pack-obj)]
-            [datomic-rest-api.rest.helpers.expression :as expression]
-            [datomic.api :as d :refer (db q touch entity)]
-            [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
-            [pseudoace.locatables :refer (root-segment)]
-            [datomic-rest-api.db.sequence :refer (get-default-sequence-database)]
-            [datomic-rest-api.helpers.sequence :refer (sequence-features)]
-            [datomic-rest-api.helpers.species :as helpers.species :refer (parse-species-name)]
-            [datomic-rest-api.rest.core :refer [def-rest-widget]]))
+  (:require
+   [clojure.string :as str]
+   [datomic-rest-api.db.sequence :as seqdb]
+   [datomic-rest-api.db.sequence :refer (get-default-sequence-database)]
+   [datomic-rest-api.helpers.sequence :refer (sequence-features)]
+   [datomic-rest-api.helpers.species :refer (parse-species-name)]
+   [datomic-rest-api.rest.helpers.date :as date-helper]
+   [datomic-rest-api.rest.helpers.expression :as expression]
+   [datomic-rest-api.rest.helpers.object :as rest-api-obj :refer (pack-obj)]
+   [datomic.api :as d :refer (db q touch entity)]
+   [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]))
 
 ;;
 ;; "name" field, included on all widgets.
@@ -114,9 +113,12 @@
    :description "Operon the gene is contained in"})
 
 (defn gene-cluster [gene]
-   {:data
-     (if-let [data (->> (:gene/main-name/text gene))] data)
-    :description "The gene cluster for this gene"})
+  {:data
+   ;; discuss - should be gene-class? referenced in overview widget...
+   ;; (if-let [data (->> (:gene-class/main-name/text gene))]
+   ;;   data)
+   nil
+   :description "The gene cluster for this gene"})
 
 (defn gene-other-names [gene]
    {:data (if-let [data (map #(get % "gene.other-name/text") (:gene/other-name gene))]
@@ -125,7 +127,7 @@
 
 (defn gene-status [gene]
   {:data (if-let [class (:gene/status gene)]
-           (humanize-ident (:gene.status/status class)))
+           (rest-api-obj/humanize-ident (:gene.status/status class)))
    :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})
 
 (defn gene-taxonomy [gene]
@@ -146,8 +148,9 @@
                           (first)
                           (:transcript/brief-identification)))]
      {:text (some (fn [[k v]] (if (= (name k) "text") v)) desc)
-      :evidence (or (get-evidence desc)
-                    (get-evidence (first (:gene/provisional-description gene))))}
+      :evidence (or (rest-api-obj/get-evidence desc)
+                    (rest-api-obj/get-evidence
+                     (first (:gene/provisional-description gene))))}
      {:text nil :evidence nil})
    :description "A manually curated description of the gene's function"})
 
@@ -156,7 +159,7 @@
         (->> (:gene/remark gene)
              (map (fn [rem]
                     {:text (:gene.remark/text rem)
-                     :evidence (get-evidence rem)}))
+                     :evidence (rest-api-obj/get-evidence rem)}))
              (seq))]
     {:data (if (empty? data) nil data)
      :description "curatorial remarks for the Gene"}))
@@ -170,7 +173,7 @@
 (defn named-by [gene]
   {:data
    (if-let [data (->> (:gene/cgc-name gene)
-                      (get-evidence)
+                      (rest-api-obj/get-evidence)
                       (mapcat val))]
      data)
    :description
@@ -201,7 +204,7 @@
 
 (defn cloned-by [gene]
   {:data
-   (if-let [ev (get-evidence (first (:gene/cloned-by gene)))]
+   (if-let [ev (rest-api-obj/get-evidence (first (:gene/cloned-by gene)))]
      {:cloned_by (key (first ev))
       :tag       (key (first ev))
       :source    (first (val (first ev)))})
@@ -234,7 +237,7 @@
                   (->> (:gene/disease-relevance gene)
                        (map (fn [rel]
                               {:text (:gene.disease-relevance/note rel)
-                               :evidence (get-evidence rel)}))
+                               :evidence (rest-api-obj/get-evidence rel)}))
                        (seq))]
            data)
    :description
@@ -276,12 +279,12 @@
      :description "the gene this one has merged into"}))
 
 (defn- get-structured-description [gene type]
-  (let [key     (keyword "gene" type)
+  (let [gene-type     (keyword "gene" type)
         txt-key (keyword (str "gene." type) "text")]
-    (->> (key gene)
+    (->> (gene-type gene)
          (map (fn [data]
                 {:text     (txt-key data)
-                 :evidence (get-evidence data)}))
+                 :evidence (rest-api-obj/get-evidence data)}))
          (seq))))
 
 (defn structured-description [gene]
@@ -295,7 +298,7 @@
                          :let [txt (:gene.provisional-description/text p)]
                          :when (not (cds txt))]
                      {:text txt
-                      :evidence (get-evidence p)})))
+                      :evidence (rest-api-obj/get-evidence p)})))
 
                :Other_description
                (get-structured-description gene "other-description")
@@ -390,7 +393,8 @@
                ", "
                (if (= nil (:paper/publication-date paper))
                  ""
-                 (first (str/split (:paper/publication-date paper) #"-"))))})
+                 (first (str/split (:paper/publication-date paper)
+                                   #"-"))))})
 
 (defn parse-int [s]
   (Integer. (re-find  #"\d+" s )))
@@ -533,7 +537,7 @@
     (if
       (contains? holder :phenotype-info/maternal)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.maternal/value
             (:phenotype-info/maternal holder)))))
 
@@ -541,7 +545,7 @@
     (if
       (contains? holder :phenotype-info/paternal)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.paternal/value
             (:phenotype-info/paternal holder)))))
 
@@ -549,7 +553,7 @@
     (if
       (contains? holder :phenotype-info/haplo-insufficient)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.paternal/value
             (:phenotype-info/haplo-insufficient holder)))))
 
@@ -560,7 +564,7 @@
         (remove
           nil?
           [(create-tag
-             (humanize-ident (:phenotype-info.variation-effect/value ve)))
+             (rest-api-obj/humanize-ident (:phenotype-info.variation-effect/value ve)))
            (if
              (contains? ve :evidence/person-evidence)
              (create-tag "Person_evidence"))
@@ -587,7 +591,7 @@
     (if
       (contains? holder :phenotype-info/ease-of-scoring)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.ease-of-scoring/value
             (:phenotype-info/ease-of-scoring holder)))))
 
@@ -600,7 +604,7 @@
     :Male_mating_efficiency
     (if
       (contains? variation :variation/male-mating-efficiency)
-      (humanize-ident
+      (rest-api-obj/humanize-ident
         (:variation.male-mating-efficiency/value
           (:variation/male-mating-efficiency variation))))
 
@@ -753,26 +757,25 @@
                     (map (fn [pid]
                            [pid (pack-obj "phenotype" (entity db pid))]))
                     (into {}))
-        ints (->> (mapcat second table)
-                  (set)
-                  (map (fn [iid]
-                         (let [int (entity db iid)]
-                           [iid
-                            {:interaction (pack-obj "interaction" int)
-                             :citations (map (partial pack-obj "paper") (:interaction/paper int))}])))
+        inters (->> (mapcat second table)
+                    (set)
+                    (map
+                     (fn [iid]
+                       (let [int (entity db iid)]
+                         [iid
+                          {:interaction (pack-obj "interaction" int)
+                           :citations (map (partial pack-obj "paper")
+                                           (:interaction/paper int))}])))
                   (into {}))
         data (map (fn [[pheno pints int-type]]
                     {:interaction_type
                      (rest-api-obj/humanize-ident int-type)
-
                      :phenotype
                      (phenos pheno)
-
                      :interactions
-                     (map #(:interaction (ints %)) pints)
-
+                     (map #(:interaction (inters %)) pints)
                      :citations
-                     (map #(:citations (ints %)) pints)})
+                     (map #(:citations (inters %)) pints)})
                   table)]
     {:data (if (empty? data) nil data)
      :description
@@ -1032,70 +1035,6 @@
 ;; Human diseases widget
 ;;
 
-(defn disease-models [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     {:potential_model
-      (seq
-        (for [d (:gene/disease-potential-model gene)]
-          (assoc (pack-obj (:gene.disease-potential-model/do-term d))
-                 :ev (get-evidence d))))
-
-      :experimental_model
-      (seq
-       (for [d (:gene/disease-experimental-model gene)]
-         (assoc (pack-obj (:gene.disease-experimental-model/do-term d))
-           :ev (get-evidence d))))
-
-      :gene
-      (seq
-       (q '[:find [?o ...]
-            :in $ ?gene
-            :where [?gene :gene/database ?dbent]
-                   [?omim :database/id "OMIM"]
-                   [?field :database-field/id "gene"]
-                   [?dbent :gene.database/database ?omim]
-                   [?dbent :gene.database/field ?field]
-                   [?dbent :gene.database/accession ?o]]
-          db (:db/id gene)))
-
-      :disease
-      (seq
-       (q '[:find [?o ...]
-            :in $ ?gene
-            :where [?gene :gene/database ?dbent]
-                   [?omim :database/id "OMIM"]
-                   [?field :database-field/id "disease"]
-                   [?dbent :gene.database/database ?omim]
-                   [?dbent :gene.database/field ?field]
-                   [?dbent :gene.database/accession ?o]]
-          db (:db/id gene)))}}))
-
-
-
-
-;;
-;; Assembly-twiddling stuff (should be in own namespace?)
-;;
-
-#_(defn locatable-root-segment [loc]
-  (loop [parent (:locatable/parent loc)
-         min    (:locatable/min    loc)
-         max    (:locatable/max    loc)]
-    (if parent
-      (if-let [ss (first (:sequence.subsequence/_sequence parent))]
-        (recur (:sequence/_subsequence ss)
-               (+ min (:sequence.subsequence/start ss) -1)
-               (+ max (:sequence.subsequence/start ss) -1))
-        {:sequence (:sequence/id parent)
-         :seq-id   (:db/id parent)
-         :min      min
-         :max      max}))))
-
-;;
-;; Reagents widget
-;;
-
 (defn- construct-labs [construct]
   (seq (map #(pack-obj "laboratory" (:construct.laboratory/laboratory %))
             (:construct/laboratory construct))))
@@ -1134,89 +1073,10 @@
                     :used_in      (pack-obj "variation" v)
                     :use_lab      (construct-labs construct))))))
 
-(defn transgenes [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->> (q '[:find [?cons ...]
-               :in $ ?gene
-               :where [?cbg :construct.driven-by-gene/gene ?gene]
-                      [?cons :construct/driven-by-gene ?cbg]]
-             db (:db/id gene))
-          (map (partial entity db))
-          (mapcat transgene-record)
-          (seq))
-     :description "transgenes expressed by this gene"}))
-
-(defn transgene-products [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->> (q '[:find [?cons ...]
-               :in $ ?gene
-               :where [?cg :construct.gene/gene ?gene]
-                      [?cons :construct/gene ?cg]]
-             db (:db/id gene))
-          (map (partial entity db))
-          (mapcat transgene-record)
-          (seq))
-     :description "transgenes that express this gene"}))
-
 (def ^:private probe-types
   {:oligo-set.type/affymetrix-microarray-probe "Affymetrix"
    :oligo-set.type/washu-gsc-microarray-probe  "GSC"
    :oligo-set.type/agilent-microarray-probe    "Agilent"})
-
-(defn microarray-probes [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->> (q '[:find [?oligo ...]
-               :in $ ?gene [?type ...]
-               :where [?gene :gene/corresponding-cds ?gcds]
-                      [?gcds :gene.corresponding-cds/cds ?cds]
-                      [?ocds :oligo-set.overlaps-cds/cds ?cds]
-                      [?oligo :oligo-set/overlaps-cds ?ocds]
-                      [?oligo :oligo-set/type ?type]]
-             db (:db/id gene) (keys probe-types))
-          (map (fn [oid]
-                 (let [oligo (entity db oid)]
-                   (assoc (pack-obj "oligo-set" oligo)
-                          :class "pcr_oligo"
-                          :label (format
-                                   "%s [%s]"
-                                   (:oligo-set/id oligo)
-                                   (some probe-types (:oligo-set/type oligo)))))))
-          (seq))
-     :description "microarray probes"}))
-
-(defn matching-cdnas [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->> (q '[:find [?cdna ...]
-               :in $ ?gene
-               :where [?gene :gene/corresponding-cds ?gcds]
-                      [?gcds :gene.corresponding-cds/cds ?cds]
-                      [?cds :cds/matching-cdna ?mcdna]
-                      [?mcdna :cds.matching-cdna/sequence ?cdna]]
-             db (:db/id gene))
-          (map #(pack-obj "sequence" (entity db %)))
-          (seq))
-     :description "cDNAs matching this gene"}))
-
-(defn antibodies [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->> (q '[:find [?ab ...]
-               :in $ ?gene
-               :where [?gab :antibody.gene/gene ?gene]
-                      [?ab :antibody/gene ?gab]]
-             db (:db/id gene))
-          (map
-            (fn [abid]
-              (let [ab (entity db abid)]
-                {:antibody (pack-obj "antibody" ab)
-                 :summary (:antibody.summary/text (:antibody/summary ab))
-                 :laboratory (map (partial pack-obj "laboratory") (:antibody/location ab))})))
-          (seq))
-     :description "antibodies generated against protein products or gene fusions"}))
 
 #_(def ^:private child-rule  '[[(child ?parent ?min ?max ?method ?c) [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
                                                                    [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
@@ -1239,80 +1099,6 @@
      [?c :locatable/method ?method]
      [(<= ?cmin ?max)]
      [(>= ?cmax ?min)]]])
-
-(defn orfeome-primers [gene]
-  (let [db  (d/entity-db gene)
-        [parent start end] (root-segment gene)]
-    {:data
-     ;;
-     ;; Big assembly-navigation query should probably be factored out somewhere
-     ;; once we're a bit more solid about how this stuff should work.
-     ;;
-     (if parent
-       (->> (q '[:find [?p ...]
-                 :in $ % ?seq ?min ?max
-                 :where [?method :method/id "Orfeome"]
-                        (or-join [?seq ?min ?max ?method ?p]
-                          (and
-                            [?ss-seq :locatable/assembly-parent ?seq]
-                            [?ss-seq :locatable/min ?ss-min]
-                            [?ss-seq :locatable/max ?ss-max]
-                            [(<= ?ss-min ?max)]
-                            [(>= ?ss-max ?min)]
-                            [(- ?min ?ss-min -1) ?rel-min]
-                            [(- ?max ?ss-min -1) ?rel-max]
-                            (child ?ss-seq ?rel-min ?rel-max ?method ?p))
-                          (child ?seq ?min ?max ?method ?p))]
-               db
-               child-rule
-               (:db/id parent) start end)
-            (map
-              (fn [ppid]
-                (let [pp (entity db ppid)]
-                  {:id    (:pcr-product/id pp)
-                   :class "pcr_oligo"
-                   :label (:pcr-product/id pp)})))
-            (seq)))
-     :description "ORFeome Project primers and sequences"}))
-
-(defn primer-pairs [gene]
-  (let [db                 (d/entity-db gene)
-        [parent start end] (root-segment gene)]
-    {:data
-     (if parent
-       (->> (q '[:find [?p ...]
-                 :in $ % ?seq ?min ?max
-                 :where [?method :method/id "GenePairs"]
-                        (or-join [?seq ?min ?max ?method ?p]
-                          (and
-                            [?ss-seq :locatable/assembly-parent ?seq]
-                            [?ss-seq :locatable/min ?ss-min]
-                            [?ss-seq :locatable/max ?ss-max]
-                            [(<= ?ss-min ?max)]
-                            [(>= ?ss-max ?min)]
-                            [(- ?min ?ss-min -1) ?rel-min]
-                            [(- ?max ?ss-min -1) ?rel-max]
-                            (child ?ss-seq ?rel-min ?rel-max ?method ?p))
-                          (child ?seq ?min ?max ?method ?p))]
-               db
-               child-rule
-               (:db/id parent) start end)
-            (map
-              (fn [ppid]
-                (let [pp (entity db ppid)]
-                  {:id    (:pcr-product/id pp)
-                   :class "pcr_oligo"
-                   :label (:pcr-product/id pp)})))
-            (seq)))
-     :description "Primer pairs"}))
-
-(defn sage-tags [gene]
-  {:data
-   (seq (map #(pack-obj "sage-tag" (:sage-tag/_gene %)) (:sage-tag.gene/_gene gene)))
-
-   :description
-   "SAGE tags identified"})
-
 
 ;;
 ;; New style GO widget
@@ -1497,20 +1283,6 @@
 ;; Expression widget
 ;;
 
-(defn anatomy-terms [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->> (q '[:find [?at ...]
-               :in $ ?gene
-               :where [?epg :expr-pattern.gene/gene ?gene]
-                      [?ep :expr-pattern/gene ?epg]
-                      [?ep :expr-pattern/anatomy-term ?epa]
-                      [?epa :expr-pattern.anatomy-term/anatomy-term ?at]]
-             db (:db/id gene))
-          (map (fn [at-id]
-                 (pack-obj "anatomy-term" (entity db at-id)))))
-     :description "anatomy terms from expression patterns for the gene"}))
-
 (defn- expr-pattern-type [ep]
   (some (set (keys ep)) [:expr-pattern/reporter-gene
                          :expr-pattern/in-situ
@@ -1524,111 +1296,6 @@
                          :expr-pattern/epic
                          :expr-pattern/cis-regulatory-element]))
 
-(defn expression-patterns [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-      (q '[:find [?ep ...]
-           :in $ ?gene
-           :where [?epg :expr-pattern.gene/gene ?gene]
-                  [?ep :expr-pattern/gene ?epg]
-                  (not
-                    [?ep :expr-pattern/microarray _])
-                  (not
-                    [?ep :expr-pattern/tiling-array _])]
-         db (:db/id gene))
-      (map
-       (fn [ep-id]
-         (let [ep (entity db ep-id)]
-           (vmap
-            :expression_pattern
-            (pack-obj "expr-pattern" ep)
-
-            :description
-            (if-let [desc (or (:expr-pattern/pattern ep)
-                              (:expr-pattern/subcellular-localization ep)
-                              (:expr-pattern.remark/text (:expr-pattern/remark ep)))]
-              {:text desc
-               :evidence (vmap
-                          :Reference (pack-obj "paper" (first (:expr-pattern/reference ep))))})
-
-            :type
-            (rest-api-obj/humanize-ident (expr-pattern-type ep))
-
-            :expressed_in
-            (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
-                 (:expr-pattern/anatomy-term ep))
-
-            :life_stage
-            (map #(pack-obj "life-stage" (:expr-pattern.life-stage/life-stage %))
-                 (:expr-pattern/life-stage ep))
-
-            :go_term
-            (if-let [go (:expr-pattern/go-term ep)]
-              {:text (map #(pack-obj "go-term" (:expr-pattern.go-term/go-term %)) go)
-               :evidence {"Subcellular localization" (:expr-pattern/subcellular-localization ep)}})
-
-            :transgene
-            (if (:expr-pattern/transgene ep)
-              (map
-               (fn [tg]
-                 (let [packed (pack-obj "transgene" tg)
-                       cs     (:transgene/construction-summary tg)]
-                   (if cs
-                     {:text packed
-                      :evidence {:Construction_summary cs}}
-                     packed)))
-               (:expr-pattern/transgene ep))
-              (map
-               (fn [cons]
-                 (let [packed (pack-obj "construct" cons)
-                       cs     (:construct/construction-summary cons)]
-                   (if cs
-                     {:text packed
-                      :evidence {:Construction_summary cs}}
-                     packed)))
-               (:expr-pattern/construct ep)))))
-
-           )))
-     :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
-
-
-(defn expression-clusters [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?ec ...]
-            :in $ ?gene
-            :where [?ecg :expression-cluster.gene/gene ?gene]
-                   [?ec :expression-cluster/gene ?ecg]]
-          db (:db/id gene))
-       (map
-         (fn [ec-id]
-           (let [ec (entity db ec-id)]
-             {:expression_cluster (pack-obj "expression-cluster" ec)
-              :description     (apply str (:expression-cluster/description ec))}))))
-     :description
-     "expression cluster data"}))
-
-(defn anatomic-expression-patterns [gene]
-  {:data  {}
-   :description "expression patterns for the gene"})
-
-(defn anatomy-function [gene]
-  (let [db (d/entity-db gene)]
-   {:data
-    (->>
-     (q '[:find [?af ...]
-          :in $ ?gene
-          :where [?afg :anatomy-function.gene/gene ?gene]
-                 [?af :anatomy-function/gene ?afg]]
-        db (:db/id gene))
-      (map
-       (fn [af-id]
-        (let [af (entity db af-id)]
-           {:anatomy-function (pack-obj "expression-cluster" af)})))) ;; need to still make this packed object - so far have not seen an exmample of it filled in
-      :description "anatomy functions associatated with this gene"}))
-
 ;; I haven't found an example for this to show that it works
 (defn- curated-images [ep]
  (let [images (:picture/expr_pattern ep)]
@@ -1636,38 +1303,6 @@
       (fn [image]
         (pack-obj "picture" image))
       images)))
-
-(defn expression-profiling-graphs [gene]
-  (let [db (d/entity-db gene)]
-   {:data
-    (->>
-     (q '[:find [?ep ...]
-          :in $ ?gene
-          :where [?epg :expr-pattern.gene/gene ?gene]
-                 [?ep :expr-pattern/gene ?epg]]
-        db (:db/id gene))
-      (map
-       (fn [ep-id]
-        (let [ep (entity db ep-id)]
-          {;;:data-test {:id (:expr-pattern/id ep)
-  ;;                    :gene (:expr-pattern/gene ep) }
-  ;;                    :rnaseq (:expr-pattern/rnaseq ep)
-    ;;                  :pattern (:expr-pattern/pattern ep)
-      ;;                :reference (:expr-pattern/reference ep)}
-;;           :data (keys ep)
-            :database nil
-           :description nil
-           :expressed_in nil
-           :expression_pattern {:class "expr_pattern"
-                                :curated_images (curated-images ep) ;; should be array of pack-obj (pack-obj "picture )
-                                :id (:expr-pattern/id ep)
-                                :label (:expr-pattern/id ep)
-                                :taxonomy "all"}
-           :go_term (first (:expr-pattern/go-term ep)) ;; need to see example
-           :life_stage (:expr-pattern/life-stage ep) ;; need to see example
-           :transgene (:expr-pattern/transgene ep) ;; need to see example
-           :type (expr-pattern-type ep)}))))
-    :description (format "expression patterns associated with the gene:%s" (:gene/id gene))}))
 
 (defn fourd-expression-movies [gene]
   (let [db (d/entity-db gene)]
@@ -1701,156 +1336,21 @@
 
     :description "interactive 4D expression movies"}))
 
-(defn microarray-topology-map-position [gene]
-  {:data nil ;; this resquires segment data and can be found in the file: lib/WormBase/API/Role/Expression.pm
-   :description "microarray topography map"})
-
 (defn fpkm-expression-summary-ls [gene]
   (expression/fpkm-expression-summary-ls gene))
-
-
 
 ;;
 ;; Homology widget
 ;;
 
 (defn- pack-ortholog [db oid]
-  (let [ortho (entity db oid)]
+  (let [ortho (entity db oid)
+        o-species (:gene.ortholog/species ortho)
+        match-species (partial  re-matches #"^(\w)\w*\s+(.*)")]
     {:ortholog (pack-obj "gene" (:gene.ortholog/gene ortho))
-     :species (if-let [[_ genus species] (re-matches #"^(\w)\w*\s+(.*)"
-                                                     (:species/id (:gene.ortholog/species ortho)))]
-                {:genus genus :species species})
-     :method (map (partial pack-obj) (:evidence/from-analysis ortho))}))
-
-(defn- homology-orthologs [gene species]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?ortho ...]
-            :in $ ?gene [?species-id ...]
-            :where [?gene :gene/ortholog ?ortho]
-                   [?ortho :gene.ortholog/species ?species]
-                   [?species :species/id ?species-id]]
-          db (:db/id gene) species)
-       (map (partial pack-ortholog db)))
-     :description
-     "precalculated ortholog assignments for this gene"}))
-
-(defn- homology-orthologs-not [gene species]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?ortho ...]    ;; Look into why this can't be done with Datomic "not"
-            :in $ ?gene ?not-species
-            :where [?gene :gene/ortholog ?ortho]
-                   [?ortho :gene.ortholog/species ?species]
-                   [?species :species/id ?species-id]
-                   [(get ?not-species ?species-id :dummy) ?smember]
-                   [(= ?smember :dummy)]]
-          db (:db/id gene) (set species))
-       (map (partial pack-ortholog db)))
-     :description
-     "precalculated ortholog assignments for this gene"}))
-
-(defn homology-paralogs [gene]
-  {:data
-   (map
-     (fn [para]
-       {:ortholog (pack-obj "gene" (:gene.paralog/gene para))
-        :species (if-let [[_ genus species] (re-matches #"^(\w)\w*\s+(.*)"
-                                                        (:species/id (:gene.paralog/species para)))]
-                   {:genus genus :species species})
-        :method (map (partial pack-obj) (:evidence/from-analysis para))})
-     (:gene/paralog gene))
-   :description
-   "precalculated ortholog assignments for this gene"})
-
-(defn protein-domains [gene]
-  (let [db (d/entity-db gene)]
-    {:data
-     (->>
-       (q '[:find [?motif ...]
-            :in $ ?gene
-            :where [?gene :gene/corresponding-cds ?gcds]
-                   [?gcds :gene.corresponding-cds/cds ?cds]
-                   [?cds :cds/corresponding-protein ?cprot]
-                   [?cprot :cds.corresponding-protein/protein ?prot]
-                   [?homol :locatable/parent ?prot]
-                   [?homol :homology/motif ?motif]
-                   [?motif :motif/id ?mid]
-                   [(.startsWith ^String ?mid "INTERPRO:")]]
-          db (:db/id gene))
-       (map
-         (fn [motif-id]
-           (let [motif (entity db motif-id)]
-             [(first (:motif/title motif))
-              (pack-obj "motif" motif)])))
-       (into {}))
-     :description
-     "protein domains of the gene"}))
-
-(defn best-blastp-matches [gene]
-  (let [db    (d/entity-db gene)]
-    (if-let [[prot length]
-             (->> (q '[:find ?prot ?pep-len
-                       :in $ ?gene
-                       :where [?gene :gene/corresponding-cds ?gcds]
-                              [?gcds :gene.corresponding-cds/cds ?cds]
-                              [?cds :cds/corresponding-protein ?cprot]
-                              [?cprot :cds.corresponding-protein/protein ?prot]
-                              [?prot :protein/peptide ?pep]
-                              [?pep :protein.peptide/length ?pep-len]]
-                     db (:db/id gene))
-                  (sort-by second)
-                  (last))]   ; longest protein
-      {:data
-       {:hits
-        (->>
-          (q '[:find ?prot ?score ?min ?max
-               :in $ ?ref
-               :where [?homol :locatable/parent ?ref]
-                      [?homol :homology/protein ?prot]
-                      [?homol :locatable/score ?score]
-                      [?homol :locatable/min ?min]
-                      [?homol :locatable/max ?max]]
-             db prot)
-          (group-by (partial take 2))   ; ?prot and ?score as groupers
-          (map
-            (fn [[[prot score] lines]]
-              (let [prot (entity db prot)]
-                {:protein prot
-                 :species (:protein/species prot)
-                 :score score
-                 :coverage (reduce + (map (fn [[_ _ min max]] (- max min)) lines))})))
-          (remove #(.startsWith (:protein/id (:protein %)) "MSP"))
-          (group-by :species)
-          (map
-            (fn [[_ hits]]
-              (let [{:keys [protein species score coverage]}
-                    (->> (sort-by :score hits)
-                         (last))]
-                {:evalue (format "%7.3g" (Math/pow 10 (- score)))
-                 :percent (format "%2.1f%%" (float (* 100 (/ coverage length))))
-                 :taxonomy (if-let [[_ g spec] (re-matches #"(.).* +(.+)" (or (:species/id species) ""))]
-                             {:genus   g
-                              :species spec})
-                 :hit (pack-obj protein)
-                 :description
-                 (or
-                   (:protein/description protein)
-                   (:protein/gene-name protein)
-                   (->> (:cds.corresponding-protein/_protein protein)
-                        (first)
-                        (:cds/_corresponding-protein)
-                        (:cds/brief-identification)
-                        (:cds.brief-identification/text))
-                   "unknown")}))))}
-       :description
-       "best BLASTP hits from selected species"}
-      {:data         nil
-       :description  "no proteins found, no best blastp hits to display"})))
-
-
+     :species (if-let [[_ g s] (match-species (:species/id o-species))]
+                {:genus g :species s})
+     :method (map pack-obj (:evidence/from-analysis ortho))}))
 
 (def nematode-species
   ["Ancylostoma ceylanicum"
@@ -1879,8 +1379,6 @@
    "Strongyloides ratti"
    "Trichinella spiralis"
    "Trichuris suis"])
-
-
 
 ;;
 ;; History widget
@@ -2017,7 +1515,7 @@
                               " by cDNA(s)"))
                 {:keys [remark-map footnotes]}
                 (reduce (fn [{:keys [remark-map footnotes]} r]
-                          (let [pr (if-let [ev (get-evidence r)]
+                          (let [pr (if-let [ev (rest-api-obj/get-evidence r)]
                                      {:text     (:cds.remark/text r)
                                       :evidence ev}
                                      (:cds.remark/text r))]
@@ -2141,9 +1639,9 @@
      "Features associated with this Gene"}))
 
 (defn- get-segments [gene]
-  (let [g-species (helpers.species/parse-species-name (:species/id (:gene/species gene)))
-        sequence-database (datomic-rest-api.db.sequence/get-default-sequence-database g-species)
-        features (datomic-rest-api.helpers.sequence/sequence-features sequence-database (:gene/id gene))]
+  (let [g-species (parse-species-name (:species/id (:gene/species gene)))
+        sequence-database (seqdb/get-default-sequence-database g-species)
+        features (sequence-features sequence-database (:gene/id gene))]
     features))
 
 (defn- longest-segment [segments]

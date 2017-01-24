@@ -7,8 +7,6 @@
             [datomic.api :as d]
             [mount.core :as mount]))
 
-
-
 (defn resolve-xref-info
   "Resolve object references to an attribute `ident` given a `db` handle.
 

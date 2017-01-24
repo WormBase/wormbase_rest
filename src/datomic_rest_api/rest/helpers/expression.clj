@@ -1,9 +1,11 @@
 (ns datomic-rest-api.rest.helpers.expression
-  (:use pseudoace.utils)
   (:import java.text.SimpleDateFormat)
-  (:require [datomic.api :as d :refer (q)]
-            [clojure.string :as str]
-            [datomic-rest-api.rest.helpers.object :as rest-api-obj :refer (humanize-ident get-evidence pack-obj)]))
+  (:require
+   [clojure.string :as str]
+   [datomic.api :as d :refer (q)]
+   [datomic-rest-api.rest.helpers.object
+    :as rest-api-obj
+    :refer (humanize-ident get-evidence pack-obj)]))
 
 (defn- control-analysis? [analysis]
   (if-let [matched (re-matches #".+control_(mean|median)"
@@ -13,19 +15,21 @@
 
 (defn fpkm-expression-summary-ls [gene]
   (let [db (d/entity-db gene)
-        result-tuples (->> (q '[:find ?analysis ?fpkm ?stage
-                                :in $ ?gene
-                                :where [?gene :gene/rnaseq ?rnaseq]
-                                       [?rnaseq :gene.rnaseq/stage ?stage]
-                                       [?rnaseq :gene.rnaseq/fpkm ?fpkm]
-                                       [?rnaseq :evidence/from-analysis ?analysis]]
-                              db (:db/id gene))
-                           (map (fn [[analysis-id fpkm stage-id]]
-                                  (let [analysis (d/entity db analysis-id)
-                                        stage (d/entity db stage-id)]
-                                    [analysis fpkm stage]))))
+        result-tuples (->> (d/q '[:find ?analysis ?fpkm ?stage
+                                  :in $ ?gene
+                                  :where
+                                  [?gene :gene/rnaseq ?rnaseq]
+                                  [?rnaseq :gene.rnaseq/stage ?stage]
+                                  [?rnaseq :gene.rnaseq/fpkm ?fpkm]
+                                  [?rnaseq :evidence/from-analysis ?analysis]]
+                                db (:db/id gene))
+                       (map (fn [[analysis-id fpkm stage-id]]
+                              (let [analysis (d/entity db analysis-id)
+                                    stage (d/entity db stage-id)]
+                                [analysis fpkm stage]))))
         results (->> result-tuples
-                     (filter (fn [[analysis]] (not (control-analysis? analysis))))
+                     (filter (fn [[analysis]]
+                               (not (control-analysis? analysis))))
                      (map (fn [[analysis fpkm stage]]
                             {:value fpkm
                              :life_stage (pack-obj stage)

@@ -1,6 +1,6 @@
 (ns datomic-rest-api.helpers.sequence
-  (:require [hugsql.core :as hugsql]
-            [datomic-rest-api.db.sequence :as sequences]))
+  (:require
+   [datomic-rest-api.db.sequence :as sequences]))
 
 (defn sequence-features [sequence-database gene-id]
  (let [db ((keyword sequence-database) sequences/sequence-dbs)]

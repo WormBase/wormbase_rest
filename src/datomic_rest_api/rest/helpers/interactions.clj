@@ -1,7 +1,8 @@
 (ns datomic-rest-api.rest.helpers.interactions
-  (:use datomic-rest-api.rest.object)
   (:require [cheshire.core :as json]
             [datomic.api :as d :refer (db history q touch entity)]
+            [datomic-rest-api.rest.helpers.object
+             :refer (obj-get obj-name pack-obj)]
             [clojure.string :as str]
             [pseudoace.utils :refer [vmap vassoc]]))
 

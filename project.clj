@@ -1,5 +1,6 @@
 (defproject wormbase/datomic-rest-api "0.0.13"
-  :description "REST API for retrieving data from datomic on a per widget basis"
+  :description
+  "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
   :min-lein-version "2.0.0"
   :sign-releases false
@@ -40,27 +41,32 @@
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
   :jvm-opts ["-Xmx6G"
-             "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"  ;; same GC options as the transactor,
-                                                       ;; should minimize long pauses.
+             ;; same GC options as the transactor,
+             ;; should minimize long pauses.
+             "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"
              "-Ddatomic.objectCacheMax=2500000000"
              "-Ddatomic.txTimeoutMsec=1000000"]
-  :profiles {:dev {:dependencies [;;[midje "1.8.3"]
-                              ;;    [datomic-schema-grapher "0.0.1"]
-                                  [ring/ring-devel "1.5.1"]]
+  :profiles {:dev {:dependencies [[ring/ring-devel "1.5.1"]]
                    :source-paths ["dev"]
-                   :env {:trace-db "datomic:ddb://us-east-1/WS257/wormbase"}
-                   :plugins [;;[lein-midje "3.2"]
-                             [jonase/eastwood "0.2.3"]
+                   :env
+                   {:trace-db "datomic:ddb://us-east-1/WS257/wormbase"}
+                   :plugins [[jonase/eastwood "0.2.3"]
                              [lein-ancient "0.6.8"]
                              [lein-bikeshed "0.3.0"]
-                             [lein-kibit "0.1.2"]
                              [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
+                             [venantius/yagni "0.1.4"]
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
-                   :eastwood {:add-linters [:unused-namespaces]}
+                   :eastwood {:add-linters [:unused-namespaces]
+                              :exclude-namespaces [user]}
 		   :ring {:nrepl {:start? true :port 8131}}}
-             :datomic-free {:dependencies [[com.datomic/datomic-free "0.9.5385"
-                                            :exclusions [joda-time]]]}
-             :datomic-pro {:dependencies [[com.datomic/datomic-pro "0.9.5385"
+
+             :datomic-free
+             {:dependencies [[com.datomic/datomic-free "0.9.5385"
+                              :exclusions [joda-time]]]}
+             :datomic-pro
+             {:dependencies [[com.datomic/datomic-pro "0.9.5385"
                                            :exclusions [joda-time]]]}
-             :ddb {:dependencies [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
-                                   :exclusions [joda-time]]]}})
+             :ddb
+             {:dependencies
+              [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
+                :exclusions [joda-time]]]}})
