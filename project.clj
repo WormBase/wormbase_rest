@@ -56,7 +56,8 @@
                              [lein-kibit "0.1.2"]
                              [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
-                   :eastwood {:add-linters [:unused-namespaces]}
+                   :eastwood {:add-linters [:unused-namespaces]
+                              :exclude-namespaces [user]}
 		   :ring {:nrepl {:start? true :port 8131}}}
              :datomic-free {:dependencies [[com.datomic/datomic-free "0.9.5385"
                                             :exclusions [joda-time]]]}
