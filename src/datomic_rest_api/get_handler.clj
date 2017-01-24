@@ -2,20 +2,15 @@
   (:require
    [cheshire.core :as json :refer (parse-string)]
    [clojure.string :as str]
-   [clojure.walk]
    [compojure.core :refer (routes GET POST ANY context wrap-routes)]
-   [compojure.handler :as handler]
    [compojure.route :as route]
    [datomic-rest-api.db.main :refer (datomic-conn)]
    ;; widget definition file are required for their "side-effect", ie. register with whitelist
    [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
-   [datomic-rest-api.rest.widgets.gene]
    [datomic-rest-api.rest.widgets.transcript]
    [datomic.api :as d :refer (db history q touch entity)]
-   [environ.core :refer (env)]
    [hiccup.core :refer (html)]
    [mount.core :as mount]
-   [ring.adapter.jetty :refer (run-jetty)]
    [ring.util.response :refer (redirect file-response)])) 
 
 (declare handle-field-get)
