@@ -1,9 +1,10 @@
 (ns datomic-rest-api.rest.helpers.references
-  (:use datomic-rest-api.rest.object)
-  (:require [cheshire.core :as json]
-            [datomic.api :as d :refer (db history q touch entity)]
-            [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vassoc]]))
+  (:require
+   [cheshire.core :as json]
+   [datomic.api :as d]
+   [datomic-rest-api.rest.helpers.object :refer (obj-get pack-obj)]
+   [clojure.string :as str]
+   [pseudoace.utils :refer (vmap vassoc)]))
 
 (defn- format-paper [paper]
   {:ptype     (if-let [t (:paper.type/type (:paper/type paper))]

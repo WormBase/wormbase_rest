@@ -1,24 +1,22 @@
 (ns datomic-rest-api.get-handler
-  (:use  pseudoace.utils)
-  (:require [datomic.api :as d :refer (db history q touch entity)]
-            [clojure.walk]
-            [clojure.string :as str]
-            [ring.adapter.jetty :refer (run-jetty)]
-            [compojure.core :refer (routes GET POST ANY context wrap-routes)]
-            [compojure.route :as route]
-            [compojure.handler :as handler]
-            [ring.util.response :refer (redirect file-response)]
-            [cheshire.core :as json :refer (parse-string)]
-            [environ.core :refer (env)]
-            [hiccup.core :refer (html)]
-            [mount.core :as mount]
-            [datomic-rest-api.db.main :refer (datomic-conn)]
-            [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
-
-            ;; widget definition file are required for their "side-effect", ie. register with whitelist
-            [datomic-rest-api.rest.widgets.gene]
-            [datomic-rest-api.rest.widgets.transcript]))
-
+  (:require
+   [cheshire.core :as json :refer (parse-string)]
+   [clojure.string :as str]
+   [clojure.walk]
+   [compojure.core :refer (routes GET POST ANY context wrap-routes)]
+   [compojure.handler :as handler]
+   [compojure.route :as route]
+   [datomic-rest-api.db.main :refer (datomic-conn)]
+   ;; widget definition file are required for their "side-effect", ie. register with whitelist
+   [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
+   [datomic-rest-api.rest.widgets.gene]
+   [datomic-rest-api.rest.widgets.transcript]
+   [datomic.api :as d :refer (db history q touch entity)]
+   [environ.core :refer (env)]
+   [hiccup.core :refer (html)]
+   [mount.core :as mount]
+   [ring.adapter.jetty :refer (run-jetty)]
+   [ring.util.response :refer (redirect file-response)])) 
 
 (declare handle-field-get)
 (declare handle-widget-get)
@@ -41,7 +39,6 @@
    (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
         (handle-field-get db schema-name id field-name request))))
 
-
 (defn init []
   (print "Making Connection\n")
   (mount/start))
@@ -51,19 +48,9 @@
         handler (app-routes db)]
     (handler request)))
 
-(defn- get-port [env-key & {:keys [default]
-                            :or {default nil}}]
-  (let [p (env env-key)]
-    (cond
-      (integer? p) p
-      (string? p)  (parse-int p)
-       :default default)))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; internal functions and helper ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;; start of REST handler for widgets and fields
 (defn- json-response [data]
