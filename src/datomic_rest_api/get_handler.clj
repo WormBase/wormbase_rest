@@ -31,12 +31,9 @@
    (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name]
         :tags ["widget"]
         (handle-widget-get db schema-name id widget-name))
-   (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
+   (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name]
         :tags ["field"]
-        ;; :return Pizza
-        ;; :body [pizza Pizza]
-        :summary "echoes a Pizza"
-        (handle-field-get db schema-name id field-name request))))
+        (handle-field-get db schema-name id field-name))))
 
 (defn init []
   (print "Making Connection\n")
@@ -60,13 +57,13 @@
 
 ;; start of REST handler for widgets and fields
 
-(defn- handle-field-get [db schema-name id field-name request]
+(defn- handle-field-get [db schema-name id field-name]
   (if-let [field-fn (resolve-endpoint "field" schema-name field-name)]
     (let [adapted-field-fn (field-adaptor field-fn)
           data (adapted-field-fn db schema-name id)]
       (-> {:name id
            :class schema-name
-           :url (:uri request)}
+           :url (str/join "/" ["/rest" "field" schema-name id field-name])}
           (assoc (keyword field-name) data)
           (json-response)))
     (-> {:message "field not exist or not available to public "}
@@ -79,7 +76,7 @@
           data (adapted-widget-fn db schema-name id)]
       (-> {:name id
            :class schema-name
-           :url (:uri (str/join "/" ["rest" "widget" schema-name id widget-name]))
+           :url (str/join "/" ["/rest" "widget" schema-name id widget-name])
            :fields data}
           (json-response)))
     (-> {:message (format "%s widget for %s not exist or not available to public"
