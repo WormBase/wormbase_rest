@@ -1,17 +1,16 @@
+;; TODO: split up and refactor this whole namespace.
 (ns datomic-rest-api.rest.fields.gene
-  (:require [cheshire.core :as c :refer (generate-string)]
-            [pseudoace.binning :refer (reg2bins xbin bins)]
-            [datomic-rest-api.rest.helpers.date :as date-helper]
-            [datomic-rest-api.rest.helpers.object :as rest-api-obj :refer (humanize-ident get-evidence author-list pack-obj)]
-            [datomic-rest-api.rest.helpers.expression :as expression]
-            [datomic.api :as d :refer (db q touch entity)]
-            [clojure.string :as str]
-            [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]
-            [pseudoace.locatables :refer (root-segment)]
-            [datomic-rest-api.db.sequence :refer (get-default-sequence-database)]
-            [datomic-rest-api.helpers.sequence :refer (sequence-features)]
-            [datomic-rest-api.helpers.species :as helpers.species :refer (parse-species-name)]
-            [datomic-rest-api.rest.core :refer [def-rest-widget]]))
+  (:require
+   [clojure.string :as str]
+   [datomic-rest-api.db.sequence :as seqdb]
+   [datomic-rest-api.db.sequence :refer (get-default-sequence-database)]
+   [datomic-rest-api.helpers.sequence :refer (sequence-features)]
+   [datomic-rest-api.helpers.species :refer (parse-species-name)]
+   [datomic-rest-api.rest.helpers.date :as date-helper]
+   [datomic-rest-api.rest.helpers.expression :as expression]
+   [datomic-rest-api.rest.helpers.object :as rest-api-obj :refer (pack-obj)]
+   [datomic.api :as d :refer (db q touch entity)]
+   [pseudoace.utils :refer [vmap vmap-if vassoc cond-let those conjv]]))
 
 ;;
 ;; "name" field, included on all widgets.
@@ -128,7 +127,7 @@
 
 (defn gene-status [gene]
   {:data (if-let [class (:gene/status gene)]
-           (humanize-ident (:gene.status/status class)))
+           (rest-api-obj/humanize-ident (:gene.status/status class)))
    :description (format "current status of the Gene:%s %s" (:gene/id gene) "if not Live or Valid")})
 
 (defn gene-taxonomy [gene]
@@ -149,8 +148,9 @@
                           (first)
                           (:transcript/brief-identification)))]
      {:text (some (fn [[k v]] (if (= (name k) "text") v)) desc)
-      :evidence (or (get-evidence desc)
-                    (get-evidence (first (:gene/provisional-description gene))))}
+      :evidence (or (rest-api-obj/get-evidence desc)
+                    (rest-api-obj/get-evidence
+                     (first (:gene/provisional-description gene))))}
      {:text nil :evidence nil})
    :description "A manually curated description of the gene's function"})
 
@@ -159,7 +159,7 @@
         (->> (:gene/remark gene)
              (map (fn [rem]
                     {:text (:gene.remark/text rem)
-                     :evidence (get-evidence rem)}))
+                     :evidence (rest-api-obj/get-evidence rem)}))
              (seq))]
     {:data (if (empty? data) nil data)
      :description "curatorial remarks for the Gene"}))
@@ -173,7 +173,7 @@
 (defn named-by [gene]
   {:data
    (if-let [data (->> (:gene/cgc-name gene)
-                      (get-evidence)
+                      (rest-api-obj/get-evidence)
                       (mapcat val))]
      data)
    :description
@@ -204,7 +204,7 @@
 
 (defn cloned-by [gene]
   {:data
-   (if-let [ev (get-evidence (first (:gene/cloned-by gene)))]
+   (if-let [ev (rest-api-obj/get-evidence (first (:gene/cloned-by gene)))]
      {:cloned_by (key (first ev))
       :tag       (key (first ev))
       :source    (first (val (first ev)))})
@@ -237,7 +237,7 @@
                   (->> (:gene/disease-relevance gene)
                        (map (fn [rel]
                               {:text (:gene.disease-relevance/note rel)
-                               :evidence (get-evidence rel)}))
+                               :evidence (rest-api-obj/get-evidence rel)}))
                        (seq))]
            data)
    :description
@@ -279,12 +279,12 @@
      :description "the gene this one has merged into"}))
 
 (defn- get-structured-description [gene type]
-  (let [key     (keyword "gene" type)
+  (let [gene-type     (keyword "gene" type)
         txt-key (keyword (str "gene." type) "text")]
-    (->> (key gene)
+    (->> (gene-type gene)
          (map (fn [data]
                 {:text     (txt-key data)
-                 :evidence (get-evidence data)}))
+                 :evidence (rest-api-obj/get-evidence data)}))
          (seq))))
 
 (defn structured-description [gene]
@@ -298,7 +298,7 @@
                          :let [txt (:gene.provisional-description/text p)]
                          :when (not (cds txt))]
                      {:text txt
-                      :evidence (get-evidence p)})))
+                      :evidence (rest-api-obj/get-evidence p)})))
 
                :Other_description
                (get-structured-description gene "other-description")
@@ -393,7 +393,8 @@
                ", "
                (if (= nil (:paper/publication-date paper))
                  ""
-                 (first (str/split (:paper/publication-date paper) #"-"))))})
+                 (first (str/split (:paper/publication-date paper)
+                                   #"-"))))})
 
 (defn parse-int [s]
   (Integer. (re-find  #"\d+" s )))
@@ -536,7 +537,7 @@
     (if
       (contains? holder :phenotype-info/maternal)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.maternal/value
             (:phenotype-info/maternal holder)))))
 
@@ -544,7 +545,7 @@
     (if
       (contains? holder :phenotype-info/paternal)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.paternal/value
             (:phenotype-info/paternal holder)))))
 
@@ -552,7 +553,7 @@
     (if
       (contains? holder :phenotype-info/haplo-insufficient)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.paternal/value
             (:phenotype-info/haplo-insufficient holder)))))
 
@@ -563,7 +564,7 @@
         (remove
           nil?
           [(create-tag
-             (humanize-ident (:phenotype-info.variation-effect/value ve)))
+             (rest-api-obj/humanize-ident (:phenotype-info.variation-effect/value ve)))
            (if
              (contains? ve :evidence/person-evidence)
              (create-tag "Person_evidence"))
@@ -590,7 +591,7 @@
     (if
       (contains? holder :phenotype-info/ease-of-scoring)
       (create-tag
-        (humanize-ident
+        (rest-api-obj/humanize-ident
           (:phenotype-info.ease-of-scoring/value
             (:phenotype-info/ease-of-scoring holder)))))
 
@@ -603,7 +604,7 @@
     :Male_mating_efficiency
     (if
       (contains? variation :variation/male-mating-efficiency)
-      (humanize-ident
+      (rest-api-obj/humanize-ident
         (:variation.male-mating-efficiency/value
           (:variation/male-mating-efficiency variation))))
 
@@ -756,26 +757,25 @@
                     (map (fn [pid]
                            [pid (pack-obj "phenotype" (entity db pid))]))
                     (into {}))
-        ints (->> (mapcat second table)
-                  (set)
-                  (map (fn [iid]
-                         (let [int (entity db iid)]
-                           [iid
-                            {:interaction (pack-obj "interaction" int)
-                             :citations (map (partial pack-obj "paper") (:interaction/paper int))}])))
+        inters (->> (mapcat second table)
+                    (set)
+                    (map
+                     (fn [iid]
+                       (let [int (entity db iid)]
+                         [iid
+                          {:interaction (pack-obj "interaction" int)
+                           :citations (map (partial pack-obj "paper")
+                                           (:interaction/paper int))}])))
                   (into {}))
         data (map (fn [[pheno pints int-type]]
                     {:interaction_type
                      (rest-api-obj/humanize-ident int-type)
-
                      :phenotype
                      (phenos pheno)
-
                      :interactions
-                     (map #(:interaction (ints %)) pints)
-
+                     (map #(:interaction (inters %)) pints)
                      :citations
-                     (map #(:citations (ints %)) pints)})
+                     (map #(:citations (inters %)) pints)})
                   table)]
     {:data (if (empty? data) nil data)
      :description
@@ -1344,12 +1344,13 @@
 ;;
 
 (defn- pack-ortholog [db oid]
-  (let [ortho (entity db oid)]
+  (let [ortho (entity db oid)
+        o-species (:gene.ortholog/species ortho)
+        match-species (partial  re-matches #"^(\w)\w*\s+(.*)")]
     {:ortholog (pack-obj "gene" (:gene.ortholog/gene ortho))
-     :species (if-let [[_ genus species] (re-matches #"^(\w)\w*\s+(.*)"
-                                                     (:species/id (:gene.ortholog/species ortho)))]
-                {:genus genus :species species})
-     :method (map (partial pack-obj) (:evidence/from-analysis ortho))}))
+     :species (if-let [[_ g s] (match-species (:species/id o-species))]
+                {:genus g :species s})
+     :method (map pack-obj (:evidence/from-analysis ortho))}))
 
 (def nematode-species
   ["Ancylostoma ceylanicum"
@@ -1514,7 +1515,7 @@
                               " by cDNA(s)"))
                 {:keys [remark-map footnotes]}
                 (reduce (fn [{:keys [remark-map footnotes]} r]
-                          (let [pr (if-let [ev (get-evidence r)]
+                          (let [pr (if-let [ev (rest-api-obj/get-evidence r)]
                                      {:text     (:cds.remark/text r)
                                       :evidence ev}
                                      (:cds.remark/text r))]
@@ -1638,9 +1639,9 @@
      "Features associated with this Gene"}))
 
 (defn- get-segments [gene]
-  (let [g-species (helpers.species/parse-species-name (:species/id (:gene/species gene)))
-        sequence-database (datomic-rest-api.db.sequence/get-default-sequence-database g-species)
-        features (datomic-rest-api.helpers.sequence/sequence-features sequence-database (:gene/id gene))]
+  (let [g-species (parse-species-name (:species/id (:gene/species gene)))
+        sequence-database (seqdb/get-default-sequence-database g-species)
+        features (sequence-features sequence-database (:gene/id gene))]
     features))
 
 (defn- longest-segment [segments]
