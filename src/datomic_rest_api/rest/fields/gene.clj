@@ -121,9 +121,11 @@
    :description "The gene cluster for this gene"})
 
 (defn gene-other-names [gene]
-   {:data (if-let [data (map #(get % "gene.other-name/text") (:gene/other-name gene))]
-             data)
-    :description (format "other names that have been used to refer to %s" (:gene/id gene))})
+  {:data (if-let [data (map #(:gene.other-name/text %)
+                            (:gene/other-name gene))]
+            data)
+   :description (format "other names that have been used to refer to %s"
+                        (:gene/id gene))})
 
 (defn gene-status [gene]
   {:data (if-let [class (:gene/status gene)]
