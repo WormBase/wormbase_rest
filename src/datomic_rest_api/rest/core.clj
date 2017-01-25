@@ -2,7 +2,6 @@
   (:require [datomic.api :as d]
             [clojure.string :as str]))
 
-
 (defn field-adaptor [field-fn]
   (fn [db class id]
     (let [wbid-field (str class "/id")]
