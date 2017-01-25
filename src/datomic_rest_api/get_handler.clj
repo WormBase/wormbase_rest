@@ -28,9 +28,9 @@
         (html [:ul (->> (endpoint-urls "widget")
                         (map #(vector :li %)))]))
    (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name :as request]
-        (handle-widget-get db schema-name id widget-name request))
+     (handle-widget-get db schema-name id widget-name request))
    (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name :as request]
-        (handle-field-get db schema-name id field-name request))))
+     (handle-field-get db schema-name id field-name request))))
 
 (defn init []
   (print "Making Connection\n")
