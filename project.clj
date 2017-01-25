@@ -34,6 +34,7 @@
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
   :main ^:skip-aot datomic-rest-api.get-handler
+  :resource-paths ["resources"]
   :uberjar {:aot :all}
   :ring {:handler datomic-rest-api.get-handler/app
          :host "0.0.0.0"
