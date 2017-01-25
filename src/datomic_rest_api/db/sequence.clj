@@ -6,7 +6,7 @@
             [clojure.data.json :as json]))
 
 (defn database-version []
-  (env :wb-version "WS257"))
+  (env :ws-version))
 
 (def species-assemblies
   (->> "ASSEMBLIES.json"
