@@ -5,8 +5,8 @@
 ## Setting environment variables
 
 ```bash
-export WS_VERSION=WS256
-export TRACE_DB="datomic:ddb://us-east-1/WS256/wormbase"
+export WS_VERSION=WS257
+export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 ```
 
 ## Starting server in development
