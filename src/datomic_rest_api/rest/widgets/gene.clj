@@ -1,6 +1,7 @@
 (ns datomic-rest-api.rest.widgets.gene
   (:require [datomic-rest-api.rest.core :refer [def-rest-widget register-independent-field]]
-            [datomic-rest-api.rest.fields.gene :as gene-fields]))
+            [datomic-rest-api.rest.fields.gene :as gene-fields]
+            [compojure.api.sweet :as sweet]))
 
 (def-rest-widget overview
   {:name                     gene-fields/name-field
@@ -67,6 +68,9 @@
   {:name  gene-fields/name-field
    :xrefs gene-fields/xrefs})
 
-(register-independent-field "fpkm_expression_summary_ls" gene-fields/fpkm-expression-summary-ls)
-(register-independent-field "alleles_other" gene-fields/alleles-other)
-(register-independent-field "polymorphisms" gene-fields/polymorphisms)
+
+(defn gene-routes [db]
+  (sweet/routes
+   (register-independent-field db "gene" "fpkm_expression_summary_ls" gene-fields/fpkm-expression-summary-ls)
+   (register-independent-field db "gene" "alleles_other" gene-fields/alleles-other)
+   (register-independent-field db "gene" "polymorphisms" gene-fields/polymorphisms)))

@@ -7,14 +7,12 @@
    [schema.core :as s]
    [datomic-rest-api.db.main :refer (datomic-conn)]
    ;; widget definition file are required for their "side-effect", ie. register with whitelist
-   [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
+;;   [datomic-rest-api.rest.core :refer (field-adaptor widget-adaptor resolve-endpoint endpoint-urls)]
    [datomic.api :as d :refer (db history q touch entity)]
    [hiccup.core :refer (html)]
    [mount.core :as mount]
-   [datomic-rest-api.rest.widgets.gene]))
+   [datomic-rest-api.rest.widgets.gene :refer (gene-routes)]))
 
-(declare handle-field-get)
-(declare handle-widget-get)
 
 (defn app-routes [db]
   (sweet/api
@@ -28,12 +26,13 @@
             :tags [{:name "api", :description "some apis"}
                    {:name "widget", :description "some widget"}
                    {:name "field", :description "some field"}]}}}
-   (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name]
-        :tags ["widget"]
-        (handle-widget-get db schema-name id widget-name))
-   (GET "/rest/field/:schema-name/:id/:field-name" [schema-name id field-name]
-        :tags ["field"]
-        (handle-field-get db schema-name id field-name))))
+   (apply sweet/routes
+          [
+           ;; (GET "/rest/widget/:schema-name/:id/:widget-name" [schema-name id widget-name]
+           ;;      :tags ["widget"]
+           ;;     (handle-widget-get db schema-name id widget-name))
+           (gene-routes db)]
+       )))
 
 (defn init []
   (print "Making Connection\n")
@@ -43,46 +42,3 @@
   (let [db (d/db datomic-conn)
         handler (app-routes db)]
     (handler request)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; internal functions and helper ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; start of REST handler for widgets and fields
-(defn- json-response [data]
-  (-> data
-      (json/generate-string {:pretty true})
-      (ring.util.response/response)
-      (ring.util.response/content-type "application/json")))
-
-;; start of REST handler for widgets and fields
-
-(defn- handle-field-get [db schema-name id field-name]
-  (if-let [field-fn (resolve-endpoint "field" schema-name field-name)]
-    (let [adapted-field-fn (field-adaptor field-fn)
-          data (adapted-field-fn db schema-name id)]
-      (-> {:name id
-           :class schema-name
-           :url (str/join "/" ["/rest" "field" schema-name id field-name])}
-          (assoc (keyword field-name) data)
-          (json-response)))
-    (-> {:message "field not exist or not available to public "}
-        (json-response)
-        (ring.util.response/status 404))))
-
-(defn- handle-widget-get [db schema-name id widget-name]
-  (if-let [widget-fn (resolve-endpoint "widget" schema-name widget-name)]
-    (let [adapted-widget-fn (widget-adaptor widget-fn)
-          data (adapted-widget-fn db schema-name id)]
-      (-> {:name id
-           :class schema-name
-           :url (str/join "/" ["/rest" "widget" schema-name id widget-name])
-           :fields data}
-          (json-response)))
-    (-> {:message (format "%s widget for %s not exist or not available to public"
-                          (str/capitalize widget-name)
-                          (str/capitalize schema-name))}
-        (json-response)
-        (ring.util.response/status 404))))
-
-;; END of REST handler for widgets and fields
