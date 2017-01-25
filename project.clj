@@ -61,10 +61,10 @@
 		   :ring {:nrepl {:start? true :port 8131}}}
 
              :datomic-free
-             {:dependencies [[com.datomic/datomic-free "0.9.5385"
+             {:dependencies [[com.datomic/datomic-free "0.9.5554"
                               :exclusions [joda-time]]]}
              :datomic-pro
-             {:dependencies [[com.datomic/datomic-pro "0.9.5385"
+             {:dependencies [[com.datomic/datomic-pro "0.9.5554"
                                            :exclusions [joda-time]]]}
              :ddb
              {:dependencies
