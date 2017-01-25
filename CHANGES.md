@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+##[0.0.15] - 2017-01-25
+- Adding env variable to eb config
+
 ##[0.0.14] - 2017-01-25
 - upgrade-to-datomic-0.9.5554
 - Fix-require-widgets-for-side-effects
