@@ -5,8 +5,8 @@
 ## Setting environment variables
 
 ```bash
-export WS_VERSION=WS256
-export TRACE_DB="datomic:ddb://us-east-1/WS256/wormbase"
+export WS_VERSION=WS257
+export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 ```
 
 ## Starting server in development
@@ -116,4 +116,11 @@ eb deploy
 
 TBD: JVM memory options.
 
-[uberjar]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
+[uberjar](http://stackoverflow.com/questions/11947037/what-is-an-uber-jar)
+
+##Sequence database list
+
+```bash
+export DB_VERSION=WSXXX;
+curl ftp://ftp.wormbase.org/pub/wormbase/releases/$DB_VERSION/species/ASSEMBLIES.$DB_VERSION.json > ASSEMBLIES.$DB_VERSION.json;
+```

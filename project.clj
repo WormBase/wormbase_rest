@@ -1,5 +1,6 @@
-(defproject wormbase/datomic-rest-api "0.0.13"
-  :description "REST API for retrieving data from datomic on a per widget basis"
+(defproject wormbase/datomic-rest-api "0.0.14"
+  :description
+  "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
   :min-lein-version "2.0.0"
   :sign-releases false
@@ -7,56 +8,65 @@
   [[org.clojure/clojure "1.8.0"]
    [datomic-schema "1.3.0"]
    [wormbase/pseudoace "0.4.14"]
-   [mount "0.1.10"]
+   [mount "0.1.11"]
    [hiccup "1.0.5"]
-   [ring "1.5.0"]
+   [ring "1.5.1"]
    [ring/ring-anti-forgery "1.0.1"]
-   [ring/ring-jetty-adapter "1.5.0"]
+   [ring/ring-jetty-adapter "1.5.1"]
    [fogus/ring-edn "0.2.0"]
-   [compojure "1.4.0"]
+   [compojure "1.5.2"]
    [clj-http "3.1.0"]
    [com.ninjudd/ring-async "0.3.4"]
    [com.ninjudd/eventual "0.4.1"]
-   [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+   [org.clojure/core.async "0.2.395"]
    [bk/ring-gzip "0.1.1"]
    [org.apache.httpcomponents/httpclient "4.5.2"]
    [org.clojure/data.json "0.2.0"]
    [clj-time "0.12.0"]
    [cheshire "5.6.1"]
    [secretary "1.2.3"]
+   [mysql/mysql-connector-java "6.0.2"]
+   [org.clojure/java.jdbc "0.7.0-alpha1"]
+   [com.layerware/hugsql "0.4.7"]
    [environ "1.0.3"]]
   :source-paths ["src"]
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
-  :main datomic-rest-api.get-handler
-  :aot [datomic-rest-api.get-handler]
+  :main ^:skip-aot datomic-rest-api.get-handler
+  :uberjar {:aot :all}
   :ring {:handler datomic-rest-api.get-handler/app
          :host "0.0.0.0"
          :init datomic-rest-api.get-handler/init}
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
   :jvm-opts ["-Xmx6G"
-             "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"  ;; same GC options as the transactor,
-                                                       ;; should minimize long pauses.
+             ;; same GC options as the transactor,
+             ;; should minimize long pauses.
+             "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"
              "-Ddatomic.objectCacheMax=2500000000"
              "-Ddatomic.txTimeoutMsec=1000000"]
-  :profiles {:dev {:dependencies [;;[midje "1.8.3"]
-                              ;;    [datomic-schema-grapher "0.0.1"]
-                                  [ring/ring-devel "1.5.0"]]
+  :profiles {:dev {:dependencies [[ring/ring-devel "1.5.1"]]
                    :source-paths ["dev"]
-                   :env {:trace-db "datomic:ddb://us-east-1/WS256/wormbase"}
-                   :plugins [;;[lein-midje "3.2"]
-                             [jonase/eastwood "0.2.3"]
+                   :env
+                   {:trace-db "datomic:ddb://us-east-1/WS257/wormbase"}
+                   :plugins [[jonase/eastwood "0.2.3"]
                              [lein-ancient "0.6.8"]
                              [lein-bikeshed "0.3.0"]
-                             [lein-kibit "0.1.2"]
                              [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
+                             [venantius/yagni "0.1.4"]
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
-                   :eastwood {:add-linters [:unused-namespaces]}}
-             :datomic-free {:dependencies [[com.datomic/datomic-free "0.9.5385"
-                                            :exclusions [joda-time]]]}
-             :datomic-pro {:dependencies [[com.datomic/datomic-pro "0.9.5385"
+                   :eastwood {:add-linters [:unused-namespaces]
+                              :exclude-namespaces [user]}
+		   :ring {:nrepl {:start? true :port 8131}}}
+
+             :datomic-free
+             {:dependencies [[com.datomic/datomic-free "0.9.5554"
+                              :exclusions [joda-time]]]}
+             :datomic-pro
+             {:dependencies [[com.datomic/datomic-pro "0.9.5554"
                                            :exclusions [joda-time]]]}
-             :ddb {:dependencies [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
-                                   :exclusions [joda-time]]]}})
+             :ddb
+             {:dependencies
+              [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
+                :exclusions [joda-time]]]}})

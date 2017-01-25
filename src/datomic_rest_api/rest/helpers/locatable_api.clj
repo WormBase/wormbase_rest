@@ -1,12 +1,12 @@
-(ns datomic-rest-api.rest.locatable-api
-  (:use pseudoace.utils
-        datomic-rest-api.rest.object
-        pseudoace.locatables
-        pseudoace.sequence)
-  (:require pseudoace.binning
-            [datomic.api :as d :refer (q entity)]
-            [cheshire.core :as json]
-            [compojure.core :refer (routes GET)]))
+(ns datomic-rest-api.rest.helpers.locatable-api
+  (:require
+   [cheshire.core :as json]
+   [compojure.core :refer (routes GET)]
+   [datomic-rest-api.rest.helpers.object :refer (pack-obj)]
+   [datomic.api :as d]
+   [pseudoace.locatables :refer (features root-segment)]
+   [pseudoace.sequence :refer (seq-length)]
+   [pseudoace.utils :refer (parse-int those vmap)]))
 
 (defn- feature-method [f]
   (if-let [method-key (first (filter #(= (name %) "method") (keys f)))]
@@ -76,7 +76,8 @@
      (sort-by :start))))
 
 (defn- transcript-structure [t tmin tmax]
-  (if-let [cds (:transcript.corresponding-cds/cds (:transcript/corresponding-cds t))]
+  (if-let [cds (:transcript.corresponding-cds/cds
+                (:transcript/corresponding-cds t))]
     (let [[_ cds-min cds-max] (root-segment cds)]
       (coding-transcript-structure t tmin tmax cds cds-min cds-max))
     (noncoding-transcript-structure t tmin tmax)))
@@ -86,9 +87,12 @@
    (features db type (:db/id parent) min max)
    (map
     (fn [[fid min max]]
-      (let [feature (entity db fid)]
+      (let [feature (d/entity db fid)]
         (vmap
-         :uniqueID (str fid)   ;; Check whether JBrowse *really* needs this...
+
+         ;; Check whether JBrowse *really* needs this...
+         :uniqueID (str fid)
+
          :name     (:label (pack-obj feature))
          :start    min
          :end      max
@@ -102,7 +106,7 @@
 
 
 (defn json-features [db {:keys [type id] :strs [start end]}]
-  (if-let [parent (entity db [:sequence/id id])]
+  (if-let [parent (d/entity db [:sequence/id id])]
     (let [start            (parse-int start)
           end              (parse-int end)
           [parent min max] (root-segment parent
@@ -110,21 +114,28 @@
                                          (or end (seq-length parent)))]
       {:status 200
        :content-type "application/json"
-       :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
+
+       ;; Should be set elsewhere.
+       :headers {"access-control-allow-origin" "*"}
+
        :body (json/generate-string
               {:features (get-features db type parent min max)}
               {:pretty true})})))
 
-(defn json-stats-global [db {:keys [type]}]
+(defn json-stats-global
+  [db {:keys [type]}]
   {:status 200
    :content-type "application/json"
-   :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
+   ;; Should be set elsewhere.
+   :headers {"access-control-allow-origin" "*"}
+
    :body (json/generate-string
           {}
           {:pretty true})})
 
-(defn json-stats-region [db {:keys [type id] :strs [start end]}]
-  (if-let [parent (entity db [:sequence/id id])]
+(defn json-stats-region
+  [db {:keys [type id] :strs [start end]}]
+  (if-let [parent (d/entity db [:sequence/id id])]
     (let [start            (parse-int start)
           end              (parse-int end)
           [parent min max] (root-segment parent
@@ -133,7 +144,10 @@
           features         (get-features db type parent min max)]
       {:status 200
        :content-type "application/json"
-       :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
+
+       ;; Should be set elsewhere.
+       :headers {"access-control-allow-origin" "*"}
+
        :body (json/generate-string
               {:featureDensity (float (/ (count features) (- max min)))
                :featureCount   (count features)}
@@ -142,7 +156,7 @@
 (defn json-densities [db {:keys [type id]
                           :strs [start end]
                           bin-size "basesPerBin"}]
-  (if-let [parent (entity db [:sequence/id id])]
+  (if-let [parent (d/entity db [:sequence/id id])]
     (let [reg-start        (parse-int start)
           reg-end          (parse-int end)
           [parent rmin rmax] (root-segment parent
@@ -158,13 +172,20 @@
                                (fn [cnts bin]
                                  (update cnts bin inc))
                                cnts
-                               (range (max 0 (quot (- start rmin) bin-size))
-                                      (min bin-count (quot (- end rmin) bin-size)))))
+                               (range (max 0
+                                           (quot (- start rmin)
+                                                 bin-size))
+                                      (min bin-count
+                                           (quot (- end rmin)
+                                                 bin-size)))))
                             (vec (repeat bin-count 0))
                             features)]
       {:status 200
        :content-type "application/json"
-       :headers {"access-control-allow-origin" "*"}    ;; Should be set elsewhere.
+
+       ;; Shouldb be set elsewhere.
+       :headers {"access-control-allow-origin" "*"}    
+
        :body (json/generate-string
               {:bins counts
                :stats {:max (reduce max counts)

@@ -1,9 +1,9 @@
-(ns datomic-rest-api.rest.object
-  (:use pseudoace.utils)
+(ns datomic-rest-api.rest.helpers.object
   (:import java.text.SimpleDateFormat)
-  (:require [datomic.api :as d :refer (db history q touch entity)]
-            [clj-time.format :as f]
-            [clojure.string :as str]))
+  (:require
+   [datomic.api :as d :refer (db history q touch entity)]
+   [clojure.string :as str]
+   [pseudoace.utils :refer (vmap-if)]))
 
 ;;
 ;; General purpose functions for working with Wormbase-ish entity-maps.
@@ -11,20 +11,23 @@
 
 (declare pack-obj)
 
-(defn obj-get [class db id]
-  "Retrieve an entity-map for object `id` of class `class` as of database-value `db`."
+(defn obj-get
+  "Retrieve an entity-map for object `id` of class `class`
+  as of database-value `db`."
+  [class db id]
   (entity db [(keyword class "id") id]))
 
-(defn obj-tax [class obj]
-  "If entity-map `obj` has a species attribute, return the short name of the
-   species, otherwise \"all\"."
+(defn obj-tax
+  "If entity-map `obj` has a species attribute,
+  return the short name of the species, otherwise \"all\"."
+  [class obj]
   (let [species-ident (keyword class "species")]
     (if-let [species (species-ident obj)]
-      (if-let [[_ g species] (re-matches #"(.).*[ _](.+)" (:species/id species))]
+      (if-let [[_ g species] (re-matches #"(.).*[ _](.+)"
+                                         (:species/id species))]
         (.toLowerCase (str g "_" species))
         "unknown")
       "all")))
-
 
 (defmulti obj-label
   "Build a human-readable label for `obj`"
@@ -74,11 +77,16 @@
      (str (author-lastname (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
-  (str (author-list paper) ", " (first (str/split (:paper/publication-date paper) #"-"))))
+  (str (author-list paper)
+       ", "
+       (first (str/split (:paper/publication-date paper)
+                         #"-"))))
 
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
-      (:feature/id feature)))
+      (if (nil? (:feature/other-name feature))
+        (:feature/id feature)
+        (first (:feature/other-name feature)))))
 
 (defmethod obj-label "anatomy-term" [_ term]
   (or (:anatomy-term.term/text (:anatomy-term/term term))
@@ -99,7 +107,7 @@
       (:transgene/id tg)))
 
 (defmethod obj-label "go-term" [_ go]
-  (first (:go-term/name go)))    ;; Not clear why multiples allowed here!
+  (first (:go-term/name go))) ;; Not clear why multiples allowed here!
 
 (defmethod obj-label "life-stage" [_ ls]
   (:life-stage/public-name ls))
@@ -115,55 +123,51 @@
   ;; Note that only certain types of interactor are considered when computing the display name.
   (let [db (d/entity-db int)]
     (if-let [il (seq
-                  (q '[:find [?interactor ...]
-                       :in $ ?int
-                       :where (or-join [?int ?interactor]
-                                ;; (and
-                                ;;   [?int :interaction/pcr-interactor ?pi]
-                                ;;   [?pi :interaction.pcr-interactor/pcr-product ?interactor])
-                                ;; (and
-                                ;;   [?int :interaction/sequence-interactor ?si]
-                                ;;   [?si :interaction.sequence-interactor/sequence ?interactor])
-                                ;; (and
-                                ;;   [?int :interaction/interactor-overlapping-cds ?ci]
-                                ;;   [?ci :interaction.interactor-overlapping-cds/cds ?interactor])
-                                   (and
-                                    [?int :interaction/interactor-overlapping-gene ?gi]
-                                    [?gi :interaction.interactor-overlapping-gene/gene ?interactor])
-                                ;; (and
-                                ;;  [?int :interaction/interactor-overlapping-protein ?pi]
-                                ;;  [?pi :interaction.interactor-overlapping-protein/protein ?interactor])
-                                   (and
-                                    [?int :interaction/molecule-interactor ?mi]
-                                    [?mi :interaction.molecule-interactor/molecule ?interactor])
-                                   (and
-                                    [?int :interaction/other-interactor ?orint]
-                                    [?orint :interaction.other-interactor/text ?interactor])
-                                   (and
-                                    [?int :interaction/rearrangement ?ri]
-                                    [?ri :interaction.rearrangement/rearrangement ?interactor])
-                                   (and
-                                    [?int :interaction/feature-interactor ?fi]
-                                    [?fi :interaction.feature-interactor/feature ?interactor])
-                                ;; (and
-                                ;;  [?int :interaction/variation-interactor ?vi]
-                                ;;  [?vi :interaction.variation-interactor/variation ?interactor])
-                                   )]
-                     db (:db/id int)))]
+                 (q '[:find [?interactor ...]
+                      :in $ ?int
+                      :where
+                      (or-join
+                       [?int ?interactor]
+                       (and
+                        [?int
+                         :interaction/interactor-overlapping-gene ?gi]
+                        [?gi
+                         :interaction.interactor-overlapping-gene/gene
+                         ?interactor])
+                       (and
+                        [?int :interaction/molecule-interactor ?mi]
+                        [?mi
+                         :interaction.molecule-interactor/molecule
+                         ?interactor])
+                       (and
+                        [?int :interaction/other-interactor ?orint]
+                        [?orint
+                         :interaction.other-interactor/text
+                         ?interactor])
+                       (and
+                        [?int :interaction/rearrangement ?ri]
+                        [?ri
+                         :interaction.rearrangement/rearrangement
+                         ?interactor])
+                       (and
+                        [?int :interaction/feature-interactor ?fi]
+                        [?fi
+                         :interaction.feature-interactor/feature
+                         ?interactor]))]
+                    db (:db/id int)))]
       (->>
        (map
         (fn [interactor]
           (cond
-           (string? interactor)
-           interactor
+            (string? interactor)
+            interactor
 
-           :default
-           (:label (pack-obj (entity db interactor)))))
+            :default
+            (:label (pack-obj (entity db interactor)))))
         il)
        (sort)
        (str/join " : "))
       (:interaction/id int))))
-
 
 (defmethod obj-label "motif" [_ motif]
   (or (first (:motif/title motif))
@@ -184,7 +188,8 @@
                 (:gene/id obj))
        :class "gene"
        :taxonomy (obj-tax class obj)}
-     :description (str "The name and WormBase internal ID of " (:gene/id obj))}))
+     :description (str "The name and WormBase internal ID of "
+                       (:gene/id obj))}))
 
 (defn obj-class
   "Attempt to determine the class of a WormBase-ish entity-map."
@@ -230,7 +235,7 @@
 (defn pack-obj
   "Retrieve a 'packed' (web-API) representation of entity-map `obj`."
   ([obj]
-     (pack-obj (obj-class obj) obj))
+   (pack-obj (obj-class obj) obj))
   ([class obj & {:keys [label]}]
    (if obj
      {:id       ((keyword class "id") obj)
@@ -243,9 +248,8 @@
       :taxonomy (obj-tax class obj)})))
 
 (defn get-evidence [holder]
-  ;; Some of these need further checking to ensure that handling of multiple
-  ;; values matches Perl.
-
+  ;; Some of these need further checking to ensure that handling of
+  ;; multiple values matches Perl.
   (vmap-if
    :Inferred_automatically
    (seq
@@ -268,9 +272,14 @@
 
    :Date_last_updated
    (if-let [date (:evidence/date-last-updated holder)]
-       [{ :id (str (.format (java.text.SimpleDateFormat. "yyyy-M-dd") date))
-         :label (str (.format (java.text.SimpleDateFormat. "yyyy-M-dd") date))
-         :class "text"}])
+     ;; TODO: refactor to use clj-time.format / utils?
+     [{:id (str (.format
+                 (java.text.SimpleDateFormat. "yyyy-M-dd")
+                 date))
+       :label (str (.format
+                    (java.text.SimpleDateFormat. "yyyy-M-dd")
+                    date))
+       :class "text"}])
    :Remark
    (seq
     (:evidence/remark holder))
@@ -284,7 +293,9 @@
    :Author_evidence
    (seq
     (for [a (:evidence/author-evidence holder)]
-      {:evidence (pack-obj "author" (:evidence.author-evidence/author holder))}))    ;; Notes seem to be ignored here.
+      {:evidence
+       ;; Notes seem to be ignored here.
+       (pack-obj "author" (:evidence.author-evidence/author holder))})) 
 
    :Accession_evidence
    (if-let [accs (:evidence/accession-evidence holder)]
@@ -304,7 +315,8 @@
 
    :GO_term_evidence
    (seq
-    (map (partial pack-obj "go-term") (:evidence/go-term-evidence holder)))
+    (map (partial pack-obj "go-term")
+         (:evidence/go-term-evidence holder)))
 
    :Expr_pattern_evidence
    (if-let [epe (:evidence/expr-pattern-evidence holder)]
@@ -345,8 +357,17 @@
    (if-let [seqs (:evidence/sequence-evidence holder)]
      (map (partial pack-obj "sequence" seqs)))))
 
+(defn pack-text
+  "Normalize text to behave like a pack object."
+  [text]
+  {:id text
+   :label (str/replace text #"_" " ")
+   :class text
+   :taxonomy nil})
+
 (defn humanize-ident
-  "Reconstruct a more human-readable representation of a Datomic enum key."
+  "Reconstruct a more human-readable representation of a
+  Datomic enum key."
   [ident]
   (if ident
     (-> (name ident)
