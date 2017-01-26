@@ -23,13 +23,11 @@
       (ring.util.response/response)
       (ring.util.response/content-type "application/json")))
 
-;; registered widgets and fields will be added to routes and documentation
-
-(defn register-independent-field [db schema-name field-name field-fn]
+(defn field-route [db schema-name field-name field-fn]
   (let [field-url (str/join "/" ["/rest" "field" schema-name ":id" field-name])
         adapted-field-fn (endpoint-adaptor field-fn)]
     (GET field-url [id]
-         :tags ["field" schema-name]
+         :tags [(str schema-name " fields")]
          (-> {:name id
               :class schema-name
               :url (str/replace field-url #":id" id)}
@@ -37,43 +35,28 @@
                     (adapted-field-fn db schema-name id))
              (json-response)))))
 
-(defn register-widget [db schema-name widget-name fields-map]
+(defn widget-route [db schema-name widget-name fields-map]
   (let [widget-url (str/join "/" ["/rest" "widget" schema-name ":id" widget-name])
         adapted-widget-fn (endpoint-adaptor (rest-widget-fn fields-map))]
-    (cons (GET widget-url [id]
-               :tags ["widget" schema-name]
-               (-> {:name id
-                    :class schema-name
-                    :url (str/replace widget-url #":id" id)}
-                   (assoc (keyword widget-name)
-                          (adapted-widget-fn db schema-name id))
-                   (json-response)))
-          (map (fn [[field-name field-fn]]
-                 (register-independent-field db schema-name field-name field-fn))
-               fields-map))
-    )
-  )
-
-
-
-(defmacro def-rest-widget
-  [name [db schema-name] body]
- ;; `(register-widget db schema-name (str (quote ~name)) ~body)
-  )
+    (->> (cons (GET widget-url [id]
+                    :tags [(str schema-name " widgets")]
+                    (-> {:name id
+                         :class schema-name
+                         :url (str/replace widget-url #":id" id)}
+                        (assoc (keyword widget-name)
+                               (adapted-widget-fn db schema-name id))
+                        (json-response)))
+               (map (fn [[field-name field-fn]]
+                      (field-route db schema-name (name field-name) field-fn))
+                    fields-map))
+         (apply sweet/routes))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; internal functions and helper ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; start of REST handler for widgets and fields
 
-
-;; start of REST handler for widgets and fields
-
-(defn- handle-field-get [db schema-name id field-name]
-
-  )
 
 ;; (defn- handle-widget-get [db schema-name id widget-name]
 ;;   (if-let [widget-fn (resolve-endpoint "widget" schema-name widget-name)]
