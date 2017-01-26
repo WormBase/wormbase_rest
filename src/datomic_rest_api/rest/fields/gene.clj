@@ -908,7 +908,7 @@
                 (map
                  (fn [tp]
                    {:mapper     (pack-obj "author" (first (:two-point-data/mapper tp)))
-                    :date       (if (some? (:two-point-data/date tp))
+                    :date       (if (:two-point-data/date tp)
                                   (date-helper/format-date (:two-point-data/date tp)))
                     :raw_data   (:two-point-data/results tp)
                     :genotype   (:two-point-data/genotype tp)
@@ -955,15 +955,15 @@
                                                 pn))]
                                     (map (juxt :label identity))
                                     (into {}))
-                         result (if (some? (:pos-neg-data/results pn))
+                         result (if (:pos-neg-data/results pn)
                                   (str/split (:pos-neg-data/results pn) #"\s+"))]
-                     {:mapper (if (some? (:pos-neg-data/mapper pn))
+                     {:mapper (if (seq (:pos-neg-data/mapper pn))
                                 (pack-obj "author" (first (:pos-neg-data/mapper pn))))
                       :comment (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
                                  (if (empty? comment) "" comment ))
-                      :date (if (some? (:pos-neg-data/date pn))
+                      :date (if (:pos-neg-data/date pn)
                               (date-helper/format-date (:pos-neg-data/date pn)))
-                      :result (if (some? result)
+                      :result (if (seq result)
                                 (map #(or (items (str/replace % #"\." ""))
                                         (str % " "))
                                    result))})))
@@ -1176,10 +1176,8 @@
         :Date_last_updated
         (if-let [d (:go-annotation/date-last-updated anno)]
           [{:class "text"
-            :id (if (some? d)
-                  (date-helper/format-date3 (str d)))
-            :label (if (some? d)
-                     (date-helper/format-date3 (str d)))}])
+            :id (date-helper/format-date3 (str d))
+            :label (date-helper/format-date3 (str d))}])
 
         :Contributed_by
         [(pack-obj "analysis"
@@ -1402,7 +1400,7 @@
        (let [result {:version (:gene.version-change/version h)
                      :curator (pack-obj "person" (:gene.version-change/person h))
                      :remark  nil
-                     :date    (if (some? (:gene.version-change/date h))
+                     :date    (if (:gene.version-change/date h)
                                 (date-helper/format-date (:gene.version-change/date h)))
                      :type    "Version_change"
                      :gene    nil
@@ -1650,7 +1648,7 @@
 (defn- get-segments [gene]
   (let [g-species (parse-species-name (:species/id (:gene/species gene)))
         sequence-database (seqdb/get-default-sequence-database g-species)]
-    (if (some? sequence-database)
+    (if sequence-database
       (sequence-features sequence-database (:gene/id gene)))))
 
 (defn- longest-segment [segments]
@@ -1659,7 +1657,7 @@
 
 (defn- get-segment [gene]
   (let [segments (get-segments gene)]
-     (if (some? segments)
+     (if (seq segments)
        (longest-segment segments))))
 
 (defn- segment-to-position [gene segment gbrowse]

@@ -77,7 +77,7 @@
      (str (author-lastname (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
-  (if (some? (:paper/publication-date paper))
+  (if (seq (:paper/publication-date paper))
     (str (author-list paper)
          ", "
          (first (str/split (:paper/publication-date paper)

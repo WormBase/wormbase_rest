@@ -15,14 +15,14 @@
        json/read))
 
 (defn get-default-sequence-database [g-species]
-  (if (some? (species-assemblies g-species))
-    (let [defaults (for [assembly ((species-assemblies g-species) "assemblies") :when (= (assembly "is_canonical") true)]
+  (if-let [assemblies (species-assemblies g-species)]
+    (let [defaults (for [assembly (assemblies "assemblies") :when (= (assembly "is_canonical") true)]
                      (str/join
                        "_"
                        [g-species
                         (assembly "bioproject")
                         (database-version)]))]
-      (if (some? defaults)
+      (if (seq defaults)
         (first defaults)))))
 
 (def sequence-dbs
