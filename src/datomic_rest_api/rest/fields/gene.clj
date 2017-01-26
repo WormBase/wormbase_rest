@@ -908,7 +908,8 @@
                 (map
                  (fn [tp]
                    {:mapper     (pack-obj "author" (first (:two-point-data/mapper tp)))
-                    :date       (date-helper/format-date (:two-point-data/date tp))
+                    :date       (if (some? (:two-point-data/date tp))
+                                  (date-helper/format-date (:two-point-data/date tp)))
                     :raw_data   (:two-point-data/results tp)
                     :genotype   (:two-point-data/genotype tp)
                     :comment    (let [comment (str/join "<br>" (map :two-point-data.remark/text (:two-point-data/remark tp)))]
@@ -954,14 +955,18 @@
                                                 pn))]
                                     (map (juxt :label identity))
                                     (into {}))
-                         result (str/split (:pos-neg-data/results pn) #"\s+")]
-                     {:mapper    (pack-obj "author" (first (:pos-neg-data/mapper pn)))
-                      :comment    (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
-                                    (if (empty? comment) "" comment ))
-                      :date      (date-helper/format-date (:pos-neg-data/date pn))
-                      :result    (map #(or (items (str/replace % #"\." ""))
-                                           (str % " "))
-                                      result)})))
+                         result (if (some? (:pos-neg-data/results pn))
+                                  (str/split (:pos-neg-data/results pn) #"\s+"))]
+                     {:mapper (if (some? (:pos-neg-data/mapper pn))
+                                (pack-obj "author" (first (:pos-neg-data/mapper pn))))
+                      :comment (let [comment (str/join "<br>" (map :pos-neg-data.remark/text (:pos-neg-data/remark pn)))]
+                                 (if (empty? comment) "" comment ))
+                      :date (if (some? (:pos-neg-data/date pn))
+                              (date-helper/format-date (:pos-neg-data/date pn)))
+                      :result (if (some? result)
+                                (map #(or (items (str/replace % #"\." ""))
+                                        (str % " "))
+                                   result))})))
                 (seq)))
    :description "Positive/Negative mapping data for this gene"}
   )
@@ -1171,8 +1176,10 @@
         :Date_last_updated
         (if-let [d (:go-annotation/date-last-updated anno)]
           [{:class "text"
-            :id (date-helper/format-date3 (str d))
-            :label (date-helper/format-date3 (str d))}])
+            :id (if (some? d)
+                  (date-helper/format-date3 (str d)))
+            :label (if (some? d)
+                     (date-helper/format-date3 (str d)))}])
 
         :Contributed_by
         [(pack-obj "analysis"
@@ -1393,10 +1400,10 @@
     (mapcat
      (fn [h]
        (let [result {:version (:gene.version-change/version h)
- ;;                    :date    (date-helper/format-date2 (:gene.version-change/date h))
                      :curator (pack-obj "person" (:gene.version-change/person h))
                      :remark  nil
-                     :date    (date-helper/format-date (:gene.version-change/date h))
+                     :date    (if (some? (:gene.version-change/date h))
+                                (date-helper/format-date (:gene.version-change/date h)))
                      :type    "Version_change"
                      :gene    nil
                      :action  "Unknown"}]
@@ -1642,18 +1649,18 @@
 
 (defn- get-segments [gene]
   (let [g-species (parse-species-name (:species/id (:gene/species gene)))
-        sequence-database (seqdb/get-default-sequence-database g-species)
-        features (sequence-features sequence-database (:gene/id gene))]
-    features))
+        sequence-database (seqdb/get-default-sequence-database g-species)]
+    (if (some? sequence-database)
+      (sequence-features sequence-database (:gene/id gene)))))
 
 (defn- longest-segment [segments]
   (first
       (sort-by #(- (:start %) (:end %)) segments)))
 
 (defn- get-segment [gene]
-  (let [segments (get-segments gene)
-        segment (longest-segment segments)]
-    segment))
+  (let [segments (get-segments gene)]
+     (if (some? segments)
+       (longest-segment segments))))
 
 (defn- segment-to-position [gene segment gbrowse]
   (let [[start, stop] (->> segment  ((juxt :start :end))  (sort-by +))
@@ -1694,11 +1701,12 @@
               "BINDING_REGIONS"]}))
 
 (defn feature-image [gene]
-  {:data (let [segment (get-segment gene)
-               position (if ((comp not empty?) segment)
-                 (segment-to-position gene segment true))]
-           (if (empty? position) nil position))
-   :description "The genomic location of the sequence to be displayed by GBrowse"})
+  (let [segment (get-segment gene)
+        data (if ((comp not empty?) segment)
+               (segment-to-position gene segment true))]
+    (if (empty? data) {}
+      {:data data
+       :description "The genomic location of the sequence to be displayed by GBrowse"})))
 
 ;;
 ;; Genetics widget
