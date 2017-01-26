@@ -5,53 +5,61 @@
             [compojure.api.sweet :as sweet :refer (GET)]))
 
 
-(defn field-adaptor [field-fn]
+(defn endpoint-adaptor [endpoint-fn]
   (fn [db class id]
-    (let [wbid-field (str class "/id")]
-      (field-fn (d/entity db [(keyword wbid-field) id])))))
+    (let [wbid (str class "/id")]
+      (endpoint-fn (d/entity db [(keyword wbid) id])))))
 
-(defn widget-adaptor [widget-fn]
-  (fn [db class id]
-    (let [wbid-field (str class "/id")]
-      (widget-fn (d/entity db [(keyword wbid-field) id])))))
-
-(declare handle-field-get)
-(declare handle-widget-get)
-(declare json-response)
-
-(defn register-endpoint [db scope schema-name endpoint-fn endpoint-name]
-)
-
-(defn- rest-widget-fn [field-map]
+(defn rest-widget-fn [fields-map]
   (fn [binding]
     (reduce (fn [result-map [key field-fn]]
               (assoc result-map key (field-fn binding)))
             {}
-            field-map)))
+            fields-map)))
+
+(defn- json-response [data]
+  (-> data
+      (json/generate-string {:pretty true})
+      (ring.util.response/response)
+      (ring.util.response/content-type "application/json")))
 
 ;; registered widgets and fields will be added to routes and documentation
 
-(defn register-widget [widget-name field-map]
-  ;; (do (register-endpoint "widget" (rest-widget-fn field-map) widget-name)
-  ;;     (doseq [[key field-fn] field-map]
-  ;;       (register-endpoint "field" schema-name field-fn (name key))))
-  )
-
 (defn register-independent-field [db schema-name field-name field-fn]
-  (let [field-url (str/join "/" ["/rest" "field" schema-name ":id" field-name])]
+  (let [field-url (str/join "/" ["/rest" "field" schema-name ":id" field-name])
+        adapted-field-fn (endpoint-adaptor field-fn)]
     (GET field-url [id]
          :tags ["field" schema-name]
-         (let [adapted-field-fn (field-adaptor field-fn)
-               data (adapted-field-fn db schema-name id)]
-           (-> {:name id
-                :class schema-name
-                :url (str/replace field-url #":id" id)}
-               (assoc (keyword field-name) data)
-               (json-response))))))
+         (-> {:name id
+              :class schema-name
+              :url (str/replace field-url #":id" id)}
+             (assoc (keyword field-name)
+                    (adapted-field-fn db schema-name id))
+             (json-response)))))
+
+(defn register-widget [db schema-name widget-name fields-map]
+  (let [widget-url (str/join "/" ["/rest" "widget" schema-name ":id" widget-name])
+        adapted-widget-fn (endpoint-adaptor (rest-widget-fn fields-map))]
+    (cons (GET widget-url [id]
+               :tags ["widget" schema-name]
+               (-> {:name id
+                    :class schema-name
+                    :url (str/replace widget-url #":id" id)}
+                   (assoc (keyword widget-name)
+                          (adapted-widget-fn db schema-name id))
+                   (json-response)))
+          (map (fn [[field-name field-fn]]
+                 (register-independent-field db schema-name field-name field-fn))
+               fields-map))
+    )
+  )
+
+
 
 (defmacro def-rest-widget
-  [name body]
-  `(register-widget (str (quote ~name)) ~body))
+  [name [db schema-name] body]
+ ;; `(register-widget db schema-name (str (quote ~name)) ~body)
+  )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -59,11 +67,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; start of REST handler for widgets and fields
-(defn- json-response [data]
-  (-> data
-      (json/generate-string {:pretty true})
-      (ring.util.response/response)
-      (ring.util.response/content-type "application/json")))
+
 
 ;; start of REST handler for widgets and fields
 
