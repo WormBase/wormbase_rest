@@ -7,7 +7,7 @@
   (let [widget-route (partial core/widget-route db "gene")
         field-route (partial core/field-route db "gene")]
     (sweet/routes
-(widget-route "overview"
+     (widget-route "overview"
                    {:name                     gene-fields/name-field
                     :version                  gene-fields/gene-version
                     :classification           gene-fields/gene-classification
@@ -37,7 +37,7 @@
                     :phenotype                gene-fields/phenotype-field
                     :phenotype_not_observed   gene-fields/phenotype-not-observed-field
                     :phenotype_by_interaction gene-fields/phenotype-by-interaction})
-     (widget-route ""
+     (widget-route "genetics"
                    {:reference_allele gene-fields/reference-allele
                     :rearrangements   gene-fields/rearrangements
                     :strains          gene-fields/strains
