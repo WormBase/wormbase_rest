@@ -1,4 +1,4 @@
-(defproject wormbase/datomic-rest-api "0.0.13"
+(defproject wormbase/datomic-rest-api "0.0.15"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -35,6 +35,7 @@
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
   :main ^:skip-aot datomic-rest-api.get-handler
+  :resource-paths ["resources"]
   :uberjar {:aot :all}
   :ring {:handler datomic-rest-api.get-handler/app
          :host "0.0.0.0"
@@ -59,13 +60,13 @@
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
                    :eastwood {:add-linters [:unused-namespaces]
                               :exclude-namespaces [user]}
-		   :ring {:nrepl {:start? true :port 8131}}}
+		   :ring {:nrepl {:start? true}}}
 
              :datomic-free
-             {:dependencies [[com.datomic/datomic-free "0.9.5385"
+             {:dependencies [[com.datomic/datomic-free "0.9.5554"
                               :exclusions [joda-time]]]}
              :datomic-pro
-             {:dependencies [[com.datomic/datomic-pro "0.9.5385"
+             {:dependencies [[com.datomic/datomic-pro "0.9.5554"
                                            :exclusions [joda-time]]]}
              :ddb
              {:dependencies

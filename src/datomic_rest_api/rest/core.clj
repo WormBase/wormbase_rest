@@ -5,7 +5,6 @@
             [compojure.api.sweet :as sweet :refer (GET)]
             [ring.util.response]))
 
-
 (defn endpoint-adaptor [endpoint-fn]
   (fn [db schema-name id]
     (let [wbid (str schema-name "/id")]

@@ -2,28 +2,28 @@
   (:require [datomic-rest-api.db.sequencesql :as sequencesql]
             [environ.core :refer (env)]
             [clojure.string :as str]
+            [clojure.java.io :as io]
             [clojure.data.json :as json]))
 
 (defn database-version []
-  (env :wb-version "WS257"))
+  (env :ws-version))
 
 (def species-assemblies
-  (json/read-str
-    (slurp
-      (str/join
-        "."
-        ["resources/assemblies/ASSEMBLIES"
-         (database-version)
-         "json"]))))
+  (->> "ASSEMBLIES.json"
+       io/resource
+       io/reader
+       json/read))
 
 (defn get-default-sequence-database [g-species]
-  (first
-    (for [assembly ((species-assemblies g-species) "assemblies") :when (= (assembly "is_canonical") true)]
-      (str/join
-        "_"
-        [g-species
-         (assembly "bioproject")
-         (database-version)]))))
+  (if-let [assemblies (species-assemblies g-species)]
+    (let [defaults (for [assembly (assemblies "assemblies") :when (= (assembly "is_canonical") true)]
+                     (str/join
+                       "_"
+                       [g-species
+                        (assembly "bioproject")
+                        (database-version)]))]
+      (if (seq defaults)
+        (first defaults)))))
 
 (def sequence-dbs
   (into

@@ -19,9 +19,9 @@ help: ; @echo $(if $(need-help),,\
 	Type \'$(MAKE)$(dash-f) help\' to get help)
 
 .PHONY: get-assembly-json
-get-assembly-json: $(call print-hep,get-assembly-json,\
+get-assembly-json: $(call print-help,get-assembly-json,\
 	                   "Grab the latest assembly json over ftp")
-	@curl ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}/species/ASSEMBLIES.${WS_VERSION}.json > resources/assemblies/ASSEMBLIES.${WS_VERSION}.json
+	@curl ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}/species/ASSEMBLIES.${WS_VERSION}.json > resources/ASSEMBLIES.json
 
 docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
 		       "Build the jar file")
@@ -99,6 +99,9 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		-e WS_VERSION=${WS_VERSION} \
 		-e PORT=${PORT} \
 		${NAME}:${VERSION}
+
+.PHONY: build-docker
+build-docker: clean docker/app.jar build $(call print-help,build-docker,"Create docker container")
 
 .PHONY: clean
 clean: $(call print-help,clean,"Remove the locally built JAR file.")
