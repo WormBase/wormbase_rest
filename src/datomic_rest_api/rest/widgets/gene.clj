@@ -1,7 +1,6 @@
 (ns datomic-rest-api.rest.widgets.gene
   (:require [datomic-rest-api.rest.core :refer [def-rest-routes widget-setting field-setting]]
-            [datomic-rest-api.rest.fields.gene :as gene-fields]
-            [compojure.api.sweet :as sweet]))
+            [datomic-rest-api.rest.fields.gene :as gene-fields]))
 
 (def-rest-routes routes "gene"
   (widget-setting "overview"
