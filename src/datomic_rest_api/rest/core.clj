@@ -3,12 +3,13 @@
             [clojure.string :as str]
             [cheshire.core :as json]
             [compojure.api.sweet :as sweet :refer (GET)]
-            [ring.util.response]))
+            [ring.util.response :as ring]))
 
 (defn endpoint-adaptor [endpoint-fn]
   (fn [db schema-name id]
-    (let [wbid (str schema-name "/id")]
-      (if-let [wb-entity (d/entity db [(keyword wbid) id])]
+    (let [attr (keyword schema-name "id")
+          lookup-ref [attr id]]
+      (if-let [wb-entity (d/entity db lookup-ref)]
         (endpoint-fn wb-entity)))))
 
 (defn rest-widget-fn [fields-map]
