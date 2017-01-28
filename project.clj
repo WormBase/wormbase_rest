@@ -71,4 +71,4 @@
              {:dependencies
               [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
                 :exclusions [joda-time]]]}}
-  :repl-options {:init (set! *print-length* 10))
+  :repl-options {:init (set! *print-length* 10)})
