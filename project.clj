@@ -58,10 +58,9 @@
                              [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
                              [venantius/yagni "0.1.4"]
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
-                   :eastwood {:add-linters [:unused-namespaces]
-                              :exclude-namespaces [user]}
+                   :eastwood "{:add-linters [:unused-namespaces]
+                              :exclude-namespaces [user]}"
 		   :ring {:nrepl {:start? true}}}
-
              :datomic-free
              {:dependencies [[com.datomic/datomic-free "0.9.5554"
                               :exclusions [joda-time]]]}
