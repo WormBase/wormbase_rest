@@ -22,15 +22,16 @@
 (defn- json-response [data]
   (-> data
       (json/generate-string {:pretty true})
-      (ring.util.response/response)
-      (ring.util.response/content-type "application/json")))
+      (ring/response)
+      (ring/content-type "application/json")))
 
-(defn- entity-not-exist [schema-name id]
+(defn- entity-not-found [schema-name id]
   (-> {:message (format "Entity %s %s does not exist" schema-name id)}
       (json-response)
-      (ring.util.response/status 404)))
+      (ring/status 404)))
 
-(defn widget-setting [widget-name field-map]
+(defn widget-setting
+  [widget-name field-map]
   {:is-widget true
    :name widget-name
    :fields field-map})
