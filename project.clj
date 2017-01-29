@@ -59,7 +59,7 @@
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
                    :eastwood {:add-linters [:unused-namespaces]
                               :exclude-namespaces [user]}
-		   :ring {:nrepl {:start? true :port 8131}}}
+		   :ring {:nrepl {:start? true}}}
 
              :datomic-free
              {:dependencies [[com.datomic/datomic-free "0.9.5554"
