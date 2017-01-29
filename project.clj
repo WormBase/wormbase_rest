@@ -15,6 +15,7 @@
    [ring/ring-jetty-adapter "1.5.1"]
    [fogus/ring-edn "0.2.0"]
    [compojure "1.5.2"]
+   [metosin/compojure-api "1.1.10"]
    [clj-http "3.1.0"]
    [com.ninjudd/ring-async "0.3.4"]
    [com.ninjudd/eventual "0.4.1"]
