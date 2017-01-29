@@ -1,4 +1,4 @@
-(defproject wormbase/datomic-rest-api "0.0.15"
+(defproject wormbase/datomic-rest-api "0.1.0"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -15,6 +15,7 @@
    [ring/ring-jetty-adapter "1.5.1"]
    [fogus/ring-edn "0.2.0"]
    [compojure "1.5.2"]
+   [metosin/compojure-api "1.1.10"]
    [clj-http "3.1.0"]
    [com.ninjudd/ring-async "0.3.4"]
    [com.ninjudd/eventual "0.4.1"]
@@ -59,7 +60,7 @@
                              [com.jakemccrary/lein-test-refresh "0.17.0"]]
                    :eastwood {:add-linters [:unused-namespaces]
                               :exclude-namespaces [user]}
-		   :ring {:nrepl {:start? true :port 8131}}}
+		   :ring {:nrepl {:start? true}}}
 
              :datomic-free
              {:dependencies [[com.datomic/datomic-free "0.9.5554"
