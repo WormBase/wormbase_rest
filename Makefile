@@ -3,7 +3,7 @@ VERSION ?= $(shell git describe --abbrev=0 --tags)
 WS_VERSION := WS257
 LOWER_WS_VERSION = `echo $(WS_VERSION) | tr A-Z a-z`
 EBX_CONFIG := .ebextensions/.config
-DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " ")
+DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " " | head -n 1)
 DEPLOY_JAR := app.jar
 PORT := 3000
 WB_ACC_NUM := 357210185381
@@ -88,7 +88,7 @@ build: $(call print-help,build,\
 
 .PHONY: run
 run: $(call print-help,run,"Run the application in docker (locally).")
-	@docker run \
+	docker run \
 		--name datomic-to-catalyst \
 		--publish-all=true \
 		--publish ${PORT}:${PORT} \
