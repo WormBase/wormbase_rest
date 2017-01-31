@@ -3,12 +3,13 @@
             [clojure.string :as str]
             [cheshire.core :as json]
             [compojure.api.sweet :as sweet :refer (GET)]
-            [ring.util.response]))
+            [ring.util.response :as ring]))
 
 (defn endpoint-adaptor [endpoint-fn]
   (fn [db schema-name id]
-    (let [wbid (str schema-name "/id")]
-      (if-let [wb-entity (d/entity db [(keyword wbid) id])]
+    (let [attr (keyword schema-name "id")
+          lookup-ref [attr id]]
+      (if-let [wb-entity (d/entity db lookup-ref)]
         (endpoint-fn wb-entity)))))
 
 (defn rest-widget-fn [fields-map]
@@ -21,15 +22,16 @@
 (defn- json-response [data]
   (-> data
       (json/generate-string {:pretty true})
-      (ring.util.response/response)
-      (ring.util.response/content-type "application/json")))
+      (ring/response)
+      (ring/content-type "application/json")))
 
 (defn- entity-not-exist [schema-name id]
   (-> {:message (format "Entity %s %s does not exist" schema-name id)}
       (json-response)
-      (ring.util.response/status 404)))
+      (ring/status 404)))
 
-(defn widget-setting [widget-name field-map]
+(defn widget-setting
+  [widget-name field-map]
   {:is-widget true
    :name widget-name
    :fields field-map})
