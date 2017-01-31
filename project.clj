@@ -1,4 +1,4 @@
-(defproject wormbase/datomic-rest-api "0.0.15"
+(defproject wormbase/datomic-rest-api "0.1.0"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
