@@ -3,11 +3,13 @@ VERSION ?= $(shell git describe --abbrev=0 --tags)
 WS_VERSION := WS257
 LOWER_WS_VERSION = `echo $(WS_VERSION) | tr A-Z a-z`
 EBX_CONFIG := .ebextensions/.config
-DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' ${EBX_CONFIG} | tr -d " " | head -n 1)
+DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
+                  ${EBX_CONFIG} | tr -d " " | head -n 1)
 DEPLOY_JAR := app.jar
 PORT := 3000
 WB_ACC_NUM := 357210185381
 FQ_TAG := ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${VERSION}
+WB_FTP_URL := ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}
 
 define print-help
         $(if $(need-help),$(warning $1 -- $2))
@@ -21,7 +23,8 @@ help: ; @echo $(if $(need-help),,\
 .PHONY: get-assembly-json
 get-assembly-json: $(call print-help,get-assembly-json,\
 	                   "Grab the latest assembly json over ftp")
-	@curl ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}/species/ASSEMBLIES.${WS_VERSION}.json > resources/ASSEMBLIES.json
+	@curl -o ./resources/ASSEMBLIES.json \
+           ${WB_FTP_RELEASE_URL}/species/ASSEMBLIES.${WS_VERSION}.json
 
 docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
 		       "Build the jar file")
@@ -73,10 +76,12 @@ eb-setenv: $(call print-help,eb-env,\
 eb-local: docker-ecr-login $(call print-help,eb-local,\
 			     "Runs the ElasticBeanStalk/docker \
 			      build and run locally.")
-	eb local run --envvars PORT="${PORT}",TRACE_DB="${DB_URI}",WS_VERSION="${WS_VERSION}"
+	eb local run --envvars \
+           PORT=${PORT},TRACE_DB=${DB_URI},WS_VERSION=${WS_VERSION}
 
 .PHONY: build
-build: $(call print-help,build,\
+build: docker/${DEPLOY_JAR} \
+       $(call print-help,build,\
 	"Build the docker images from using the current git revision.")
 	@docker build -t ${NAME}:${VERSION} \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
@@ -100,8 +105,14 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		-e PORT=${PORT} \
 		${NAME}:${VERSION}
 
-.PHONY: build-docker
-build-docker: clean docker/app.jar build $(call print-help,build-docker,"Create docker container")
+.PHONY: docker-build
+docker-build: clean build \
+              $(call print-help,docker-build, "Create docker container")
+
+docker-clean: $(call print-help,docker-clean,\
+               "Stop and remove the docker container (if running).")
+	@docker stop datomic-to-catalyst
+	@docker rm datomic-to-catalyst
 
 .PHONY: clean
 clean: $(call print-help,clean,"Remove the locally built JAR file.")
