@@ -34,12 +34,12 @@
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
-  :main ^:skip-aot datomic-rest-api.get-handler
+  :main ^:skip-aot datomic-rest-api.main
   :resource-paths ["resources"]
   :uberjar {:aot :all}
-  :ring {:handler datomic-rest-api.get-handler/app
+  :ring {:handler datomic-rest-api.main/app
          :host "0.0.0.0"
-         :init datomic-rest-api.get-handler/init}
+         :init datomic-rest-api.main/init}
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
   :jvm-opts ["-Xmx6G"
@@ -66,7 +66,7 @@
                               :exclusions [joda-time]]]}
              :datomic-pro
              {:dependencies [[com.datomic/datomic-pro "0.9.5554"
-                                           :exclusions [joda-time]]]}
+                              :exclusions [joda-time]]]}
              :ddb
              {:dependencies
               [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"

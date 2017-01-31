@@ -1,10 +1,11 @@
 (ns datomic_rest_api.rest.gene-test
-  (:require [clojure.test :refer :all]
-            [datomic.api :as d]
-            [mount.core :as mount]
-            [datomic-rest-api.db.main :refer [datomic-conn]]
-            [datomic-rest-api.rest.fields.gene :as gene]))
-
+  (:require
+   [clojure.test :refer :all]
+   [datomic-rest-api.db.main :refer [datomic-conn]]
+   [datomic-rest-api.rest.gene.variation :as variation]
+   [datomic-rest-api.rest.gene.widgets.genetics :as genetics]
+   [datomic.api :as d]
+   [mount.core :as mount]))
 
 ;; See https://clojure.github.io/clojure/clojure.test-api.html for details
 
@@ -31,17 +32,21 @@
                  (:data variations))))
 
 
-;;This is a regular test function, which is to be wrapped using my-test-fixture
+;;This is a regular test function, which is to be wrapped using
+;;my-test-fixture
 (deftest test-alleles-and-polymorphisms
-  (let [reference-allele (#'gene/reference-allele (get-gene "WBGene00006759"))
-        alleles (#'gene/alleles (get-gene "WBGene00006759"))
-        alleles-other (#'gene/alleles-other (get-gene "WBGene00006759"))
-        polymorphisms (#'gene/polymorphisms (get-gene "WBGene00006759"))
+  (let [reference-allele (#'genetics/reference-allele
+                          (get-gene "WBGene00006759"))
+        alleles (#'variation/alleles (get-gene "WBGene00006759"))
+        alleles-other (#'variation/alleles-other
+                       (get-gene "WBGene00006759"))
+        polymorphisms (#'variation/polymorphisms
+                       (get-gene "WBGene00006759"))
         allele1 (find-variation-in "WBVar00248722" alleles)
         allele-other1 (find-variation-in "WBVar00278273" alleles-other)
         allele-other2 (find-variation-in "WBVar01495296" alleles-other)
         allele-other3 (->> (get-gene "WBGene00018307")
-                           (#'gene/alleles-other)
+                           (#'variation/alleles-other)
                            (find-variation-in "WBVar00601075"))
         polymorphism1 (find-variation-in "WBVar01858901" polymorphisms)]
     (testing "reference allele"
@@ -70,42 +75,48 @@
       (testing "contains a correct strain"
         (is (some #(= "RW7080" (:id %)) (:strain allele1))))
       (testing "contains a correct citation"
-        (is (some #(= "Mori, Moerman, & Waterston, 1986" (:label %)) (:sources allele1))))
-
-      (testing "correct isoform"
-        (is (some #(= "ZK617.1h" (:label %)) (:isoform allele-other1))))
+        (is (some #(= "Mori, Moerman, & Waterston, 1986"
+                      (:label %))
+                  (:sources allele1))))
       (testing "correct location type"
-        (is (some #(= "Coding exon" %) (:locations allele-other1)))))
+        (is (some #(= "Coding exon" %)
+                  (:locations allele-other1)))))
 
     (testing "molecular change"
       (testing "molecular change with Nonsense mutation"
         (testing "correct molecular change"
           (is (some #(= "Nonsense" %) (:effects allele-other1))))
         (testing "correct composite change"
-          (is (some #(= "Q4481Amber" %) (:composite_change allele-other1)))))
+          (is (some #(= "Q4481Amber" %)
+                    (:composite_change allele-other1)))))
       (testing "molecular change with Missense mutation"
         (testing "correct molecular change"
-          (is (some #(= "Missense" %) (:effects allele-other2))))
+          (is (some #(= "Missense" %)
+                    (:effects allele-other2))))
         (testing "correct composite change"
-          (is (some #(= "A1774T" %) (:composite_change allele-other2)))))
+          (is (some #(= "A1774T" %)
+                    (:composite_change allele-other2)))))
       (testing "effects outside of CDS"
         (is (some #(= "Promoter" %) (:effects allele-other3)))))))
 
 
 (deftest test-strains
-  (let [strains (#'gene/strains (get-gene "WBGene00006759"))]
+  (let [strains (#'genetics/strains (get-gene "WBGene00006759"))]
     (testing "strains carrying unc-22 alone"
-      (is (some #(= "BC18" (:id %)) (-> (:data strains)
-                                        (:carrying_gene_alone_and_cgc)))))
+      (is (some #(= "BC18" (:id %))
+                (-> (:data strains)
+                    (:carrying_gene_alone_and_cgc)))))
     (testing "strains available from cgc"
-      (is (some #(= "BA836" (:id %)) (-> (:data strains)
-                                         (:available_from_cgc)))))))
+      (is (some #(= "BA836" (:id %))
+                (-> (:data strains)
+                    (:available_from_cgc)))))))
 
 (deftest test-rearrangements
-  (let [rearrangements (#'gene/rearrangements (get-gene "WBGene00006759"))]
+  (let [rearrangements (#'genetics/rearrangements
+                        (get-gene "WBGene00006759"))]
     (testing "negative"
       (is (some #(= "sDf22" (:id %)) (-> (:data rearrangements)
-                                        (:negative)))))
+                                         (:negative)))))
     (testing "positive"
       (is (some #(= "nDf28" (:id %)) (-> (:data rearrangements)
                                          (:positive)))))))
