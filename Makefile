@@ -24,7 +24,7 @@ help: ; @echo $(if $(need-help),,\
 get-assembly-json: $(call print-help,get-assembly-json,\
 	                   "Grab the latest assembly json over ftp")
 	@curl -o ./resources/ASSEMBLIES.json \
-           ${WB_FTP_RELEASE_URL}/species/ASSEMBLIES.${WS_VERSION}.json
+           ${WB_FTP_URL}/species/ASSEMBLIES.${WS_VERSION}.json
 
 docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
 		       "Build the jar file")
