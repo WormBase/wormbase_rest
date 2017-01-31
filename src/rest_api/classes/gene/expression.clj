@@ -43,7 +43,23 @@
       :indep_variable (map obj/humanize-ident idpv)
       :description (:analysis/description project)}}))
 
-(defn fpkm-expression-summary-ls [gene]
+(def q-corresponding-transcript
+  '[:find ?gene .
+    :in $ ?transcript
+    :where
+    [?gene :gene/corresponding-transcript ?th]
+    [?th :gene.corresponding-transcript/transcript ?transcript]])
+
+(defmulti fpkm-expression-summary-ls
+  "Used for the expression widget."
+  (fn [entity]
+    ;; Use (:pace/identifies-class entity) ?
+    ;; or ideally something thatt lets use use :gene/id and :transcipt/id in the defemethod 
+    (contains? entity :gene/id)))
+
+(defmethod fpkm-expression-summary-ls
+  true
+  [gene]
   (let [db (d/entity-db gene)
         result-tuples (->> (d/q '[:find ?analysis ?fpkm ?stage
                                   :in $ ?gene
@@ -86,3 +102,12 @@
               :table {:fpkm {:data results}}})
      :description (str "Fragments Per Kilobase of transcript per "
                        "Million mapped reads (FPKM) expression data")}))
+
+(defmethod fpkm-expression-summary-ls
+  false
+  [transcript]
+  (let [db (d/entity-db transcript)]
+    (->> (d/q q-corresponding-transcript db (:db/id transcript))
+         (d/entity db)
+         (fpkm-expression-summary-ls))))
+
