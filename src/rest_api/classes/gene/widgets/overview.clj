@@ -1,10 +1,10 @@
-(ns datomic-rest-api.rest.gene.widgets.overview
+(ns rest-api.classes.gene.widgets.overview
   (:require
    [clojure.string :as str]
-   [datomic-rest-api.formatters.object :as obj :refer [pack-obj]]
-   [datomic-rest-api.rest.gene.generic :as generic]
    [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]))
+   [pseudoace.utils :as pace-utils]
+   [rest-api.classes.gene.generic :as generic]
+   [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 ;;; move?
 (def ^:private transcript-types

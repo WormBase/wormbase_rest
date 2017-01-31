@@ -1,9 +1,9 @@
-(ns datomic-rest-api.formatters.object
+(ns rest-api.formatters.object
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [datomic-rest-api.formatters.date :as dates]
-   [pseudoace.utils :as pace-utils])
+   [pseudoace.utils :as pace-utils]
+   [rest-api.formatters.date :as dates])
   (:import
    (java.text SimpleDateFormat)))
 

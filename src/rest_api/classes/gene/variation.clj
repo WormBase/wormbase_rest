@@ -1,9 +1,9 @@
-(ns datomic-rest-api.rest.gene.variation
+(ns rest-api.classes.gene.variation
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [datomic-rest-api.formatters.object :refer [pack-obj]]
-   [pseudoace.utils :as pace-utils]))
+   [pseudoace.utils :as pace-utils]
+   [rest-api.formatters.object :refer [pack-obj]]))
 
 (def ^{:private true} molecular-change-effects
   {:molecular-change/missense "Missense"

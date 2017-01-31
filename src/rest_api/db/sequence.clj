@@ -1,10 +1,10 @@
-(ns datomic-rest-api.db.sequence
+(ns rest-api.db.sequence
   (:require
    [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [datomic-rest-api.db.sequencesql :as sequencesql]
-   [environ.core :refer (env)]))
+   [environ.core :refer [env]]
+   [rest-api.db.sequencesql :as sequencesql]))
 
 (defn database-version []
   (env :ws-version))

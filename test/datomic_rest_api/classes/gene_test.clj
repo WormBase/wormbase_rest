@@ -1,11 +1,11 @@
-(ns datomic_rest_api.rest.gene-test
+(ns datomic_rest_api.classes.gene-test
   (:require
    [clojure.test :refer :all]
-   [datomic-rest-api.db.main :refer [datomic-conn]]
-   [datomic-rest-api.rest.gene.variation :as variation]
-   [datomic-rest-api.rest.gene.widgets.genetics :as genetics]
    [datomic.api :as d]
-   [mount.core :as mount]))
+   [mount.core :as mount]
+   [rest-api.classes.gene.variation :as variation]
+   [rest-api.classes.gene.widgets.genetics :as genetics]
+   [rest-api.db.main :refer [datomic-conn]]))
 
 ;; See https://clojure.github.io/clojure/clojure.test-api.html for details
 

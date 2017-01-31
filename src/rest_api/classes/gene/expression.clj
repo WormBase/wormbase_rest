@@ -1,8 +1,8 @@
-(ns datomic-rest-api.rest.gene.expression
+(ns rest-api.classes.gene.expression
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [datomic-rest-api.formatters.object :as obj]))
+   [rest-api.formatters.object :as obj]))
 
 (defn- control-analysis? [analysis]
   (if-let [matched (re-matches #".+control_(mean|median)"

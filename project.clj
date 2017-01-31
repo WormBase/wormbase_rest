@@ -1,4 +1,4 @@
-(defproject wormbase/datomic-rest-api "0.1.0"
+(defproject wormbase/rest-api "0.1.0"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -34,12 +34,12 @@
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-pprint "1.1.1"]
             [lein-ring "0.9.7"]]
-  :main ^:skip-aot datomic-rest-api.main
+  :main ^:skip-aot rest-api.main
   :resource-paths ["resources"]
   :uberjar {:aot :all}
-  :ring {:handler datomic-rest-api.main/app
+  :ring {:handler rest-api.main/app
          :host "0.0.0.0"
-         :init datomic-rest-api.main/init}
+         :init rest-api.main/init}
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
   :jvm-opts ["-Xmx6G"

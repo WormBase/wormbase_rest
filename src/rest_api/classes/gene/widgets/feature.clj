@@ -1,10 +1,10 @@
-(ns datomic-rest-api.rest.gene.widgets.feature
+(ns rest-api.classes.gene.widgets.feature
   (:require
    [clojure.string :as str]
-   [datomic-rest-api.db.sequence :as seqdb]
-   [datomic-rest-api.formatters.object :refer [pack-obj]]
-   [datomic-rest-api.rest.gene.generic :as generic]
-   [datomic-rest-api.rest.gene.sequence :as seqfeat]
+   [rest-api.db.sequence :as seqdb]
+   [rest-api.formatters.object :refer [pack-obj]]
+   [rest-api.classes.gene.generic :as generic]
+   [rest-api.classes.gene.sequence :as seqfeat]
    [datomic.api :as d]))
 
 (defn- not-nil [xs]

@@ -1,9 +1,10 @@
-(ns datomic-rest-api.main
+(ns rest-api.main
   (:require
    [compojure.api.sweet :as sweet]
    [compojure.api.routes :as routes]
-   [datomic-rest-api.rest.gene.routing :as gene]
-   [datomic-rest-api.rest.transcript.routing :as transcript]
+   [rest-api.routes :refer [routes-from-spec]]
+   [rest-api.classes.gene.routing :as gene]
+   [rest-api.classes.transcript.routing :as transcript]
    [mount.core :as mount]))
 
 (def ^:private all-route-specs

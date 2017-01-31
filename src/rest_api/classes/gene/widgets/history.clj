@@ -1,11 +1,11 @@
-(ns datomic-rest-api.rest.gene.widgets.history
+(ns rest-api.classes.gene.widgets.history
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [datomic-rest-api.formatters.date :as dates]
-   [datomic-rest-api.formatters.object :refer [pack-obj]]
-   [datomic-rest-api.rest.gene.generic :as generic]
-   [pseudoace.utils :as pace-utils]))
+   [pseudoace.utils :as pace-utils]
+   [rest-api.classes.gene.generic :as generic]
+   [rest-api.formatters.date :as dates]
+   [rest-api.formatters.object :refer [pack-obj]]))
 
 (defn history-events [gene]
   (let [data

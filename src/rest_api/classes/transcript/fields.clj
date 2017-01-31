@@ -1,7 +1,7 @@
-(ns datomic-rest-api.rest.transcript.fields
+(ns rest-api.classes.transcript.fields
   (:require
-   [datomic-rest-api.rest.gene.expression :as expression]
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [rest-api.classes.gene.expression :as expression]))
 
 (def q-corresponding-transcript
   '[:find ?gene .

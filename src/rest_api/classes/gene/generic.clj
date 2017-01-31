@@ -1,7 +1,6 @@
-(ns datomic-rest-api.rest.gene.generic
+(ns rest-api.classes.gene.generic
   (:require
-   [datomic-rest-api.formatters.object :refer [pack-obj]]))
-
+   [rest-api.formatters.object :refer [pack-obj]]))
 
 (defn name-field [gene]
   (let [data (pack-obj "gene" gene)]

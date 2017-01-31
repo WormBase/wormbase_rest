@@ -1,10 +1,10 @@
-(ns datomic-rest-api.routes
+(ns rest-api.routes
   (:require 
    [cheshire.core :as json]
    [clojure.string :as str]
    [compojure.api.sweet :as sweet]
    [datomic.api :as d]
-   [datomic-rest-api.db.main :refer [datomic-conn]]
+   [rest-api.db.main :refer [datomic-conn]]
    [ring.util.response :as ring]
    [schema.core :as schema]))
 

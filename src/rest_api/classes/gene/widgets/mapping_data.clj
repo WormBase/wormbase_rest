@@ -1,10 +1,10 @@
-(ns datomic-rest-api.rest.gene.widgets.mapping-data
+(ns rest-api.classes.gene.widgets.mapping-data
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [datomic-rest-api.formatters.date :as dates]
-   [datomic-rest-api.formatters.object :refer [pack-obj]]
-   [datomic-rest-api.rest.gene.generic :as generic]))
+   [rest-api.classes.gene.generic :as generic]
+   [rest-api.formatters.date :as dates]
+   [rest-api.formatters.object :refer [pack-obj]]))
 
 (def q-twopt-mapping-posneg
   '[:find [?pn ...]

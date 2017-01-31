@@ -1,12 +1,12 @@
-(ns datomic-rest-api.rest.gene.widgets.ontology
+(ns rest-api.classes.gene.widgets.ontology
   (:require
-   [clojure.string :as str]
    [clojure.set :as set]
+   [clojure.string :as str]
    [datomic.api :as d]
-   [datomic-rest-api.formatters.date :as date]
-   [datomic-rest-api.formatters.object :as obj :refer [pack-obj]]
-   [datomic-rest-api.rest.gene.generic :as generic]
-   [pseudoace.utils :as pace-utils]))
+   [pseudoace.utils :as pace-utils]
+   [rest-api.classes.gene.generic :as generic]
+   [rest-api.formatters.date :as date]
+   [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (def ^:private division-names
   {:go-term.type/molecular-function "Molecular_function"

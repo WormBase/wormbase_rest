@@ -1,7 +1,7 @@
-(ns datomic-rest-api.rest.gene.widgets.external-links
+(ns rest-api.classes.gene.widgets.external-links
   (:require
-   [datomic-rest-api.rest.gene.generic :as generic]
-   [pseudoace.utils :as pace-utils]))
+   [pseudoace.utils :as pace-utils]
+   [rest-api.classes.gene.generic :as generic]))
 
 (defn xrefs [gene]
   {:data

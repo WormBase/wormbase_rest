@@ -1,10 +1,10 @@
-(ns datomic-rest-api.rest.gene.widgets.genetics
+(ns rest-api.classes.gene.widgets.genetics
   (:require
    [datomic.api :as d]
-   [datomic-rest-api.rest.gene.generic :as gene-fields]
-   [datomic-rest-api.formatters.object :as obj :refer [pack-obj]]
-   [datomic-rest-api.rest.gene.variation :as variation]
-   [pseudoace.utils :as pace-utils]))
+   [pseudoace.utils :as pace-utils]
+   [rest-api.classes.gene.generic :as gene-fields]
+   [rest-api.classes.gene.variation :as variation]
+   [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 ;; TODO: factor-out duplication
 

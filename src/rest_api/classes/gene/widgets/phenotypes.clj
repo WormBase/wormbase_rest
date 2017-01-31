@@ -1,10 +1,10 @@
-(ns datomic-rest-api.rest.gene.widgets.phenotypes
+(ns rest-api.classes.gene.widgets.phenotypes
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [datomic-rest-api.formatters.object :as obj]
-   [datomic-rest-api.rest.gene.generic :as generic]
-   [pseudoace.utils :as pace-utils]))
+   [pseudoace.utils :as pace-utils]
+   [rest-api.classes.gene.generic :as generic]
+   [rest-api.formatters.object :as obj]))
 
 (defn parse-int
   "Format a string as a number."
