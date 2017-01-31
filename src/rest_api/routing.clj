@@ -1,4 +1,4 @@
-(ns rest-api.routes
+(ns rest-api.routing
   (:require 
    [cheshire.core :as json]
    [clojure.string :as str]
@@ -96,9 +96,9 @@
              xs)]
     (create rs)))
 
-(defmacro defroutes-spec
+(defmacro defroutes
   "Convenience constructor for defining `RouteSpec`s.
    Helps ensure this is defined with a constant name when used."
   [& rs]
-  `(def ~(symbol "route-spec")
+  `(def ~(symbol "routes")
      (routes-from-spec (map->RouteSpec ~@rs))))

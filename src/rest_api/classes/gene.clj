@@ -1,4 +1,4 @@
-(ns rest-api.classes.gene.routing
+(ns rest-api.classes.gene
   (:require
    [rest-api.classes.gene.widgets.external-links :as external-links]
    [rest-api.classes.gene.widgets.feature :as feature]
@@ -9,9 +9,9 @@
    [rest-api.classes.gene.widgets.overview :as overview]
    [rest-api.classes.gene.widgets.phenotypes :as phenotypes]
    [rest-api.classes.gene.variation :as variation]
-   [rest-api.routes :as routes]))
+   [rest-api.routing :as routing]))
 
-(routes/defroutes-spec
+(routing/defroutes
   {:datatype "gene"
    :widget
    {:external_links external-links/widget
