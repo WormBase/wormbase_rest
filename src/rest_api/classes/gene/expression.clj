@@ -53,8 +53,8 @@
 (defmulti fpkm-expression-summary-ls
   "Used for the expression widget."
   (fn [entity]
-    ;; Use (:pace/identifies-class entity) ?
-    ;; or ideally something thatt lets use use :gene/id and :transcipt/id in the defemethod 
+    ;; Use (:pace/identifies-class entity) ?  or ideally something
+    ;; thatt lets use use :gene/id and :transcipt/id in the defemethod
     (contains? entity :gene/id)))
 
 (defmethod fpkm-expression-summary-ls
@@ -71,10 +71,10 @@
                                    :evidence/from-analysis
                                    ?analysis]]
                                 db (:db/id gene))
-                       (map (fn [[analysis-id fpkm stage-id]]
-                              (let [analysis (d/entity db analysis-id)
-                                    stage (d/entity db stage-id)]
-                                [analysis fpkm stage]))))
+                           (map (fn [[analysis-id fpkm stage-id]]
+                                  (let [analysis (d/entity db analysis-id)
+                                        stage (d/entity db stage-id)]
+                                    [analysis fpkm stage]))))
         results (->> result-tuples
                      (filter (fn [[analysis]]
                                (not (control-analysis? analysis))))
