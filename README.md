@@ -17,7 +17,7 @@ Run following commands and test each step happens correctly.
 export WS_VERSION=WS257
 export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 lein with-profile +datomic-pro,+ddb ring server-headless 8130
-lein with-profile +datomic-pro,+ddb test
+lein with-profile +datomic-pro,+ddb do eastwood, test
 make build-docker
 docker ps -a 
 docker stop id
@@ -39,6 +39,12 @@ export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 ## Starting server in development
 ```bash
 lein with-profile +datomic-pro,+ddb ring server-headless 8130
+```
+
+### Code linting
+Check for code purity, unused namespaces et al.
+```bash
+lein with-profile +datomic-pro,+ddb eastwood
 ```
 
 ### Running unit tests

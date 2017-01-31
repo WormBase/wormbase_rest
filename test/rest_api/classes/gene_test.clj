@@ -1,4 +1,4 @@
-(ns datomic_rest_api.classes.gene-test
+(ns rest-api.classes.gene-test
   (:require
    [clojure.test :refer :all]
    [datomic.api :as d]
@@ -21,7 +21,6 @@
 ;; Here we register my-test-fixture to be called once, wrapping ALL tests
 ;; in the namespace
 (use-fixtures :once my-test-fixture)
-
 
 (defn get-gene [id]
   (d/entity (d/db datomic-conn) [:gene/id id]))

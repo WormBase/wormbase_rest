@@ -53,8 +53,6 @@
 (defmulti fpkm-expression-summary-ls
   "Used for the expression widget."
   (fn [entity]
-    ;; Use (:pace/identifies-class entity) ?  or ideally something
-    ;; thatt lets use use :gene/id and :transcipt/id in the defemethod
     (contains? entity :gene/id)))
 
 (defmethod fpkm-expression-summary-ls
@@ -95,8 +93,7 @@
                      (set)
                      (map fpkm-analysis-stage-study)
                      (apply merge))]
-    {:data (if (empty? results)
-             nil
+    {:data (if (not (empty? results))
              {:controls controls
               :by_study studies
               :table {:fpkm {:data results}}})
@@ -107,7 +104,8 @@
   false
   [transcript]
   (let [db (d/entity-db transcript)]
-    (->> (d/q q-corresponding-transcript db (:db/id transcript))
+    (->> (:db/id transcript)
+         (d/q q-corresponding-transcript db)
          (d/entity db)
          (fpkm-expression-summary-ls))))
 
