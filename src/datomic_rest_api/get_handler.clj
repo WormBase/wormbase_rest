@@ -1,15 +1,11 @@
 (ns datomic-rest-api.get-handler
   (:require
-   [cheshire.core :as json]
-   [clojure.string :as str]
    [compojure.api.sweet :as sweet]
    [datomic-rest-api.db.main :refer [datomic-conn]]
    [datomic-rest-api.rest.widgets.gene :as gene]
    [datomic-rest-api.rest.widgets.transcript :as transcript]
    [datomic.api :as d]
-   [hiccup.core :refer [html]]
-   [mount.core :as mount]
-   [schema.core :as s]))
+   [mount.core :as mount]))
 
 (defn app-routes [db]
   (sweet/api

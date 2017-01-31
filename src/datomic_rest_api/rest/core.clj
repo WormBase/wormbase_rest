@@ -25,7 +25,7 @@
       (ring/response)
       (ring/content-type "application/json")))
 
-(defn- entity-not-found [schema-name id]
+(defn- entity-not-exist [schema-name id]
   (-> {:message (format "Entity %s %s does not exist" schema-name id)}
       (json-response)
       (ring/status 404)))
