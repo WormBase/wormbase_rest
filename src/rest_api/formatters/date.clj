@@ -1,5 +1,6 @@
-(ns datomic-rest-api.rest.helpers.date
-  (:import java.text.SimpleDateFormat))
+(ns rest-api.formatters.date
+  (:import
+   (java.text SimpleDateFormat)))
 
 (defn format-date
   [date-str]
@@ -9,8 +10,8 @@
 
 (defn format-date2
   [date-str]
-   (.format
-     (java.text.SimpleDateFormat. "yyyy-M-dd")
+  (.format
+   (java.text.SimpleDateFormat. "yyyy-M-dd")
       (.parse
       (java.text.SimpleDateFormat. "yyyy-MM-dd'T'HH:mm:ssZ")
         (str date-str))))

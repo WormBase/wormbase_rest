@@ -17,15 +17,17 @@ Run following commands and test each step happens correctly.
 export WS_VERSION=WS257
 export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 lein with-profile +datomic-pro,+ddb ring server-headless 8130
-lein with-profile +datomic-pro,+ddb test
-make build-docker
-docker ps -a 
-docker stop id
-docker rm id
+lein with-profile +datomic-pro,+ddb do eastwood, test
+make docker-build
 make run
+docker ps -a
+make docker-clean
+git clone && checkout <tag>
 eb init
 make docker-tag
 make docker-push-ecr
+make eb-local
+
 eb deploy
 ```
 
@@ -39,6 +41,12 @@ export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 ## Starting server in development
 ```bash
 lein with-profile +datomic-pro,+ddb ring server-headless 8130
+```
+
+### Code linting
+Check for code purity, unused namespaces et al.
+```bash
+lein with-profile +datomic-pro,+ddb eastwood
 ```
 
 ### Running unit tests
