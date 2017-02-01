@@ -1,9 +1,10 @@
-(ns datomic-rest-api.db.sequence
-  (:require [datomic-rest-api.db.sequencesql :as sequencesql]
-            [environ.core :refer (env)]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
-            [clojure.data.json :as json]))
+(ns rest-api.db.sequence
+  (:require
+   [clojure.data.json :as json]
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [environ.core :refer [env]]
+   [rest-api.db.sequencesql :as sequencesql]))
 
 (defn database-version []
   (env :ws-version))
@@ -16,7 +17,8 @@
 
 (defn get-default-sequence-database [g-species]
   (if-let [assemblies (species-assemblies g-species)]
-    (let [defaults (for [assembly (assemblies "assemblies") :when (= (assembly "is_canonical") true)]
+    (let [defaults (for [assembly (assemblies "assemblies")
+                         :when (= (assembly "is_canonical") true)]
                      (str/join
                        "_"
                        [g-species
@@ -42,7 +44,10 @@
                {:connection-uri
                  (str "jdbc:mysql://10.0.0.181:3306/"
 		       db-name
-                       "?user=wormbase&password=sea3l3ganz&useSSL=false&useLocalSessionState=true")}})))))))
+                       (str "?user=wormbase&"
+                            "password=sea3l3ganz&"
+                            "useSSL=false&"
+                            "useLocalSessionState=true"))}})))))))
 
 (defn gene-features [db-spec gene-name]
   (sequencesql/gene-features db-spec {:name gene-name}))

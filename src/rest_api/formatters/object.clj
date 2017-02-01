@@ -1,9 +1,11 @@
-(ns datomic-rest-api.rest.helpers.object
-  (:import java.text.SimpleDateFormat)
+(ns rest-api.formatters.object
   (:require
-   [datomic.api :as d :refer (db history q touch entity)]
    [clojure.string :as str]
-   [pseudoace.utils :refer (vmap-if)]))
+   [datomic.api :as d]
+   [pseudoace.utils :as pace-utils]
+   [rest-api.formatters.date :as dates])
+  (:import
+   (java.text SimpleDateFormat)))
 
 ;;
 ;; General purpose functions for working with Wormbase-ish entity-maps.
@@ -15,7 +17,7 @@
   "Retrieve an entity-map for object `id` of class `class`
   as of database-value `db`."
   [class db id]
-  (entity db [(keyword class "id") id]))
+  (d/entity db [(keyword class "id") id]))
 
 (defn obj-tax
   "If entity-map `obj` has a species attribute,
@@ -120,42 +122,44 @@
   (or (first (:protein/gene-name prot))
       (:protein/id prot)))
 
+(def q-interactor
+  '[:find [?interactor ...]
+    :in $ ?int
+    :where
+    (or-join
+     [?int ?interactor]
+     (and
+      [?int
+       :interaction/interactor-overlapping-gene ?gi]
+      [?gi
+       :interaction.interactor-overlapping-gene/gene
+       ?interactor])
+     (and
+      [?int :interaction/molecule-interactor ?mi]
+      [?mi
+       :interaction.molecule-interactor/molecule
+       ?interactor])
+     (and
+      [?int :interaction/other-interactor ?orint]
+      [?orint
+       :interaction.other-interactor/text
+       ?interactor])
+     (and
+      [?int :interaction/rearrangement ?ri]
+      [?ri
+       :interaction.rearrangement/rearrangement
+       ?interactor])
+     (and
+      [?int :interaction/feature-interactor ?fi]
+      [?fi
+       :interaction.feature-interactor/feature
+       ?interactor]))])
+
 (defmethod obj-label "interaction" [_ int]
-  ;; Note that only certain types of interactor are considered when computing the display name.
+  ;; Note that only certain types of interactor are considered when
+  ;; computing the display name.
   (let [db (d/entity-db int)]
-    (if-let [il (seq
-                 (q '[:find [?interactor ...]
-                      :in $ ?int
-                      :where
-                      (or-join
-                       [?int ?interactor]
-                       (and
-                        [?int
-                         :interaction/interactor-overlapping-gene ?gi]
-                        [?gi
-                         :interaction.interactor-overlapping-gene/gene
-                         ?interactor])
-                       (and
-                        [?int :interaction/molecule-interactor ?mi]
-                        [?mi
-                         :interaction.molecule-interactor/molecule
-                         ?interactor])
-                       (and
-                        [?int :interaction/other-interactor ?orint]
-                        [?orint
-                         :interaction.other-interactor/text
-                         ?interactor])
-                       (and
-                        [?int :interaction/rearrangement ?ri]
-                        [?ri
-                         :interaction.rearrangement/rearrangement
-                         ?interactor])
-                       (and
-                        [?int :interaction/feature-interactor ?fi]
-                        [?fi
-                         :interaction.feature-interactor/feature
-                         ?interactor]))]
-                    db (:db/id int)))]
+    (if-let [il (seq (d/q q-interactor db (:db/id int)))]
       (->>
        (map
         (fn [interactor]
@@ -164,7 +168,7 @@
             interactor
 
             :default
-            (:label (pack-obj (entity db interactor)))))
+            (:label (pack-obj (d/entity db interactor)))))
         il)
        (sort)
        (str/join " : "))
@@ -239,64 +243,54 @@
    (pack-obj (obj-class obj) obj))
   ([class obj & {:keys [label]}]
    (if obj
-     {:id       ((keyword class "id") obj)
-      :label    (or label
-                  (obj-label class obj))
-      :class  (if class
-                (if (= class "author")
-                  "person"
-                  (str/replace class "-" "_")))
+     {:id ((keyword class "id") obj)
+      :label (or label (obj-label class obj))
+      :class (if class
+               (if (= class "author")
+                 "person"
+                 (str/replace class "-" "_")))
       :taxonomy (obj-tax class obj)})))
 
 (defn get-evidence [holder]
   ;; Some of these need further checking to ensure that handling of
   ;; multiple values matches Perl.
-  (vmap-if
+  (pace-utils/vmap-if
    :Inferred_automatically
-   (seq
-    (:evidence/inferred-automatically holder))
+   (seq (:evidence/inferred-automatically holder))
 
    :Curator
-   (seq
-    (for [person (:evidence/curator-confirmed holder)]
-      (pack-obj "person" person)))
+   (seq (for [person (:evidence/curator-confirmed holder)]
+          (pack-obj "person" person)))
 
    :Person_evidence
-   (seq
-    (for [person (:evidence/person-evidence holder)]
-      (pack-obj "person" person)))
+   (seq (for [person (:evidence/person-evidence holder)]
+          (pack-obj "person" person)))
 
    :Paper_evidence
-   (seq
-    (for [paper (:evidence/paper-evidence holder)]
-      (pack-obj "paper" paper)))
+   (seq (for [paper (:evidence/paper-evidence holder)]
+          (pack-obj "paper" paper)))
 
    :Date_last_updated
-   (if-let [date (:evidence/date-last-updated holder)]
-     ;; TODO: refactor to use clj-time.format / utils?
-     [{:id (str (.format
-                 (java.text.SimpleDateFormat. "yyyy-M-dd")
-                 date))
-       :label (str (.format
-                    (java.text.SimpleDateFormat. "yyyy-M-dd")
-                    date))
-       :class "text"}])
+   (if-let [last-updated (:evidence/date-last-updated holder)]
+     (let [ds (-> last-updated dates/format-date str)]
+       [{:id ds
+         :label ds
+         :class "text"}]))
+
    :Remark
-   (seq
-    (:evidence/remark holder))
+   (seq (:evidence/remark holder))
 
    :Published_as
-   (seq
-    (for [pa (:evidence/published-as holder)]
-      {:evidence pa
-       :label    pa}))
+   (seq (for [pa (:evidence/published-as holder)]
+          {:evidence pa
+           :label pa}))
 
    :Author_evidence
-   (seq
-    (for [a (:evidence/author-evidence holder)]
-      {:evidence
-       ;; Notes seem to be ignored here.
-       (pack-obj "author" (:evidence.author-evidence/author holder))})) 
+   (seq (for [a (:evidence/author-evidence holder)
+              :let [author (:evidence.author-evidence/author holder)]]
+          {:evidence
+           ;; Notes seem to be ignored here.
+           (pack-obj "author" author)})) 
 
    :Accession_evidence
    (if-let [accs (:evidence/accession-evidence holder)]
@@ -308,16 +302,14 @@
 
 
    :Protein_id_evidence
-   (seq
-    (for [p (:evidence/protein-id-evidence holder)]
-      {:id    p
-       :label p
-       :class "Entrezp"}))
+   (seq (for [p (:evidence/protein-id-evidence holder)]
+          {:id p
+           :label p
+           :class "Entrezp"}))
 
    :GO_term_evidence
-   (seq
-    (map (partial pack-obj "go-term")
-         (:evidence/go-term-evidence holder)))
+   (seq (map (partial pack-obj "go-term")
+             (:evidence/go-term-evidence holder)))
 
    :Expr_pattern_evidence
    (if-let [epe (:evidence/expr-pattern-evidence holder)]
@@ -329,7 +321,7 @@
 
    :RNAi_evidence   ;; could be multiples?
    (if-let [rnai (first (:evidence/rnai-evidence holder))]
-     {:id    (:rnai/id rnai)
+     {:id (:rnai/id rnai)
       :label (if-let [hn (:rnai/history-name rnai)]
                (format "%s (%s)" (:rnai/id rnai) hn)
                (:rnai/id rnai))})

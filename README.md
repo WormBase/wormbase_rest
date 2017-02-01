@@ -2,6 +2,35 @@
 
 - Provide interface to datomic database to WormBase website.
 
+## Prep for deployment
+
+- Make sure correct WS version is specified in files
+- Make get-assembly-json
+- Change version of d-t-c in project.clj and Dockerrun.aws.json
+- create tag (git hf release start <version>; docker hf release finish <version>)
+
+## Deployment
+
+Run following commands and test each step happens correctly.
+
+```bash
+export WS_VERSION=WS257
+export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
+lein with-profile +datomic-pro,+ddb ring server-headless 8130
+lein with-profile +datomic-pro,+ddb do eastwood, test
+make docker-build
+make run
+docker ps -a
+make docker-clean
+git clone && checkout <tag>
+eb init
+make docker-tag
+make docker-push-ecr
+make eb-local
+
+eb deploy
+```
+
 ## Setting environment variables
 
 ```bash
@@ -12,6 +41,12 @@ export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 ## Starting server in development
 ```bash
 lein with-profile +datomic-pro,+ddb ring server-headless 8130
+```
+
+### Code linting
+Check for code purity, unused namespaces et al.
+```bash
+lein with-profile +datomic-pro,+ddb eastwood
 ```
 
 ### Running unit tests
@@ -117,10 +152,3 @@ eb deploy
 TBD: JVM memory options.
 
 [uberjar](http://stackoverflow.com/questions/11947037/what-is-an-uber-jar)
-
-##Sequence database list
-
-```bash
-export DB_VERSION=WSXXX;
-curl ftp://ftp.wormbase.org/pub/wormbase/releases/$DB_VERSION/species/ASSEMBLIES.$DB_VERSION.json > ASSEMBLIES.$DB_VERSION.json;
-```
