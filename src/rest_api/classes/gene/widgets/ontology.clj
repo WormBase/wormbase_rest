@@ -104,9 +104,15 @@
 
         :GO_reference
         (if (:go-annotation/go-term-relation anno)
-          ;; TODO: This looks broken!?
           (concat
-           )))}
+           (for [{rel :go-annotation.go-term-relation/text
+                  gt :go-annotation.go-term-relation/go-term}
+                 (:go-annotation/go-term-relation anno)]
+             {:class "Gene Ontology Consortium"
+              :dbt "GO_REF"
+              :id (:go-term/id gt)
+              :label (:go-term/id gt)})))
+        )}
 
       :go_type
       (if-let [go-type (:go-term/type term)]
@@ -120,7 +126,8 @@
       (pack-obj "go-term" term :label (:go-term/id term))
 
       :term_description
-      (pack-obj "go-term" term)})
+      (pack-obj "go-term" term)}
+     )
    annos))
 
 (defn gene-ontology-full [gene]
