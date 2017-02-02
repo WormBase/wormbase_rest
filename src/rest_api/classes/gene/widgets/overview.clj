@@ -151,14 +151,14 @@
              (cond
                (:associated_sequence data)
                "This gene is known only by sequence.")
-                   
+
              (cond
                (= (:confirmed data) "Confirmed")
                "Gene structures have been confirmed by a curator."
-               
+
                (:gene/matching-cdna gene)
                "Gene structures have been confirmed by matching cDNA."
-                     
+
                :default
                "Gene structures have not been confirmed.")))))]
     {:data data
@@ -179,12 +179,16 @@
      :description "the gene this one has merged into"}))
 
 (defn gene-cluster [gene]
-  {:data
-   ;; discuss - should be gene-class? referenced in overview widget...
-   ;; (if-let [data (->> (:gene-class/main-name/text gene))]
-   ;;   data)
-   nil
-   :description "The gene cluster for this gene"})
+  (let [db (d/entity-db gene)
+        gc (->> (d/q '[:find ?gc .
+                       :in $ ?gene
+                       :where
+                       [?gc :gene-cluster/contains-gene ?gene]]
+                     db (:db/id gene))
+                (d/entity db))]
+
+    {:data (if gc (pack-obj gc))
+     :description "The gene cluster for this gene"}))
 
 (defn gene-other-names [gene]
   {:data (let [other-names (:gene/other-name gene)
@@ -345,7 +349,7 @@
    :locus_name               locus-name
    :merged_into              merged-into
    :name                     generic/name-field
-   :named_by                 named-by  
+   :named_by                 named-by
    :operon                   gene-operon
    :other_names              gene-other-names
    :parent_sequence          parent-sequence
@@ -354,7 +358,5 @@
    :status                   gene-status
    :structured_description   structured-description
    :taxonomy                 gene-taxonomy
-   :transposon               transposon   
+   :transposon               transposon
    :version                  gene-version})
-
-
