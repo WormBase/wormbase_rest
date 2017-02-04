@@ -90,7 +90,7 @@ java -jar <jar-name>.jar
 
 ## Docker
 
-Build an [uberjar] (with ring server support) on the local machine
+Build an [uberjar][1] (with ring server support) on the local machine
 to avoid having to download dependencies in the container:
 
 ```bash
@@ -151,4 +151,4 @@ eb deploy
 
 TBD: JVM memory options.
 
-[uberjar](http://stackoverflow.com/questions/11947037/what-is-an-uber-jar)
+[1]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
