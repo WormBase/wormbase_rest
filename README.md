@@ -16,8 +16,8 @@ Run following commands and test each step happens correctly.
 ```bash
 export WS_VERSION=WS257
 export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
-lein with-profile +datomic-pro,+ddb ring server-headless 8130
-lein with-profile +datomic-pro,+ddb do eastwood, test
+lein ring server-headless 8130
+lein do eastwood, test
 make docker-build
 make run
 docker ps -a
@@ -40,25 +40,25 @@ export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 
 ## Starting server in development
 ```bash
-lein with-profile +datomic-pro,+ddb ring server-headless 8130
+lein ring server-headless 8130
 ```
 
 ### Code linting
 Check for code purity, unused namespaces et al.
 ```bash
-lein with-profile +datomic-pro,+ddb eastwood
+lein eastwood
 ```
 
 ### Running unit tests
 
 To run tests that watch for changes in the repo:
 ```bash
-lein with-profile +datomic-pro,+ddb test-refresh
+lein test-refresh
 ```
 
 To run all tests:
 ```bash
-lein with-profile +datomic-pro,+ddb test
+lein test
 ```
 
 ## Deploying to production

@@ -2,25 +2,15 @@
   (:require
    [clojure.test :refer :all]
    [datomic.api :as d]
-   [mount.core :as mount]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.classes.gene.widgets.genetics :as genetics]
-   [rest-api.db.main :refer [datomic-conn]]))
-
-;; See https://clojure.github.io/clojure/clojure.test-api.html for details
-
-;; my-test-fixture will be passed a fn that will call all your tests
-;; (e.g. test-using-db).  Here you perform any required setup
-;; (e.g. create-db), then call the passed function f, then perform
-;; any required teardown (e.g. destroy-db).
-(defn my-test-fixture [f]
-  (mount/start)
-  (f)
-  (mount/stop))
+   [rest-api.db.main :refer [datomic-conn]]
+   [rest-api.db-testing :as db-testing]
+   ))
 
 ;; Here we register my-test-fixture to be called once, wrapping ALL tests
 ;; in the namespace
-(use-fixtures :once my-test-fixture)
+(use-fixtures :once db-testing/db-lifecycle)
 
 (defn get-gene [id]
   (d/entity (d/db datomic-conn) [:gene/id id]))

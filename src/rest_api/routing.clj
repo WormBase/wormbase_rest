@@ -1,104 +1,102 @@
 (ns rest-api.routing
-  (:require 
-   [cheshire.core :as json]
+  (:require
+   [cheshire.core :as json] ;; TODO: use compojure.api's formats instead
    [clojure.string :as str]
    [compojure.api.sweet :as sweet]
    [datomic.api :as d]
    [rest-api.db.main :refer [datomic-conn]]
-   [ring.util.response :as ring]
+   [ring.util.request :as ring-in]
+   [ring.util.response :as ring-out]
    [schema.core :as schema]))
 
 (defn- json-response [data]
   (-> data
       (json/generate-string {:pretty true})
-      (ring/response)
-      (ring/content-type "application/json")))
+      (ring-out/response)
+      (ring-out/content-type "application/json")))
 
-(defn- entity-not-found [schema-name id]
-  (-> {:message (format "Entity %s %s does not exist" schema-name id)}
+(defn- entity-not-found [entity-class id]
+  (-> {:message (format "%s entity %s does not exist" entity-class id)}
       (json-response)
-      (ring/status 404)))
+      (ring-out/status 404)))
 
-(defn- wrap-entity-handler [entity-handler]
-  (fn [schema-name id]
+(defn- conform-uri [request]
+  (str/replace-first (:uri request) "/" ""))
+
+(defmulti conform-to-scheme
+  (fn [scheme entity-handler entity request]
+    (keyword scheme)))
+
+(defmethod conform-to-scheme :field
+  [scheme entity-handler entity request]
+  (let [result (entity-handler entity)
+        endpoint-name (-> (ring-in/path-info request)
+                          (str/split #"/")
+                          (last))]
+    {endpoint-name result}))
+
+(defmethod conform-to-scheme :widget
+  [scheme entity-handlers entity request]
+  (let [result (reduce-kv (fn [m k handler]
+                            (assoc m k (handler entity)))
+                          (empty entity-handlers)
+                          entity-handlers)]
+    {:fields result}))
+
+(defn make-request-handler [scheme entity-handler]
+  (fn [request]
     (let [db (d/db datomic-conn)
-          attr (keyword schema-name "id")
+          id (get-in request [:params :id])
+          entity-class (-> (:context request)
+                           (str/split #"/")
+                           (last))
+          attr (keyword entity-class "id")
           lookup-ref [attr id]]
-      (if-let [wb-entity (d/entity db lookup-ref)]
-        (entity-handler wb-entity)))))
-
-(defn- wrap-entity-handlers [route-spec]
-  (fn [binding]
-    (reduce-kv (fn [m k handler]
-                 (assoc m k (handler binding)))
-               (empty route-spec)
-               route-spec)))
-
-(defmulti create-routes
-  (fn [a _ _]
-    (map? a)))
-
-(defmethod create-routes
-  true
-  [route-spec endpoint-name datatype]
-  (let [handler (wrap-entity-handlers route-spec)]
-    (create-routes handler endpoint-name datatype)))
-
-(defmethod create-routes
-  false
-  [entity-handler endpoint-name datatype]
-  (let [ep-name (if (keyword? endpoint-name)
-                  (name endpoint-name)
-                  endpoint-name)
-        uri-parts [nil datatype ":id" ep-name]
-        uri (str/join "/" uri-parts)
-        handler (wrap-entity-handler entity-handler)]
-    (sweet/GET uri [id]
-      :path-params [id :- schema/Str]
-      (if-let [result (handler datatype id)]
-        (-> {:name id
-             :class datatype
-             :url (str/replace uri #":id" id)}
-            (assoc (keyword ep-name) result)
-            (json-response))
-        (entity-not-found datatype id)))))
+      (if-let [entity (d/entity db lookup-ref)]
+        (->> (conform-to-scheme scheme entity-handler entity request)
+             (merge {:class entity-class
+                     :name id
+                     :uri (conform-uri request)})
+             (json-response))
+        (entity-not-found entity-class id)))))
 
 (defprotocol RouteSpecification
-  (create
+  (-create-routes
     [route-spec]
     [route-spec opts]))
 
 (defrecord RouteSpec [datatype widget field]
   RouteSpecification
-  (create [this {:keys [publish-widget-fields?] :as opts}]
+  (-create-routes [this {:keys [publish-widget-fields?] :as opts}]
     (let [fields (:field this)
           field-defs (if publish-widget-fields?
                        (apply merge (cons fields (->> this :widget vals)))
                        fields)
           route-data (assoc this :field field-defs)
-          wb-dt (:datatype route-data)]
+          entity-class (:entity-class route-data)]
       (flatten
        (for [kw [:widget :field]
              :let [scheme (name kw)
                    ep-defs (kw route-data)]]
-         (for [[ep-name ep-map] (sort-by key ep-defs)]
-           (sweet/context (str "/" scheme) []
-             :tags [(str datatype " " scheme "s")]
-             (create-routes ep-map ep-name wb-dt)))))))
-  (create [this]
-    (create this {:publish-widget-fields? true})))
+         (for [[ep-kw entity-handler] (sort-by key ep-defs)
+               :let [ep-name (name ep-kw)]]
+           (sweet/context (str "/" scheme "/" entity-class) []
+             :tags [(str entity-class " " scheme "s")]
+             (sweet/GET (str "/:id/" ep-name) []
+               :path-params [id :- schema/Str]
+               (make-request-handler kw entity-handler))))))))
 
-(defn routes-from-spec
-  "Creates compojure-api routes from the given route spec `rs`."
-  [xs]
-  (let [rs (if (map? xs)
-             (map->RouteSpec xs)
-             xs)]
-    (create rs)))
+  (-create-routes [this]
+    (-create-routes this {:publish-widget-fields? true})))
 
 (defmacro defroutes
   "Convenience constructor for defining `RouteSpec`s.
    Helps ensure this is defined with a constant name when used."
   [& rs]
   `(def ~(symbol "routes")
-     (routes-from-spec (map->RouteSpec ~@rs))))
+     (if-let [rs# (cond
+                   (map? ~@rs) (map->RouteSpec ~@rs)
+                   (vector? ~@rs) (apply ->RouteSpec ~@rs))]
+       (-create-routes rs#)
+       (throw (IllegalArgumentException.
+               (format "Invalid route spec %s" ~@rs))))))
