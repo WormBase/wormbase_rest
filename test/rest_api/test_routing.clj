@@ -1,12 +1,56 @@
 (ns rest-api.test-routing
   (:require
+   [cheshire.core :as json]
    [clojure.test :refer :all]
+   [clojure.walk :as w]
    [compojure.api.routes :as c-routes]
    [compojure.api.sweet :as sweet]
    [rest-api.db-testing :as db-testing]
    [rest-api.routing :as routing]))
 
+
 (use-fixtures :once db-testing/db-lifecycle)
+
+(deftest test-make-request-handler
+  (testing
+      "Main request handler produces correct data structure (widgets)"
+    (let [req {:uri "/rest/widget/gene/WBGene00000001/overview"
+               :context "/rest/widget/gene"
+               :params {:id "WBGene00000001"}}
+          [res-x, res-y] [{:data {:x "X"} :description "X desc"}
+                          {:data {:y "Y"} :description "Y desc"}]
+          handler-x (fn [e] res-x)
+          handler-y (fn [e] res-y)
+          widgets {:top-x handler-x :top-y handler-y}
+          handler (routing/make-request-handler :widget widgets)
+          response (handler req)
+          expected {:uri "rest/widget/gene/WBGene00000001/overview"
+                    :class "gene"
+                    :name "WBGene00000001"
+                    :fields
+                    {:top-x res-x
+                     :top-y res-y}}]
+      (is (= 200 (:status response)))
+      (is (= "application/json"
+             (get-in response [:headers "Content-Type"])))
+      (let [result (json/parse-string (:body response))
+            exp (w/stringify-keys expected)]
+        (is (= result exp)))))
+
+      (let [req {:uri "/rest/field/gene/WBGene00000001/xrefs"
+                 :context "/rest/widget/gene"
+                 :params {:id "WBGene00000001"}}
+            res-x {:data {:x "X"} :description "X desc"}
+            entity-handler (fn [e] res-x)
+            handler (routing/make-request-handler :field entity-handler)
+            response (handler req)
+            expected {:xrefs res-x
+                      :uri "rest/field/gene/WBGene00000001/xrefs"
+                      :class "gene"
+                      :name "WBGene00000001"}]
+        (let [result (json/parse-string (:body response))
+              exp (w/stringify-keys expected)]
+          (is (= result exp)))))
 
 (deftest test-conform-to-scheme
   (testing "Is structure correct for catalyst for widget scheme?"
@@ -17,8 +61,7 @@
           handler-x (fn [e] res-x)
           handler-y (fn [e] res-y)
           entity-handler {:x handler-x :y handler-y}
-          expected {:fields {:x res-x :y res-y}
-                    :uri "rest/widget/gene/WBGene0101010101/overview"}
+          expected {:fields {:x res-x :y res-y}}
           result (routing/conform-to-scheme :widget
                                             entity-handler
                                             entity
@@ -29,18 +72,12 @@
           entity {}
           result {:data {:x "X"} :description "D"}
           entity-handler (fn [e] result)
-          expected {"f1" (entity-handler entity)
-                    ;; TODO: dubious
-                    ;; should probably be /rest/field/ rather than
-                    ;; /species
-                    ;; See /WormBase/datomic-to-catalyst/issues/61
-                    :uri "/species/gene/WBGene0101010101/f1"}
+          expected {"f1" (entity-handler entity)}
           result (routing/conform-to-scheme :field
                                             entity-handler
                                             entity
                                             req)]
       (is (= result expected)))))
-
 
 ;; setup for test-defroutes
 (let [dummy-handler (fn [_] {})

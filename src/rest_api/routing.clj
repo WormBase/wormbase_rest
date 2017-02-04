@@ -30,17 +30,10 @@
 (defmethod conform-to-scheme :field
   [scheme entity-handler entity request]
   (let [result (entity-handler entity)
-
-        ;; TODO:
-        ;; See /WormBase/datomic-to-catalyst/issues/61
-        ;; uri (conform-uri (:uri request))
-        uri (str/replace (:uri request) "/rest/field" "/species")
-
         endpoint-name (-> (ring-in/path-info request)
                           (str/split #"/")
                           (last))]
-    {endpoint-name result
-     :uri uri}))
+    {endpoint-name result}))
 
 (defmethod conform-to-scheme :widget
   [scheme entity-handlers entity request]
@@ -48,8 +41,7 @@
                             (assoc m k (handler entity)))
                           (empty entity-handlers)
                           entity-handlers)]
-    {:fields result
-     :uri (conform-uri request)}))
+    {:fields result}))
 
 (defn make-request-handler [scheme entity-handler]
   (fn [request]
@@ -63,7 +55,8 @@
       (if-let [entity (d/entity db lookup-ref)]
         (->> (conform-to-scheme scheme entity-handler entity request)
              (merge {:class entity-class
-                     :name id})
+                     :name id
+                     :uri (conform-uri request)})
              (json-response))
         (entity-not-found entity-class id)))))
 
@@ -91,7 +84,7 @@
              :tags [(str entity-class " " scheme "s")]
              (sweet/GET (str "/:id/" ep-name) []
                :path-params [id :- schema/Str]
-               (make-request-handler scheme entity-handler))))))))
+               (make-request-handler kw entity-handler))))))))
 
   (-create-routes [this]
     (-create-routes this {:publish-widget-fields? true})))
