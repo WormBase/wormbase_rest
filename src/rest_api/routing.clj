@@ -1,6 +1,6 @@
 (ns rest-api.routing
   (:require
-   [cheshire.core :as json] ;; TODO: remove, see main.clj
+   [cheshire.core :as json] ;; TODO: use compojure.api's formats instead
    [clojure.string :as str]
    [compojure.api.sweet :as sweet]
    [datomic.api :as d]
