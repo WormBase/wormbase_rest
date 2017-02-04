@@ -12,7 +12,6 @@
    [com.layerware/hugsql "0.4.7"]
    [com.ninjudd/eventual "0.5.5"]
    [com.ninjudd/ring-async "0.3.4"]
-   [compojure "1.5.2"]
    [datomic-schema "1.3.0"]
    [environ "1.1.0"]
    [fogus/ring-edn "0.3.0"]
