@@ -60,6 +60,11 @@ To run all tests:
 ```bash
 lein test
 ```
+## Swagger validation (development - optional)
+Clone the [swagger-validator-badge][2] repository somewhere,
+e.g `~/git`, then [run the swagger-validator service locally][3].
+
+This service will run on `http://localhost:8002`.
 
 ## Deploying to production
 
@@ -152,3 +157,5 @@ eb deploy
 TBD: JVM memory options.
 
 [1]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
+[2]: https://github.com/swagger-api/validator-badge
+[3]: https://github.com/swagger-api/validator-badge#running-locally

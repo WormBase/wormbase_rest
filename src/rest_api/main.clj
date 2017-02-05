@@ -1,6 +1,7 @@
 (ns rest-api.main
   (:require
    [compojure.api.sweet :as sweet]
+   [environ.core :as environ]
    [mount.core :as mount]
    [rest-api.classes.gene :as gene]
    [rest-api.classes.transcript :as transcript]))
