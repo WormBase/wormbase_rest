@@ -7,7 +7,7 @@
 (routing/defroutes
   {:entity-class "person"
    :widget
-   {:external_links external-links/widget
+   {
     :overview overview/widget
    })
 
