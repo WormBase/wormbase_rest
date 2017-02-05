@@ -36,15 +36,15 @@
 
 (def widget
   {
-   :also_refers_to           also-refers-to
-   :name                     name-field
-   :email                    email
-   :orcid                    orcid
-   :institution              institution
-   :web_page                 web-page
-   :street_address           street-address
-   :also_known_as            also-known-as
-   :previous_addresses       previous-addresses
+;;  :also_refers_to           also-refers-to
+;;  :name                     name-field
+;;  :email                    email
+;;  :orcid                    orcid
+;;  :institution              institution
+;;  :web_page                 web-page
+  :street_address           street-address
+;;  :also_known_as            also-known-as
+;;  :previous_addresses       previous-addresses
   })
 
 (defn street-address [person]
@@ -58,4 +58,9 @@
     {:data (if (empty? data) nil data)
      :description "street address of this person"}))
 
+
+;; (defn name-field [person]
+;;   (let [data (pack-obj "person" person)]
+;;     {:data (if (empty? data) nil data)
+;;      :description (format "The name and WormBase internal ID of %s" (:person/id person))}))
 
