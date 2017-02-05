@@ -19,9 +19,9 @@
    [ring "1.5.1"]
    [wormbase/pseudoace "0.4.14"]]
   :source-paths ["src"]
-  :plugins [[lein-cljsbuild "1.1.3"]
+  :plugins [[lein-environ "1.1.0"]
             [lein-pprint "1.1.1"]
-            [lein-ring "0.9.7"]]
+            [lein-ring "0.11.0"]]
   :main ^:skip-aot rest-api.main
   :resource-paths ["resources"]
   :uberjar {:aot :all}
