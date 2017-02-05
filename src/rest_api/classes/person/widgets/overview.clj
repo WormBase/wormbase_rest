@@ -34,19 +34,6 @@
 ;;      :description
 ;;      "other genes that this locus name may refer to"}))
 
-(def widget
-  {
-;;  :also_refers_to           also-refers-to
-;;  :name                     name-field
-;;  :email                    email
-;;  :orcid                    orcid
-;;  :institution              institution
-;;  :web_page                 web-page
-  :street_address           street-address
-;;  :also_known_as            also-known-as
-;;  :previous_addresses       previous-addresses
-  })
-
 (defn street-address [person]
   (let [db (d/entity-db person)
         data (->> (d/q '[:find [?street-address ...]
@@ -63,4 +50,17 @@
 ;;   (let [data (pack-obj "person" person)]
 ;;     {:data (if (empty? data) nil data)
 ;;      :description (format "The name and WormBase internal ID of %s" (:person/id person))}))
+
+(def widget
+  {
+;;  :also_refers_to           also-refers-to
+;;  :name                     name-field
+;;  :email                    email
+;;  :orcid                    orcid
+;;  :institution              institution
+;;  :web_page                 web-page
+  :street_address           street-address
+;;  :also_known_as            also-known-as
+;;  :previous_addresses       previous-addresses
+  })
 
