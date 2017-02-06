@@ -60,11 +60,23 @@ To run all tests:
 ```bash
 lein test
 ```
-## Swagger validation (development - optional)
+## Swagger JSON validation
+The swagger UI displays a badge indicating whether the applications
+`swagger.json` is valid according to the specification.
+
+The official online validator cannot work with private IP addresses,
+so we need to run a local swagger validator in order in development.
+
+By default, the application will assume a local validation service is
+running at `http://localhost:8002` (when using the lein `:dev`
+profile).  This is not required, but should you not be running the
+service, the swagger UI page will display a broken image instead of
+the badge.
+
+### Running a local swagger validation service
 Clone the [swagger-validator-badge][2] repository somewhere,
 e.g `~/git`, then [run the swagger-validator service locally][3].
 
-This service will run on `http://localhost:8002`.
 
 ## Deploying to production
 
