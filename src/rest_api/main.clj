@@ -3,6 +3,7 @@
    [compojure.api.sweet :as sweet]
    [mount.core :as mount]
    [rest-api.classes.gene :as gene]
+   [rest-api.classes.person :as person]
    [rest-api.classes.transcript :as transcript]))
 
 (defn init []
@@ -10,6 +11,7 @@
 
 (def ^:private all-routes
   [gene/routes
+   person/routes
    transcript/routes])
 
 ;; `validatorUrl` doesn't work with private urls, see:
