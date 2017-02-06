@@ -9,6 +9,7 @@
    [rest-api.classes.gene.widgets.overview :as overview]
    [rest-api.classes.gene.widgets.phenotype :as phenotype]
    [rest-api.classes.gene.variation :as variation]
+   [rest-api.classes.gene.expression :as exp]
    [rest-api.routing :as routing]))
 
 (routing/defroutes
@@ -24,9 +25,5 @@
     :phenotype phenotype/widget}
    :field
    {:alleles_other variation/alleles-other
-    :polymorphisms variation/polymorphisms}})
-
-
-
-
-  
+    :polymorphisms variation/polymorphisms
+    :fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})
