@@ -104,15 +104,15 @@
                      (:go-annotation/reference anno))])
 
         :GO_reference
-        (if (:go-annotation/go-term-relation anno)
-          (concat
-           (for [{rel :go-annotation.go-term-relation/text
-                  gt :go-annotation.go-term-relation/go-term}
-                 (:go-annotation/go-term-relation anno)]
-             {:class "Gene Ontology Consortium"
-              :dbt "GO_REF"
-              :id (:go-term/id gt)
-              :label (:go-term/id gt)})))
+        (seq (for [{go-id :go-annotation.go-reference/text
+                    ref-db :go-annotation.go-reference/database
+                    ref-db-field :go-annotation.go-reference/database-field}
+                   (:go-annotation/go-reference anno)]
+               {:class (:database/name ref-db)
+                :dbt (:database-field/id ref-db-field)
+                :id go-id
+                :label go-id}))
+
         )}
 
       :go_type
