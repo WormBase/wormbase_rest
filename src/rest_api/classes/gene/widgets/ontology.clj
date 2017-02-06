@@ -95,8 +95,9 @@
             :label (date/format-date3 (str d))}])
 
         :Contributed_by
-        [(pack-obj "analysis"
-                   (:go-annotation/contributed-by anno))]
+        (if-let [cb (:go-annotation/contributed-by anno)]
+          (pack-obj cb))
+
         :Reference
         (if (:go-annotation/reference anno)
           [(pack-obj "paper"
