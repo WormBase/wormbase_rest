@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+##[0.1.2] - (unreleased)
+- swagger UI will now display validator badge.
+
 ##[0.1.1] - 2017-02-01
 - Split up code into new structure.
 - Refactored (compojure-api) routing code.

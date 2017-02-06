@@ -1,4 +1,4 @@
-(ns rest-api.classes.gene.widgets.phenotypes
+(ns rest-api.classes.gene.widgets.phenotype
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
