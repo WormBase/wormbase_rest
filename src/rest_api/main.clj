@@ -48,7 +48,7 @@
        (str "Widget and field endpoints "
             "used by the official [WormBase]"
             "(http://www.wormbase.org) site.")
-       :contact {:name "WormBase development team"
+       :contact {:name "the WormBase development team"
                  :email "developers@wormbase.org"}
        :version (System/getProperty "rest-api.version")}}}}
    (sweet/context "/" []
