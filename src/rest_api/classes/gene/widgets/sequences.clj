@@ -4,9 +4,13 @@
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.gene.generic :as generic]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+   [rest-api.formatters.object :as obj :refer [pack-obj humanize-ident]]))
 
-
+(defn get-transcript-length [sequence]
+  (let [species (:transcript/species sequence)
+        method (:locatable/method sequence)]
+    ; get the length from db
+    "test"))
 
 (defn gene-model-data [db coding? seqs]
   (->>
@@ -27,60 +31,64 @@
               {:keys [remark-map footnotes]}
               (reduce (fn [{:keys [remark-map footnotes]} r]
                         (let [pr (if-let [ev (obj/get-evidence r)]
-                                   {:text     (:cds.remark/text r)
+                                   {:text (:cds.remark/text r)
                                     :evidence ev}
                                    (:cds.remark/text r))]
                           (if-let [n (get remark-map pr)]
                             {:remark-map remark-map
-                             :footnotes  (pace-utils/conjv footnotes n)}
+                             :footnotes (pace-utils/conjv footnotes n)}
                             (let [n (inc (count remark-map))]
                               {:remark-map (assoc remark-map pr n)
-                               :footnotes  (pace-utils/conjv footnotes n)}))))
+                               :footnotes (pace-utils/conjv footnotes n)}))))
                       {:remark-map remark-map}
                       (:cds/remark cds))]
-          {:remark-map remark-map
-           :table (pace-utils/conjv
-                    table
-                    (pace-utils/vmap
-                      :model
-                      (map pack-obj seqs)
+ ;         {(ke( cds))
+           {:remark-map remark-map
+            :kets (seq cds);; not working
+            :table (pace-utils/conjv
+                     table
+                     (pace-utils/vmap
+                       :model
+                       (map pack-obj seqs)
 
-                      :protein
-                      (pack-obj "protein" protein)
+                       :protein
+                       (pack-obj "protein" protein)
 
-                      :cds
-                      (pace-utils/vmap
-                        :text (pace-utils/vassoc (pack-obj "cds" cds) :footnotes footnotes)
-                        :evidence (if (not (empty? status))
-                                    {:status status}))
+                       :cds
+                       (pace-utils/vmap
+                         :text (pace-utils/vassoc (pack-obj "cds" cds) :footnotes footnotes)
+                         :evidence (if (not (empty? status))
+                                     {:status status}))
 
-                      :length_spliced
-                      (if coding?
-                        (if-let [exons (seq (:cds/source-exons cds))]
-                          (->>
-                            (map
-                              (fn [ex]
-                                (- (:cds.source-exons/end ex)
-                                   (:cds.source-exons/start ex) -1)) exons)
-                            (reduce +))))
+                       :length_spliced
+                       (if coding?
+                         (let [length-spliced (if-let [exons (seq (:cds/source-exons cds))]
+                                                (->>
+                                                  (map
+                                                    (fn [ex]
+                                                      (- (:cds.source-exons/end ex)
+                                                         (:cds.source-exons/start ex) -1))
+                                                    exons)
+                                                  (reduce +)))]
+                           (if (= length-spliced 0)
+                             "-"
+                             length-spliced)))
 
-                      :length_unspliced
-                      (str/join
-                        "<br>"
-                        (for [s seqs]
-                          (if (and (:locatable/max s) (:locatable/min s))
-                            (- (:locatable/max s) (:locatable/min s))
-                            "-")))
+                       :length_unspliced
+                       (seq
+                         (for [s seqs]
+                           (get-transcript-length s)))
 
-                      :length_protein
-                      (:protein.peptide/length (:protein/peptide protein))
+                       :length_protein
+                       (:protein.peptide/length (:protein/peptide protein))
 
-                      :type (if seqs
-                              (if-let [mid (:method/id
-                                             (or (:transcript/method sequence)
-                                                 (:pseudogene/method sequence)
-                                                 (:cds/method sequence)))]
-                                (str/replace mid #"_" " ")))))}))
+                       :type (if seqs
+                               (if-let [mid (:method/id
+                                              (or (:transcript/method sequence)
+                                                  (:pseudogene/method sequence)
+                                                  (:cds/method sequence)))]
+                                 (str/replace mid #"_" " ")))))};}
+           ))
       {})
     ((fn [{:keys [table remark-map]}]
        (pace-utils/vmap
