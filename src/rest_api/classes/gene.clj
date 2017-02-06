@@ -23,7 +23,7 @@
     :overview overview/widget
     :phenotype phenotype/widget}
    :field
-   {:alles_other variation/alleles-other
+   {:alleles_other variation/alleles-other
     :polymorphisms variation/polymorphisms}})
 
 
