@@ -60,6 +60,23 @@ To run all tests:
 ```bash
 lein test
 ```
+## Swagger JSON validation
+The swagger UI displays a badge indicating whether the applications
+`swagger.json` is valid according to the specification.
+
+The official online validator cannot work with private IP addresses,
+so we need to run a local swagger validator in order in development.
+
+By default, the application will assume a local validation service is
+running at `http://localhost:8002` (when using the lein `:dev`
+profile).  This is not required, but should you not be running the
+service, the swagger UI page will display a broken image instead of
+the badge.
+
+### Running a local swagger validation service
+Clone the [swagger-validator-badge][2] repository somewhere,
+e.g `~/git`, then [run the swagger-validator service locally][3].
+
 
 ## Deploying to production
 
@@ -90,7 +107,7 @@ java -jar <jar-name>.jar
 
 ## Docker
 
-Build an [uberjar] (with ring server support) on the local machine
+Build an [uberjar][1] (with ring server support) on the local machine
 to avoid having to download dependencies in the container:
 
 ```bash
@@ -151,4 +168,6 @@ eb deploy
 
 TBD: JVM memory options.
 
-[uberjar](http://stackoverflow.com/questions/11947037/what-is-an-uber-jar)
+[1]: http://stackoverflow.com/questions/11947037/what-is-an-uber-jar
+[2]: https://github.com/swagger-api/validator-badge
+[3]: https://github.com/swagger-api/validator-badge#running-locally

@@ -1,19 +1,16 @@
 (ns rest-api.test-routing
   (:require
-   [cheshire.core :as json]
    [clojure.test :refer :all]
-   [clojure.walk :as w]
    [compojure.api.routes :as c-routes]
    [compojure.api.sweet :as sweet]
    [rest-api.db-testing :as db-testing]
    [rest-api.routing :as routing]))
 
-
 (use-fixtures :once db-testing/db-lifecycle)
 
 (deftest test-make-request-handler
   (testing
-      "Main request handler produces correct data structure (widgets)"
+    "Main request handler produces correct data structure (widgets)"
     (let [req {:uri "/rest/widget/gene/WBGene00000001/overview"
                :context "/rest/widget/gene"
                :params {:id "WBGene00000001"}}
@@ -31,26 +28,21 @@
                     {:top-x res-x
                      :top-y res-y}}]
       (is (= 200 (:status response)))
-      (is (= "application/json"
-             (get-in response [:headers "Content-Type"])))
-      (let [result (json/parse-string (:body response))
-            exp (w/stringify-keys expected)]
-        (is (= result exp)))))
-
-      (let [req {:uri "/rest/field/gene/WBGene00000001/xrefs"
-                 :context "/rest/widget/gene"
-                 :params {:id "WBGene00000001"}}
-            res-x {:data {:x "X"} :description "X desc"}
-            entity-handler (fn [e] res-x)
-            handler (routing/make-request-handler :field entity-handler)
-            response (handler req)
-            expected {:xrefs res-x
-                      :uri "rest/field/gene/WBGene00000001/xrefs"
-                      :class "gene"
-                      :name "WBGene00000001"}]
-        (let [result (json/parse-string (:body response))
-              exp (w/stringify-keys expected)]
-          (is (= result exp)))))
+      (is (= (:body response) expected))))
+  (testing
+    "Main request handler produces correct data structure (fields)"
+    (let [req {:uri "/rest/field/gene/WBGene00000001/xrefs"
+               :context "/rest/widget/gene"
+               :params {:id "WBGene00000001"}}
+          res-x {:data {:x "X"} :description "X desc"}
+          entity-handler (fn [e] res-x)
+          handler (routing/make-request-handler :field entity-handler)
+          response (handler req)
+          expected {:xrefs res-x
+                    :uri "rest/field/gene/WBGene00000001/xrefs"
+                    :class "gene"
+                    :name "WBGene00000001"}]
+      (is (= (:body response) expected)))))
 
 (deftest test-conform-to-scheme
   (testing "Is structure correct for catalyst for widget scheme?"
@@ -72,7 +64,7 @@
           entity {}
           result {:data {:x "X"} :description "D"}
           entity-handler (fn [e] result)
-          expected {"f1" (entity-handler entity)}
+          expected {:f1 (entity-handler entity)}
           result (routing/conform-to-scheme :field
                                             entity-handler
                                             entity
@@ -90,6 +82,7 @@
   (routing/defroutes {:datatype "testing"
                       :widget widget
                       :field fields})
+
 (deftest test-defroutes
   (testing "Defining routes via `defroutes` macro."
     ;; Expected counts:

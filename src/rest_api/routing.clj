@@ -1,24 +1,16 @@
 (ns rest-api.routing
   (:require
-   [cheshire.core :as json] ;; TODO: use compojure.api's formats instead
    [clojure.string :as str]
    [compojure.api.sweet :as sweet]
    [datomic.api :as d]
    [rest-api.db.main :refer [datomic-conn]]
-   [ring.util.request :as ring-in]
-   [ring.util.response :as ring-out]
+   [ring.util.request :as req]
+   [ring.util.http-response :as res]
    [schema.core :as schema]))
 
-(defn- json-response [data]
-  (-> data
-      (json/generate-string {:pretty true})
-      (ring-out/response)
-      (ring-out/content-type "application/json")))
-
-(defn- entity-not-found [entity-class id]
-  (-> {:message (format "%s entity %s does not exist" entity-class id)}
-      (json-response)
-      (ring-out/status 404)))
+(defn- entity-not-found [schema-name id]
+  (-> {:message (format "Entity %s %s does not exist" schema-name id)}
+      (res/not-found)))
 
 (defn- conform-uri [request]
   (str/replace-first (:uri request) "/" ""))
@@ -30,10 +22,11 @@
 (defmethod conform-to-scheme :field
   [scheme entity-handler entity request]
   (let [result (entity-handler entity)
-        endpoint-name (-> (ring-in/path-info request)
-                          (str/split #"/")
-                          (last))]
-    {endpoint-name result}))
+        endpoint-kw (-> (req/path-info request)
+                        (str/split #"/")
+                        (last)
+                        (keyword))]
+    {endpoint-kw result}))
 
 (defmethod conform-to-scheme :widget
   [scheme entity-handlers entity request]
@@ -57,7 +50,7 @@
              (merge {:class entity-class
                      :name id
                      :uri (conform-uri request)})
-             (json-response))
+             (res/ok))
         (entity-not-found entity-class id)))))
 
 (defprotocol RouteSpecification
