@@ -25,6 +25,7 @@
   :main ^:skip-aot rest-api.main
   :resource-paths ["resources"]
   :uberjar {:aot :all}
+  :target-path "target/%s"
   :ring {:handler rest-api.main/app
          :host "0.0.0.0"
          :init rest-api.main/init}
