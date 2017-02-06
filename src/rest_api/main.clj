@@ -4,7 +4,8 @@
    [environ.core :as environ]
    [mount.core :as mount]
    [rest-api.classes.gene :as gene]
-   [rest-api.classes.transcript :as transcript]))
+   [rest-api.classes.transcript :as transcript]
+   [ring.middleware.gzip :as ring-gzip]))
 
 (def ^:private all-routes
   "A collection of all routes to served by the application."
