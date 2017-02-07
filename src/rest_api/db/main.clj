@@ -1,15 +1,16 @@
 (ns rest-api.db.main
   (:require   
-   [environ.core :refer (env)]
    [datomic.api :as d]
-   [mount.core :refer [defstate]]))
+   [environ.core :as environ]
+   [mount.core :as mount]))
 
-(defn- new-connection []
-  (d/connect (env :trace-db)))
+(defn- connect []
+  (let [db-uri (environ/env :trace-db)]
+    (d/connect db-uri)))
 
 (defn- disconnect [conn]
   (d/release conn))
 
-(defstate datomic-conn
-  :start (new-connection)
+(mount/defstate datomic-conn
+  :start (connect)
   :stop (disconnect datomic-conn))

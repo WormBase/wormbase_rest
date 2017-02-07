@@ -4,6 +4,6 @@
    [rest-api.classes.gene.expression :as exp]))
 
 (routing/defroutes
-  {:datatype "transcript"
+  {:entity-class "transcript"
    :field
    {:fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})
