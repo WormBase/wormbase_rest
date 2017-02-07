@@ -290,7 +290,7 @@
               :let [author (:evidence.author-evidence/author holder)]]
           {:evidence
            ;; Notes seem to be ignored here.
-           (pack-obj "author" author)})) 
+           (pack-obj "author" author)}))
 
    :Accession_evidence
    (if-let [accs (:evidence/accession-evidence holder)]

@@ -23,9 +23,17 @@
 
 (defn- expression-table-row [entity entity-name expr-pattern qualifier]
   {(keyword entity-name) (pack-obj entity)
-   :evidence {:text (pack-obj expr-pattern)
-              :evidence (expr-pattern-detail expr-pattern qualifier)}
-   :image ""})
+   :details
+   {:text (assoc (pack-obj expr-pattern)
+                 :curated_images
+                 (->> (:picture/_expr-pattern expr-pattern)
+                      (map pack-obj)
+                      (map #(assoc % :thumbnail
+                                   {:format "jpg",
+                                    :name "WBPaper00032514/F6.large_A",
+                                    :class "/img-static/pictures"}))
+                      (seq)))
+    :evidence (expr-pattern-detail expr-pattern qualifier)}})
 
 (defn expressed-in [gene]
   (let [db (d/entity-db gene)]
@@ -41,7 +49,7 @@
                    db (:db/id gene))]
        (map (fn [[anatomy expr-pattern qualifier]]
               (expression-table-row (d/entity db anatomy)
-                                    "anatomy"
+                                    "anatomy_term"
                                     (d/entity db expr-pattern)
                                     (d/entity db qualifier)))
             anatomy-relations))
@@ -49,6 +57,6 @@
 
 (def widget
   {:name generic/name-field
-   :expressed-in expressed-in
+   :expressed_in expressed-in
    }
   )
