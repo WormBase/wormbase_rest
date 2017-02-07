@@ -16,7 +16,7 @@
   "The URL used to validate the swagger JSON produced by the application."
   (if-let [validator-url (environ/env :swagger-validator-url)]
     validator-url
-    "//online.swagger.io"))
+    "//online.swagger.io/validator"))
 
 (def ^:private api-output-formats
   "The formats API endpoints will produce data in."
