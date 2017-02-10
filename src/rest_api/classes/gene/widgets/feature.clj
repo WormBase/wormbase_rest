@@ -12,15 +12,6 @@
     []
     xs))
 
-(defn xform-species-name
-  "Transforms a `species-name` from the WB database into
-  a name used to look up connection configuration to a sequence db."
-  [species]
-  (let [species-name-parts (str/split species #" ")
-        g (str/lower-case (ffirst species-name-parts))
-        species (second species-name-parts)]
-    (str/join "_" [g species])))
-
 (defn- expr-pattern [db fid]
   (->> (d/q '[:find [?e ...]
               :in $ ?f
@@ -33,16 +24,14 @@
         (fn [eid]
           (let [expr (d/entity db eid)]
             {:text
-             (map #(pack-obj "anatomy-term"
-                             (:expr-pattern.anatomy-term/anatomy-term %))
+             (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
                   (:expr-pattern/anatomy-term expr))
              :evidence {:by (pack-obj "expr-pattern" expr)}})))
        (seq)))
 
 (defn- interaction [feature]
   (->> (:interaction.feature-interactor/_feature feature)
-       (map #(pack-obj "interaction"
-                       (:interaction/_feature-interactor %)))
+       (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
        (seq)))
 
 (defn- bounded-by [feature]
@@ -60,10 +49,10 @@
 (defn- associated-feature [db fid]
   (let [feature (d/entity db fid)
         method (-> (:locatable/method feature)
-                   (:method/id))       
+                   (:method/id))
         inter (interaction feature)
         ep (expr-pattern db fid)
-        bbpo (bounded-by feature) 
+        bbpo (bounded-by feature)
         tf (transcription-factor feature)]
     {:name (pack-obj "feature" feature)
      :description (first (:feature/description feature))
@@ -91,7 +80,7 @@
 
 (defn- get-segments [gene]
   (let [species-name (->> gene :gene/species :species/id)
-        g-species (xform-species-name species-name)
+        g-species (seqfeat/xform-species-name species-name)
         sequence-database (seqdb/get-default-sequence-database g-species)]
     (if sequence-database
       (seqfeat/sequence-features sequence-database (:gene/id gene)))))
