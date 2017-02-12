@@ -95,18 +95,25 @@
             :label (date/format-date3 (str d))}])
 
         :Contributed_by
-        [(pack-obj "analysis"
-                   (:go-annotation/contributed-by anno))]
+        (if-let [cb (:go-annotation/contributed-by anno)]
+          (pack-obj cb))
+
         :Reference
         (if (:go-annotation/reference anno)
           [(pack-obj "paper"
                      (:go-annotation/reference anno))])
 
         :GO_reference
-        (if (:go-annotation/go-term-relation anno)
-          ;; TODO: This looks broken!?
-          (concat
-           )))}
+        (seq (for [{go-id :go-annotation.go-reference/text
+                    ref-db :go-annotation.go-reference/database
+                    ref-db-field :go-annotation.go-reference/database-field}
+                   (:go-annotation/go-reference anno)]
+               {:class (:database/name ref-db)
+                :dbt (:database-field/id ref-db-field)
+                :id go-id
+                :label go-id}))
+
+        )}
 
       :go_type
       (if-let [go-type (:go-term/type term)]
@@ -120,7 +127,8 @@
       (pack-obj "go-term" term :label (:go-term/id term))
 
       :term_description
-      (pack-obj "go-term" term)})
+      (pack-obj "go-term" term)}
+     )
    annos))
 
 (defn gene-ontology-full [gene]
