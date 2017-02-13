@@ -85,17 +85,6 @@
                            (sort-by +))
         padded-start (- start 2000)
         padded-stop (+ stop 2000)
-        calc-browser-pos (fn [x-op x y mult-offset]
-                           (if gbrowse
-                             (->> (reduce - (sort-by - [x y]))
-                                  (double)
-                                  (* mult-offset)
-                                  (int)
-                                  (x-op x))
-                             y))
-        browser-start (calc-browser-pos - padded-start padded-stop 0.2)
-        browser-stop (calc-browser-pos + padded-stop padded-start 0.5)
-        id (str (:seqname segment) ":" browser-start ".." browser-stop)
         tracks ["GENES"
                 "RNASEQ_ASYMMETRIES"
                 "RNASEQ"
@@ -111,20 +100,7 @@
                 "BINDING_SITES_PREDICTED"
                 "BINDING_SITES_CURATED"
                 "BINDING_REGIONS"]]
-    (sequence-fns/create-genomic-location-obj id gene tracks)
-    {:class "genomic_location" ;; To populate this correctly we will
-                               ;; need sequence data
-     :id id
-     :label id
-     :pos_string id
-     :taxonomy (if-let [class (:gene/species gene)]
-                 (if-let [[_ genus species]
-                          (re-matches #"^(.*)\s(.*)$"
-                                      (:species/id class))]
-                   (str/lower-case
-                    (str/join [(first genus) "_" species]))))
-     :tracks tracks
-     }))
+    (sequence-fns/create-genomic-location-obj padded-start padded-stop gene segment tracks gbrowse)))
 
 (defn feature-image [gene]
   (let [segment (sequence-fns/get-longest-segment gene)
