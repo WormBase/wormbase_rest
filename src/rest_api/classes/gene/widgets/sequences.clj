@@ -76,9 +76,9 @@
                       table
                       (pace-utils/vmap
                         :model
-                        (for [tc (:gene/corresponding-transcript gene)]
-                          (let [t (:gene.corresponding-transcript/transcript tc)]
-                            (pack-obj "transcript" t)))
+;                        (for [tc (:gene/corresponding-transcript gene)]
+;                          (let [t (:gene.corresponding-transcript/transcript tc)]
+                            (pack-obj "transcript" sequence);)
 
                         :protein
                         (pack-obj "protein" protein)
@@ -107,9 +107,9 @@
 
                         :length_unspliced
                         (if coding?
-                          (for [tc (:gene/corresponding-transcript gene)]
-                            (let [t (:gene.corresponding-transcript/transcript tc)]
-                              (let [length-spliced (if-let [exons (seq (:transcript/source-exons t))]
+;                          (for [tc (:gene/corresponding-transcript gene)]
+ ;                           (let [t (:gene.corresponding-transcript/transcript tc)]
+                              (let [length-spliced (if-let [exons (seq (:transcript/source-exons sequence))]
                                                      (->>
                                                        (map
                                                          (fn [ex]
@@ -119,7 +119,8 @@
                                                        (reduce +)))]
                                 (if (= length-spliced 0)
                                   "-"
-                                  length-spliced)))))
+                                  length-spliced)))
+                        ;))
 
                         :length_protein
                         (:protein.peptide/length (:protein/peptide protein))
