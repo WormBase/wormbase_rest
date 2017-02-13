@@ -121,12 +121,15 @@
                         :length_protein
                         (:protein.peptide/length (:protein/peptide protein))
 
-                        :type (if seqs
-                                (if-let [mid (:method/id
-                                               (or (:transcript/method sequence)
-                                                   (:pseudogene/method sequence)
-                                                   (:cds/method sequence)))]
-                                  (str/replace mid #"_" " ")))))})))
+                        :type
+                        (if seqs
+                          (if-let [mid (:method/id
+                                         (or
+                                           (:locatable/method sequence)
+                                           (:transcript/method sequence)
+                                           (:pseudogene/method sequence)
+                                           (:cds/method sequence)))]
+                            (str/replace mid #"_" " ")))))})))
       {})
     ((fn [{:keys [table remark-map]}]
        (pace-utils/vmap
