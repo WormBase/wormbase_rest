@@ -2,6 +2,7 @@
   (:require
    [rest-api.classes.gene.widgets.external-links :as external-links]
    [rest-api.classes.gene.widgets.feature :as feature]
+   [rest-api.classes.gene.widgets.sequences :as sequences]
    [rest-api.classes.gene.widgets.genetics :as genetics]
    [rest-api.classes.gene.widgets.history :as history]
    [rest-api.classes.gene.widgets.mapping-data :as mapping-data]
@@ -24,6 +25,7 @@
     :mapping_data mapping-data/widget
     :overview overview/widget
     :location location/widget
+    :sequences sequences/widget
     :phenotype phenotype/widget}
    :field
    {:alleles_other variation/alleles-other

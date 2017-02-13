@@ -23,16 +23,14 @@
         (fn [eid]
           (let [expr (d/entity db eid)]
             {:text
-             (map #(pack-obj "anatomy-term"
-                             (:expr-pattern.anatomy-term/anatomy-term %))
+             (map #(pack-obj "anatomy-term" (:expr-pattern.anatomy-term/anatomy-term %))
                   (:expr-pattern/anatomy-term expr))
              :evidence {:by (pack-obj "expr-pattern" expr)}})))
        (seq)))
 
 (defn- interaction [feature]
   (->> (:interaction.feature-interactor/_feature feature)
-       (map #(pack-obj "interaction"
-                       (:interaction/_feature-interactor %)))
+       (map #(pack-obj "interaction" (:interaction/_feature-interactor %)))
        (seq)))
 
 (defn- bounded-by [feature]

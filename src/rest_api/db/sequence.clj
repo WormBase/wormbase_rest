@@ -41,7 +41,8 @@
                              (database-version)])]
 
               {(keyword db-name)
-               {:connection-uri
+               {:subprotocol "mysql"
+                :connection-uri
                  (str "jdbc:mysql://10.0.0.181:3306/"
 		       db-name
                        (str "?user=wormbase&"
@@ -51,3 +52,9 @@
 
 (defn gene-features [db-spec gene-name]
   (sequencesql/gene-features db-spec {:name gene-name}))
+
+(defn sequence-features-where-type [db-spec feature-name method]
+  (sequencesql/sequence-features-where-type
+    db-spec
+    {:name feature-name
+     :tag method}))
