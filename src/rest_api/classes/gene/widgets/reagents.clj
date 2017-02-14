@@ -130,18 +130,6 @@
           (seq))
      :description "antibodies generated against protein products or gene fusions"}))
 
-#_(def ^:private child-rule
- '[[(child ?parent ?min ?max ?method ?c)
-   [(pseudoace.binning/reg2bins ?min ?max) [?bin ...]]
-   [(pseudoace.binning/xbin ?parent ?bin) ?xbin]
-   [?c :locatable/xbin ?xbin]
-   [?c :locatable/parent ?parent]
-   [?c :pcr-product/method ?method]
-   [?c :locatable/min ?cmin]
-   [?c :locatable/max ?cmax]
-   [(<= ?cmin ?max)]
-   [(>= ?cmax ?min)]]])
-
 (def ^:private child-rule
   '[[(child ?parent ?min ?max ?method ?c) [?parent :sequence/id ?seq-name]
      [(pseudoace.binning/bins ?seq-name ?min ?max) [?bin ...]]
@@ -158,34 +146,30 @@
   (let [db (d/entity-db gene)
         [parent start end] (locatables/root-segment gene)]
     {:data
-     ;;
-     ;; Big assembly-navigation query should probably be factored out somewhere
-     ;; once we're a bit more solid about how this stuff should work.
-     ;;
-     (if parent
+    (if parent
        (->> (d/q '[:find [?p ...]
-                 :in $ % ?seq ?min ?max
-                 :where [?method :method/id "Orfeome"]
-                 (or-join [?seq ?min ?max ?method ?p]
-     (and
-       [?ss-seq :locatable/assembly-parent ?seq]
-       [?ss-seq :locatable/min ?ss-min]
-       [?ss-seq :locatable/max ?ss-max]
-       [(<= ?ss-min ?max)]
-       [(>= ?ss-max ?min)]
-       [(- ?min ?ss-min -1) ?rel-min]
-       [(- ?max ?ss-min -1) ?rel-max]
-       (child ?ss-seq ?rel-min ?rel-max ?method ?p))
-     (child ?seq ?min ?max ?method ?p))]
+                   :in $ % ?seq ?min ?max
+                   :where [?method :method/id "Orfeome"]
+                          (or-join [?seq ?min ?max ?method ?p]
+                           (and
+                           [?ss-seq :locatable/assembly-parent ?seq]
+                           [?ss-seq :locatable/min ?ss-min]
+                           [?ss-seq :locatable/max ?ss-max]
+                           [(<= ?ss-min ?max)]
+                           [(>= ?ss-max ?min)]
+                           [(- ?min ?ss-min -1) ?rel-min]
+                           [(- ?max ?ss-min -1) ?rel-max]
+                           (child ?ss-seq ?rel-min ?rel-max ?method ?p))
+                           (child ?seq ?min ?max ?method ?p))]
                db
                child-rule
                (:db/id parent) start end)
             (map
               (fn [ppid]
                 (let [pp (d/entity db ppid)]
-     {:id    (:pcr-product/id pp)
-      :class "pcr_oligo"
-      :label (:pcr-product/id pp)})))
+                  {:id    (:pcr-product/id pp)
+                   :class "pcr_oligo"
+                   :label (:pcr-product/id pp)})))
             (seq)))
      :description "ORFeome Project primers and sequences"}))
 
