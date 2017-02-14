@@ -1,11 +1,8 @@
 (ns rest-api.classes.gene.widgets.location
   (:require
-    [clojure.string :as str]
-    [datomic.api :as d]
-    [pseudoace.utils :as pace-utils]
     [rest-api.classes.gene.sequence :as sequence-fns]
     [rest-api.classes.gene.generic :as generic]
-    [rest-api.formatters.object :as obj :refer  [pack-obj]]))
+))
 
 (defn genetic-position [gene]
   (let [segment (sequence-fns/get-longest-segment gene)
