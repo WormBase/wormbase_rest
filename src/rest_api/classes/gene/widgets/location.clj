@@ -7,10 +7,10 @@
 (defn genetic-position [gene]
   (let [segment (sequence-fns/get-longest-segment gene)
         gene-map (:gene/map gene)
-        chr (if (nil? gene-map) nil (:map/id (:gene.map/map gene-map)))
-        map-position (if (nil? gene-map) nil (:map-position/position gene-map))
-        error (if (nil? map-position) nil (:map-error/error map-position))
-        position (if (nil? map-position) nil (:map-position.position/float map-position))]
+        chr (:map/id (:gene.map/map gene-map))
+        map-position (:map-position/position gene-map)
+        error (:map-error/error map-position)
+        position (:map-position.position/float map-position)]
     {:data [{:chromosome chr
             :position position
             :error error
