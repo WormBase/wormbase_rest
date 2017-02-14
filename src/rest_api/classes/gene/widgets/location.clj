@@ -1,8 +1,7 @@
 (ns rest-api.classes.gene.widgets.location
   (:require
     [rest-api.classes.gene.sequence :as sequence-fns]
-    [rest-api.classes.gene.generic :as generic]
-))
+    [rest-api.classes.gene.generic :as generic]))
 
 (defn genetic-position [gene]
   (let [segment (sequence-fns/get-longest-segment gene)
@@ -28,11 +27,11 @@
    :description "tracks displayed in GBrowse"})
 
 (defn- genomic-obj [gene]
- (if-let [segment (sequence-fns/get-longest-segment gene)]
-           (let [[start, stop] (->> segment
-                                     ((juxt :start :end))
-                                     (sort-by +))]
-             (sequence-fns/create-genomic-location-obj start stop gene segment nil true))))
+  (if-let [segment (sequence-fns/get-longest-segment gene)]
+    (let [[start, stop] (->> segment
+                             ((juxt :start :end))
+                             (sort-by +))]
+      (sequence-fns/create-genomic-location-obj start stop gene segment nil true))))
 
 (defn genomic-position [gene]
   {:data [(genomic-obj gene)]
