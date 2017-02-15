@@ -9,14 +9,14 @@
    [rest-api.formatters.object :as obj :refer [pack-obj humanize-ident]]))
 
 (defn- get-features-from-sequence [sequence]
-  (let  [species-name  (->> sequence :transcript/species :species/id)
-         g-species  (seqfeat/xform-species-name species-name)
-         sequence-database  (seqdb/get-default-sequence-database g-species)
-         db-spec  ((keyword sequence-database) seqdb/sequence-dbs)
+  (if-let [species-name (->> sequence :transcript/species :species/id)]
+    (let [g-species (seqfeat/xform-species-name species-name)
+         sequence-database (seqdb/get-default-sequence-database g-species)
+         db-spec ((keyword sequence-database) seqdb/sequence-dbs)
          method (:method/id (:locatable/method sequence))
          transcript-id (:transcript/id sequence)]
     (if sequence-database
-      (seqdb/sequence-features-where-type db-spec transcript-id method))))
+      (seqdb/sequence-features-where-type db-spec transcript-id method)))))
 
 (defn cds-id [s]
   ;Can be either a cds, transcript or pseudogene

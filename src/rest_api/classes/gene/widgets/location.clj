@@ -13,7 +13,9 @@
     {:data [{:chromosome chr
              :position position
              :error error
-             :formatted (format "%s:%2.2f +/- %2.3f cM" chr position (if (nil? error) 0 error))
+             :formatted (if (nil? error)
+                          (format "%s:%2.2f +/- (unknown)f cM" chr position)
+                          (format "%s:%2.2f +/- %2.3f cM" chr position error))
              :method ""}]
      :description (str "Genetic position of Gene:" (:gene/id gene))}))
 
