@@ -43,24 +43,27 @@
    "allele designation of the affiliated laboratory"}))
 ;; note that the perl catalyst interface does not return proper data for "rep", it gives a single value while the data could have multiple persons, e.g. WBPerson8705
 
+
+
 (defn gene-classes [person]
    (let [db (d/entity-db person)
          data
          (first
-         (->> (d/q '[:find [?laboratory ...]
+         (->> (d/q '[:find [?geneclass ...]
                    :in $ ?person
                    :where [?laboratory :laboratory/registered-lab-members ?person]
+                          [?geneclass :gene-class/designating-laboratory ?laboratory]
                           ]
                  db (:db/id person))
               (map (fn [oid]
-                     (let [laboratory (d/entity db oid)]
-                        (->> (d/q '[:find [?geneclass ...]
-                                  :in $ ?laboratory
+                     (let [geneclass (d/entity db oid)]
+                        (->> (d/q '[:find [?laboratory ...]
+                                  :in $ ?geneclass
                                   :where [?geneclass :gene-class/designating-laboratory ?laboratory]
                                          ]
                                 db oid)
-                             (map (fn [gcid]
-                               (let [geneclass (d/entity db gcid)]
+                             (map (fn [lid]
+                               (let [laboratory (d/entity db lid)]
                                  (pace-utils/vmap
                                   :lab
                                      {:taxonomy "all"
