@@ -50,7 +50,12 @@
       :exclusions [joda-time]]]}
    :dev [:datomic-pro
          :ddb
-         {:dependencies [[ring/ring-devel "1.5.1"]]
+         {:aliases
+          {"code-qa"
+           ["do"
+            ["eastwood"]
+            "test"]}
+          :dependencies [[ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
           :env
           {:trace-db "datomic:ddb://us-east-1/WS257/wormbase"
