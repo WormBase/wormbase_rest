@@ -1,6 +1,5 @@
 (ns rest-api.classes.person.widgets.overview
   (:require
-   [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.formatters.date :as date]

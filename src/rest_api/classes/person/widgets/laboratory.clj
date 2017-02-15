@@ -1,10 +1,7 @@
 (ns rest-api.classes.person.widgets.laboratory
   (:require
-   [clojure.string :as str]
    [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
-   [rest-api.formatters.date :as date]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+   [pseudoace.utils :as pace-utils]))
 
 
 (defn lab-info [person]

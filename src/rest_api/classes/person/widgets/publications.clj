@@ -2,13 +2,10 @@
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
-   [rest-api.formatters.date :as date]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+   [pseudoace.utils :as pace-utils]))
 
 
 (defn publications [person]
-         (def keymap)
    (let [db (d/entity-db person)
          dataArrayTuples
          (->> (d/q '[:find [?paper ...]
@@ -38,7 +35,6 @@
    "publications by this person excluding meeting abstracts."}))
 
 (defn meeting-abstracts [person]
-         (def keymap)
    (let [db (d/entity-db person)
          dataArrayTuples
          (->> (d/q '[:find [?paper ...]

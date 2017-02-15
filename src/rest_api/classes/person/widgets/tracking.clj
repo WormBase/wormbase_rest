@@ -1,10 +1,7 @@
 (ns rest-api.classes.person.widgets.tracking
   (:require
-   [clojure.string :as str]
    [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
-   [rest-api.formatters.date :as date]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+   [rest-api.formatters.date :as date]))
 
 
 (defn last-verified [person]
@@ -33,6 +30,5 @@
 (def widget
   { :last_verified            last-verified
     :status                   status
-    :possibly_publishes_as    possibly-publishes-as
-  })
+    :possibly_publishes_as    possibly-publishes-as})
 
