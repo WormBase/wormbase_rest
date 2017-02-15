@@ -43,30 +43,30 @@
                                    (int)
                                    (x-op x))
                               y))
-        browser-start  (calc-browser-pos - start stop 0.2)
-        browser-stop  (calc-browser-pos + stop start 0.5)
+        browser-start (calc-browser-pos - start stop 0.2)
+        browser-stop (calc-browser-pos + stop start 0.5)
         label (str (:seqname segment) ":" start ".." stop)
-        id (str  (:seqname segment) ":" browser-start ".." browser-stop)]
-  (pace-utils/vmap
-    :class
-    "genomic_location"
+        id (str (:seqname segment) ":" browser-start ".." browser-stop)]
+    (pace-utils/vmap
+      :class
+      "genomic_location"
 
-    :id
-    id
+      :id
+      id
 
-    :label
-    label
+      :label
+      label
 
-    :pos_string
-    id
+      :pos_string
+      id
 
-    :taxonomy
-    (if-let  [class  (:gene/species gene)]
-      (if-let  [[_ genus species]
-                (re-matches #"^(.*)\s(.*)$"
-                            (:species/id class))]
-        (str/lower-case
-          (str/join  [(first genus) "_" species]))))
+      :taxonomy
+      (if-let  [class  (:gene/species gene)]
+        (if-let  [[_ genus species]
+                  (re-matches #"^(.*)\s(.*)$"
+                              (:species/id class))]
+          (str/lower-case
+            (str/join  [(first genus) "_" species]))))
 
-    :tracks
-    tracks)))
+      :tracks
+      tracks)))

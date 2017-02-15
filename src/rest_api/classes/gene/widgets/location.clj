@@ -11,10 +11,10 @@
         error (:map-error/error map-position)
         position (:map-position.position/float map-position)]
     {:data [{:chromosome chr
-            :position position
-            :error error
-            :formatted (format "%s:%2.2f +/- %2.3f cM" chr position (if (nil? error) 0 error))
-            :method ""}]
+             :position position
+             :error error
+             :formatted (format "%s:%2.2f +/- %2.3f cM" chr position (if (nil? error) 0 error))
+             :method ""}]
      :description (str "Genetic position of Gene:" (:gene/id gene))}))
 
 (defn tracks [gene]
