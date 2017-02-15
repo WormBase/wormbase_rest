@@ -10,6 +10,7 @@
    [rest-api.classes.gene.widgets.overview :as overview]
    [rest-api.classes.gene.widgets.phenotype :as phenotype]
    [rest-api.classes.gene.widgets.reagents :as reagents]
+   [rest-api.classes.gene.widgets.phenotype-graph :as phenotype-graph]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.routing :as routing]))
@@ -26,6 +27,7 @@
     :overview overview/widget
     :sequences sequences/widget
     :reagents reagents/widget
+    :phenotype_graph phenotype-graph/widget
     :phenotype phenotype/widget}
    :field
    {:alleles_other variation/alleles-other
