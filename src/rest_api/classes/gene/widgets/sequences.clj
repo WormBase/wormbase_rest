@@ -1,7 +1,6 @@
 (ns rest-api.classes.gene.widgets.sequences
   (:require
    [clojure.string :as str]
-   [clojure.set :as set]
    [datomic.api :as d]
    [rest-api.db.sequence :as seqdb]
    [pseudoace.utils :as pace-utils]
@@ -13,15 +12,16 @@
   (let  [species-name  (->> sequence :transcript/species :species/id)
          g-species  (seqfeat/xform-species-name species-name)
          sequence-database  (seqdb/get-default-sequence-database g-species)
+         db-spec  ((keyword sequence-database) seqdb/sequence-dbs)
          method (:method/id (:locatable/method sequence))
          transcript-id (:transcript/id sequence)]
     (if sequence-database
-      (seqfeat/sequence-features-where-type sequence-database transcript-id method))))
+      (seqdb/sequence-features-where-type db-spec transcript-id method))))
 
 (defn cds-id [s]
   ;Can be either a cds, transcript or pseudogene
   (if-let [cds (or
-                 (and (:cds/id s))
+                 (and (:cds/id s) s)
                  (:transcript.corresponding-cds/cds (:transcript/corresponding-cds s))
                  (:pseudogene.corresponding-cds/cds (:psuedogene/corresponding-cds s)))]
     (:cds/id cds)))
@@ -52,7 +52,7 @@
         (if-let [features (get-features-from-sequence sequence)]
           (let [cds (get-corresponding-cds sequence)
                 protein (:cds.corresponding-protein/protein (:cds/corresponding-protein cds))
-                seqs (or (seq (map :transcript.corresponding-cds/_cds (:transcript/_corresponding-cds cds)))
+                seqs (or (seq (map :transcript/_corresponding-cds (:transcript.corresponding-cds/_cds cds)))
                          [sequence])
                 status (str (obj/humanize-ident (:cds/prediction-status cds))
                             (if (:cds/matching-cdna cds)
@@ -74,19 +74,19 @@
              :table (pace-utils/conjv
                       table
                       (pace-utils/vmap
-                        :model
-                        (for  [tc  (:gene/corresponding-transcript gene)]
-                          (let  [t  (:gene.corresponding-transcript/transcript tc)]
-                            (pack-obj "transcript" t)))
+                        :model (for [s seqs]
+                                 (pack-obj s))
 
                         :protein
                         (pack-obj "protein" protein)
 
                         :cds
-                        (pace-utils/vmap
-                          :text (pace-utils/vassoc (pack-obj "cds" cds) :footnotes footnotes)
-                          :evidence (if (not (empty? status))
-                                      {:status status}))
+                        (if (nil? cds)
+                          "(no CDS)"
+                          (pace-utils/vmap
+                            :text (pace-utils/vassoc (pack-obj "cds" cds) :footnotes footnotes)
+                            :evidence (if (not (empty? status))
+                                        {:status status})))
 
                         :length_spliced
                         (if coding?
@@ -104,19 +104,18 @@
 
                         :length_unspliced
                         (if coding?
-                          (for [tc (:gene/corresponding-transcript gene)]
-                            (let [t (:gene.corresponding-transcript/transcript tc)]
-                              (let [length-spliced (if-let [exons (seq (:transcript/source-exons t))]
-                                                     (->>
-                                                       (map
-                                                         (fn [ex]
-                                                           (- (:transcript.source-exons/max ex)
-                                                              (:transcript.source-exons/min ex) -1))
-                                                         exons)
-                                                       (reduce +)))]
-                                (if (= length-spliced 0)
-                                  "-"
-                                  length-spliced)))))
+                          (for [s seqs]
+                            (let [length-spliced (if-let [exons (seq (:transcript/source-exons s))]
+                                                   (->>
+                                                     (map
+                                                       (fn [ex]
+                                                         (- (:transcript.source-exons/max ex)
+                                                            (:transcript.source-exons/min ex) -1))
+                                                       exons)
+                                                     (reduce +)))]
+                              (if (= length-spliced 0)
+                                "-"
+                                length-spliced))))
 
                         :length_protein
                         (:protein.peptide/length (:protein/peptide protein))
@@ -151,7 +150,6 @@
                   db
                   '[[(gene-transcript ?gene ?seq) [?gene :gene/corresponding-transcript ?ct]
                      [?ct :gene.corresponding-transcript/transcript ?seq]]
-                    ;; Per Perl code, take transcripts if any exist, otherwise take the CDS itself.
                     [(gene-cdst-or-cds ?gene ?seq) [?gene :gene/corresponding-cds ?cc]
                      [?cc :gene.corresponding-cds/cds ?cds]
                      [?ct :transcript.corresponding-cds/cds ?cds]

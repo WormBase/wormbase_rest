@@ -9,6 +9,7 @@
    [rest-api.classes.gene.widgets.ontology :as gene-ontology]
    [rest-api.classes.gene.widgets.overview :as overview]
    [rest-api.classes.gene.widgets.phenotype :as phenotype]
+   [rest-api.classes.gene.widgets.location :as location]
    [rest-api.classes.gene.widgets.reagents :as reagents]
    [rest-api.classes.gene.widgets.phenotype-graph :as phenotype-graph]
    [rest-api.classes.gene.variation :as variation]
@@ -25,6 +26,7 @@
     :history history/widget
     :mapping_data mapping-data/widget
     :overview overview/widget
+    :location location/widget
     :sequences sequences/widget
     :reagents reagents/widget
     :phenotype_graph phenotype-graph/widget
