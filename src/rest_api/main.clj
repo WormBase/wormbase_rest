@@ -5,6 +5,7 @@
    [mount.core :as mount]
    [rest-api.classes.gene :as gene]
    [rest-api.classes.transcript :as transcript]
+   [ring.util.http-response :as res]
    [ring.middleware.gzip :as ring-gzip]))
 
 (def ^:private all-routes
@@ -21,6 +22,16 @@
 (def ^:private api-output-formats
   "The formats API endpoints will produce data in."
   ["application/json"])
+
+(defn- wrap-not-found
+  "Fallback 404 handler."
+  [handler]
+  (fn [request]
+    (let [response (handler request)]
+      (if response
+        response
+        (res/not-found
+         {:reason "These are not the worms you're looking for"})))))
 
 (defn init
   "Entry-point for ring server initialization."
@@ -52,7 +63,7 @@
                  :email "developers@wormbase.org"}
        :version (System/getProperty "rest-api.version")}}}}
    (sweet/context "/" []
-     :middleware [ring-gzip/wrap-gzip]
+     :middleware [ring-gzip/wrap-gzip wrap-not-found]
      (sweet/context "/rest" []
        (->> all-routes
             (flatten)
