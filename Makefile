@@ -116,4 +116,4 @@ docker-clean: $(call print-help,docker-clean,\
 
 .PHONY: clean
 clean: $(call print-help,clean,"Remove the locally built JAR file.")
-	rm -f ./docker/${DEPLOY_JAR}
+	@rm -f ./docker/${DEPLOY_JAR}
