@@ -17,7 +17,7 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.5.1"]
-   [wormbase/pseudoace "0.4.14"]]
+   [wormbase/pseudoace "0.4.15"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
             [lein-pprint "1.1.1"]
