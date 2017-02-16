@@ -1,10 +1,10 @@
 NAME := wormbase/datomic-to-catalyst
 VERSION ?= $(shell git describe --abbrev=0 --tags)
-WS_VERSION := WS257
-LOWER_WS_VERSION = `echo $(WS_VERSION) | tr A-Z a-z`
 EBX_CONFIG := .ebextensions/.config
 DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
+WS_VERSION ?= $(shell echo ${DB_URI} | sed -rn 's|.*(WS[0-9].+).*|\1|p')
+LOWER_WS_VERSION ?= $(shell echo ${WS_VERSION} | tr A-Z a-z)
 DEPLOY_JAR := app.jar
 PORT := 3000
 WB_ACC_NUM := 357210185381
@@ -22,11 +22,11 @@ help: ; @echo $(if $(need-help),,\
 
 .PHONY: get-assembly-json
 get-assembly-json: $(call print-help,get-assembly-json,\
-	                   "Grab the latest assembly json over ftp")
+                    "Grab the latest assembly json over ftp")
 	@curl -o ./resources/ASSEMBLIES.json \
            ${WB_FTP_URL}/species/ASSEMBLIES.${WS_VERSION}.json
 
-docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
+docker/${DEPLOY_JAR}: $(call print-help,docker/${DEPLOY_JAR},\
 		       "Build the jar file")
 	@./scripts/build-appjar.sh
 
@@ -66,8 +66,7 @@ eb-create: $(call print-help,eb-create,\
 eb-setenv: $(call print-help,eb-env,\
 	     "Set enviroment variables for the \
 	      ElasticBeanStalk environment")
-	eb setenv TRACE_DB="${DB_URI}" \
-		  WS_VERSION="${WS_VERSION}" \
+	eb setenv WB_DB_URI="${DB_URI}" \
 		  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
 		  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
 		  -e "datomic-to-catalyst"
@@ -76,8 +75,7 @@ eb-setenv: $(call print-help,eb-env,\
 eb-local: docker-ecr-login $(call print-help,eb-local,\
 			     "Runs the ElasticBeanStalk/docker \
 			      build and run locally.")
-	eb local run --envvars \
-           PORT=${PORT},TRACE_DB=${DB_URI},WS_VERSION=${WS_VERSION}
+	eb local run --envvars PORT=${PORT},WB_DB_URI=${DB_URI}
 
 .PHONY: build
 build: docker/${DEPLOY_JAR} \
@@ -100,8 +98,7 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		--detach \
 		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-		-e TRACE_DB=${DB_URI} \
-		-e WS_VERSION=${WS_VERSION} \
+		-e WB_DB_URI=${DB_URI} \
 		-e PORT=${PORT} \
 		${NAME}:${VERSION}
 
