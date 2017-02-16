@@ -3,11 +3,12 @@
    [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [environ.core :refer [env]]
+   [pseudoace.utils :as pace-utils]
+   [rest-api.db.main :as db]
    [rest-api.db.sequencesql :as sequencesql]))
 
 (defn database-version []
-  (env :ws-version))
+  (pace-utils/wbdb-name (db/datomic-uri)))
 
 (def species-assemblies
   (->> "ASSEMBLIES.json"

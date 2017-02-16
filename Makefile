@@ -1,6 +1,5 @@
 NAME := wormbase/datomic-to-catalyst
 VERSION ?= $(shell git describe --abbrev=0 --tags)
-WS_VERSION := WS257
 LOWER_WS_VERSION = `echo $(WS_VERSION) | tr A-Z a-z`
 EBX_CONFIG := .ebextensions/.config
 DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
@@ -66,7 +65,7 @@ eb-create: $(call print-help,eb-create,\
 eb-setenv: $(call print-help,eb-env,\
 	     "Set enviroment variables for the \
 	      ElasticBeanStalk environment")
-	eb setenv TRACE_DB="${DB_URI}" \
+	eb setenv WB_DB_URI="${DB_URI}" \
 		  WS_VERSION="${WS_VERSION}" \
 		  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
 		  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
@@ -77,7 +76,7 @@ eb-local: docker-ecr-login $(call print-help,eb-local,\
 			     "Runs the ElasticBeanStalk/docker \
 			      build and run locally.")
 	eb local run --envvars \
-           PORT=${PORT},TRACE_DB=${DB_URI},WS_VERSION=${WS_VERSION}
+           PORT=${PORT},WB_DB_URI=${DB_URI},WS_VERSION=${WS_VERSION}
 
 .PHONY: build
 build: docker/${DEPLOY_JAR} \
@@ -100,7 +99,7 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		--detach \
 		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-		-e TRACE_DB=${DB_URI} \
+		-e WB_DB_URI=${DB_URI} \
 		-e WS_VERSION=${WS_VERSION} \
 		-e PORT=${PORT} \
 		${NAME}:${VERSION}

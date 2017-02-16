@@ -17,7 +17,7 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.5.1"]
-   [wormbase/pseudoace "0.4.14"]]
+   [wormbase/pseudoace "0.4.15"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
             [lein-pprint "1.1.1"]
@@ -58,7 +58,7 @@
           :dependencies [[ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
           :env
-          {:trace-db "datomic:ddb://us-east-1/WS257/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS257/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"

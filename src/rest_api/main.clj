@@ -9,9 +9,6 @@
    [ring.util.http-response :as res]
    [ring.middleware.gzip :as ring-gzip]))
 
-(defn init []
-  (mount/start))
-
 (def ^:private all-routes
   "A collection of all routes to served by the application."
   [gene/routes
