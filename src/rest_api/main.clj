@@ -4,13 +4,18 @@
    [environ.core :as environ]
    [mount.core :as mount]
    [rest-api.classes.gene :as gene]
+   [rest-api.classes.person :as person]
    [rest-api.classes.transcript :as transcript]
    [ring.util.http-response :as res]
    [ring.middleware.gzip :as ring-gzip]))
 
+(defn init []
+  (mount/start))
+
 (def ^:private all-routes
   "A collection of all routes to served by the application."
   [gene/routes
+   person/routes
    transcript/routes])
 
 (def ^:private swagger-validator-url
