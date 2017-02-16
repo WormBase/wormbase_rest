@@ -17,7 +17,9 @@
              (map (fn [oid]
                     (let [paper (d/entity db oid)]
                       (pace-utils/vmap
-                        :year (first (str/split (:paper/publication-date paper) #"-"))
+                        :year (or (if (:paper/publication-date paper)
+                                    (first (str/split (:paper/publication-date paper) #"-")))
+                                  "unknown")
                         :object
                         (pace-utils/vmap
                           :taxonomy "all"
@@ -43,7 +45,9 @@
              (map (fn [oid]
                     (let [paper (d/entity db oid)]
                       (pace-utils/vmap
-                        :year (first (str/split (:paper/publication-date paper) #"-"))
+                        :year (or (if (:paper/publication-date paper)
+                                    (first (str/split (:paper/publication-date paper) #"-")))
+                                  "unknown")
                         :object
                         (pace-utils/vmap
                           :taxonomy "all"
