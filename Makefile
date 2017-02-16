@@ -22,11 +22,11 @@ help: ; @echo $(if $(need-help),,\
 
 .PHONY: get-assembly-json
 get-assembly-json: $(call print-help,get-assembly-json,\
-	                   "Grab the latest assembly json over ftp")
+                    "Grab the latest assembly json over ftp")
 	@curl -o ./resources/ASSEMBLIES.json \
            ${WB_FTP_URL}/species/ASSEMBLIES.${WS_VERSION}.json
 
-docker/${DEPLOY_JAR}: $(call print-help,docker/app.jar,\
+docker/${DEPLOY_JAR}: $(call print-help,docker/${DEPLOY_JAR},\
 		       "Build the jar file")
 	@./scripts/build-appjar.sh
 
