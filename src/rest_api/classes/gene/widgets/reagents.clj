@@ -3,6 +3,7 @@
     [datomic.api :as d]
     [rest-api.classes.gene.generic :as generic]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
+    [pseudoace.binning]
     [pseudoace.utils :as pace-utils]
     [pseudoace.locatables :as locatables]))
 
