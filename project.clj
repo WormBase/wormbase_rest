@@ -68,7 +68,5 @@
            [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
            [venantius/yagni "0.1.4"]
            [com.jakemccrary/lein-test-refresh "0.17.0"]]
-          :eastwood {:add-linters [:unused-namespaces]
-                     :exclude-namespaces [user]}
           :ring {:nrepl {:start? true}}}]}
   :repl-options {:init (set! *print-length* 10)})
