@@ -19,7 +19,7 @@
                       (pace-utils/vmap
                         :year (or (if (:paper/publication-date paper)
                                     (first (str/split (:paper/publication-date paper) #"-")))
-                                  "unknown")
+                                  "Year Not Available")
                         :object
                         (pace-utils/vmap
                           :taxonomy "all"
@@ -47,7 +47,7 @@
                       (pace-utils/vmap
                         :year (or (if (:paper/publication-date paper)
                                     (first (str/split (:paper/publication-date paper) #"-")))
-                                  "unknown")
+                                  "Year Not Available")
                         :object
                         (pace-utils/vmap
                           :taxonomy "all"
