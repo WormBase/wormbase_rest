@@ -44,19 +44,18 @@
   (let [db (d/entity-db person)
         data
         (first
-          (->> (d/q '[:find [?geneclass ...]
+          (->> (d/q '[:find [?laboratory ...]
                       :in $ ?person
-                      :where [?laboratory :laboratory/registered-lab-members ?person]
-                      [?geneclass :gene-class/designating-laboratory ?laboratory]]
+                      :where [?laboratory :laboratory/registered-lab-members ?person]]
                     db (:db/id person))
                (map (fn [oid]
-                      (let [geneclass (d/entity db oid)]
-                        (->> (d/q '[:find [?laboratory ...]
-                                    :in $ ?geneclass
+                      (let [laboratory (d/entity db oid)]
+                        (->> (d/q '[:find [?geneclass ...]
+                                    :in $ ?laboratory
                                     :where [?geneclass :gene-class/designating-laboratory ?laboratory]]
                                   db oid)
                              (map (fn [lid]
-                                    (let [laboratory (d/entity db lid)]
+                                    (let [geneclass (d/entity db lid)]
                                       (pace-utils/vmap
                                         :lab
                                         {:taxonomy "all"

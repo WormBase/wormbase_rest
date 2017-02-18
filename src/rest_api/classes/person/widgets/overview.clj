@@ -90,7 +90,7 @@
                       (pace-utils/vmap
                         :date-modified (date/format-date (:person.old-address/datetype old-address))
                         :email (:address/email old-address)
-                        :institution (:address/institution old-address)
+                        ;;                        :institution (:address/institution old-address)
                         :street-address (:address/street-address old-address)
                         :country (:address/country old-address)
                         :main-phone (:address/main-phone old-address)
@@ -104,6 +104,25 @@
      :description
      "previous addresses of this person."}))
 
+(defn lab-representative-for [person]
+  (let [db (d/entity-db person)
+        data
+        (->> (d/q '[:find [?laboratory ...]
+                    :in $ ?person
+                    :where [?laboratory :laboratory/representative ?person]]
+                  db (:db/id person))
+             (map (fn [oid]
+                    (let [laboratory (d/entity db oid)]
+                      (pace-utils/vmap
+                        :taxonomy "all"
+                        :class "laboratory"
+                        :label (:laboratory/id laboratory)
+                        :id (:laboratory/id laboratory)))))
+             (seq))]
+    {:data (if (empty? data) nil data)
+     :description
+     "Principal Investigator/Lab representativef for"}))
+
 (def widget
   {:name                     name-field
    :email                    email
@@ -111,5 +130,6 @@
    ;;    :institution              institution
    :web_page                 web-page
    :street_address           street-address
-   :also_known_as            also-known-as
+   :aka                      also-known-as
+   :lab_representative_for   lab-representative-for
    :previous_addresses       previous-addresses})
