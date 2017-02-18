@@ -90,7 +90,7 @@
                       (pace-utils/vmap
                         :date-modified (date/format-date (:person.old-address/datetype old-address))
                         :email (:address/email old-address)
-                        :institution (:address/institution old-address)
+                        ;;                        :institution (:address/institution old-address)
                         :street-address (:address/street-address old-address)
                         :country (:address/country old-address)
                         :main-phone (:address/main-phone old-address)
