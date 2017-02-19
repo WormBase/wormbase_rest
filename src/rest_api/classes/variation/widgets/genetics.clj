@@ -21,31 +21,44 @@
    :description "gene in which this variation is found (if any)"})
 
 (defn reference-allele [variation]
-  (let [genes (get-gene-from-variation variation)
+  (let [genes []; (get-gene-from-variation variation)
         gene (first genes)]
   (gene-genetics/reference-allele gene)))
 
+; Working - not sure if right though
 (defn other-allele [variation]
-  {:data (if-let [gene (first (:variation/gene variation))]
-           (let [db  (d/entity-db gene)]
-	   (->> (d/q '[:find [?var ...]
-		       :in $ ?variation ?gene
-	 	       :where
-	    	       [?var :variation/strain ?vsh]
-                       [?vsh :variation.strain/strain strain]
-		       [?var :variation/phenotype _]
-                       (not [?var :variation/id variation])]
-		     db (:db/id variation) (:db/id gene))
-		(map #(gene-variation/process-variation (d/entity db %))))))
-  :description "other alleles of the containing gene (if known)"})
+  {:data (let [genes (map :variation.gene/gene (:variation/gene variation))]
+           (for [gene genes]
+             (let [db  (d/entity-db gene)
+                   alleles (d/q '[:find [?var ...]
+                                  :in $ ?gene
+                                  :where [?vh :variation.gene/gene ?gene]
+                                         [?var :variation/gene ?vh]
+                                         [?var :variation/phenotype _]]
+                                db (:db/id gene))
+                   polymorphisms (filter
+                                   (fn [aid]
+                                     (let [allele (d/entity db aid)]
+                                       (contains? allele :variation/confirmed-snp))) alleles)
+                   sequenced-alleles (filter
+                                       (fn [aid]
+                                         (let [allele (d/entity db aid)]
+                                           (complement
+                                             (contains? allele :variation/confirmed-snp)))) alleles)]
+               {:polymorphisms (for [polymorphism polymorphisms]
+                                 (pack-obj (d/entity db polymorphism)))
+                :sequenced_alleles (for [sequenced-allele sequenced-alleles]
+                                     (pack-obj (d/entity db  sequenced-allele)))})))
+   :description "other alleles of the containing gene (if known)"})
 
+; need to varify
 (defn linked-to [variation]
   {:data (if-let [linked-to (:variation/linked-to variation)]
-           "found")
+           (for [link linked-to] (pack-obj linked-to)))
   :description "linked_to"})
 
 (defn strain [variation]
-  {:data (if-let [strains (:variation/strain variation)]
+  {:data (if-let [strains (map :variation.strain/strain (:variation/strain variation))]
            (global-generic/categorize-strains strains))
    :description "strains carrying this variation"})
 

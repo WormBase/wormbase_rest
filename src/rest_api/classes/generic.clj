@@ -36,7 +36,6 @@
                   (pace-utils/vassoc
                     (pack-obj "strain" strain)
                     :genotype  (:strain/genotype strain)
-                    :keys (keys strain)
                     :transgenes  (pack-obj "transgene"  (first tgs)))))
              strains)))
 
