@@ -1,20 +1,25 @@
 (ns rest-api.classes.variation.widgets.overview
   (:require
+    [datomic.api :as d]
+    [clojure.string :as str]
     [rest-api.classes.variation.generic :as generic]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn taxonomy [variation]
-  {:data nil
+  {:data (if-let [sid(:species/id (:variation/species variation))]
+             (let [[genus species] (str/split sid #" ")]
+               {:genus genus
+                :species species}))
    :description "the genus and species of the current object"})
 
-
-; This needs to be worked on 
+; This needs to be worked on
 (defn corresponding-gene [variation]
-  (let [gene (:variation/gene variation)]
-    {:data (if (nil? gene) nil (pack-obj "gene" gene))
-     :keys (keys variation)
+  (let [db  (d/entity-db variation)
+        genes (seq (map :variation.gene/gene (:variation/gene variation)))]
+    {:data (if (nil? genes)
+             (for [gene genes]
+               (pack-obj gene)))
      :description "gene in which this variation is found (if any)"}))
-
 
 ;need to find and instance where get-evidence works for variation
 (defn evidence [variation]
