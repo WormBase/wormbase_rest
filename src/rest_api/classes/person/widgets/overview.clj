@@ -74,7 +74,7 @@
 (defn also-known-as [person]
   {:data
    (or (:person/also-known-as person)
-       "unknown")
+       nil)
    :description
    "other names person is also known as."})
 
