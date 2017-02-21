@@ -70,5 +70,7 @@
            [com.jakemccrary/lein-test-refresh "0.17.0"]]
           :eastwood {:add-linters [:unused-namespaces]
                      :exclude-namespaces [user]}
-          :ring {:nrepl {:start? true}}}]}
+          :ring {:nrepl {:start? true}}}]
+   :test
+   {:resource-paths ["test/resources"]}}
   :repl-options {:init (set! *print-length* 10)})
