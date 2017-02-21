@@ -72,11 +72,8 @@
      :description "email addresses of this person"}))
 
 (defn also-known-as [person]
-  {:data
-   (or (:person/also-known-as person)
-       nil)
-   :description
-   "other names person is also known as."})
+  {:data (:person/also-known-as person)
+   :description "other names person is also known as."})
 
 (defn previous-addresses [person]
   (let [db (d/entity-db person)
