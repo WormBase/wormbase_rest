@@ -1,7 +1,7 @@
 (ns rest-api.regression-testing
   (:require
    [clojure.data :as data]
-   [clojure.data.json :as json]
+   [cheshire.core :as json]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.string :as str])
@@ -25,7 +25,7 @@
   "Return the path for saved EDN fixtures from `opts`."
   [opts]
   (let [default-path "/tmp"]
-    (when (= default-path "/tmp")
+    (when (= (:fixtures-path opts) default-path)
       (println "Warning: you probably want to supply"
                ":fixtures-path in 'opts'"))
     (get opts :fixtures-path default-path)))
@@ -40,7 +40,7 @@
         out-file (io/file out-path (fixture-filename url))]
     (binding [*out* (io/writer out-file)
               *print-length* nil]
-      (println (json/read-str data)))))
+      (println (json/generate-string data)))))
 
 (defn read-test-fixture
   "Read an EDN test fixtures saved from an existing WB service."
