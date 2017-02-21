@@ -5,6 +5,7 @@
    [rest-api.classes.gene.widgets.sequences :as sequences]
    [rest-api.classes.gene.widgets.genetics :as genetics]
    [rest-api.classes.gene.widgets.history :as history]
+   [rest-api.classes.gene.widgets.interactions :as interactions]
    [rest-api.classes.gene.widgets.mapping-data :as mapping-data]
    [rest-api.classes.gene.widgets.ontology :as gene-ontology]
    [rest-api.classes.gene.widgets.overview :as overview]
@@ -24,6 +25,7 @@
     :gene_ontology gene-ontology/widget
     :genetics genetics/widget
     :history history/widget
+    :interactions interactions/widget
     :mapping_data mapping-data/widget
     :overview overview/widget
     :location location/widget

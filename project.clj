@@ -68,5 +68,7 @@
            [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
            [venantius/yagni "0.1.4"]
            [com.jakemccrary/lein-test-refresh "0.17.0"]]
-          :ring {:nrepl {:start? true}}}]}
+          :ring {:nrepl {:start? true}}}]
+      :test
+      {:resource-paths ["test/resources"]}}
   :repl-options {:init (set! *print-length* 10)})
