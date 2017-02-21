@@ -1,25 +1,19 @@
 (ns rest-api.classes.gene-test
   (:require
    [clojure.test :refer :all]
-   [datomic.api :as d]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.classes.gene.widgets.genetics :as genetics]
-   [rest-api.db.main :refer [datomic-conn]]
-   [rest-api.db-testing :as db-testing]
-   ))
+   [rest-api.db-testing :as db-testing]))
+
+(def get-gene (partial db-testing/entity "gene"))
 
 ;; Here we register my-test-fixture to be called once, wrapping ALL tests
 ;; in the namespace
 (use-fixtures :once db-testing/db-lifecycle)
 
-(defn get-gene [id]
-  (d/entity (d/db datomic-conn) [:gene/id id]))
-
 (defn find-variation-in [id variations]
-  (first (filter #(= id (-> (:variation %)
-                            (:id)))
+  (first (filter #(= id (-> (:variation %) (:id)))
                  (:data variations))))
-
 
 ;;This is a regular test function, which is to be wrapped using
 ;;my-test-fixture
