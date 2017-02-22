@@ -81,5 +81,4 @@
    :mutagen mutagen
    :isolated_by_author isolated-by-author
    :isolated_via_forward_genetics isolated-via-forward-genetics
-   :date_isolated date-isolated
-   })
+   :date_isolated date-isolated})

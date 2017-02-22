@@ -3,8 +3,8 @@
     [rest-api.classes.generic :as generic]
     [rest-api.classes.variation.generic :as variation-generic]))
 
-(defn xrefs [gene]
-  (generic/xrefs "variation" gene))
+(defn xrefs [variation]
+  (generic/xrefs "variation" variation))
 
 (def widget
   {:name  variation-generic/name-field

@@ -31,11 +31,13 @@
            (for [gene genes]
              (let [db  (d/entity-db gene)
                    alleles (d/q '[:find [?var ...]
-                                  :in $ ?gene
+                                  :in $ ?variation ?gene
                                   :where [?vh :variation.gene/gene ?gene]
                                          [?var :variation/gene ?vh]
-                                         [?var :variation/phenotype _]]
-                                db (:db/id gene))
+                                         [?var :variation/allele true]
+                                         (not [?var :variation/phenotype _])
+                                         [(not= ?var ?variation)]]
+                                db (:db/id variation) (:db/id gene))
                    polymorphisms (filter
                                    (fn [aid]
                                      (let [allele (d/entity db aid)]
@@ -43,18 +45,18 @@
                    sequenced-alleles (filter
                                        (fn [aid]
                                          (let [allele (d/entity db aid)]
-                                           (complement
+                                           (not
                                              (contains? allele :variation/confirmed-snp)))) alleles)]
                {:polymorphisms (for [polymorphism polymorphisms]
                                  (pack-obj (d/entity db polymorphism)))
                 :sequenced_alleles (for [sequenced-allele sequenced-alleles]
                                      (pack-obj (d/entity db  sequenced-allele)))})))
-   :description "other alleles of the containing gene (if known)"})
+   :description "other variations of the containing gene (if known)"})
 
 ; need to varify
 (defn linked-to [variation]
-  {:data (if-let [linked-to (:variation/linked-to variation)]
-           (for [link linked-to] (pack-obj linked-to)))
+  {:data (if-let [links (:variation/linked-to variation)]
+           (for [linked-to links] (pack-obj linked-to)))
   :description "linked_to"})
 
 (defn strain [variation]

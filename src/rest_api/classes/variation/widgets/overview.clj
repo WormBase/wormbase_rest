@@ -59,7 +59,6 @@
     {:physical_class (pysical-class variation)
      :general_class general-class}))
 
-
 (defn variation-type [variation]
   {:data (variation-type-data variation)
    :description "the general type of the variation"})

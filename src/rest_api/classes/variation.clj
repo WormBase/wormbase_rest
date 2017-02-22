@@ -3,6 +3,8 @@
     [rest-api.classes.variation.widgets.overview :as overview]
     [rest-api.classes.variation.widgets.genetics :as genetics]
     [rest-api.classes.variation.widgets.isolation :as isolation]
+    [rest-api.classes.variation.widgets.location :as location]
+    [rest-api.classes.variation.widgets.molecular-details :as molecular-details]
     [rest-api.classes.variation.widgets.external-links :as external-links]
     [rest-api.routing :as routing]))
 
@@ -12,4 +14,6 @@
    {:overview overview/widget
     :genetics genetics/widget
     :isolation isolation/widget
-    :external-links external-links/widget}})
+    :location location/widget
+    :molecular_details molecular-details/widget
+    :external_links external-links/widget}})
