@@ -9,7 +9,7 @@
 
 (t/use-fixtures :once db-testing/db-lifecycle)
 
-(t/deftest test-interactions-widget
+(t/deftest ^:regression test-interactions-widget
   (t/testing "Regression for gene interactions widget."
     (doseq [gene-id ["WBGene00000001"
                      "WBGene00000421"
