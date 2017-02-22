@@ -11,13 +11,16 @@
 
 (t/deftest ^:regression test-interactions-widget
   (t/testing "Regression for gene interactions widget."
-    (doseq [gene-id ["WBGene00000001"
-                     "WBGene00000421"
-                     "WBGene00003421"
-                     "WBGene00009192"]]
-      (let [gene (db-testing/entity "gene" gene-id)
-            exp-data (regression/read-gene-fixture gene-id "interactions")
-            act-data (gene-interactions/interactions gene)]
-        (t/is (empty? (regr-test/compare-api-result "interactions"
-                                                    exp-data
-                                                    act-data)))))))
+    (doall
+     (doseq [gene-id ["WBGene00000001"
+                      "WBGene00000421"
+                      "WBGene00003421"
+                      "WBGene00009192"
+                      "WBGene00020398"]]
+       (let [gene (db-testing/entity "gene" gene-id)
+             exp-data (regression/read-gene-fixture gene-id
+                                                    "interactions")
+             act-data (gene-interactions/interactions gene)]
+         (t/is (empty? (regr-test/compare-api-result "interactions"
+                                                     exp-data
+                                                     act-data))))))))
