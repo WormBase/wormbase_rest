@@ -54,7 +54,9 @@
          (edn/read))))
 
 (defn compare-api-result
-  "Comare the result of a widget function with a stored EDN fixture."
+  "Compare the result of a widget function with a stored EDN fixture.
+  Returns `nil` if `actual` is equal to `expected`.
+  Returns a mapping describing the differences otherwise."
   [widget-name expected actual & opts]
   (let [debug? (get opts :debug? false)
         get-in-data (partial get-in ["fields" widget-name])
