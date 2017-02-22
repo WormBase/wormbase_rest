@@ -39,8 +39,8 @@
         out-path (fixtures-path opts)
         out-file (io/file out-path (fixture-filename url))]
     (binding [*out* (io/writer out-file)
-              *print-length* nil]
-      (println (json/generate-string data)))))
+              *print-length* false]
+      (prn (json/parse-string data)))))
 
 (defn read-test-fixture
   "Read an EDN test fixtures saved from an existing WB service."
@@ -63,7 +63,7 @@
         act (get-in-data actual)
         exp (get-in-data expected)
         [left right both] (data/diff exp act)]
-    (when-not (every? nil? [left right both])
+    (when-not (every? nil? [left right])
       (when debug?
         (println "EXPECTED ONLY:")
         (println left)
