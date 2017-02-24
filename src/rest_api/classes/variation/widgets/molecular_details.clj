@@ -2,7 +2,9 @@
   (:require
     [datomic.api :as d]
     [clojure.string :as str]
-    [rest-api.classes.gene.sequence :as gene-variation]
+    [rest-api.db.sequence :as seqdb]
+    [rest-api.classes.generic :as global-generic]
+    [rest-api.classes.gene.sequence :as gene-sequence]
     [rest-api.classes.variation.generic :as variation-generic]
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
@@ -198,6 +200,15 @@
    }
   )
 
+(defn- variation-features  [variation]
+  (if-let  [species-name  (->> variation :variation/species :species/id)]
+    (let  [g-species  (global-generic/xform-species-name species-name)
+           sequence-database  (seqdb/get-default-sequence-database g-species)
+           db-spec  ((keyword sequence-database) seqdb/sequence-dbs)
+           variation-id  (:variation/id variation)]
+      (if sequence-database
+        (seqdb/variation-features db-spec variation-id)))))
+
 (defn- compile-nucleotide-changes [variation]
   (remove nil?
           [
@@ -213,11 +224,9 @@
            (if-let [substitution (:variation/substitution variation)]
              (let [wt (:variation.substitution/alt substitution)
                    mut (:variation.substitution/ref substitution)
-                   g-species (if-let [species-name (:species/id
-                                                     (:variation/species variation))]
-                               (gene-variation/xform-species-name species-name)
-                               "all")]
-               g-species
+                   features (variation-features variation)]
+               (println (:variation/other-name variation))
+               (count features) 
                )
              )
            ]))

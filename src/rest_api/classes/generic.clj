@@ -4,6 +4,15 @@
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
     [clojure.string :as str]))
 
+(defn xform-species-name
+    "Transforms a `species-name` from the WB database into
+      a name used to look up connection configuration to a sequence db."
+        [species]
+          (let  [species-name-parts  (str/split species #" ")
+                          g  (str/lower-case  (ffirst species-name-parts))
+                                   species  (second species-name-parts)]
+                (str/join "_"  [g species])))
+
 (defn xrefs [role obj]
   {:data
    (let [ckw (partial (str/join "." [role "database"]))]

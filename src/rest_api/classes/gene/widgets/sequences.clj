@@ -2,15 +2,16 @@
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
-   [rest-api.db.sequence :as seqdb]
    [pseudoace.utils :as pace-utils]
+   [rest-api.db.sequence :as seqdb]
+   [rest-api.classes.generic :as global-generic]
    [rest-api.classes.gene.generic :as generic]
    [rest-api.classes.gene.sequence :as seqfeat]
    [rest-api.formatters.object :as obj :refer [pack-obj humanize-ident]]))
 
 (defn- get-features-from-sequence [sequence]
   (if-let [species-name (->> sequence :transcript/species :species/id)]
-    (let [g-species (seqfeat/xform-species-name species-name)
+    (let [g-species (global-generic/xform-species-name species-name)
          sequence-database (seqdb/get-default-sequence-database g-species)
          db-spec ((keyword sequence-database) seqdb/sequence-dbs)
          method (:method/id (:locatable/method sequence))
