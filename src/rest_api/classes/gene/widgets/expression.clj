@@ -23,17 +23,21 @@
 
 (defn- expression-table-row [entity entity-name expr-pattern qualifier]
   {(keyword entity-name) (pack-obj entity)
+
+   :expression_pattern
+   (assoc (pack-obj expr-pattern)
+          :curated_images
+          (->> (:picture/_expr-pattern expr-pattern)
+               (map pack-obj)
+               (map #(assoc % :thumbnail
+                            {:format "jpg",
+                             :name "WBPaper00032514/F6.large_A",
+                             :class "/img-static/pictures"}))
+               (seq)))
+
    :details
-   {:text (assoc (pack-obj expr-pattern)
-                 :curated_images
-                 (->> (:picture/_expr-pattern expr-pattern)
-                      (map pack-obj)
-                      (map #(assoc % :thumbnail
-                                   {:format "jpg",
-                                    :name "WBPaper00032514/F6.large_A",
-                                    :class "/img-static/pictures"}))
-                      (seq)))
-    :evidence (expr-pattern-detail expr-pattern qualifier)}})
+   {:evidence (expr-pattern-detail expr-pattern qualifier)}
+   })
 
 (defn expressed-in [gene]
   (let [db (d/entity-db gene)]
