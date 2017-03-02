@@ -1,10 +1,12 @@
 (ns rest-api.regression-testing
   (:require
-   [clojure.data :as data]
    [cheshire.core :as json]
+   [clojure.data :as data]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
-   [clojure.string :as str])
+   [clojure.pprint :refer [pprint]]
+   [clojure.string :as str]
+   [clojure.walk :as walk])
   (:import
    (java.io PushbackReader)
    (java.net URI)))
@@ -53,23 +55,43 @@
          (PushbackReader.)
          (edn/read))))
 
+(defn update-to-comparable [data]
+  (walk/postwalk (fn [xform]
+                   (if (coll? xform)
+                     (reduce-kv
+                      (fn [x k v]
+                        (assoc x k (cond
+                                     (or (vector? v) (list? v))
+                                     (vec (sort-by first v))
+                                     
+                                     :default v)))
+                      (empty xform)
+                      xform)
+                     xform))
+                 data))
+
 (defn compare-api-result
   "Compare the result of a widget function with a stored EDN fixture.
   Returns `nil` if `actual` is equal to `expected`.
   Returns a mapping describing the differences otherwise."
-  [widget-name expected actual & opts]
+  [widget-name ref-result result & [opts]]
   (let [debug? (get opts :debug? false)
-        get-in-data (partial get-in ["fields" widget-name])
-        act (get-in-data actual)
-        exp (get-in-data expected)
-        [left right both] (data/diff exp act)]
+        actual (-> result                   
+                   (update-to-comparable)
+                   (walk/stringify-keys))
+        expected (-> ref-result                     
+                     (get-in ["fields" widget-name])
+                     (update-to-comparable))
+        [left right both] (data/diff expected actual)]
     (when-not (every? nil? [left right])
       (when debug?
-        (println "EXPECTED ONLY:")
-        (println left)
-        (println)
-        (println "ACTUAL ONLY:")
-        (println right))
+        (when left
+          (println)
+          (println "Differences in expected but not in actual:")
+          (pprint left)
+          (println)
+          (println "*** Actual:")
+          (pprint actual)))
       {:expected-only left
        :actual-only right
        :both both})))
