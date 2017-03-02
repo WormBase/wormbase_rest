@@ -65,15 +65,16 @@
        (first))))
 
 (defn author-list [paper]
-  (let [authors (->> (:paper/author paper)
-                     (sort-by :ordered/index))]
+  (let [authors (sort-by :ordered/index (:paper/author paper))]
     (cond
      (= (count authors) 1)
      (author-lastname (first authors))
-
+     
      (< (count authors) 6)
-     (let [names (map author-lastname authors)]
-       (str (str/join ", " (butlast names)) ", & " (last names)))
+     (let [last-names (map author-lastname authors)]
+       (str (str/join ", " (butlast last-names))
+            " & "
+            (last last-names)))
 
      :default
      (str (author-lastname (first authors)) " et al."))))

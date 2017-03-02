@@ -1,5 +1,6 @@
 (ns rest-api.classes.gene.widgets.interactions
   (:require
+   [clojure.set :as set]
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
@@ -14,12 +15,20 @@
    :interactor-info.interactor-type/trans-regulated :affected
    :interactor-info.interactor-type/cis-regulated :affected})
 
-(def ^:private interaction-target
-  (some-fn
-   :interaction.interactor-overlapping-gene/gene
+(def ^:private interaction-targets
+  [:interaction.feature-interactor/feature
    :interaction.interactor-overlapping-cds/cds
+   :interaction.interactor-overlapping-gene/gene
    :interaction.interactor-overlapping-protein/protein
-   :interaction.feature-interactor/feature))
+   :interaction.molecule-interactor/molecule
+   :interaction.other-interactor/text
+   :interaction.pcr-interactor/pcr-product
+   :interaction.sequence-interactor/sequence
+   :interaction.variation-interactor/variation])
+
+;; TODO: check this list of targets
+(def ^:private interaction-target
+  (apply some-fn interaction-targets))
 
 (def ^:private some-cds
   (some-fn
@@ -27,59 +36,6 @@
 
 (def some-interaction
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
-
-(defn- interactor-role [interactor]
-  (let [int-types (:interactor-info/interactor-type interactor)]
-    (or (interactor-role-map (first int-types))
-        (if (some-cds (interaction-target interactor))
-          :associated-product)
-        :other)))
-
-(defn- humanize-name [ident]
-  (-> (name ident)
-      (str/split #":")
-      (last)
-      (str/replace #"-" " ")
-      (str/capitalize)))
-
-(defn- interaction-type [int]
-  (humanize-name (first (:interaction/type int))))
-
-(defn- pack-int-roles [ref-obj int nearby? pred a b direction]
-  (for [x a
-        y b
-        :let [xt (interaction-target x)
-              yt (interaction-target y)]
-        :when (and (pred xt yt)
-                   (or nearby? (= xt ref-obj) (= yt ref-obj)))]
-    [(str (:label (pack-obj xt)) " " (:label (pack-obj yt)))
-     {:type (interaction-type int)
-      :effector xt
-      :affected yt
-      :direction direction}]))
-
-(defn- interaction-info [int ref-obj nearby?]
-  (if (or (not ((:interaction/type int) :interaction.type/predicted))
-          (> (or (:interaction/log-likelihood-score int) 1000) 1.5))
-    (let [{effectors :effector
-           affected :affected
-           others :other
-           associated :associated-product}
-          (group-by interactor-role
-                    (concat
-                     (:interaction/interactor-overlapping-cds int)
-                     (:interaction/interactor-overlapping-gene int)
-                     (:interaction/interactor-overlapping-protein int)
-                     (:interaction/feature-interactor int)))
-          typ (interaction-type int)
-          pack-iroles (partial pack-int-roles ref-obj int nearby?)]
-      (->> (if (or effectors affected)
-             (let [x (concat effectors others)
-                   pred (constantly true)]
-               (pack-iroles pred x affected "Effector->Affected"))
-             (pack-iroles #(not= %1 %2) others others "non-directional"))
-           (into {})
-           (vals)))))
 
 (def int-rules
   '[[(gene-interaction ?gene ?int)
@@ -102,6 +58,23 @@
      [(not= ?n1 ?n2)]
      (gene-neighbour ?gene ?n2)]])
 
+(defn- interactor-role [interactor]
+  (let [int-types (:interactor-info/interactor-type interactor)]
+    (or (interactor-role-map (first int-types))
+        (if (some-cds (interaction-target interactor))
+          :associated-product)
+        :other)))
+
+(defn- humanize-name [ident]
+  (-> (name ident)
+      (str/split #":")
+      (last)
+      (str/replace #"-" " ")
+      (str/capitalize)))
+
+(defn- interaction-type [int]
+  (->> int :interaction/type first humanize-name))
+
 (defn gene-direct-interactions [db gene]
   (d/q '[:find [?int ...]
          :in $ % ?gene
@@ -120,6 +93,11 @@
                  (> cnt 1)))
        (map first)))
 
+(defn- predicted [typ]
+  (if (= typ "Predicted")
+    1
+    0))
+
 (defn gene-interactions [obj nearby?]
   (let [db (d/entity-db obj)
         id (:db/id obj)]
@@ -130,53 +108,130 @@
       (if nearby?
         (gene-nearby-interactions db id))))))
 
+(defn- annotate-role [obj int-type role]
+  (let [identify (keyword (:class role) "id")]
+    (pace-utils/vassoc role
+                       :predicted (predicted int-type)
+                       :main (if (= (identify obj) (:id role))
+                               1))))
+
 (defn- assoc-interaction [obj typ data unpacked]
-  (let [packed (pack-obj unpacked)]
-    (-> data
-        (assoc-in [:nodes (:id packed)]
-                  (pace-utils/vassoc
-                   packed
-                   :predicted (if (= typ "Predicted")
-                                1
-                                0)
-                   :main (if (= unpacked obj)
-                           1)))
-        (assoc-in [:ntypes (:class packed)] 1))))
+  (-> data
+      (assoc-in [:nodes (:id unpacked)] (annotate-role obj typ unpacked))
+      (assoc-in [:ntypes (:class unpacked)] 1)))
+
+(defn- update-in-uniq [data path func value]
+  ;; #dbg ^{:break/when (= (last path) :interactions)}
+  (update-in data
+             path
+             (fn [old new]
+               (vec (set (func old new))))
+             value))
 
 (defn- update-in-edges [data int-key packed-int papers]
   (-> data
-      (update-in [:edges int-key :interactions]
-                 conj packed-int)
-      (update-in [:edges int-key :citations]
-                 into papers)))
+      (update-in-uniq [:edges int-key :interactions]
+                      conj
+                      packed-int)
+      (update-in-uniq [:edges int-key :citations]
+                      into
+                      papers)))
+
+(defn- pack-int-roles [ref-obj int nearby? pred a b direction]
+  (let [typ (interaction-type int)]
+    (for [x a
+          y b
+          :let [xt (interaction-target x)
+                yt (interaction-target y)]
+          :when (and (pred xt yt)
+                     (or nearby? (= xt ref-obj) (= yt ref-obj)))]
+      (let [roles (zipmap [:effector :affected]
+                          (sort-by (partial pred ref-obj) [xt yt]))]
+        [(str (:label (pack-obj xt)) " " (:label (pack-obj yt)))
+         (merge {:typ typ :direction direction} roles)]))))
+
+(defn- interaction-info [int ref-obj nearby?]
+  (let [int-type (:interaction/type int)
+        not-has-int-type #(not (contains? int-type %))]
+    (if (or (not-has-int-type :interaction.type/predicted)
+            (> (or (:interaction/log-likelihood-score int) 1000) 1.5))
+      (let [{effectors :effector
+             affected :affected
+             others :other
+             associated :associated-product}
+            (group-by interactor-role                      
+                      (concat
+                       (:interaction/interactor-overlapping-cds int)
+                       (:interaction/interactor-overlapping-gene int)
+                       (:interaction/interactor-overlapping-protein int)
+                       (:interaction/feature-interactor int)
+                       (:interaction/molecule-interactor int)))
+            pack-iroles (partial pack-int-roles ref-obj int nearby?)]
+        (->> (if (or effectors affected)
+               (let [x (concat effectors others)
+                     pred (constantly true)]
+                 (pack-iroles pred x affected "Effector->Affected"))
+               (pack-iroles #(not= %1 %2)
+                            others
+                            others
+                            "non-directional"))
+             (into {})
+             (vals))))))
+
+(defn- annotate-interactor-roles [obj typ int-roles]
+  (->> int-roles
+       (map pack-obj)
+       (map (partial annotate-role obj typ))))
+
+(defn- pack-papers [papers]
+  (->> papers
+       (map (partial pack-obj "paper"))
+       #_(map (fn [paper]
+              (update paper :label
+                      (fn [label]
+                        (str " " label)))))))
 
 (defn- obj-interaction
-  [obj data [interaction {:keys [typ effector affected direction]}]]
-  (if (every? pace-utils/not-nil? (map some-interaction [effector affected]))
-    (let [packed (map pack-obj [effector affected])
-          [packed-effector packed-affected] packed
+  [obj nearby? data [interaction
+                     {:keys [typ effector affected direction]}]]
+  (if (every? not-empty (map some-interaction [effector affected]))
+    (let [packed-roles (annotate-interactor-roles obj
+                                                  typ
+                                                  [effector affected])
+          [packed-effector packed-affected] packed-roles
           int-pheno-key :interaction/interaction-phenotype
-          [ename aname] (map :label packed)
+          [ename aname] (map :label packed-roles)
           ;; warning: could be more than one.
-          phenotype (pack-obj "phenotype" (first (int-pheno-key interaction)))
-          mk-key #(str %1 " " %2 " " type " " (:label phenotype))
+
+          ;; DEBUG: WBGene00000421
+          ;; x (do
+          ;;     (if (int-pheno-key interaction)
+          ;;       (println "Got" (count (int-pheno-key interaction))
+          ;;                "phenotypes for interaction:"
+          ;;                (->> interaction
+          ;;                     :interaction/interaction-phenotype
+          ;;                     (map :phenotype/id))))
+          ;;     1)
+          phenotype (pack-obj "phenotype"
+                              (first (int-pheno-key interaction)))
+          mk-key #(str %1 " " %2 " " typ " " (:label phenotype))
           ;; interactions with the same endpoints but
           ;; a different phenotype get a separate row.
           e-key (mk-key ename aname)
           a-key (mk-key aname ename)
           i-label (str/join " : " (sort [ename aname]))
           packed-int (pack-obj "interaction" interaction :label i-label)
-          paper-refs (:interaction/paper interaction)
-          papers (map (partial pack-obj "paper") paper-refs)
+          papers (pack-papers (:interaction/paper interaction))
           assoc-int (partial assoc-interaction obj typ)
-          result (-> data
+          result (-> data       
                      (assoc-in [:types typ] 1)
-                     (assoc-int effector)
-                     (assoc-int affected)
-                     (update-in [:phenotypes]
-                                pace-utils/vassoc
-                                (:id phenotype)
-                                phenotype))]
+                     (assoc-int packed-effector)
+                     (assoc-int packed-affected)
+                     ;; (update-in [:phenotypes] phenotypes)
+                                ;; pace-utils/vassoc
+                                ;; (:id phenotype)
+                                ;; phenotype)
+          )]
       (cond
         (get-in result [:edges e-key])
         (update-in-edges result e-key packed-int papers)
@@ -188,13 +243,15 @@
         (assoc-in result
                   [:edges e-key]
                   {:interactions [packed-int]
-                   :citations (set papers)
+                   :citations (vec (set papers))
                    :type typ
                    :effector packed-effector
                    :affected packed-affected
                    :direction direction
                    :phenotype phenotype
-                   :nearby 0})))
+                   :nearby (if nearby?
+                             "1"
+                             "0")})))
     data))
 
 (defn obj-interactions [obj nearby?]
@@ -204,22 +261,28 @@
                    (map vector
                         (repeat interaction)
                         (interaction-info interaction obj nearby?))))
-         (reduce (partial obj-interaction obj) {}))))
+         (reduce (partial obj-interaction obj nearby?) {}))))
 
 (defn interactions [gene]
-  {:description "genetic and predicted interactions"
-   :data
-   {:edges (vals (:edges (obj-interactions gene false)))}})
-
-(defn interaction-details [gene id]
   {:data (let [{:keys [types edges ntypes nodes phenotypes]}
-               (obj-interactions gene true)]
+               (obj-interactions gene false)
+               vedges (vec (vals edges))]
            {:types types
-            :edges (vals edges)
+            :edges vedges
+            :edges_all vedges
             :ntypes ntypes
             :nodes nodes
-            :phenotypes phenotypes
-            :showall 1})})
+            :phenotypes (->> vedges
+                             (map :phenotype)
+                             (filter identity)
+                             (set)
+                             (map (fn [pt]
+                                    [(:id pt) pt]))
+                             (into {})
+                             (not-empty))
+            :class "Gene"
+            :showall "1"})
+   :description "genetic and predicted interactions"})
 
 (def widget
   {:name generic/name-field
