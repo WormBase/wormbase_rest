@@ -6,8 +6,27 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]
    [rest-api.classes.gene.generic :as generic]))
 
+(defn- expr-pattern-type [expr-pattern]
+  (let [type-keys
+        [:expr-pattern/antibody
+         :expr-pattern/cis-regulatory-element
+         :expr-pattern/epic
+         :expr-pattern/genome-editing
+         :expr-pattern/in-situ
+         :expr-pattern/localizome
+         :expr-pattern/microarray
+         :expr-pattern/northern
+         :expr-pattern/reporter-gene
+         :expr-pattern/rnaseq
+         :expr-pattern/rt-pcr
+         :expr-pattern/tiling-array
+         :expr-pattern/western]]
+    (->> (filter #(% expr-pattern) type-keys)
+         (map obj/humanize-ident))))
+
 (defn- expr-pattern-detail [expr-pattern qualifier]
   (pace-utils/vmap
+   :Type (seq (expr-pattern-type expr-pattern))
    :Paper (if-let [paper-holders (:expr-pattern/reference expr-pattern)]
             (->> paper-holders
                  (map :expr-pattern.reference/paper)
