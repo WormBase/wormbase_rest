@@ -21,6 +21,18 @@
 
    ))
 
+(defn- pack-image [picture]
+  (let [prefix (if (re-find #"<Journal_URL>" (:picture/acknowledgement-template picture))
+                 (:paper/id (first (:picture/reference picture)))
+                 (:person/id (first (:picture/contact picture))))
+        [_ picture-name format-name] (re-matches #"(.+)\.(.+)" (:picture/name picture))]
+    (-> picture
+        (pack-obj)
+        (assoc :thumbnail
+               {:format (or format-name "")
+                :name (str prefix "/" (or picture-name (:picture/name picture)))
+                :class "/img-static/pictures"}))))
+
 (defn- expression-table-row [entity entity-name expr-pattern qualifier]
   {(keyword entity-name) (pack-obj entity)
 
@@ -28,11 +40,7 @@
    (assoc (pack-obj expr-pattern)
           :curated_images
           (->> (:picture/_expr-pattern expr-pattern)
-               (map pack-obj)
-               (map #(assoc % :thumbnail
-                            {:format "jpg",
-                             :name "WBPaper00032514/F6.large_A",
-                             :class "/img-static/pictures"}))
+               (map pack-image)
                (seq)))
 
    :details
