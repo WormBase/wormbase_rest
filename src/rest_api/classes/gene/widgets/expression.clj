@@ -60,11 +60,10 @@
     {:ontology_term (pack-obj ontology-term)
 
      :expression_pattern
-     (assoc {}
-            :curated_images
-            (->> (:picture/_expr-pattern expr-pattern)
-                 (map pack-image)
-                 (seq)))
+     (if-let [packed-images (->> (:picture/_expr-pattern expr-pattern)
+                                 (map pack-image)
+                                 (seq))]
+       {:curated_images packed-images})
 
      :details
      {:evidence (expr-pattern-detail expr-pattern qualifier)}}))
