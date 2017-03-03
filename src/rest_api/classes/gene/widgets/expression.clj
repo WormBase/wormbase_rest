@@ -84,8 +84,26 @@
        (map #(expression-table-row db %) anatomy-relations))
      :description "the tissue that the gene is expressed in"}))
 
+(defn expressed-during [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (if-let [life-stage-relations
+              (d/q '[:find ?at ?ep ?ah
+                     :in $ ?gene
+                     :where
+                     [?gh :expr-pattern.gene/gene ?gene]
+                     [?ep :expr-pattern/gene ?gh]
+                     [?ep :expr-pattern/life-stage ?ah]
+                     [?ah :expr-pattern.life-stage/life-stage ?at]]
+                   db (:db/id gene))]
+       (map #(expression-table-row db %) life-stage-relations))
+     :description "the tissue that the gene is expressed in"}))
+
+
+
 (def widget
   {:name generic/name-field
    :expressed_in expressed-in
+   :expressed_during expressed-during
    }
   )
