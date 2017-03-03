@@ -130,6 +130,64 @@
 ;; End of expression pattern related tables
 ;;
 
+
+;;
+;; Expression profile graph work
+;;
+(defn- expr-pattern-db [expr-pattern]
+  (->> (:expr-pattern/db-info expr-pattern)
+       (map #(assoc {}
+                    :id (:expr-pattern.db-info/accession %)
+                    :label (:database/name (:expr-pattern.db-info/database %))
+                    :class (:database/id (:expr-pattern.db-info/database %))))))
+
+(defn- profiling-graph-description [expr-pattern]
+  (let [descriptions
+        (some seq [(:expr-pattern/pattern expr-pattern)
+                   (:expr-pattern/subcellular-localization expr-pattern)
+                   (map :expr-pattern.remark/text (:expr-pattern/remark expr-pattern))])
+
+        references
+        (->> (:expr-pattern/reference expr-pattern)
+             (map :expr-pattern.reference/paper)
+             (map pack-obj))]
+    (if references
+      {:text (str/join "; " descriptions)
+       :evidence {:Reference references}}
+      (str/join "; " descriptions))))
+
+(defn- profiling-graph-table-row [db expr-pattern-dbid]
+  (let [expr-pattern (d/entity db expr-pattern-dbid)
+        packed-images (->> (:picture/_expr-pattern expr-pattern)
+                           (map pack-image)
+                           (seq))]
+    {:expression_pattern (assoc (pack-obj expr-pattern)
+                                :curated_images packed-images)
+     :description (profiling-graph-description expr-pattern)
+     :type (seq (expr-pattern-type expr-pattern))
+     :database (seq (expr-pattern-db expr-pattern))}))
+
+(defn expression-profiling-graphs [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [expr-patterns
+           (d/q '[:find [?ep ...]
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  (or [?ep :expr-pattern/microarray]
+                      [?ep :expr-pattern/rnaseq]
+                      [?ep :expr-pattern/tiling-array])]
+                db (:db/id gene))]
+       (seq (map #(profiling-graph-table-row db %) expr-patterns)))
+     :description (str "expression patterns associated with the " (:gene/id gene))}))
+;;
+;; End of Expression profile graph work
+;;
+
+
+
 (defn expression-cluster [gene]
   (let [db (d/entity-db gene)]
     {:data
@@ -153,6 +211,7 @@
    :expressed_in expressed-in
    :expressed_during expressed-during
    :subcellular_localization subcellular-localization
+   :expression_profiling_graphs expression-profiling-graphs
    :expression_cluster expression-cluster
    }
   )
