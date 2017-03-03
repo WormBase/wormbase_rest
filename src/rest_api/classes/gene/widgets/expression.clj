@@ -6,6 +6,10 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]
    [rest-api.classes.gene.generic :as generic]))
 
+;;
+;; Expression pattern related tables
+;;
+
 (defn- expr-pattern-type [expr-pattern]
   (let [type-keys
         [:expr-pattern/antibody
@@ -122,10 +126,33 @@
        (seq (map #(expression-table-row db %) go-term-relations)))
      :description "the tissue that the gene is expressed in"}))
 
+;;
+;; End of expression pattern related tables
+;;
+
+(defn expression-cluster [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [expr-clusters
+           (d/q '[:find [?ec ...]
+                  :in $ ?gene
+                  :where
+                  [?h :expression-cluster.gene/gene ?gene]
+                  [?ec :expression-cluster/gene ?h]]
+                db (:db/id gene))]
+       (->> expr-clusters
+            (map (partial d/entity db))
+            (map #(assoc {}
+                         :expression_cluster (pack-obj %)
+                         :description (:expression-cluster/description %)))
+            (seq)))
+     :description "expression cluster data"}))
+
 (def widget
   {:name generic/name-field
    :expressed_in expressed-in
    :expressed_during expressed-during
    :subcellular_localization subcellular-localization
+   :expression_cluster expression-cluster
    }
   )
