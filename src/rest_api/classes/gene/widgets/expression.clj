@@ -115,8 +115,8 @@
 
 (def widget
   {:name generic/name-field
-   ;; :expressed_in expressed-in
-   ;; :expressed_during expressed-during
+   :expressed_in expressed-in
+   :expressed_during expressed-during
    :subcellular_localization subcellular-localization
    }
   )
