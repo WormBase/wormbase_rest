@@ -27,7 +27,24 @@
 
 ;has data
 (defn context [variation]
-  {:data nil
+  {:data (let [public-name (:variation/public-name variation)
+               max-seqlen 1000000
+               flank 250
+               seq-len (if
+                         (contains? variation :variation-source-location)
+                          nil
+                          1)
+                             ]
+
+            {:ldtype_fragment nil
+             :wildtype_full (seq (:variation/expr-pattern variation))
+             :mutant_fragment nil
+             :keys (keys variation)
+             :mutant_full nil
+             :wildtype_header (str "Wild type N2, with " flank " bp flanks")
+             :sl (seq (:variation/source-location variation))
+             :mutant_header (str name " with " flank " bp flanks")
+             :placeholder nil})
    :description "wild type and variant sequences in genomic context"})
 
 (defn flanking-pcr-products [variation]
@@ -192,13 +209,26 @@
   {:data nil
    :description "experimental status of this polymorphism"})
 
-(defn- pack-nulcleotide-change-obj [type-str wildtype]
+(defn- pack-nulcleotide-change-obj [type-str wildtype mutant]
   {:type type-str
    :wildtype wildtype
+   :mutant mutant
    :wildtype-label "wildtype"
-   :mutant-label "variant"
-   }
+   :mutant-label "variant"}
   )
+
+(defn- reverse-complement [dna]
+  (str/replace
+    (str/reverse dna)
+    #"A|C|G|T|a|c|g|t"
+    {"A" "T"
+     "C" "G"
+     "G" "C"
+     "T" "A"
+     "a" "t"
+     "c" "g"
+     "g" "c"
+     "t" "a"}))
 
 (defn- variation-features  [variation]
   (if-let  [species-name  (->> variation :variation/species :species/id)]
@@ -207,39 +237,54 @@
            db-spec  ((keyword sequence-database) seqdb/sequence-dbs)
            variation-id  (:variation/id variation)]
       (if sequence-database
-        (seqdb/variation-features db-spec variation-id)))))
+        (do (println db-spec) (println variation-id)
+        (seqdb/variation-features db-spec variation-id))))))
 
 (defn- compile-nucleotide-changes [variation]
   (remove nil?
           [
            (if-let [insertion (:variation/insertion variation)]
              (if-let [tis (:variation/transposon-insertion variation)]
-                   (for [ti tis] (keys ti)))
- ;              (pack-nucleotide-change-obj "insertion")
-               )
+               (for [ti tis] (keys ti)))
+             ;              (pack-nucleotide-change-obj "insertion")
+             )
            ;  )
            (if-let [deletion (:variation/deletion variation)]
-              nil
-           )
-           (if-let [substitution (:variation/substitution variation)]
-             (let [wt (:variation.substitution/alt substitution)
-                   mut (:variation.substitution/ref substitution)
-                   features (variation-features variation)]
-               (println (:variation/other-name variation))
-               (count features) 
-               )
+             nil
              )
-           ]))
+           (if-let [substitution (:variation/substitution variation)]
+             (if-let [mut (:variation.substitution/ref substitution)]
+               (let [features (variation-features variation)]
+                 (println (str (seq (:object (first features)))))
+                 (if-let [feature (first features)]
+                   (let [wt (:variation.substitution/alt substitution)
+                         plus-strand-dna (:object feature)
+                         uc-plus-strand-dna (do (println plus-strand-dna)
+                                                (str/upper-case plus-strand-dna))]
+                     (if (not= (str/upper-case wt) uc-plus-strand-dna)
+                       (let [rc-wt (reverse-complement wt)]
+                         (println rc-wt)
+                         (println uc-plus-strand-dna)
+                         (if (= (str/upper-case rc-wt) uc-plus-strand-dna)
+                           (pack-nulcleotide-change-obj )
+                         {:wt rc-wt
+                          :dbid (:db/id variation)
+                          :mut (reverse-complement mut)}))))))
+               
+               ))]))
 
 
 (defn nucleotide-change [variation]
-  {:data  (compile-nucleotide-changes variation)
+  {:data  nil ;(compile-nucleotide-changes variation)
    :keys (keys variation)
    :description "raw nucleotide changes for this variation"})
 
-;has data
+;tested with WBVar00101112
 (defn reference-strain [variation]
-  {:data nil
+  {:data (if-let [vshs (:variation/strain variation)]
+           (for [vsh vshs
+                 :let [strain (:variation.strain/strain vsh)]]
+                (pack-obj strain)))
    :description "strains that this variant has been observed in"})
 
 (defn causes-frameshift [variaition]
