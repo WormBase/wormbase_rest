@@ -27,7 +27,6 @@
 (defn- expr-pattern-detail [expr-pattern qualifier]
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
-   :Expression_pattern (pack-obj expr-pattern)
    :Paper (if-let [paper-holders (:expr-pattern/reference expr-pattern)]
             (->> paper-holders
                  (map :expr-pattern.reference/paper)
@@ -63,7 +62,8 @@
      (if-let [packed-images (->> (:picture/_expr-pattern expr-pattern)
                                  (map pack-image)
                                  (seq))]
-       {:curated_images packed-images})
+       (assoc (pack-obj expr-pattern) :curated_images packed-images)
+       (pack-obj expr-pattern))
 
      :details
      {:evidence (expr-pattern-detail expr-pattern qualifier)}}))
