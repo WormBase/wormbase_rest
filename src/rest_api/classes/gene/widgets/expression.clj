@@ -53,19 +53,21 @@
                 :name (str prefix "/" (or picture-name (:picture/name picture)))
                 :class "/img-static/pictures"}))))
 
-(defn- expression-table-row [entity entity-name expr-pattern qualifier]
-  {(keyword entity-name) (pack-obj entity)
+(defn- expression-table-row [db [ontology-term-dbid expr-pattern-dbid qualifier-dbid]]
+  (let [ontology-term (d/entity db ontology-term-dbid)
+        expr-pattern (d/entity db expr-pattern-dbid)
+        qualifier (d/entity db qualifier-dbid)]
+    {:ontology_term (pack-obj ontology-term)
 
-   :expression_pattern
-   (assoc {}
-          :curated_images
-          (->> (:picture/_expr-pattern expr-pattern)
-               (map pack-image)
-               (seq)))
+     :expression_pattern
+     (assoc {}
+            :curated_images
+            (->> (:picture/_expr-pattern expr-pattern)
+                 (map pack-image)
+                 (seq)))
 
-   :details
-   {:evidence (expr-pattern-detail expr-pattern qualifier)}
-   })
+     :details
+     {:evidence (expr-pattern-detail expr-pattern qualifier)}}))
 
 (defn expressed-in [gene]
   (let [db (d/entity-db gene)]
@@ -79,12 +81,7 @@
                      [?ep :expr-pattern/anatomy-term ?ah]
                      [?ah :expr-pattern.anatomy-term/anatomy-term ?at]]
                    db (:db/id gene))]
-       (map (fn [[anatomy expr-pattern qualifier]]
-              (expression-table-row (d/entity db anatomy)
-                                    "anatomy_term"
-                                    (d/entity db expr-pattern)
-                                    (d/entity db qualifier)))
-            anatomy-relations))
+       (map #(expression-table-row db %) anatomy-relations))
      :description "the tissue that the gene is expressed in"}))
 
 (def widget
