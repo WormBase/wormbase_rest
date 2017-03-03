@@ -24,6 +24,15 @@
     (->> (filter #(% expr-pattern) type-keys)
          (map obj/humanize-ident))))
 
+(defn- short-term-list [expr-pattern terms]
+  (let [capacity 5
+        size (count terms)]
+    (if (> size capacity)
+      (concat (map pack-obj (take capacity terms))
+              [(assoc (pack-obj expr-pattern)
+                   :label (format "<strong>and %s more</strong>" (- size capacity)))])
+      (map pack-obj terms))))
+
 (defn- expr-pattern-detail [expr-pattern qualifier]
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
@@ -32,10 +41,10 @@
                  (map :expr-pattern.reference/paper)
                  (map pack-obj)))
    :Expressed_in (->> (:qualifier/anatomy-term qualifier)
-                      (map pack-obj)
+                      (short-term-list expr-pattern)
                       (seq))
    :Expressed_during (->> (:qualifier/life-stage qualifier)
-                          (map pack-obj)
+                          (short-term-list expr-pattern)
                           (seq))
 
    ))
