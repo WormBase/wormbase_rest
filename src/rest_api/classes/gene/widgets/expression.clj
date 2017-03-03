@@ -80,46 +80,46 @@
 (defn expressed-in [gene]
   (let [db (d/entity-db gene)]
     {:data
-     (if-let [anatomy-relations
-              (d/q '[:find ?at ?ep ?ah
-                     :in $ ?gene
-                     :where
-                     [?gh :expr-pattern.gene/gene ?gene]
-                     [?ep :expr-pattern/gene ?gh]
-                     [?ep :expr-pattern/anatomy-term ?ah]
-                     [?ah :expr-pattern.anatomy-term/anatomy-term ?at]]
-                   db (:db/id gene))]
-       (map #(expression-table-row db %) anatomy-relations))
+     (let [anatomy-relations
+           (d/q '[:find ?t ?ep ?th
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  [?ep :expr-pattern/anatomy-term ?th]
+                  [?th :expr-pattern.anatomy-term/anatomy-term ?t]]
+                db (:db/id gene))]
+       (seq (map #(expression-table-row db %) anatomy-relations)))
      :description "the tissue that the gene is expressed in"}))
 
 (defn expressed-during [gene]
   (let [db (d/entity-db gene)]
     {:data
-     (if-let [life-stage-relations
-              (d/q '[:find ?at ?ep ?ah
-                     :in $ ?gene
-                     :where
-                     [?gh :expr-pattern.gene/gene ?gene]
-                     [?ep :expr-pattern/gene ?gh]
-                     [?ep :expr-pattern/life-stage ?ah]
-                     [?ah :expr-pattern.life-stage/life-stage ?at]]
-                   db (:db/id gene))]
-       (map #(expression-table-row db %) life-stage-relations))
+     (let [life-stage-relations
+           (d/q '[:find ?t ?ep ?th
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  [?ep :expr-pattern/life-stage ?th]
+                  [?th :expr-pattern.life-stage/life-stage ?t]]
+                db (:db/id gene))]
+       (seq (map #(expression-table-row db %) life-stage-relations)))
      :description "the tissue that the gene is expressed in"}))
 
 (defn subcellular-localization [gene]
   (let [db (d/entity-db gene)]
     {:data
-     (if-let [go-term-relations
-              (d/q '[:find ?at ?ep ?ah
-                     :in $ ?gene
-                     :where
-                     [?gh :expr-pattern.gene/gene ?gene]
-                     [?ep :expr-pattern/gene ?gh]
-                     [?ep :expr-pattern/go-term ?ah]
-                     [?ah :expr-pattern.go-term/go-term ?at]]
-                   db (:db/id gene))]
-       (map #(expression-table-row db %) go-term-relations))
+     (let [go-term-relations
+           (d/q '[:find ?t ?ep ?th
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  [?ep :expr-pattern/go-term ?th]
+                  [?th :expr-pattern.go-term/go-term ?t]]
+                db (:db/id gene))]
+       (seq (map #(expression-table-row db %) go-term-relations)))
      :description "the tissue that the gene is expressed in"}))
 
 (def widget
