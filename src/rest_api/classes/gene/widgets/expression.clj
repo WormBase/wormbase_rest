@@ -206,6 +206,46 @@
             (seq)))
      :description "expression cluster data"}))
 
+;;
+;; anatomy functions field
+;;
+
+
+(defn- anatomy-functions-table-row [db [anatomy-function-dbids involved-dbid]]
+  (let [anatomy-function (d/entity db anatomy-function-dbids)
+        involved (d/entity db involved-dbid)]
+    {:bp_inv (pack-obj (:anatomy-function.involved/anatomy-term involved))
+     :assay (if-let [assay-holders (seq (:anatomy-function/assay anatomy-function))]
+              {:text (->> (map :anatomy-function.assay/ao-code assay-holders)
+                          (map :ao-code/id)
+                          (str/join "<br/>"))
+               :evidence {:genotype
+                          (->> (map :anatomy-function.assay/condition assay-holders)
+                               (map :condition/genotype)
+                               (reduce into [])
+                               (str/join "<br/>"))}})
+     :phenotype (pack-obj (:anatomy-function.phenotype/phenotype (:anatomy-function/phenotype anatomy-function)))
+     :reference (pack-obj (:anatomy-function/reference anatomy-function))}))
+
+(defn anatomy-functions [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [function-term-relations
+           (d/q '[:find ?af ?at
+                  :in $ ?gene
+                  :where
+                  [?h :anatomy-function.gene/gene ?gene]
+                  [?af :anatomy-function/gene ?h]
+                  [?af :anatomy-function/involved ?at]]
+                db (:db/id gene))]
+       (->> function-term-relations
+            (map (partial anatomy-functions-table-row db))
+            (seq)))
+     :description "anatomy functions associatated with this gene"}))
+;;
+;; end of anatomy functions field
+;;
+
 (def widget
   {:name generic/name-field
    :expressed_in expressed-in
@@ -213,5 +253,5 @@
    :subcellular_localization subcellular-localization
    :expression_profiling_graphs expression-profiling-graphs
    :expression_cluster expression-cluster
-   }
+   :anatomy_function anatomy-functions}
   )
