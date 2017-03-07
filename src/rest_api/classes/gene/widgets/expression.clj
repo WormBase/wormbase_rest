@@ -206,15 +206,29 @@
             (seq)))
      :description "expression cluster data"}))
 
+
 ;;
 ;; anatomy functions field
 ;;
 
-
 (defn- anatomy-functions-table-row [db [anatomy-function-dbids involved-dbid]]
   (let [anatomy-function (d/entity db anatomy-function-dbids)
         involved (d/entity db involved-dbid)]
-    {:bp_inv (pack-obj (:anatomy-function.involved/anatomy-term involved))
+    {:bp_inv {:text (pack-obj (:anatomy-function.involved/anatomy-term involved))
+              :evidence (->> [:anatomy-function-info/autonomous
+                              :anatomy-function-info/insufficient
+                              :anatomy-function-info/necessary
+                              :anatomy-function-info/nonautonomous
+                              :anatomy-function-info/remark
+                              :anatomy-function-info/sufficient
+                              :anatomy-function-info/unnecessary]
+                             (reduce (fn [coll attr]
+                                       (if-let [attr-values (attr involved)]
+                                         (assoc coll
+                                                (obj/humanize-ident attr)
+                                                (str/join "<br/>" attr-values))
+                                         coll))
+                                     {}))}
      :assay (if-let [assay-holders (seq (:anatomy-function/assay anatomy-function))]
               {:text (->> (map :anatomy-function.assay/ao-code assay-holders)
                           (map :ao-code/id)
