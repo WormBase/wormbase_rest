@@ -90,6 +90,7 @@
                   :where
                   [?gh :expr-pattern.gene/gene ?gene]
                   [?ep :expr-pattern/gene ?gh]
+                  (not [?ep :expr-pattern/epic])
                   [?ep :expr-pattern/anatomy-term ?th]
                   [?th :expr-pattern.anatomy-term/anatomy-term ?t]]
                 db (:db/id gene))]
@@ -105,6 +106,7 @@
                   :where
                   [?gh :expr-pattern.gene/gene ?gene]
                   [?ep :expr-pattern/gene ?gh]
+                  (not [?ep :expr-pattern/epic])
                   [?ep :expr-pattern/life-stage ?th]
                   [?th :expr-pattern.life-stage/life-stage ?t]]
                 db (:db/id gene))]
@@ -120,6 +122,7 @@
                   :where
                   [?gh :expr-pattern.gene/gene ?gene]
                   [?ep :expr-pattern/gene ?gh]
+                  (not [?ep :expr-pattern/epic])
                   [?ep :expr-pattern/go-term ?th]
                   [?th :expr-pattern.go-term/go-term ?t]]
                 db (:db/id gene))]
@@ -141,7 +144,7 @@
                     :label (:database/name (:expr-pattern.db-info/database %))
                     :class (:database/id (:expr-pattern.db-info/database %))))))
 
-(defn- profiling-graph-description [expr-pattern]
+(defn- expr-pattern-description [expr-pattern]
   (let [descriptions
         (some seq [(:expr-pattern/pattern expr-pattern)
                    (:expr-pattern/subcellular-localization expr-pattern)
@@ -163,7 +166,7 @@
                            (seq))]
     {:expression_pattern (assoc (pack-obj expr-pattern)
                                 :curated_images packed-images)
-     :description (profiling-graph-description expr-pattern)
+     :description (expr-pattern-description expr-pattern)
      :type (seq (expr-pattern-type expr-pattern))
      :database (seq (expr-pattern-db expr-pattern))}))
 
@@ -181,12 +184,53 @@
                       [?ep :expr-pattern/tiling-array])]
                 db (:db/id gene))]
        (seq (map #(profiling-graph-table-row db %) expr-patterns)))
-     :description (str "expression patterns associated with the " (:gene/id gene))}))
+     :description (str "expression profiles associated with the " (:gene/id gene))}))
 ;;
 ;; End of Expression profile graph work
 ;;
 
+;; EPIC expression pattern, such as Expr10220 and Expr10221
+(defn- epic-table-row [db expr-pattern-dbid]
+  (let [expr-pattern (d/entity db expr-pattern-dbid)]
+    {:expression_pattern
+     (if-let [packed-images (->> (:picture/_expr-pattern expr-pattern)
+                                 (map pack-image)
+                                 (seq))]
+       (assoc (pack-obj expr-pattern) :curated_images packed-images)
+       (pack-obj expr-pattern))
 
+     :type (seq (expr-pattern-type expr-pattern))
+     :description (expr-pattern-description expr-pattern)
+     :life_stage (->> (:expr-pattern/life-stage expr-pattern)
+                      (map :expr-pattern.life-stage/life-stage)
+                      (map pack-obj)
+                      (seq))
+     :expressed_in (->> (:expr-pattern/anatomy-term expr-pattern)
+                        (map :expr-pattern.anatomy-term/anatomy-term)
+                        (map pack-obj)
+                        (seq))
+     :go_term (->> (:expr-pattern/go-term expr-pattern)
+                   (map :expr-pattern.go-term/go-term)
+                   (map pack-obj)
+                   (seq))
+     :database (seq (expr-pattern-db expr-pattern))}))
+
+(defn epic-expr-patterns [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [pattern-dbids
+           (d/q '[:find [?ep ...]
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  [?ep :expr-pattern/epic]]
+                db (:db/id gene))]
+       (seq (map #(epic-table-row db %) pattern-dbids)))
+     :description "Large-scale cellular resolution compendium of gene expression dynamics"}))
+
+
+;; example gene with expression movies WBGene00016948
 (defn expression-movies [gene]
   (let [db (d/entity-db gene)]
     {:data
@@ -291,5 +335,5 @@
    :expression_profiling_graphs expression-profiling-graphs
    :expression_cluster expression-cluster
    :anatomy_function anatomy-functions
-   :fourd_expression_movies expression-movies}
-  )
+   :fourd_expression_movies expression-movies
+   :epic_expr_patterns epic-expr-patterns})
