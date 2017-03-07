@@ -187,6 +187,28 @@
 ;;
 
 
+(defn expression-movies [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [expr-pattern-dbids
+           (d/q '[:find [?ep ...]
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  [?ep :expr-pattern/movieurl ?th]]
+                db (:db/id gene))]
+       (if (not-empty expr-pattern-dbids)
+         (reduce (fn [coll expr-pattern-dbid]
+                   (let [expr-pattern (d/entity db expr-pattern-dbid)]
+                     (assoc coll
+                            (:expr-pattern/id expr-pattern)
+                            {:object (pack-obj expr-pattern)
+                             :movie (:expr-pattern/movieurl expr-pattern)
+                             :details (str/join "; " (:expr-pattern/pattern expr-pattern))})))
+                 {} expr-pattern-dbids)))
+     :description "the tissue that the gene is expressed in"}))
+
 
 (defn expression-cluster [gene]
   (let [db (d/entity-db gene)]
@@ -260,6 +282,7 @@
 ;; end of anatomy functions field
 ;;
 
+
 (def widget
   {:name generic/name-field
    :expressed_in expressed-in
@@ -267,5 +290,6 @@
    :subcellular_localization subcellular-localization
    :expression_profiling_graphs expression-profiling-graphs
    :expression_cluster expression-cluster
-   :anatomy_function anatomy-functions}
+   :anatomy_function anatomy-functions
+   :fourd_expression_movies expression-movies}
   )
