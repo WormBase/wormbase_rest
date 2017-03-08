@@ -140,7 +140,7 @@
     (if (> size capacity)
       (concat (map pack-obj (take capacity terms))
               [(assoc (pack-obj expr-pattern)
-                   :label (format "<strong>and %s more</strong>" (- size capacity)))])
+                      :label (format "<strong>and %s more</strong>" (- size capacity)))])
       (map pack-obj terms))))
 
 (defn- expr-pattern-detail [expr-pattern qualifier]
@@ -383,8 +383,8 @@
 ;; anatomy functions field
 ;;
 
-(defn- anatomy-functions-table-row [db [anatomy-function-dbids involved-dbid]]
-  (let [anatomy-function (d/entity db anatomy-function-dbids)
+(defn- anatomy-functions-table-row [db [anatomy-function-dbid involved-dbid]]
+  (let [anatomy-function (d/entity db anatomy-function-dbid)
         involved (d/entity db involved-dbid)]
     {:bp_inv {:text (pack-obj (:anatomy-function.involved/anatomy-term involved))
               :evidence (->> [:anatomy-function-info/autonomous
