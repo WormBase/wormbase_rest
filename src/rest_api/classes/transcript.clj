@@ -1,8 +1,9 @@
 (ns rest-api.classes.transcript
   (:require
    [datomic.api :as d]
-   [rest-api.routing :as routing]
-   [rest-api.classes.gene.expression :as exp]))
+   [rest-api.classes.gene.expression :as exp]
+   [rest-api.formatters.object :as obj]
+   [rest-api.routing :as routing]))
 
 (defn- provide-gene [gene-field-function]
   (fn [transcript]
@@ -13,7 +14,7 @@
         (gene-field-function (d/entity db gene-dbid))))))
 
 (def expression-widget
-  {:name generic/name-field
+  {:name obj/name-field
    :expressed_in (provide-gene exp/expressed-in)
    :expressed_during (provide-gene exp/expressed-during)
    :subcellular_localization (provide-gene exp/subcellular-localization)
