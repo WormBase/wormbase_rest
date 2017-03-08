@@ -368,3 +368,9 @@
         (last)
         (str/replace #"-" " ")
         (str/capitalize))))
+
+(defn name-field [gene]
+  (let [data (pack-obj gene)]
+    {:data (not-empty data)
+     :description (format "The name and WormBase internal ID of %s"
+                          (:id data))}))
