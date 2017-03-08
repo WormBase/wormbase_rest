@@ -7,11 +7,11 @@
 
 (defn- provide-gene [gene-field-function]
   (fn [transcript]
-    (let [db (d/entity-db transcript)]
-      (if-let [gene-dbid (d/q exp/q-corresponding-transcript
-                              db
-                              (:db/id transcript))]
-        (gene-field-function (d/entity db gene-dbid))))))
+    (if-let [gene (->> transcript
+                       (:gene.corresponding-transcript/_transcript )
+                       (map :gene/_corresponding-transcript)
+                       (first))]
+      (gene-field-function gene))))
 
 (def expression-widget
   {:name obj/name-field
