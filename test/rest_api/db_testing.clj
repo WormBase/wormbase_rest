@@ -9,6 +9,11 @@
   (f)
   (mount/stop))
 
-(defn entity [lookup-ref]
-  (d/entity (d/db datomic-conn) lookup-ref))
-
+(defn entity
+  ([wb-class wb-name]
+   (let [kw (if (keyword? wb-class)
+              (name wb-class)
+              wb-class)]
+     (entity [(keyword wb-class "id") wb-name])))
+  ([lookup-ref]
+   (d/entity (d/db datomic-conn) lookup-ref)))

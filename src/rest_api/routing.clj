@@ -9,8 +9,8 @@
    [schema.core :as schema]))
 
 (defn- entity-not-found [schema-name id]
-  (-> {:message (format "Entity %s %s does not exist" schema-name id)}
-      (res/not-found)))
+  (res/not-found
+   {:message (format "Entity %s %s does not exist" schema-name id)}))
 
 (defn- conform-uri [request]
   (str/replace-first (:uri request) "/" ""))
