@@ -1,6 +1,7 @@
 (ns rest-api.classes.transcript
   (:require
    [datomic.api :as d]
+   [rest-api.classes.gene.widgets.external-links :as external-links]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.formatters.object :as obj]
    [rest-api.routing :as routing]))
@@ -22,6 +23,7 @@
    :expression_cluster (delegate-to-gene exp/expression-cluster)
    :anatomy_function (delegate-to-gene exp/anatomy-functions)
    :fourd_expression_movies (delegate-to-gene exp/expression-movies)
+   :external_links external_links/widget
    :epic_expr_patterns (delegate-to-gene exp/epic-expr-patterns)})
 
 (routing/defroutes

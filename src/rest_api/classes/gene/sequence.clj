@@ -1,18 +1,10 @@
 (ns rest-api.classes.gene.sequence
   (:require
     [clojure.string :as str]
+    [rest-api.classes.generic :as generic]
     [rest-api.db.sequence :as seqdb]
     [pseudoace.utils :as pace-utils]
     [rest-api.db.sequence :as wb-seq]))
-
-(defn xform-species-name
-  "Transforms a `species-name` from the WB database into
-  a name used to look up connection configuration to a sequence db."
-  [species]
-  (let  [species-name-parts  (str/split species #" ")
-         g  (str/lower-case  (ffirst species-name-parts))
-         species  (second species-name-parts)]
-    (str/join "_"  [g species])))
 
 (defn sequence-features [db-name gene-id]
  (let [db ((keyword db-name) wb-seq/sequence-dbs)]
@@ -20,7 +12,7 @@
 
 (defn get-segments  [gene]
   (let  [species-name  (->> gene :gene/species :species/id)
-         g-species  (xform-species-name species-name)
+         g-species  (generic/xform-species-name species-name)
          sequence-database  (seqdb/get-default-sequence-database g-species)]
     (if sequence-database
       (sequence-features sequence-database  (:gene/id gene)))))
