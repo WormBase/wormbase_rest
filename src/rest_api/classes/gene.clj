@@ -1,6 +1,7 @@
 (ns rest-api.classes.gene
   (:require
    [rest-api.classes.gene.widgets.external-links :as external-links]
+   [rest-api.classes.gene.widgets.expression :as expression]
    [rest-api.classes.gene.widgets.feature :as feature]
    [rest-api.classes.gene.widgets.sequences :as sequences]
    [rest-api.classes.gene.widgets.genetics :as genetics]
@@ -21,6 +22,7 @@
   {:entity-class "gene"
    :widget
    {:external_links external-links/widget
+    :expression expression/widget
     :feature feature/widget
     :gene_ontology gene-ontology/widget
     :genetics genetics/widget
