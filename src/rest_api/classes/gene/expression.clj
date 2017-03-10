@@ -179,6 +179,10 @@
 
      :expression_pattern
      (if-let [packed-images (->> (:picture/_expr-pattern expr-pattern)
+                                 (filter (fn [picture]
+                                           (or ((set (:picture/life-stage picture)) ontology-term)
+                                               ((set (:picture/cellular-component picture)) ontology-term)
+                                               ((set (:picture/anatomy picture)) ontology-term))))
                                  (map pack-image)
                                  (seq))]
        (assoc (pack-obj expr-pattern) :curated_images packed-images)
