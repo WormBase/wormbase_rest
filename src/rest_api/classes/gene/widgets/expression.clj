@@ -12,6 +12,7 @@
    :subcellular_localization expression/subcellular-localization
    :epic_expr_patterns expression/epic-expr-patterns
    :expression_profiling_graphs expression/expression-profiling-graphs
+   :expr_pattern_images expression/expr-pattern-images
    :expression_cluster expression/expression-cluster
    :anatomy_function expression/anatomy-functions
    :fourd_expression_movies expression/expression-movies

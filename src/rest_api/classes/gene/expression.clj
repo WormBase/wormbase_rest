@@ -340,6 +340,26 @@
      :description "Large-scale cellular resolution compendium of gene expression dynamics"}))
 
 
+;; expression pattern images
+(defn expr-pattern-images [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [pattern-dbids
+           (d/q '[:find [?pic ...]
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  [?pic :picture/expr-pattern ?ep]]
+                db (:db/id gene))]
+       (->> pattern-dbids
+            (map #(d/entity db %))
+            (map pack-image)
+            (seq)
+            (assoc {} :curated_images)))
+     :description "Large-scale cellular resolution compendium of gene expression dynamics"}))
+
+
 ;; example gene with expression movies WBGene00016948
 (defn expression-movies [gene]
   (let [db (d/entity-db gene)]
