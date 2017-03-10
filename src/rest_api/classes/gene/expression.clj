@@ -445,18 +445,26 @@
            (format "%s Mountain: %s" (:expr-profile/id expr-profile) (str/join " " mountains)))
     (pack-obj expr-profile)))
 
+(def gene-pcr-product-rules
+  '[[(gene-pcr-product ?gene ?pcr)
+     [?gene :gene/corresponding-transcript ?th]
+     [?th :gene.corresponding-transcript/transcript ?t]
+     [?t :transcript/corresponding-pcr-product ?pcr]]
+    [(gene-pcr-product ?gene ?pcr)
+     [?gene :gene/corresponding-cds ?th]
+     [?th :gene.corresponding-cds/cds ?t]
+     [?t :cds/corresponding-pcr-product ?pcr]]])
+
 (defn microarray-topology-map-position [gene]
   (let [db (d/entity-db gene)]
     {:data
      (let [expr-profile-dbids
            (d/q '[:find [?pr ...]
-                  :in $ ?gene
+                  :in $ % ?gene
                   :where
-                  [?gene :gene/corresponding-transcript ?th]
-                  [?th :gene.corresponding-transcript/transcript ?t]
-                  [?t :transcript/corresponding-pcr-product ?pcr]
+                  (gene-pcr-product ?gene ?pcr)
                   [?pr :locatable/parent ?pcr]]
-                db (:db/id gene))]
+                db gene-pcr-product-rules (:db/id gene))]
        (->> expr-profile-dbids
             (map #(d/entity db %))
             (map pack-expr-profile)
