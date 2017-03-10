@@ -431,3 +431,39 @@
 ;;
 ;; end of anatomy functions field
 ;;
+
+;;
+;; microarray topography map
+;;
+
+(defn- pack-expr-profile [expr-profile]
+  (if-let [mountains (->> (:expr-profile/expr-map expr-profile)
+                          (map :sk-map/mountain)
+                          (seq))]
+    (assoc (pack-obj expr-profile)
+           :label
+           (format "%s Mountain: %s" (:expr-profile/id expr-profile) (str/join " " mountains)))
+    (pack-obj expr-profile)))
+
+(defn microarray-topology-map-position [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [expr-profile-dbids
+           (d/q '[:find [?pr ...]
+                  :in $ ?gene
+                  :where
+                  [?gene :gene/corresponding-transcript ?th]
+                  [?th :gene.corresponding-transcript/transcript ?t]
+                  [?t :transcript/corresponding-pcr-product ?pcr]
+                  [?pr :locatable/parent ?pcr]]
+                db (:db/id gene))]
+       (->> expr-profile-dbids
+            (map #(d/entity db %))
+            (map pack-expr-profile)
+            (sort-by :id)
+            (seq)))
+     :description "microarray topography map"}))
+
+;;
+;; End of microarray topography map
+;;

@@ -10,8 +10,9 @@
    :expressed_in expression/expressed-in
    :expressed_during expression/expressed-during
    :subcellular_localization expression/subcellular-localization
+   :epic_expr_patterns expression/epic-expr-patterns
    :expression_profiling_graphs expression/expression-profiling-graphs
    :expression_cluster expression/expression-cluster
    :anatomy_function expression/anatomy-functions
    :fourd_expression_movies expression/expression-movies
-   :epic_expr_patterns expression/epic-expr-patterns})
+   :microarray_topology_map_position expression/microarray-topology-map-position})
