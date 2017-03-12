@@ -31,7 +31,7 @@
       (is (= (:body response) expected))))
   (testing
     "Main request handler produces correct data structure (fields)"
-    (let [req {:uri "/rest/field/gene/WBGene00000001/xrefs"
+    (let [req {:uri "/rest/field/gene/WBGene00000001/rearrangements"
                :context "/rest/widget/gene"
                :params {:id "WBGene00000001"}}
           res-x {:data {:x "X"} :description "X desc"}
@@ -39,7 +39,7 @@
           handler (routing/make-request-handler :field entity-handler)
           response (handler req)
           expected {:xrefs res-x
-                    :uri "rest/field/gene/WBGene00000001/xrefs"
+                    :uri "rest/field/gene/WBGene00000001/rearrangements"
                     :class "gene"
                     :name "WBGene00000001"}]
       (is (= (:body response) expected)))))

@@ -67,19 +67,18 @@
                        fields)
           route-data (assoc this :field field-defs)
           entity-class (:entity-class route-data)
-          entity-segment (str/replace entity-class #"-" "_")
-          ]
+          entity-segment (str/replace entity-class #"-" "_")]
       (flatten
-       (for [kw [:widget :field]
-             :let [scheme (name kw)
-                   ep-defs (kw route-data)]]
-         (for [[ep-kw entity-handler] (sort-by key ep-defs)
-               :let [ep-name (name ep-kw)]]
-           (sweet/context (str "/" scheme "/" entity-segment) []
-             :tags [(str entity-segment " " scheme "s")]
-             (sweet/GET (str "/:id/" ep-name) []
-               :path-params [id :- schema/Str]
-               (make-request-handler kw entity-handler))))))))
+        (for [kw [:widget :field]
+              :let [scheme (name kw)
+                    ep-defs (kw route-data)]]
+          (for [[ep-kw entity-handler] (sort-by key ep-defs)
+                :let [ep-name (name ep-kw)]]
+            (sweet/context (str "/" scheme "/" entity-segment) []
+              :tags [(str entity-segment " " scheme "s")]
+              (sweet/GET (str "/:id/" ep-name) []
+                :path-params [id :- schema/Str]
+                (make-request-handler kw entity-handler))))))))
 
   (-create-routes [this]
     (-create-routes this {:publish-widget-fields? true})))
