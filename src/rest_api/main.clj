@@ -33,8 +33,10 @@
    analysis/routes
    variation/routes
    cds/routes
+   clone/routes
    disease/routes
    homology-group/routes
+   interaction/routes
    molecule/routes
    motif/routes
    paper/routes

@@ -23,12 +23,12 @@
    :expression_cluster (delegate-to-gene exp/expression-cluster)
    :anatomy_function (delegate-to-gene exp/anatomy-functions)
    :fourd_expression_movies (delegate-to-gene exp/expression-movies)
-   :external_links external_links/widget
    :epic_expr_patterns (delegate-to-gene exp/epic-expr-patterns)})
 
 (routing/defroutes
   {:entity-class "transcript"
    :widget
-   {:expression expression-widget}
+   {:expression expression-widget
+    :external_links external-links/widget}
    :field
    {:fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})

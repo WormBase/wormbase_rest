@@ -43,7 +43,7 @@
           entity-class (-> (:context request)
                            (str/split #"/")
                            (last))
-          attr (keyword entity-class "id")
+          attr (keyword (str/replace entity-class #"_" "-") "id")
           lookup-ref [attr id]]
       (if-let [entity (d/entity db lookup-ref)]
         (->> (conform-to-scheme scheme entity-handler entity request)
@@ -66,15 +66,17 @@
                        (apply merge (cons fields (->> this :widget vals)))
                        fields)
           route-data (assoc this :field field-defs)
-          entity-class (:entity-class route-data)]
+          entity-class (:entity-class route-data)
+          entity-segment (str/replace entity-class #"-" "_")
+          ]
       (flatten
        (for [kw [:widget :field]
              :let [scheme (name kw)
                    ep-defs (kw route-data)]]
          (for [[ep-kw entity-handler] (sort-by key ep-defs)
                :let [ep-name (name ep-kw)]]
-           (sweet/context (str "/" scheme "/" entity-class) []
-             :tags [(str entity-class " " scheme "s")]
+           (sweet/context (str "/" scheme "/" entity-segment) []
+             :tags [(str entity-segment " " scheme "s")]
              (sweet/GET (str "/:id/" ep-name) []
                :path-params [id :- schema/Str]
                (make-request-handler kw entity-handler))))))))
