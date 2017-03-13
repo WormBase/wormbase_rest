@@ -28,9 +28,9 @@
         allele1 (find-variation-in "WBVar00248722" alleles)
         allele-other1 (find-variation-in "WBVar00278273" alleles-other)
         allele-other2 (find-variation-in "WBVar01495296" alleles-other)
-        allele-other3 (->> (get-gene "WBGene00018307")
-                           (#'variation/alleles-other)
-                           (find-variation-in "WBVar00601075"))
+        allele2 (->> (get-gene "WBGene00003657")
+                     (#'variation/alleles)
+                     (find-variation-in "WBVar00600733"))
         polymorphism1 (find-variation-in "WBVar01858901" polymorphisms)]
     (testing "reference allele"
       (is (some #(= "e66" (:label %)) (:data reference-allele))))
@@ -80,7 +80,7 @@
           (is (some #(= "A1774T" %)
                     (:composite_change allele-other2)))))
       (testing "effects outside of CDS"
-        (is (some #(= "Promoter" %) (:effects allele-other3)))))))
+        (is (some #(= "Promoter" %) (:effects allele2)))))))
 
 
 (deftest test-strains

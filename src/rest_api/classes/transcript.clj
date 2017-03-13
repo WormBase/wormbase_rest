@@ -1,6 +1,7 @@
 (ns rest-api.classes.transcript
   (:require
    [datomic.api :as d]
+   [rest-api.classes.gene.widgets.external-links :as external-links]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.formatters.object :as obj]
    [rest-api.routing :as routing]))
@@ -18,15 +19,18 @@
    :expressed_in (delegate-to-gene exp/expressed-in)
    :expressed_during (delegate-to-gene exp/expressed-during)
    :subcellular_localization (delegate-to-gene exp/subcellular-localization)
+   :epic_expr_patterns (delegate-to-gene exp/epic-expr-patterns)
    :expression_profiling_graphs (delegate-to-gene exp/expression-profiling-graphs)
+   :expr_pattern_images (delegate-to-gene exp/expr-pattern-images)
    :expression_cluster (delegate-to-gene exp/expression-cluster)
    :anatomy_function (delegate-to-gene exp/anatomy-functions)
    :fourd_expression_movies (delegate-to-gene exp/expression-movies)
-   :epic_expr_patterns (delegate-to-gene exp/epic-expr-patterns)})
+   :microarray_topology_map_position (delegate-to-gene exp/microarray-topology-map-position)})
 
 (routing/defroutes
   {:entity-class "transcript"
    :widget
-   {:expression expression-widget}
+   {:expression expression-widget
+    :external_links external-links/widget}
    :field
    {:fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})
