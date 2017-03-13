@@ -4,7 +4,7 @@
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.formatters.object :refer [obj-get obj-name pack-obj]]
-   [rest-api.classes.gene.generic :as generic]))
+   [rest-api.classes.generic :as generic]))
 
 (def ^:private interactor-role-map
   {:interactor-info.interactor-type/effector :effector

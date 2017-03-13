@@ -1,7 +1,7 @@
 (ns rest-api.classes.gene.widgets.location
   (:require
     [rest-api.classes.gene.sequence :as sequence-fns]
-    [rest-api.classes.gene.generic :as generic]))
+    [rest-api.classes.generic :as generic]))
 
 (defn genetic-position [gene]
   (let [segment (sequence-fns/get-longest-segment gene)

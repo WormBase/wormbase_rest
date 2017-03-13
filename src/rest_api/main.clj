@@ -6,6 +6,21 @@
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.gene :as gene]
    [rest-api.classes.person :as person]
+   [rest-api.classes.anatomy-term :as anatomy-term]
+   [rest-api.classes.analysis :as analysis]
+   [rest-api.classes.variation :as variation]
+   [rest-api.classes.cds :as cds]
+   [rest-api.classes.clone :as clone]
+   [rest-api.classes.disease :as disease]
+   [rest-api.classes.homology-group :as homology-group]
+   [rest-api.classes.interaction :as interaction]
+   [rest-api.classes.molecule :as molecule]
+   [rest-api.classes.motif :as motif]
+   [rest-api.classes.paper :as paper]
+   [rest-api.classes.protein :as protein]
+   [rest-api.classes.rnai :as rnai]
+   [rest-api.classes.sequence :as seqs]
+   [rest-api.classes.structure-data :as structure-data]
    [rest-api.classes.transcript :as transcript]
    [ring.util.http-response :as res]
    [ring.middleware.gzip :as ring-gzip]))
@@ -14,6 +29,21 @@
   "A collection of all routes to served by the application."
   [gene/routes
    person/routes
+   anatomy-term/routes
+   analysis/routes
+   variation/routes
+   cds/routes
+   clone/routes
+   disease/routes
+   homology-group/routes
+   interaction/routes
+   molecule/routes
+   motif/routes
+   paper/routes
+   protein/routes
+   rnai/routes
+   seqs/routes
+   structure-data/routes
    transcript/routes])
 
 (def ^:private swagger-validator-url

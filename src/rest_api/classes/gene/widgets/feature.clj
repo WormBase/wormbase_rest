@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [rest-api.formatters.object :refer [pack-obj]]
    [rest-api.classes.gene.sequence :as sequence-fns]
-   [rest-api.classes.gene.generic :as generic]
+   [rest-api.classes.generic :as generic]
    [datomic.api :as d]))
 
 (defn- not-nil [xs]
