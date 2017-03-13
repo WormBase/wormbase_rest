@@ -20,7 +20,7 @@
   (let [data
         (if-let [k (first (filter #(= (name %) "id") (keys object)))]
           (let [role (namespace k)
-                ckw (partial (str/join "." [role "database"]))]
+                ckw (str role ".database")]
             (reduce
               (fn [refs database]
                 (let [match-accession (partial re-matches #"(?:OMIM:|GI:)(.*)")
