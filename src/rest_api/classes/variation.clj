@@ -5,6 +5,7 @@
     [rest-api.classes.variation.widgets.isolation :as isolation]
     [rest-api.classes.variation.widgets.location :as location]
     [rest-api.classes.variation.widgets.molecular-details :as molecular-details]
+    [rest-api.classes.variation.widgets.phenotypes :as phenotypes]
     [rest-api.classes.variation.widgets.external-links :as external-links]
     [rest-api.routing :as routing]))
 
@@ -16,4 +17,5 @@
     :isolation isolation/widget
     :location location/widget
     :molecular_details molecular-details/widget
+    :phenotypes phenotypes/widget
     :external_links external-links/widget}})
