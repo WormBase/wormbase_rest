@@ -58,7 +58,7 @@
           :dependencies [[ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
           :env
-          {:wb-db-uri "datomic:ddb://us-east-1/WS257/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS258/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"
