@@ -82,7 +82,6 @@
               :y (mk-route-spec [:e :f :g])}
       fields {:z (mk-route-spec [:h :i])}]
   (routing/defroutes {:entity-class "some-entity"
-                      :datatype "testing"
                       :widget widget
                       :field fields})
 
