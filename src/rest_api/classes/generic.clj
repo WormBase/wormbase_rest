@@ -47,7 +47,7 @@
                                    rest
                                    acc))))))
               {}
-              ((kw-db-role object))))]
+              ((kw-db-role object)))))]
     {:data (not-empty data)
      :description  (str "external databases and IDs containing "
                         "additional information on the object")}))
