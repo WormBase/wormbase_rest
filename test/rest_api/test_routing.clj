@@ -19,7 +19,7 @@
           handler-x (fn [e] res-x)
           handler-y (fn [e] res-y)
           widgets {:top-x handler-x :top-y handler-y}
-          handler (routing/make-request-handler :widget widgets)
+          handler (routing/make-request-handler :widget widgets "gene")
           response (handler req)
           expected {:uri "rest/widget/gene/WBGene00000001/overview"
                     :class "gene"
@@ -31,15 +31,17 @@
       (is (= (:body response) expected))))
   (testing
     "Main request handler produces correct data structure (fields)"
-    (let [req {:uri "/rest/field/gene/WBGene00000001/rearrangements"
+    (let [req {:uri "/rest/field/gene/WBGene00000001/xrefs"
                :context "/rest/widget/gene"
                :params {:id "WBGene00000001"}}
           res-x {:data {:x "X"} :description "X desc"}
           entity-handler (fn [e] res-x)
-          handler (routing/make-request-handler :field entity-handler)
+          handler (routing/make-request-handler :field
+                                                entity-handler
+                                                "gene")
           response (handler req)
           expected {:xrefs res-x
-                    :uri "rest/field/gene/WBGene00000001/rearrangements"
+                    :uri "rest/field/gene/WBGene00000001/xrefs"
                     :class "gene"
                     :name "WBGene00000001"}]
       (is (= (:body response) expected)))))
