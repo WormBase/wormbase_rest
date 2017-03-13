@@ -19,7 +19,7 @@
           handler-x (fn [e] res-x)
           handler-y (fn [e] res-y)
           widgets {:top-x handler-x :top-y handler-y}
-          handler (routing/make-request-handler :widget widgets)
+          handler (routing/make-request-handler :widget widgets "gene")
           response (handler req)
           expected {:uri "rest/widget/gene/WBGene00000001/overview"
                     :class "gene"
@@ -36,7 +36,9 @@
                :params {:id "WBGene00000001"}}
           res-x {:data {:x "X"} :description "X desc"}
           entity-handler (fn [e] res-x)
-          handler (routing/make-request-handler :field entity-handler)
+          handler (routing/make-request-handler :field
+                                                entity-handler
+                                                "gene")
           response (handler req)
           expected {:xrefs res-x
                     :uri "rest/field/gene/WBGene00000001/xrefs"
@@ -79,7 +81,8 @@
       widget {:x (mk-route-spec [:a :b :c :d])
               :y (mk-route-spec [:e :f :g])}
       fields {:z (mk-route-spec [:h :i])}]
-  (routing/defroutes {:datatype "testing"
+  (routing/defroutes {:entity-class "some-entity"
+                      :datatype "testing"
                       :widget widget
                       :field fields})
 

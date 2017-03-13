@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.1.3] - 2017-02-16
+## [0.1.3] - Unreleased
 - Gene page widgets added: sequences, phenotype-graph, reagents and location
 - Person page widgets added: laboratory, overview, publications, tracking
 
