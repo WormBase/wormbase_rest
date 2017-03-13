@@ -36,14 +36,11 @@
                           entity-handlers)]
     {:fields result}))
 
-(defn make-request-handler [scheme entity-handler]
+(defn make-request-handler [scheme entity-handler entity-class]
   (fn [request]
     (let [db (d/db datomic-conn)
           id (get-in request [:params :id])
-          entity-class (-> (:context request)
-                           (str/split #"/")
-                           (last))
-          attr (keyword (str/replace entity-class #"_" "-") "id")
+          attr (keyword entity-class "id")
           lookup-ref [attr id]]
       (if-let [entity (d/entity db lookup-ref)]
         (->> (conform-to-scheme scheme entity-handler entity request)
@@ -78,7 +75,7 @@
               :tags [(str entity-segment " " scheme "s")]
               (sweet/GET (str "/:id/" ep-name) []
                 :path-params [id :- schema/Str]
-                (make-request-handler kw entity-handler))))))))
+                (make-request-handler kw entity-handler entity-class))))))))
 
   (-create-routes [this]
     (-create-routes this {:publish-widget-fields? true})))
