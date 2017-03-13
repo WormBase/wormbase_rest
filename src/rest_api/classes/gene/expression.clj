@@ -357,7 +357,7 @@
 (defn expr-pattern-images [gene]
   (let [db (d/entity-db gene)]
     {:data
-     (let [pattern-dbids
+     (let [picture-dbids
            (d/q '[:find [?pic ...]
                   :in $ ?gene
                   :where
@@ -365,7 +365,7 @@
                   [?ep :expr-pattern/gene ?gh]
                   [?pic :picture/expr-pattern ?ep]]
                 db (:db/id gene))]
-       (->> pattern-dbids
+       (->> picture-dbids
             (map #(d/entity db %))
             (map pack-image)
             (seq)
