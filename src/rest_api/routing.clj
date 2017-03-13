@@ -9,8 +9,8 @@
    [schema.core :as schema]))
 
 (defn- entity-not-found [schema-name id]
-  (-> {:message (format "Entity %s %s does not exist" schema-name id)}
-      (res/not-found)))
+  (res/not-found
+   {:message (format "Entity %s %s does not exist" schema-name id)}))
 
 (defn- conform-uri [request]
   (str/replace-first (:uri request) "/" ""))
@@ -36,13 +36,10 @@
                           entity-handlers)]
     {:fields result}))
 
-(defn make-request-handler [scheme entity-handler]
+(defn make-request-handler [scheme entity-handler entity-class]
   (fn [request]
     (let [db (d/db datomic-conn)
           id (get-in request [:params :id])
-          entity-class (-> (:context request)
-                           (str/split #"/")
-                           (last))
           attr (keyword entity-class "id")
           lookup-ref [attr id]]
       (if-let [entity (d/entity db lookup-ref)]
@@ -66,18 +63,19 @@
                        (apply merge (cons fields (->> this :widget vals)))
                        fields)
           route-data (assoc this :field field-defs)
-          entity-class (:entity-class route-data)]
+          entity-class (:entity-class route-data)
+          entity-segment (str/replace entity-class #"-" "_")]
       (flatten
-       (for [kw [:widget :field]
-             :let [scheme (name kw)
-                   ep-defs (kw route-data)]]
-         (for [[ep-kw entity-handler] (sort-by key ep-defs)
-               :let [ep-name (name ep-kw)]]
-           (sweet/context (str "/" scheme "/" entity-class) []
-             :tags [(str entity-class " " scheme "s")]
-             (sweet/GET (str "/:id/" ep-name) []
-               :path-params [id :- schema/Str]
-               (make-request-handler kw entity-handler))))))))
+        (for [kw [:widget :field]
+              :let [scheme (name kw)
+                    ep-defs (kw route-data)]]
+          (for [[ep-kw entity-handler] (sort-by key ep-defs)
+                :let [ep-name (name ep-kw)]]
+            (sweet/context (str "/" scheme "/" entity-segment) []
+              :tags [(str entity-segment " " scheme "s")]
+              (sweet/GET (str "/:id/" ep-name) []
+                :path-params [id :- schema/Str]
+                (make-request-handler kw entity-handler entity-class))))))))
 
   (-create-routes [this]
     (-create-routes this {:publish-widget-fields? true})))

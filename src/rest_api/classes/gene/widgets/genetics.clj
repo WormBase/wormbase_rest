@@ -2,8 +2,7 @@
   (:require
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as global-generic]
-   [rest-api.classes.gene.generic :as gene-fields]
+   [rest-api.classes.generic :as generic]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -49,11 +48,11 @@
 
 (defn strains [gene]
   (let [strains (:gene/strain gene)]
-    {:data (global-generic/categorize-strains strains)
+    {:data (generic/categorize-strains strains)
      :description "strains carrying this gene"}))
 
 (def widget
-  {:name             gene-fields/name-field
+  {:name             generic/name-field
    :alleles          variation/alleles
    :alleles_count    variation/alleles-count
    :rearrangements   rearrangements

@@ -1,6 +1,7 @@
 (ns rest-api.classes.gene.sequence
   (:require
     [clojure.string :as str]
+    [rest-api.classes.generic :as generic]
     [rest-api.db.sequence :as seqdb]
     [rest-api.classes.generic :as global-generic]
     [pseudoace.utils :as pace-utils]
@@ -12,7 +13,7 @@
 
 (defn get-segments  [gene]
   (let  [species-name  (->> gene :gene/species :species/id)
-         g-species  (global-generic/xform-species-name species-name)
+         g-species  (generic/xform-species-name species-name)
          sequence-database  (seqdb/get-default-sequence-database g-species)]
     (if sequence-database
       (sequence-features sequence-database  (:gene/id gene)))))

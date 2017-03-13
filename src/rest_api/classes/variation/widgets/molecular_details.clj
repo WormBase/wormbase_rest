@@ -3,7 +3,7 @@
     [datomic.api :as d]
     [clojure.string :as str]
     [rest-api.db.sequence :as seqdb]
-    [rest-api.classes.generic :as global-generic]
+    [rest-api.classes.generic :as generic]
     [rest-api.classes.gene.sequence :as gene-sequence]
     [rest-api.classes.variation.generic :as variation-generic]
     [pseudoace.utils :as pace-utils]
@@ -232,7 +232,7 @@
 
 (defn- variation-features  [variation]
   (if-let  [species-name  (->> variation :variation/species :species/id)]
-    (let  [g-species  (global-generic/xform-species-name species-name)
+    (let  [g-species  (generic/xform-species-name species-name)
            sequence-database  (seqdb/get-default-sequence-database g-species)
            db-spec  ((keyword sequence-database) seqdb/sequence-dbs)
            variation-id  (:variation/id variation)]

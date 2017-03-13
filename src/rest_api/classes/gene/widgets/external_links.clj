@@ -1,11 +1,10 @@
 (ns rest-api.classes.gene.widgets.external-links
   (:require
-    [rest-api.classes.generic :as generic]
-    [rest-api.classes.gene.generic :as gene-generic]))
+    [rest-api.classes.generic :as generic]))
 
 (defn xrefs [gene]
-  (generic/xrefs "gene" gene))
+  (generic/xrefs gene))
 
 (def widget
-  {:name  gene-generic/name-field
+  {:name  generic/name-field
    :xrefs xrefs})

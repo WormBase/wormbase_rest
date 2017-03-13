@@ -6,7 +6,7 @@
     [rest-api.classes.variation.widgets.location :as location]
     [rest-api.classes.variation.widgets.molecular-details :as molecular-details]
     [rest-api.classes.variation.widgets.phenotypes :as phenotypes]
-    [rest-api.classes.variation.widgets.external-links :as external-links]
+    [rest-api.classes.gene.widgets.external-links :as external-links]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
