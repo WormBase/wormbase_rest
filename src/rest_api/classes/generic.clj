@@ -20,6 +20,7 @@
   (let [data
         (if-let [k (first (filter #(= (name %) "id") (keys object)))]
           (let [role (namespace k)
+                kw-db-role (keyword role "database")
                 ckw (str role ".database")]
             (reduce
               (fn [refs database]
@@ -27,26 +28,26 @@
                       kw-field (keyword ckw "field")
                       kw-database-field (keyword ckw "database-field")
                       kw-accession (keyword ckw "accession")
-                      kw-text (keyword ckw "text")]
+                      kw-text (keyword ckw "text")
+                      kw-db-id (keyword ckw "database")
+                      kw-field-id (if (contains? database kw-database-field)
+                                    kw-database-field
+                                    kw-field)
+                      kw-db-acc (if (contains? database kw-text)
+                                  kw-text
+                                  kw-accession)]
                   (update-in refs
-                             [(:database/id ((keyword ckw "database") database))
-                              (:database-field/id ((if (contains? database kw-database-field)
-                                                     kw-database-field
-                                                     kw-field)
-                                                   database))
+                             [(:database/id (kw-db-id database))
+                              (:database-field/id (kw-field-id database))
                               :ids]
                              pace-utils/conjv
-                             (let [acc ((if (contains? database kw-text)
-                                          kw-text
-                                          kw-accession)
-                                        database)]
-                               (if (nil? acc)
-                                 nil
+                             (let [acc (kw-db-acc database)]
+                               (if-not (nil? acc)
                                  (if-let [[_ rest] (match-accession acc)]
                                    rest
                                    acc))))))
               {}
-              ((keyword role "database") object))))]
+              ((kw-db-role object)))))]
     {:data (not-empty data)
      :description  (str "external databases and IDs containing "
                         "additional information on the object")}))
