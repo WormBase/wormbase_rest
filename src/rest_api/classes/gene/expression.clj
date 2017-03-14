@@ -169,7 +169,13 @@
         (assoc :thumbnail
                {:format (or format-name "")
                 :name (str prefix "/" (or picture-name (:picture/name picture)))
-                :class "/img-static/pictures"}))))
+                :class "/img-static/pictures"}
+
+               :description
+               (if-let [expr-patterns (seq (:picture/expr-pattern picture))]
+                 (->> (map :expr-pattern/id expr-patterns)
+                      (str/join ", ")
+                      (str "curated pictures for ")))))))
 
 (defn- expression-table-row [db ontology-term-dbid relations]
   (let [ontology-term (d/entity db ontology-term-dbid)]
