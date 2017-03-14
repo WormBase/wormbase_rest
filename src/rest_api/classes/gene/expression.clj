@@ -500,7 +500,8 @@
                   :in $ % ?gene
                   :where
                   (gene-pcr-product ?gene ?pcr)
-                  [?pr :locatable/parent ?pcr]]
+                  [?pr :locatable/parent ?pcr]
+                  [?pr :expr-profile/id]]
                 db gene-pcr-product-rules (:db/id gene))]
        (->> expr-profile-dbids
             (map #(d/entity db %))
