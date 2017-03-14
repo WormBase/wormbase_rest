@@ -16,6 +16,7 @@
 
 (def expression-widget
   {:name obj/name-field
+   :gene_name (delegate-to-gene obj/name-field)
    :expressed_in (delegate-to-gene exp/expressed-in)
    :expressed_during (delegate-to-gene exp/expressed-during)
    :subcellular_localization (delegate-to-gene exp/subcellular-localization)
