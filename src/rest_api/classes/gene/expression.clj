@@ -373,6 +373,15 @@
                 db (:db/id gene))]
        (->> picture-dbids
             (map #(d/entity db %))
+            (sort-by (fn [picture]
+                       ;; is picture for expression profiling graph? If so, they come last
+                       (->> picture
+                            (:picture/expr-pattern)
+                            (some (fn [expr-pattern]
+                                    (or (:expr-pattern/microarray expr-pattern)
+                                        (:expr-pattern/rnaseq expr-pattern)
+                                        (:expr-pattern/tiling-array expr-pattern))))
+                            (boolean))))
             (map pack-image)
             (seq)
             (assoc {} :curated_images)))
