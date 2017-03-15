@@ -376,7 +376,7 @@
             (map pack-image)
             (seq)
             (assoc {} :curated_images)))
-     :description "Large-scale cellular resolution compendium of gene expression dynamics"}))
+     :description "Expression pattern images"}))
 
 
 ;; example gene with expression movies WBGene00016948
