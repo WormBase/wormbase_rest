@@ -224,7 +224,7 @@
                   [?th :expr-pattern.anatomy-term/anatomy-term ?t]]
                 db (:db/id gene))]
        (expression-table db anatomy-relations))
-     :description "the tissue that the gene is expressed in"}))
+     :description "the tissue in which the gene is expressed"}))
 
 (defn expressed-during [gene]
   (let [db (d/entity-db gene)]
@@ -240,7 +240,7 @@
                   [?th :expr-pattern.life-stage/life-stage ?t]]
                 db (:db/id gene))]
        (expression-table db life-stage-relations))
-     :description "the tissue that the gene is expressed in"}))
+     :description "the developmental stage in which the gene is expressed"}))
 
 (defn subcellular-localization [gene]
   (let [db (d/entity-db gene)]
@@ -256,7 +256,7 @@
                   [?th :expr-pattern.go-term/go-term ?t]]
                 db (:db/id gene))]
        (expression-table db go-term-relations))
-     :description "the tissue that the gene is expressed in"}))
+     :description "the cellular component in which the gene is expressed"}))
 
 ;;
 ;; End of expression pattern related tables
@@ -409,7 +409,7 @@
                              :movie (:expr-pattern/movieurl expr-pattern)
                              :details (str/join "; " (:expr-pattern/pattern expr-pattern))})))
                  {} expr-pattern-dbids)))
-     :description "the tissue that the gene is expressed in"}))
+     :description "interactive 4D expression movies"}))
 
 
 (defn expression-cluster [gene]
