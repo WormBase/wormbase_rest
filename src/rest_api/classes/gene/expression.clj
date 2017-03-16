@@ -169,7 +169,13 @@
         (assoc :thumbnail
                {:format (or format-name "")
                 :name (str prefix "/" (or picture-name (:picture/name picture)))
-                :class "/img-static/pictures"}))))
+                :class "/img-static/pictures"}
+
+               :description
+               (if-let [expr-patterns (seq (:picture/expr-pattern picture))]
+                 (->> (map :expr-pattern/id expr-patterns)
+                      (str/join ", ")
+                      (str "curated pictures for ")))))))
 
 (defn- expression-table-row [db ontology-term-dbid relations]
   (let [ontology-term (d/entity db ontology-term-dbid)]
@@ -218,7 +224,7 @@
                   [?th :expr-pattern.anatomy-term/anatomy-term ?t]]
                 db (:db/id gene))]
        (expression-table db anatomy-relations))
-     :description "the tissue that the gene is expressed in"}))
+     :description "the tissue in which the gene is expressed"}))
 
 (defn expressed-during [gene]
   (let [db (d/entity-db gene)]
@@ -234,7 +240,7 @@
                   [?th :expr-pattern.life-stage/life-stage ?t]]
                 db (:db/id gene))]
        (expression-table db life-stage-relations))
-     :description "the tissue that the gene is expressed in"}))
+     :description "the developmental stage in which the gene is expressed"}))
 
 (defn subcellular-localization [gene]
   (let [db (d/entity-db gene)]
@@ -250,7 +256,7 @@
                   [?th :expr-pattern.go-term/go-term ?t]]
                 db (:db/id gene))]
        (expression-table db go-term-relations))
-     :description "the tissue that the gene is expressed in"}))
+     :description "the cellular component in which the gene is expressed"}))
 
 ;;
 ;; End of expression pattern related tables
@@ -278,9 +284,14 @@
              (map :expr-pattern.reference/paper)
              (map pack-obj))]
     (if references
-      {:text (str/join "; " descriptions)
-       :evidence {:Reference references}}
-      (str/join "; " descriptions))))
+      (let [text (str/join " " descriptions)
+            max-word-count 50
+            truncated-text (->> (str/split text #"\s+" (+ 1 max-word-count))
+                                (take max-word-count)
+                                (str/join " ")
+                                (format "%s..."))]
+        {:text truncated-text
+         :evidence {:Reference references}}))))
 
 (defn- profiling-graph-table-row [db expr-pattern-dbid]
   (let [expr-pattern (d/entity db expr-pattern-dbid)
@@ -367,10 +378,19 @@
                 db (:db/id gene))]
        (->> picture-dbids
             (map #(d/entity db %))
+            (sort-by (fn [picture]
+                       ;; is picture for expression profiling graph? If so, they come last
+                       (->> picture
+                            (:picture/expr-pattern)
+                            (some (fn [expr-pattern]
+                                    (or (:expr-pattern/microarray expr-pattern)
+                                        (:expr-pattern/rnaseq expr-pattern)
+                                        (:expr-pattern/tiling-array expr-pattern))))
+                            (boolean))))
             (map pack-image)
             (seq)
             (assoc {} :curated_images)))
-     :description "Large-scale cellular resolution compendium of gene expression dynamics"}))
+     :description "Expression pattern images"}))
 
 
 ;; example gene with expression movies WBGene00016948
@@ -394,7 +414,7 @@
                              :movie (:expr-pattern/movieurl expr-pattern)
                              :details (str/join "; " (:expr-pattern/pattern expr-pattern))})))
                  {} expr-pattern-dbids)))
-     :description "the tissue that the gene is expressed in"}))
+     :description "interactive 4D expression movies"}))
 
 
 (defn expression-cluster [gene]
