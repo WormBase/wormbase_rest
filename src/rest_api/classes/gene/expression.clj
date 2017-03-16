@@ -284,9 +284,14 @@
              (map :expr-pattern.reference/paper)
              (map pack-obj))]
     (if references
-      {:text (str/join "; " descriptions)
-       :evidence {:Reference references}}
-      (str/join "; " descriptions))))
+      (let [text (str/join " " descriptions)
+            max-word-count 50
+            truncated-text (->> (str/split text #"\s+" (+ 1 max-word-count))
+                                (take max-word-count)
+                                (str/join " ")
+                                (format "%s..."))]
+        {:text truncated-text
+         :evidence {:Reference references}}))))
 
 (defn- profiling-graph-table-row [db expr-pattern-dbid]
   (let [expr-pattern (d/entity db expr-pattern-dbid)
