@@ -188,7 +188,7 @@
              (fn [old new]
                (->> (func old new)
                     (set)
-                    (sort-by :id) 
+                    (sort-by :id)
                     (vec)))
              value))
 
@@ -283,6 +283,10 @@
                          (filter identity))]
     (some #(= (:predicted %) 1) predictions)))
 
+
+(defn- assoc-showall [data nearby?]
+  (assoc data :showall (or (< (count (:edges data)) 100) nearby?)))
+
 (defn- obj-interaction
   [obj nearby? data [interaction
                      {:keys [typ effector affected direction]}]]
@@ -290,7 +294,7 @@
     (if (or (every? not-empty (map some-interaction roles))
             (not (and nearby? (any-predicted? data interaction))))
       (let [packed-roles (annotate-interactor-roles obj data typ roles)
-            [packed-effector packed-affected] packed-roles            
+            [packed-effector packed-affected] packed-roles
             [e-name a-name] (map :label packed-roles)
             phenotype (pack-obj
                        "phenotype"
@@ -306,27 +310,28 @@
             result (-> data
                        (assoc-in [:types typ] 1)
                        (assoc-int packed-effector)
-                       (assoc-int packed-affected))]
-        (cond
-          (get-in result [:edges e-key])
-          (update-in-edges result e-key packed-int papers)
+                       (assoc-int packed-affected))
+            result* (cond
+                      (get-in result [:edges e-key])
+                      (update-in-edges result e-key packed-int papers)
 
-          (get-in result [:edges a-key])
-          (update-in-edges result a-key packed-int papers)
+                      (get-in result [:edges a-key])
+                      (update-in-edges result a-key packed-int papers)
 
-          :default
-          (assoc-in result
-                    [:edges e-key]
-                    {:affected packed-affected
-                     :citations (vec papers)
-                     :direction direction
-                     :effector packed-effector
-                     :interactions [packed-int]
-                     :phenotype phenotype
-                     :type typ
-                     :nearby (if nearby?
-                               "1"
-                               "0")})))
+                      :default
+                      (assoc-in result
+                                [:edges e-key]
+                                {:affected packed-affected
+                                 :citations (vec papers)
+                                 :direction direction
+                                 :effector packed-effector
+                                 :interactions [packed-int]
+                                 :phenotype phenotype
+                                 :type typ
+                                 :nearby (if nearby?
+                                           "1"
+                                           "0")}))]
+        (assoc-showall result* nearby?))
       data)))
 
 (defn- obj-interactions
@@ -341,7 +346,9 @@
                                                            nearby?))))
                           (distinct-by #(:interaction/id (first %))))
         mk-interaction (partial obj-interaction obj nearby?)]
-    (reduce mk-interaction data interactions)))
+    (if (and nearby? (> (count interactions) 3000))
+      (assoc data :showall "0")
+      (reduce mk-interaction data interactions))))
 
 (defn- collect-phenotypes
   "Collect phenotypes from node edges."
@@ -355,21 +362,37 @@
        (into {})
        (not-empty)))
 
+(defn- build-interactions [gene results-formatter]
+  (let [edge-vals (comp vec fixup-citations vals :edges)
+        data (obj-interactions gene {} :nearby? false)
+        edges (edge-vals data)
+        results (obj-interactions gene data :nearby? true)
+        edges-all (vals (:edges results))]
+    (-> results
+        (assoc :phenotypes (collect-phenotypes edges-all))
+        (assoc :edges edges)
+        (assoc :edges_all edges-all)
+        (results-formatter))))
+
+(defn- format-interactions [results]
+  (if (:showall results)
+    (-> results
+        (assoc :class "Gene")
+        (assoc :showall "1"))
+    (select-keys results [:edges])))
+
+(defn- format-interaction-details [results]
+  (update-in results [:showall] #(str (if % 1 0))))
+
 (defn interactions
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [gene]
-  {:data (let [edge-vals (comp vec fixup-citations vals :edges)
-               results (obj-interactions gene {} :nearby? false)
-               edges (edge-vals results)
-               nb-results (obj-interactions gene results :nearby? true)
-               edges-all (edge-vals nb-results)]
-           (-> nb-results
-               (assoc :class "Gene")
-               (assoc :edges edges)
-               (assoc :edges_all edges-all)
-               (assoc :phenotypes (collect-phenotypes edges-all))
-               (assoc :showall "1")))
-   :description "genetic and predicted interactions"})
+  {:description "genetic and predicted interactions"
+   :data (build-interactions gene format-interactions)})
+
+(defn interaction-details [gene]
+  {:description "addtional nearby interactions"
+   :data (build-interactions gene format-interaction-details)})
 
 (def widget
   {:name generic/name-field
