@@ -64,11 +64,12 @@
                act-data
                {:debug? true}))))
 
-(defn- edges-sort-key [key-xform edge]
-  (let [get-in-edge #(get-in edge (map key-xform [% "id"]))]
-    [(get edge (key-xform "type"))
-     (get-in-edge "effector")
-     (get-in-edge "affected")]))
+(defn- edges-sort-key [key-xform edge1 edge2]
+  (let [get-in-edge #(get-in %1 (map key-xform [%2 "id"]))
+        edge-keys ["affected" "effector" "type"]
+        alpha (vec (map (partial get-in-edge edge1) edge-keys))
+        beta (vec (map (partial get-in-edge edge2) edge-keys))]
+    (reduce #(.compareTo %1 %2) [alpha beta])))
 
 (defn- munge-expected-data [data]
   (->> data
@@ -90,7 +91,7 @@
                                       "edges"
                                       (fn [edges]
                                         (->> edges
-                                             (sort-by
+                                             (sort
                                               (partial edges-sort-key
                                                        str))
                                              (vec)))))
@@ -116,18 +117,19 @@
      (let [gene (db-testing/entity "gene" gene-id)
            exp-data (regression/read-gene-fixture gene-id
                                                     "interactions")
-           act-data (gene-interactions/interactions gene)
+           act-data (->> (gene-interactions/interactions gene)
+                         (walk/keywordize-keys))
            do-diff-test (partial diff-test gene-id exp-data act-data)]
        (do-diff-test "interaction nodes" #(get-in % [:data :nodes]))
        (do-diff-test "interaction edges"
                      (fn [item]
                        (->> (get-in item [:data :edges])
-                            (sort-by (partial edges-sort-key keyword))
+                            (sort (partial edges-sort-key keyword))
                             vec)))
        (do-diff-test "interaction edges_all"
                      (fn [item]
                        (->> (get-in item [:data :edges_all])
-                            (sort-by (partial edges-sort-key keyword))
+                            (sort (partial edges-sort-key keyword))
                             vec)))
        (let [data-leaf #(get-in %1 [:data %2])]
          (t/testing "interaction types"
