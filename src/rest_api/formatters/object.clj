@@ -161,18 +161,17 @@
   ;; computing the display name.
   (let [db (d/entity-db int)]
     (if-let [il (seq (d/q q-interactor db (:db/id int)))]
-      (->>
-       (map
-        (fn [interactor]
-          (cond
-            (string? interactor)
-            interactor
+      (->> il
+           (map
+            (fn [interactor]
+              (cond
+                (string? interactor)
+                interactor
 
-            :default
-            (:label (pack-obj (d/entity db interactor)))))
-        il)
-       (sort)
-       (str/join " : "))
+                :default
+                (:label (pack-obj (d/entity db interactor))))))
+           (sort)
+           (str/join " : "))
       (:interaction/id int))))
 
 (defmethod obj-label "motif" [_ motif]
