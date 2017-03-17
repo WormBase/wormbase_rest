@@ -71,7 +71,7 @@
           :ring {:nrepl {:start? true}}}]
    :test
    {:resource-paths ["test/resources"]
-    :test-selectors {:default :all
+    :test-selectors {:default (fn [m] (not (:manual m)))
                      :regression :regression
                      :integration :integration}}}
   :repl-options {:init (set! *print-length* 10)})

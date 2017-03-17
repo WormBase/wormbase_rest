@@ -36,13 +36,17 @@
   "Creates a test fixture for interactions.
   `url` should resolve to a JSON document that the existing API should
   re-produce."
-  [url opts]
+  [url opts & [munge-data]]
   (let [data (slurp url)
         out-path (fixtures-path opts)
         out-file (io/file out-path (fixture-filename url))]
-    (binding [*out* (io/writer out-file)
-              *print-length* false]
-      (prn (json/parse-string data)))))
+    (let [pdata (json/parse-string data)
+          mdata (if munge-data
+                  (munge-data pdata)
+                  pdata)]
+          (binding [*out* (io/writer out-file)
+                    *print-length* false]
+            (prn mdata)))))
 
 (defn read-test-fixture
   "Read an EDN test fixtures saved from an existing WB service."
@@ -53,17 +57,27 @@
     (->> (io/file fixture-path)
          (io/reader)
          (PushbackReader.)
-         (edn/read))))
+         (edn/read)
+         (walk/keywordize-keys))))
+
+(defn sort-maps-by-id [maps]
+  (->> maps
+       (sort-by #(get % "id"))
+       (vec)
+       (filter identity)))
 
 (defn update-to-comparable [data]
   (walk/postwalk (fn [xform]
-                   (if (coll? xform)
+                   (if (map? xform)
                      (reduce-kv
                       (fn [x k v]
                         (assoc x k (cond
-                                     (or (vector? v) (list? v))
-                                     (vec (sort-by first v))
+                                     (= k "citations")
+                                     (sort-maps-by-id (set v))
                                      
+                                     (and (or (vector? v) (list? v))
+                                          (every? map? v))
+                                     (sort-maps-by-id v)
                                      :default v)))
                       (empty xform)
                       xform)
@@ -76,10 +90,10 @@
   Returns a mapping describing the differences otherwise."
   [widget-name ref-result result & [opts]]
   (let [debug? (get opts :debug? false)
-        actual (-> result                   
-                   (update-to-comparable)
-                   (walk/stringify-keys))
-        expected (-> ref-result                     
+        actual (-> result
+                   (walk/stringify-keys)
+                   (update-to-comparable))
+        expected (-> ref-result
                      (get-in ["fields" widget-name])
                      (update-to-comparable))
         [left right both] (data/diff expected actual)]
@@ -90,9 +104,15 @@
           (println "Differences in expected but not in actual:")
           (pprint left)
           (println)
-          (println "*** Actual:")
-          (pprint actual)))
+          (println "--- Actual:")
+          (pprint actual))
+        (when right
+          (println)
+          (println "Differences in actual but not in expected:")
+          (pprint right)
+          (println)
+          (println "+++ Expected:")
+          (pprint expected)))
       {:expected-only left
        :actual-only right
        :both both})))
-
