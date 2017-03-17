@@ -40,13 +40,14 @@
   (let [data (slurp url)
         out-path (fixtures-path opts)
         out-file (io/file out-path (fixture-filename url))]
-    (let [pdata (json/parse-string data)
-          mdata (if munge-data
-                  (munge-data pdata)
-                  pdata)]
-          (binding [*out* (io/writer out-file)
-                    *print-length* false]
-            (prn mdata)))))
+    (when-not (.exists out-file)
+      (let [pdata (json/parse-string data)
+            mdata (if munge-data
+                    (munge-data pdata)
+                    pdata)]
+        (binding [*out* (io/writer out-file)
+                  *print-length* false]
+          (prn mdata))))))
 
 (defn read-test-fixture
   "Read an EDN test fixtures saved from an existing WB service."
