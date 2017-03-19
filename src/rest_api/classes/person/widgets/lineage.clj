@@ -6,7 +6,7 @@
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn generate-map [oid]
+(defn- generate-map [oid]
   (let [otherpersonid (get oid 0)
         otherpersonname (get oid 1)
         jsondata (get oid 2)
