@@ -27,6 +27,7 @@
     :gene_ontology gene-ontology/widget
     :genetics genetics/widget
     :history history/widget
+    :interactions interactions/interactions
     ;; DISABLED (Matt Russell, 2014-03-17)
     ;; :interactions interactions/widget
     :mapping_data mapping-data/widget
