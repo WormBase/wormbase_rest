@@ -7,7 +7,8 @@
   with the name `endpoint-name`."
   [gene-name endpoint-name & opts]
   (let [url (str "/rest/widget/gene/" gene-name "/" endpoint-name)
-        opts {:fixtures-path "test/fixtures/classes/gene"}]
-    (regr-testing/read-test-fixture url opts)))
+        opts {:fixtures-path "test/fixtures/classes/gene"}
+        data (regr-testing/read-test-fixture url opts)]
+    (get-in data [:fields (keyword endpoint-name)])))
 
 

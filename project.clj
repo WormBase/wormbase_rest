@@ -69,6 +69,9 @@
            [venantius/yagni "0.1.4"]
            [com.jakemccrary/lein-test-refresh "0.17.0"]]
           :ring {:nrepl {:start? true}}}]
-      :test
-      {:resource-paths ["test/resources"]}}
+   :test
+   {:resource-paths ["test/resources"]
+    :test-selectors {:default (fn [m] (not (:manual m)))
+                     :regression :regression
+                     :integration :integration}}}
   :repl-options {:init (set! *print-length* 10)})
