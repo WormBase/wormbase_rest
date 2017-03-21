@@ -27,6 +27,15 @@
            [?rnai :rnai/phenotype-not-observed ?ph]
            [?ph :rnai.phenotype-not-observed/phenotype ?pheno]])
 
+(def q-gene-construct-transgene-pheno
+  '[:find ?pheno (distinct ?ph)
+    :in $ ?g
+    :where [?cbg :construct.driven-by-gene/gene ?g]
+           [?cons :construct/driven-by-gene ?cbg]
+           [?cons :construct/transgene-construct ?tg]
+           [?tg :transgene/phenotype ?ph]
+           [?ph :transgene.phenotype/phenotype ?pheno]])
+
 (def q-gene-var-pheno
   '[:find ?pheno (distinct ?ph)
     :in $ ?g
@@ -332,6 +341,13 @@
                              (apply merge x)))]
     {(str/join "_" (sort (keys var-combo))) (vals var-combo)}))
 
+(defn- get-pato-combinations-overexpressed [db pid phenos]
+  (if-let [tp (phenos pid)]
+    (let [patos (for [t tp
+                      :let [holder (d/entity db t)]]
+                  (get-pato-from-holder holder))]
+      (apply merge patos))))
+
 (defn- get-pato-combinations [db pid rnai-phenos var-phenos not?]
   (if-let [vp (distinct (concat (rnai-phenos pid) (var-phenos pid)))]
     (let [patos (for [v vp
@@ -421,34 +437,30 @@
                                                       tg-id)]
                  evidence)))}}))
 
-(defn drives-overexpression [gene]
-  (let [db (d/entity-db gene)
-        tg-ids (d/q '[:find [?tg ...]
-                      :in $ ?gene
-                      :where
-                      [?cbg :construct.driven-by-gene/gene ?gene]
-                      [?cons :construct/driven-by-gene ?cbg]
-                      [?cons :construct/transgene-construct ?tg]]
-                    db (:db/id gene))
-        tg-evidence (partial transgene-evidence-for-phenotype db tg-ids)
-        phenotype
-        (->> tg-ids
-             (map (fn [tg]
-                    (->> (d/q '[:find [?pheno ...]
-                                :in $ ?tg
-                                :where
-                                [?tg :transgene/phenotype ?ph]
-                                [?ph
-                                 :transgene.phenotype/phenotype
-                                 ?pheno]]
-                              db tg)
-                         (map tg-evidence)
-                         (into {}))))
-             (into {}))]
-    {:data (if ((comp not empty?) phenotype)
-             {:Phenotype phenotype})
-     :description (str "phenotypes due to overexpression under "
-                       "the promoter of this gene")}))
+(defn- phenotype-table-entity-overexpressed
+  [db pheno pato-key entity pid trans-phenos]
+   :entity entity
+   :phenotype {:class "phenotype"
+               :id (:phenotype/id pheno)
+               :label (:phenotype.primary-name/text
+                       (:phenotype/primary-name pheno))
+               :taxonomy "all"}
+   :evidence
+   (pace-utils/vmap
+     "Transgene:"
+     (if-let [tp (seq (trans-phenos pid))]
+       (for [t tp
+             :let [holder (d/entity db t)
+                   transgene (:transgene/_phenotype holder)
+                   pato-keys (keys (get-pato-from-holder holder))
+                   trans-pato-key (first pato-keys)]]
+         (if (= pato-key trans-pato-key)
+           {:text
+            {:class "transgene"
+             :id (:transgene/id transgene)
+             :label (:transgene/public-name transgene)
+             :taxonomy "c_elegans"}
+            :evidence (var-evidence holder transgene pheno)})))))
 
 (defn- phenotype-table-entity
   [db pheno pato-key entity pid var-phenos rnai-phenos not-observed?]
@@ -510,6 +522,36 @@
                     (evidence-paper paper)))}
                (var-evidence holder rnai pheno))})))))})
 
+(defn- phenotype-table-overexpressed [db gene]
+  (let [trans-phenos (into {} (d/q
+                                q-gene-construct-transgene-pheno
+                                db gene))]
+    (->>
+      (flatten
+        (for [pid (keys trans-phenos)
+              :let [pheno (d/entity db pid)]]
+          (let [pcs (get-pato-combinations-overexpressed
+                      db
+                      pid
+                      trans-phenos)]
+            (if (nil? pcs)
+              (phenotype-table-entity-overexpressed
+                db
+                pheno
+                nil
+                nil
+                pid
+                trans-phenos)
+              (for [[pato-key entity] pcs]
+                (phenotype-table-entity-overexpressed
+                  db
+                  pheno
+                  pato-key
+                  entity
+                  pid
+                  trans-phenos))))))
+      (into  []))))
+
 (defn- phenotype-table [db gene not-observed?]
   (let [var-phenos (into {} (d/q (if not-observed?
                                    q-gene-var-not-pheno
@@ -548,6 +590,11 @@
                                         rnai-phenos
                                         not-observed?))))))
          (into []))))
+
+(defn drives-overexpression [gene]
+  (let [data (phenotype-table-overexpressed (d/entity-db gene) (:db/id gene))]
+    {:data data
+     :description (str "phenotypes due to overexpression under the promoter of this gene")}))
 
 (defn phenotype-field [gene]
   (let [data (phenotype-table (d/entity-db gene) (:db/id gene) false)]
