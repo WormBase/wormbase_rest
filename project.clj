@@ -36,7 +36,9 @@
              ;; should minimize long pauses.
              "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"
              "-Ddatomic.objectCacheMax=2500000000"
-             "-Ddatomic.txTimeoutMsec=1000000"]
+             "-Ddatomic.txTimeoutMsec=1000000"
+             ;; prevent omission of stack-trace (hotsport optimisation)
+             "-XX:-OmitStackTraceInFastThrow"]
   :profiles
   {:datomic-free
    {:dependencies [[com.datomic/datomic-free "0.9.5554"
