@@ -228,34 +228,34 @@
 
 (defn- pack-int-roles
   "Pack interaction roles into the expected format."
-  [ref-obj int nearby? predicate a b direction]
+  [ref-obj int nearby? a b direction]
   (let [typ (interaction-type int)
         non-directional? (= direction "non-directional")]
     (for [x a
           y b
           :let [xt (some-interaction-target x)
                 yt (some-interaction-target y)]
-          :when (or (predicate xt yt)
-                    (and (not nearby?)
-                         (not= (guess-class ref-obj) "interaction")
-                         (not-any? #(= % ref-obj) [xt yt])))]
-      (let [participants (if non-directional?
-                           (vec (sort-by-id [xt yt]))
-                           [xt yt])
-            packed (sort-by-id (map pack-obj participants))
-            roles (zipmap [:effector :affected]
-                          (sort-by (partial predicate ref-obj) [xt yt]))
-            labels (filter identity (map :label packed))
-            result-key (str/trim (str/join " " labels))]
-        (when result-key
-          (if-let [result (merge {:typ typ :direction direction} roles)]
-            [result-key result]))))))
+          :when (not= xt yt)]
+      (when-not (and nearby?
+                     (= (guess-class ref-obj) "interaction")
+                     (not-any? #(= % ref-obj) [xt yt]))
+        (let [participants (if non-directional?
+                             (vec (sort-by-id [xt yt]))
+                             [xt yt])
+              packed (sort-by-id (map pack-obj participants))
+              roles (zipmap [:effector :affected]
+                            (sort-by (partial not= ref-obj) [xt yt]))
+              labels (filter identity (map :label packed))
+              result-key (str/trim (str/join " " labels))]
+          (when result-key
+            (if-let [result (merge {:typ typ :direction direction} roles)]
+              [result-key result])))))))
 
 (defn- interaction-info [ia ref-obj nearby?]
   (let [possible-int-types (:interaction/type ia)
         ignore-types #{:interaction.type/genetic:no-interaction
                        :interaction.type/predicted}]
-    (if (or (not (set/intersection ignore-types possible-int-types))
+    (if (or (not-empty (set/intersection ignore-types possible-int-types))
             (> (or (:interaction/log-likelihood-score ia) 1000) 1.5))
       (let [ia-refs (interactor-refs (d/entity-db ia))
             get-interactors (apply juxt ia-refs)
@@ -267,16 +267,9 @@
                                                        interactions)
             pack-iroles (partial pack-int-roles ref-obj ia nearby?)
             roles (if (or effectors affected)
-                    (let [x (concat effectors others)
-                          predicate (constantly true)]
-                      (pack-iroles predicate
-                                   x
-                                   affected
-                                   "Effector->Affected"))
-                    (pack-iroles #(not= %1 %2)
-                                 others
-                                 others
-                                 "non-directional"))]
+                    (let [x (concat effectors others)]
+                      (pack-iroles x affected "Effector->Affected"))
+                    (pack-iroles others others "non-directional"))]
         (->> roles
              (vec)
              (into {})
