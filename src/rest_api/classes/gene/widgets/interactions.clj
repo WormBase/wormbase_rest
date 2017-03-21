@@ -1,10 +1,13 @@
 (ns rest-api.classes.gene.widgets.interactions
   (:require
+   [clojure.set :as set]
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic :as generic]
    [rest-api.formatters.object :refer [pack-obj]]))
+
+(def sort-by-id (partial sort-by :id))
 
 (def ^:private interaction-phenotype-key :interaction/interaction-phenotype)
 
@@ -32,7 +35,6 @@
   (some-fn :interaction.feature-interactor/feature
            :interaction.interactor-overlapping-gene/gene
            :interaction.molecule-interactor/molecule
-           :interaction.other-interactor/text
            :interaction.rearrangement/rearrangement))
 
 (def ^:private all-interaction-targets
@@ -188,7 +190,7 @@
              (fn [old new]
                (->> (func old new)
                     (set)
-                    (sort-by :id)
+                    (sort-by-id)
                     (vec)))
              value))
 
@@ -218,6 +220,12 @@
            (merge edge {:citations citations*})))
        edges))
 
+(defn- guess-class [entity-map]
+  (->> (keys entity-map)
+       (filter #(= (name %) "id"))
+       (first)
+       (namespace)))
+
 (defn- pack-int-roles
   "Pack interaction roles into the expected format."
   [ref-obj int nearby? predicate a b direction]
@@ -227,24 +235,27 @@
           y b
           :let [xt (some-interaction-target x)
                 yt (some-interaction-target y)]
-          :when (and (predicate xt yt)
-                     (or nearby? (= xt ref-obj) (= yt ref-obj)))]
-      (let [packed (map pack-obj (if non-directional?
-                                   (sort-by :id [xt yt])
-                                   [xt yt]))
+          :when (or (predicate xt yt)
+                    (and (not nearby?)
+                         (not= (guess-class ref-obj) "interaction")
+                         (not-any? #(= % ref-obj) [xt yt])))]
+      (let [participants (if non-directional?
+                           (vec (sort-by-id [xt yt]))
+                           [xt yt])
+            packed (sort-by-id (map pack-obj participants))
             roles (zipmap [:effector :affected]
                           (sort-by (partial predicate ref-obj) [xt yt]))
-            labels (map :label (if non-directional?
-                                 (sort-by :id packed)
-                                 packed))
-            result-key (str/trim (str/join " " labels))
-            result (merge {:typ typ :direction direction} roles)]
-        [result-key result]))))
+            labels (filter identity (map :label packed))
+            result-key (str/trim (str/join " " labels))]
+        (when result-key
+          (if-let [result (merge {:typ typ :direction direction} roles)]
+            [result-key result]))))))
 
 (defn- interaction-info [ia ref-obj nearby?]
   (let [possible-int-types (:interaction/type ia)
-        any-int-has-type (partial contains? possible-int-types)]
-    (if (or (not (any-int-has-type :interaction.type/predicted))
+        ignore-types #{:interaction.type/genetic:no-interaction
+                       :interaction.type/predicted}]
+    (if (or (not (set/intersection ignore-types possible-int-types))
             (> (or (:interaction/log-likelihood-score ia) 1000) 1.5))
       (let [ia-refs (interactor-refs (d/entity-db ia))
             get-interactors (apply juxt ia-refs)
@@ -254,17 +265,22 @@
              others :other
              associated :associated-product} (group-by interactor-role
                                                        interactions)
-            pack-iroles (partial pack-int-roles ref-obj ia nearby?)]
-        (->> (if (or effectors affected)
-               (let [x (concat effectors others)
-                     predicate (constantly true)]
-                 (pack-iroles predicate x affected "Effector->Affected"))
-               (pack-iroles #(not= %1 %2)
-                            others
-                            others
-                            "non-directional"))
+            pack-iroles (partial pack-int-roles ref-obj ia nearby?)
+            roles (if (or effectors affected)
+                    (let [x (concat effectors others)
+                          predicate (constantly true)]
+                      (pack-iroles predicate
+                                   x
+                                   affected
+                                   "Effector->Affected"))
+                    (pack-iroles #(not= %1 %2)
+                                 others
+                                 others
+                                 "non-directional"))]
+        (->> roles
+             (vec)
              (into {})
-             (vals))))))
+             vals)))))
 
 (defn- annotate-interactor-roles [obj data typ int-roles]
   (->> int-roles
@@ -385,12 +401,14 @@
   (update-in results [:showall] #(str (if % 1 0))))
 
 (defn interactions
-  "Produces a data-structure suitable for rendering a cytoscape graph."
+  "Produces a data structure suitable for rendering the table listing."
   [gene]
   {:description "genetic and predicted interactions"
    :data (build-interactions gene format-interactions)})
 
-(defn interaction-details [gene]
+(defn interaction-details
+  "Produces a data-structure suitable for rendering a cytoscape graph."
+  [gene]
   {:description "addtional nearby interactions"
    :data (build-interactions gene format-interaction-details)})
 
