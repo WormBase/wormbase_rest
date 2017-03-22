@@ -256,7 +256,7 @@
         no-interaction :interaction.type/genetic:no-interaction
         lls (or (:interaction/log-likelihood-score ia) 1000)]
     (cond
-      (possible-int-types no-interaction)
+      (pace-utils/not-nil? (possible-int-types no-interaction))
       nil
 
       (and (<= lls 1.5)
