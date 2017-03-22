@@ -253,10 +253,18 @@
 
 (defn- interaction-info [ia ref-obj nearby?]
   (let [possible-int-types (:interaction/type ia)
-        ignore-types #{:interaction.type/genetic:no-interaction
-                       :interaction.type/predicted}]
-    (if (or (not-empty (set/intersection ignore-types possible-int-types))
-            (> (or (:interaction/log-likelihood-score ia) 1000) 1.5))
+        no-interaction :interaction.type/genetic:no-interaction
+        lls (or (:interaction/log-likelihood-score ia) 1000)]
+    (cond
+      (possible-int-types no-interaction)
+      nil
+
+      (and (<= lls 1.5)
+           (and (not= (guess-class ref-obj) "interaction")
+                (possible-int-types :interaction.type/predicted)))
+      nil
+
+      :default
       (let [ia-refs (interactor-refs (d/entity-db ia))
             get-interactors (apply juxt ia-refs)
             interactions (apply concat (get-interactors ia))
