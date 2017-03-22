@@ -326,24 +326,24 @@
         assoc-int (partial assoc-interaction obj typ nearby?)
         result (-> data
                    (assoc-in [:types typ] 1)
-                   (assoc-int effector)
-                   (assoc-int affected))]
+                   (assoc-int packed-effector)
+                   (assoc-int packed-affected))]
     (let [result* (cond
                     (get-in result [:edges e-key])
-                    (update-in-edges result e-key packed-int papers)
+                    (update-in-edges result e-key packed-int packed-papers)
 
                     (get-in result [:edges a-key])
-                    (update-in-edges result a-key packed-int papers)
+                    (update-in-edges result a-key packed-int packed-papers)
 
                     :default
                     (assoc-in result
                               [:edges e-key]
-                              {:affected affected
-                               :citations (vec papers)
+                              {:affected packed-affected
+                               :citations (vec packed-papers)
                                :direction direction
-                               :effector effector
-                               :interactions [interaction]
-                               :phenotype phenotype
+                               :effector packed-effector
+                               :interactions [packed-int]
+                               :phenotype packed-phenotype
                                :type typ
                                :nearby (if nearby?
                                          "1"
