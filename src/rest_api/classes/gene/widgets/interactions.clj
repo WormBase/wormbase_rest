@@ -281,7 +281,7 @@
         (->> roles
              (vec)
              (into {})
-             vals)))))
+             (vals))))))
 
 (defn- annotate-interactor-roles [obj data typ int-roles]
   (->> int-roles
@@ -304,51 +304,62 @@
 (defn- assoc-showall [data nearby?]
   (assoc data :showall (or (< (count (:edges data)) 100) nearby?)))
 
+(defn- edge-key [x y typ phenotype]
+  (str/trimr
+   (str x " " y " " typ " " (:label phenotype))))
+
+(defn- process-obj-interaction
+  [obj nearby? data
+   [interaction {:keys [typ effector affected direction]}]]
+  (let [roles [effector affected]
+        packed-roles (annotate-interactor-roles obj data typ roles)
+        [packed-effector packed-affected] packed-roles
+        [e-name a-name] (map :label packed-roles)
+        ;; WARNING: could be more than one phenotype
+        papers (:interaction/paper interaction)
+        packed-papers (pack-papers papers)
+        phenotype (first (interaction-phenotype-key interaction))
+        packed-int (pack-obj "interaction" interaction)
+        packed-phenotype (pack-obj "phenotype")
+        e-key (edge-key e-name a-name typ packed-phenotype)
+        a-key (edge-key a-name e-name typ packed-phenotype)
+        assoc-int (partial assoc-interaction obj typ nearby?)
+        result (-> data
+                   (assoc-in [:types typ] 1)
+                   (assoc-int effector)
+                   (assoc-int affected))]
+    (let [result* (cond
+                    (get-in result [:edges e-key])
+                    (update-in-edges result e-key packed-int papers)
+
+                    (get-in result [:edges a-key])
+                    (update-in-edges result a-key packed-int papers)
+
+                    :default
+                    (assoc-in result
+                              [:edges e-key]
+                              {:affected affected
+                               :citations (vec papers)
+                               :direction direction
+                               :effector effector
+                               :interactions [interaction]
+                               :phenotype phenotype
+                               :type typ
+                               :nearby (if nearby?
+                                         "1"
+                                         "0")}))]
+      (assoc-showall result* nearby?))))
+
 (defn- obj-interaction
   [obj nearby? data [interaction
                      {:keys [typ effector affected direction]}]]
-  (let [roles [effector affected]]
+  (let [roles [effector affected]
+        possible-types (:interaction/type interaction)
+        predicted? :interaction.type/predicted]
     (if (or (every? not-empty (map some-interaction roles))
-            (not (and nearby? (any-predicted? data interaction))))
-      (let [packed-roles (annotate-interactor-roles obj data typ roles)
-            [packed-effector packed-affected] packed-roles
-            [e-name a-name] (map :label packed-roles)
-            phenotype (pack-obj
-                       "phenotype"
-                       ;; WARNING: could be more than one phenotype
-                       (first (interaction-phenotype-key interaction)))
-            mk-key #(str/trimr
-                     (str %1 " " %2 " " typ " " (:label phenotype)))
-            e-key (mk-key e-name a-name)
-            a-key (mk-key a-name e-name)
-            packed-int (pack-obj "interaction" interaction)
-            papers (pack-papers (:interaction/paper interaction))
-            assoc-int (partial assoc-interaction obj typ nearby?)
-            result (-> data
-                       (assoc-in [:types typ] 1)
-                       (assoc-int packed-effector)
-                       (assoc-int packed-affected))
-            result* (cond
-                      (get-in result [:edges e-key])
-                      (update-in-edges result e-key packed-int papers)
-
-                      (get-in result [:edges a-key])
-                      (update-in-edges result a-key packed-int papers)
-
-                      :default
-                      (assoc-in result
-                                [:edges e-key]
-                                {:affected packed-affected
-                                 :citations (vec papers)
-                                 :direction direction
-                                 :effector packed-effector
-                                 :interactions [packed-int]
-                                 :phenotype phenotype
-                                 :type typ
-                                 :nearby (if nearby?
-                                           "1"
-                                           "0")}))]
-        (assoc-showall result* nearby?))
+            (not effector))
+      (when (and nearby? (nil? (possible-types predicted?)))
+        (process-obj-interaction obj nearby? data interaction))
       data)))
 
 (defn- obj-interactions
