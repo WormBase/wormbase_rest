@@ -291,15 +291,15 @@
 (defn- pack-papers [papers]
   (map (partial pack-obj "paper") papers))
 
-(defn- any-predicted?
-  "Return true iif any node has predicted set to 1."
+(defn- any-interactor-predicted?
+  "Return true iif any node has predicted set to 1 for
+  any targets of `interaction`."
   [data interaction]
   (let [predictions (->> (all-interaction-targets interaction)
                          (map (fn [obj-id]
                                 (get-in data [:nodes obj-id :predicted])))
                          (filter identity))]
     (some #(= (:predicted %) 1) predictions)))
-
 
 (defn- assoc-showall [data nearby?]
   (assoc data :showall (or (< (count (:edges data)) 100) nearby?)))
@@ -353,11 +353,9 @@
   [obj nearby? data [interaction
                      {:keys [typ effector affected direction]}]]
   (let [roles [effector affected]
-        possible-types (:interaction/type interaction)
-        predicted? (possible-types :interaction.type/predicted)
         has-interaction? (every? not-empty (map some-interaction roles))]
     (if (and effector has-interaction?)
-      (when (and nearby? predicted?)
+      (when (and nearby? (not any-interactor-predicted? data interaction))
         ;; TODO
         ;; pass in the destructured interaction variables (packed)
         ;; into process-obj-interaction to avoid 'nth error'
