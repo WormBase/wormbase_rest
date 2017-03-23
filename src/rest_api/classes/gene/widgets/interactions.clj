@@ -289,7 +289,9 @@
        (map (partial annotate-role obj data typ))))
 
 (defn- pack-papers [papers]
-  (map (partial pack-obj "paper") papers))
+  (->> papers
+       (map (partial pack-obj "paper"))
+       (vec)))
 
 (defn- any-interactor-predicted?
   "Return true iif any node has predicted set to 1 for
@@ -338,7 +340,7 @@
                     (assoc-in result
                               [:edges e-key]
                               {:affected packed-affected
-                               :citations (vec packed-papers)
+                               :citations packed-papers
                                :direction direction
                                :effector packed-effector
                                :interactions [packed-int]
@@ -352,20 +354,19 @@
 (defn- obj-interaction
   [obj nearby? data [interaction
                      {:keys [typ effector affected direction]}]]
-  (let [roles [effector affected]
-        has-interaction? (every? not-empty (map some-interaction roles))]
-    (if (and effector has-interaction?)
-      (cond
-        (and nearby? (any-interactor-predicted? data interaction)) data
-        :default (process-obj-interaction obj
-                                          nearby?
-                                          data
-                                          interaction
-                                          typ
-                                          effector
-                                          affected
-                                          direction))
-      data)))
+  (let [roles [effector affected]] 
+    (cond
+      (not-any? some-interaction roles) data
+      (not effector) data
+      (and nearby? (any-interactor-predicted? data interaction)) data
+      :default (process-obj-interaction obj
+                                        nearby?
+                                        data
+                                        interaction
+                                        typ
+                                        effector
+                                        affected
+                                        direction))))
 
 (defn- obj-interactions
   [obj data & {:keys [nearby?]}]
