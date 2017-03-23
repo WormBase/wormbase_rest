@@ -263,7 +263,7 @@
               [result-key result])))))))
 
 (defn- interaction-info [ia ref-obj nearby?]
-  (let [possible-int-types (:interaction/type ia)
+  (let [possible-int-types (get :interaction/type ia #{})
         no-interaction :interaction.type/genetic:no-interaction
         lls (or (:interaction/log-likelihood-score ia) 1000)]
     (cond
