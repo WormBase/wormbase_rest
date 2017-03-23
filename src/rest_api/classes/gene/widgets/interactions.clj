@@ -309,8 +309,7 @@
    (str x " " y " " typ " " (:label phenotype))))
 
 (defn- process-obj-interaction
-  [obj nearby? data
-   [interaction {:keys [typ effector affected direction]}]]
+  [obj nearby? data interaction typ effector affected direction]
   (let [roles [effector affected]
         packed-roles (annotate-interactor-roles obj data typ roles)
         [packed-effector packed-affected] packed-roles
@@ -320,7 +319,7 @@
         packed-papers (pack-papers papers)
         phenotype (first (interaction-phenotype-key interaction))
         packed-int (pack-obj "interaction" interaction)
-        packed-phenotype (pack-obj "phenotype")
+        packed-phenotype (pack-obj "phenotype" phenotype)
         e-key (edge-key e-name a-name typ packed-phenotype)
         a-key (edge-key a-name e-name typ packed-phenotype)
         assoc-int (partial assoc-interaction obj typ nearby?)
@@ -355,11 +354,21 @@
                      {:keys [typ effector affected direction]}]]
   (let [roles [effector affected]
         possible-types (:interaction/type interaction)
-        predicted? :interaction.type/predicted]
-    (if (or (every? not-empty (map some-interaction roles))
-            (not effector))
-      (when (and nearby? (nil? (possible-types predicted?)))
-        (process-obj-interaction obj nearby? data interaction))
+        predicted? (possible-types :interaction.type/predicted)
+        has-interaction? (every? not-empty (map some-interaction roles))]
+    (if (and effector has-interaction?)
+      (when (and nearby? predicted?)
+        ;; TODO
+        ;; pass in the destructured interaction variables (packed)
+        ;; into process-obj-interaction to avoid 'nth error'
+        (process-obj-interaction obj
+                                 nearby?
+                                 data
+                                 interaction
+                                 typ
+                                 effector
+                                 affected
+                                 direction))
       data)))
 
 (defn- obj-interactions
