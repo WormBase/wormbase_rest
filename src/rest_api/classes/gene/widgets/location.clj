@@ -36,7 +36,8 @@
       (sequence-fns/create-genomic-location-obj start stop gene segment nil true))))
 
 (defn genomic-position [gene]
-  {:data [(genomic-obj gene)]
+  {:data (if-let [position (genomic-obj gene)]
+           [position])
    :description "The genomic location of the sequence"})
 
 (defn genomic-image [gene]
