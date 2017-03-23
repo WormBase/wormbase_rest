@@ -172,12 +172,10 @@
                 (if nearby?
                   (gene-nearby-interactions db id)))
         interactor-predicted? (partial any-interactor-predicted? data)
-        transduce-interactions (if nearby?
-                                 (filter interactor-predicted?)
-                                 (keep identity))]
-        (->> (d/pull-many db ["*"] ia-ids)
-                          (transduce-interactions)
-                          (sort-by :interaction/id))))
+        interactions (d/pull-many db ["*"] ia-ids)]
+    (if nearby?
+      (filter interactor-predicted? interactions)
+      interactions)))
 
 (defn- identity-kw [role]
   (keyword (:class role) "id"))
