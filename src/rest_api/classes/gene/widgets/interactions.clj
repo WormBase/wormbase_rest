@@ -355,18 +355,16 @@
   (let [roles [effector affected]
         has-interaction? (every? not-empty (map some-interaction roles))]
     (if (and effector has-interaction?)
-      (when (and nearby? (not any-interactor-predicted? data interaction))
-        ;; TODO
-        ;; pass in the destructured interaction variables (packed)
-        ;; into process-obj-interaction to avoid 'nth error'
-        (process-obj-interaction obj
-                                 nearby?
-                                 data
-                                 interaction
-                                 typ
-                                 effector
-                                 affected
-                                 direction))
+      (cond
+        (and nearby? (any-interactor-predicted? data interaction)) data
+        :default (process-obj-interaction obj
+                                          nearby?
+                                          data
+                                          interaction
+                                          typ
+                                          effector
+                                          affected
+                                          direction))
       data)))
 
 (defn- obj-interactions
