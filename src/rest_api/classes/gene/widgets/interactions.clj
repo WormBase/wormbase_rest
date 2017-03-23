@@ -154,17 +154,30 @@
       1)
     0))
 
-(defn gene-interactions [obj nearby?]
+(defn- any-interactor-predicted?
+  "Return true iif any node has predicted set to 1 for
+  any targets of `interaction`."
+  [data interaction]
+  (let [predictions (->> (all-interaction-targets interaction)
+                         (map (fn [obj-id]
+                                (get-in data [:nodes obj-id :predicted])))
+                         (filter identity))]
+    (some #(= (:predicted %) 1) predictions)))
+
+(defn gene-interactions [obj data nearby?]
   (let [db (d/entity-db obj)
         id (:db/id obj)
-        interactions (concat
-                      (gene-direct-interactions db id)
-                      (if nearby?
-                        (gene-nearby-interactions db id)))]
-    (->> interactions
-         (map (partial d/entity db))
-         (distinct-by :db/id)
-         (sort-by :db/id))))
+        ia-ids (concat
+                (gene-direct-interactions db id)
+                (if nearby?
+                  (gene-nearby-interactions db id)))
+        interactor-predicted? (partial any-interactor-predicted? data)
+        transduce-interactions (if nearby?
+                                 (filter interactor-predicted?)
+                                 (keep identity))]
+        (->> (d/pull-many db ["*"] ia-ids)
+                          (transduce-interactions)
+                          (sort-by :interaction/id))))
 
 (defn- identity-kw [role]
   (keyword (:class role) "id"))
@@ -293,16 +306,6 @@
        (map (partial pack-obj "paper"))
        (vec)))
 
-(defn- any-interactor-predicted?
-  "Return true iif any node has predicted set to 1 for
-  any targets of `interaction`."
-  [data interaction]
-  (let [predictions (->> (all-interaction-targets interaction)
-                         (map (fn [obj-id]
-                                (get-in data [:nodes obj-id :predicted])))
-                         (filter identity))]
-    (some #(= (:predicted %) 1) predictions)))
-
 (defn- assoc-showall [data nearby?]
   (assoc data :showall (or (< (count (:edges data)) 100) nearby?)))
 
@@ -358,7 +361,6 @@
     (cond
       (not-any? some-interaction roles) data
       (not effector) data
-      (and nearby? (any-interactor-predicted? data interaction)) data
       :default (process-obj-interaction obj
                                         nearby?
                                         data
@@ -370,7 +372,7 @@
 
 (defn- obj-interactions
   [obj data & {:keys [nearby?]}]
-  (let [ints (gene-interactions obj nearby?)
+  (let [ints (gene-interactions obj data nearby?)
         interactions (->> ints
                           (mapcat (fn [interaction]
                                     (map vector
