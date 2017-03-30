@@ -13,7 +13,7 @@
    [rest-api.classes.clone :as clone]
    [rest-api.classes.disease :as disease]
    [rest-api.classes.homology-group :as homology-group]
-   [rest-api.classes.interaction :as interaction]
+;;   [rest-api.classes.interaction :as interaction] ; comment out for WS258
    [rest-api.classes.molecule :as molecule]
    [rest-api.classes.motif :as motif]
    [rest-api.classes.paper :as paper]
@@ -36,7 +36,7 @@
    clone/routes
    disease/routes
    homology-group/routes
-   interaction/routes
+;;   interaction/routes ; comment out for WS258
    molecule/routes
    motif/routes
    paper/routes
@@ -101,4 +101,3 @@
        (->> all-routes
             (flatten)
             (apply sweet/routes))))))
-
