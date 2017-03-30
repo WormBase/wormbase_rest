@@ -172,7 +172,7 @@
                 (if nearby?
                   (gene-nearby-interactions db id)))
         interactor-predicted? (partial any-interactor-predicted? data)
-        interactions (d/pull-many db ["*"] ia-ids)]
+        interactions (map (partial d/entity db) ia-ids)]
     (if nearby?
       (filter interactor-predicted? interactions)
       interactions)))
