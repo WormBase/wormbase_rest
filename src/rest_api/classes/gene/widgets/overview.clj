@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.gene.generic :as generic]
+   [rest-api.classes.generic :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 ;;; move?
@@ -76,7 +76,7 @@
   {:data
    (if-let [operon (->> (:operon.contains-gene/_gene gene)
                         (first)
-                        (:operon/_contains_gene))]
+                        (:operon/_contains-gene))]
      (pack-obj "operon" operon))
    :description "Operon the gene is contained in"})
 

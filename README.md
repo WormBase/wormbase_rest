@@ -14,8 +14,7 @@
 Run following commands and test each step happens correctly.
 
 ```bash
-export WS_VERSION=WS257
-export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS258/wormbase"
 lein ring server-headless 8130
 lein do eastwood, test
 make docker-build
@@ -34,8 +33,7 @@ eb deploy
 ## Setting environment variables
 
 ```bash
-export WS_VERSION=WS257
-export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS258/wormbase"
 ```
 
 ## Starting server in development
@@ -43,10 +41,23 @@ export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 lein ring server-headless 8130
 ```
 
-### Code linting
-Check for code purity, unused namespaces et al.
+### Code quality
+To run code-quality checks (linting and runs all tests):
+  * Before submitting a pull request.
+  * Before deploying a release.
+
 ```bash
-lein eastwood
+lein code-qa
+```
+
+### Code linting
+Run `lein eastwood` to run the linting checks.
+
+To have linting check for unused namespaces:
+
+```bash
+lein eastwood \
+  '{:add-linter [:ununsed-namespaces] :exclude-namespace [user]}'
 ```
 
 ### Running unit tests
@@ -60,7 +71,8 @@ To run all tests:
 ```bash
 lein test
 ```
-## Swagger JSON validation
+
+### Running a local swagger JSON validator
 The swagger UI displays a badge indicating whether the applications
 `swagger.json` is valid according to the specification.
 
@@ -73,7 +85,6 @@ profile).  This is not required, but should you not be running the
 service, the swagger UI page will display a broken image instead of
 the badge.
 
-### Running a local swagger validation service
 Clone the [swagger-validator-badge][2] repository somewhere,
 e.g `~/git`, then [run the swagger-validator service locally][3].
 
@@ -152,7 +163,7 @@ Now to test the ElasticBeanStalk `eb local run` command, do:
 
 `make eb-local`
 
-### Deployment
+## Deployment
 
 Initial deployment:
 
@@ -165,6 +176,21 @@ For subsequent deployments, use the `eb` CLI directly:
 ```bash
 eb deploy
 ```
+
+### Post-deployment tasks
+
+- Update project.clj to new version with `-SNAPSHOT` suffix
+  e.g: "1.0-SNAPSHOT"
+
+- Update CHANGE.md with new "un-released" version header and "nothing
+  changed" stanza:
+
+  ```
+   ##[0.1.3] - (un-released)
+   - nothing changed yet.
+  ```
+- commit and push to develop.
+
 
 TBD: JVM memory options.
 

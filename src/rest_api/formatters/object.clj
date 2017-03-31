@@ -290,7 +290,7 @@
               :let [author (:evidence.author-evidence/author holder)]]
           {:evidence
            ;; Notes seem to be ignored here.
-           (pack-obj "author" author)})) 
+           (pack-obj "author" author)}))
 
    :Accession_evidence
    (if-let [accs (:evidence/accession-evidence holder)]
@@ -368,3 +368,9 @@
         (last)
         (str/replace #"-" " ")
         (str/capitalize))))
+
+(defn name-field [gene]
+  (let [data (pack-obj gene)]
+    {:data (not-empty data)
+     :description (format "The name and WormBase internal ID of %s"
+                          (:id data))}))
