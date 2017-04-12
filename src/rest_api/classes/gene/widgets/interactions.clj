@@ -135,12 +135,12 @@
 (defn- interaction-type-name [interaction]
   (let [itype (first (:interaction/type interaction))
         type-name (humanize-name itype)]
-    (cond 
+    (cond
       ;; Hack to produce the "type-name" when real type-name
       ;; is regulatory.
       ;; Perhaps the proposed module system should be able to address
       ;; this better (URL to chris grove's email/port)
-      (str/includes? (str/lower-case type-name) "regulat") 
+      (str/includes? (str/lower-case type-name) "regulat")
       (if-let [reg-res (regulatory-result interaction)]
         (cond
           (= reg-res :interaction.regulation-result.value/does-not-regulate)
@@ -188,11 +188,11 @@
         ia-ids (concat
                 (gene-direct-interactions db id)
                 (if nearby?
-                  (gene-nearby-interactions db id)))        
+                  (gene-nearby-interactions db id)))
         interactions (map (partial d/entity db) ia-ids)]
     interactions))
 
-(defn- identity-kw 
+(defn- identity-kw
   ([role]
    (identity-kw role :class))
   ([role role-selector]
@@ -283,21 +283,21 @@
 (defn- interaction-info [ia ref-obj nearby?]
   (let [possible-int-types (get ia :interaction/type #{})
         no-interaction :interaction.type/genetic:no-interaction
-        focus-gene-id (:gene/id ref-obj) 
+        focus-gene-id (:gene/id ref-obj)
         lls (or (:interaction/log-likelihood-score ia) 1000)]
     (cond
-      (possible-int-types no-interaction)
-      nil
+      ;; (possible-int-types no-interaction)
+      ;; nil
 
-      (and (<= lls 1.5)
-           (not= (guess-class ref-obj) "interaction")
-           (possible-int-types :interaction.type/predicted))
-      (do
-        ;; (println "Returning nil from interaction-info when nearby? is" nearby?
-        ;;          "because score <= 1.5 (" lls ")"
-        ;;          "and $type of ref-obj ne interaction (" (guess-class ref-obj) ")"
-        ;;          "and the interaction type was" (possible-int-types :interaction.type/predicted))
-        nil)
+      ;; (and (<= lls 1.5)
+      ;;      (not= (guess-class ref-obj) "interaction")
+      ;;      (possible-int-types :interaction.type/predicted))
+      ;; (do
+      ;;   ;; (println "Returning nil from interaction-info when nearby? is" nearby?
+      ;;   ;;          "because score <= 1.5 (" lls ")"
+      ;;   ;;          "and $type of ref-obj ne interaction (" (guess-class ref-obj) ")"
+      ;;   ;;          "and the interaction type was" (possible-int-types :interaction.type/predicted))
+      ;;   nil)
 
       :default
       (let [ia-refs (interactor-refs (d/entity-db ia))
@@ -313,12 +313,14 @@
                     (let [x (concat effectors others)]
                       (pack-iroles x affected "Effector->Affected"))
                     (pack-iroles others others "non-directional"))]
-        (->> roles
+        (->> (do
+               (println roles)
+               roles)
              (vec)
              (into {})
              (vals))))))
 
-(defn- annotate-interactor-roles [obj data type-name int-roles]  
+(defn- annotate-interactor-roles [obj data type-name int-roles]
   (->> int-roles
        (map pack-obj)
        (map (partial annotate-role obj data type-name))))
@@ -397,6 +399,9 @@
   (let [ints (gene-interactions obj data nearby?)
         xxx (do
               (println "Got" (count ints) "interaction ids from initial query when nearby? is" nearby?)
+              ;; (doseq [a ints]
+              ;;   (println (map :gene/public-name (map :interaction.interactor-overlapping-gene/gene (:interaction/interactor-overlapping-gene a))))
+              ;;   (println (interaction-info a obj nearby?)))
               1)
         interactions (->> ints
                           (mapcat (fn [interaction]
@@ -411,7 +416,7 @@
               (println "Got" (count interactions) "interaction infos when nearby? is" nearby?)
               1)
         mk-interaction (partial obj-interaction obj nearby?)]
-    ;; (println "calling mk-interaction with" (count interactions) 
+    ;; (println "calling mk-interaction with" (count interactions)
     ;;          "interactions, nearby? is " nearby?
     ;;          "Number of interaction ids was" (count ints))
     (if (and nearby? (> (count interactions) 3000))
@@ -454,7 +459,7 @@
       (update-in [:showall] #(str (if % 1 0)))
       (assoc :edges (:edges_all results))
       (dissoc :edges_all)))
-      
+
 (defn interactions
   "Produces a data structure suitable for rendering the table listing."
   [gene]
