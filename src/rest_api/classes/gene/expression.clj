@@ -388,8 +388,7 @@
                                         (:expr-pattern/tiling-array expr-pattern))))
                             (boolean))))
             (map pack-image)
-            (seq)
-            (assoc {} :curated_images)))
+            (seq)))
      :description "Expression pattern images"}))
 
 

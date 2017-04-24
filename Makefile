@@ -3,7 +3,7 @@ VERSION ?= $(shell git describe --abbrev=0 --tags)
 EBX_CONFIG := .ebextensions/.config
 DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
-WS_VERSION ?= $(shell echo ${DB_URI} | sed -rn 's|.*(WS[0-9].+).*|\1|p')
+WS_VERSION ?= $(shell echo ${DB_URI} | sed -rn 's|.*(WS[0-9]+).*|\1|p')
 LOWER_WS_VERSION ?= $(shell echo ${WS_VERSION} | tr A-Z a-z)
 DEPLOY_JAR := app.jar
 PORT := 3000
