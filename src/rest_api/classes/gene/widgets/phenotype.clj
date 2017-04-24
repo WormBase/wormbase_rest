@@ -341,14 +341,14 @@
                              (apply merge x)))]
     {(str/join "_" (sort (keys var-combo))) (vals var-combo)}))
 
-(defn- get-pato-combinations-overexpressed [db pid phenos]
+(defn- get-pato-combinations [db pid phenos]
   (if-let [tp (phenos pid)]
     (let [patos (for [t tp
                       :let [holder (d/entity db t)]]
                   (get-pato-from-holder holder))]
       (apply merge patos))))
 
-(defn- get-pato-combinations [db pid rnai-phenos var-phenos not?]
+(defn- get-pato-combinations-gene [db pid rnai-phenos var-phenos not?]
   (if-let [vp (distinct (concat (rnai-phenos pid) (var-phenos pid)))]
     (let [patos (for [v vp
                       :let [holder (d/entity db v)]]
@@ -530,7 +530,7 @@
       (flatten
         (for [pid (keys trans-phenos)
               :let [pheno (d/entity db pid)]]
-          (let [pcs (get-pato-combinations-overexpressed
+          (let [pcs (get-pato-combinations
                       db
                       pid
                       trans-phenos)]
@@ -552,6 +552,41 @@
                   trans-phenos))))))
       (into  []))))
 
+(defn- phenotype-table-var [db gene not-observed?]
+  (let [var-phenos (into {} (d/q (if not-observed?
+                                   q-gene-var-not-pheno
+                                   q-gene-var-pheno)
+                                 db gene))]
+    (->> (flatten
+           (for [pid (keys var-phenos)
+                 :let [pheno (d/entity db pid)]]
+             (let [pcs (get-pato-combinations
+                         db
+                         pid
+                         var-phenos)]
+               (if (nil? pcs)
+                 (phenotype-table-entity db
+                                         pheno
+                                         nil
+                                         nil
+                                         pid
+                                         var-phenos
+                                         rnai-phenos
+                                         not-observed?)
+                 (for [[pato-key entity] pcs]
+                   (phenotype-table-entity db
+                                           pheno
+                                           pato-key
+                                           entity
+                                           pid
+                                           var-phenos
+                                           rnai-phenos
+                                           not-observed?))))))
+         (into []))))
+
+
+
+
 (defn- phenotype-table [db gene not-observed?]
   (let [var-phenos (into {} (d/q (if not-observed?
                                    q-gene-var-not-pheno
@@ -566,11 +601,12 @@
     (->> (flatten
           (for [pid phenos
                 :let [pheno (d/entity db pid)]]
-            (let [pcs (get-pato-combinations db
-                                             pid
-                                             rnai-phenos
-                                             var-phenos
-                                             not-observed?)]
+            (let [pcs (get-pato-combinations-gene
+                        db
+                        pid
+                        rnai-phenos
+                        var-phenos
+                        not-observed?)]
             (if (nil? pcs)
               (phenotype-table-entity db
                                       pheno
