@@ -6,5 +6,5 @@
 
 (def widgets
   {:phenotypes_not_observed nil
-   :name nil
+   :name generic/name-field
    :phenotypes nil})
