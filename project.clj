@@ -17,6 +17,7 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.5.1"]
+   [wormbase/wb-graphql "0.1.0-SNAPSHOT"]
    [wormbase/pseudoace "0.4.15"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
@@ -71,4 +72,5 @@
           :ring {:nrepl {:start? true}}}]
       :test
       {:resource-paths ["test/resources"]}}
-  :repl-options {:init (set! *print-length* 10)})
+  :repl-options {:init (set! *print-length* 10)}
+  :repositories [["tmp" "file:///tmp/clojure_jars"]])

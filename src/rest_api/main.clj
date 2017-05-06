@@ -22,6 +22,7 @@
    [rest-api.classes.sequence :as seqs]
    [rest-api.classes.structure-data :as structure-data]
    [rest-api.classes.transcript :as transcript]
+   [rest-api.routing]
    [ring.util.http-response :as res]
    [ring.middleware.gzip :as ring-gzip]))
 
@@ -100,4 +101,8 @@
      (sweet/context "/rest" []
        (->> all-routes
             (flatten)
-            (apply sweet/routes))))))
+            (apply sweet/routes)))
+     (sweet/undocumented
+      (sweet/context
+       "/graphql" []
+       rest-api.routing/graphql-routes)))))

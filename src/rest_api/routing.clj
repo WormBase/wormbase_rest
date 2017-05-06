@@ -6,7 +6,8 @@
    [rest-api.db.main :refer [datomic-conn]]
    [ring.util.request :as req]
    [ring.util.http-response :as res]
-   [schema.core :as schema]))
+   [schema.core :as schema]
+   [wb-graphql.handler]))
 
 (defn- entity-not-found [schema-name id]
   (res/not-found
@@ -91,3 +92,8 @@
        (-create-routes rs#)
        (throw (IllegalArgumentException.
                (format "Invalid route spec %s" ~@rs))))))
+
+(defn graphql-routes [request]
+  (let [handler (-> (wb-graphql.handler/create-routes)
+                    (wb-graphql.handler/wrap-app (d/db datomic-conn)))]
+    (handler request)))
