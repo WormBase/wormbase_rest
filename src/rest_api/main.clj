@@ -9,6 +9,9 @@
    [rest-api.classes.anatomy-term :as anatomy-term]
    [rest-api.classes.analysis :as analysis]
    [rest-api.classes.variation :as variation]
+   [rest-api.classes.transgene :as transgene]
+   [rest-api.classes.strain :as strain]
+   [rest-api.classes.rearrangement :as rearrangement]
    [rest-api.classes.cds :as cds]
    [rest-api.classes.clone :as clone]
    [rest-api.classes.disease :as disease]
@@ -32,6 +35,9 @@
    anatomy-term/routes
    analysis/routes
    variation/routes
+   transgene/routes
+   strain/routes
+   rearrangement/routes
    cds/routes
    clone/routes
    disease/routes
