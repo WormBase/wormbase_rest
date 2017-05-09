@@ -11,6 +11,7 @@
    [rest-api.classes.variation :as variation]
    [rest-api.classes.transgene :as transgene]
    [rest-api.classes.strain :as strain]
+   [rest-api.classes.wbprocess :as wbprocess]
    [rest-api.classes.rearrangement :as rearrangement]
    [rest-api.classes.cds :as cds]
    [rest-api.classes.clone :as clone]
@@ -37,6 +38,7 @@
    variation/routes
    transgene/routes
    strain/routes
+   wbprocess/routes
    rearrangement/routes
    cds/routes
    clone/routes

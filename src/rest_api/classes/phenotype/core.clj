@@ -218,8 +218,6 @@
           (:phenotype-info.ease-of-scoring/value
             (:phenotype-info/ease-of-scoring holder)))))
 
-    :keys (keys holder)
-
     :Caused_by_gene
     (if
       (contains? holder :phenotype-info/caused-by-gene)

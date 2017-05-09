@@ -83,7 +83,6 @@
      :description "phenotypes annotated with this term"}))
 
 (def widget
-  {
- ;;  :phenotypes_not_observed phenotypes-not-observed
+  {:phenotypes_not_observed phenotypes-not-observed
    :phenotypes phenotypes-observed
    :name generic/name-field})
