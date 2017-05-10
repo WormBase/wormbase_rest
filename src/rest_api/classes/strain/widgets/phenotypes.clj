@@ -38,7 +38,7 @@
                 strain-pato-key (first pato-keys)]]
       (if (= pato-key strain-pato-key)
         {:text (pack-obj strain)
-         :evidence (phenotype-core/var-evidence holder strain pheno)}))))
+         :evidence (phenotype-core/get-evidence holder strain pheno)}))))
 
 (defn- phenotype-table [db strain not-observed?]
   (let [strain-phenos (into {} (d/q (if not-observed?

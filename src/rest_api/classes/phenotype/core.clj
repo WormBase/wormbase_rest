@@ -55,7 +55,7 @@
                   (get-pato-from-holder holder))]
       (apply merge patos))))
 
-(defn var-evidence [holder variation pheno]
+(defn get-evidence [holder entity pheno]
   (pace-utils/vmap
     :Person_evidence
     (seq
@@ -66,11 +66,16 @@
          :taxonomy "all"}))
 
     :Curator
-    (seq (for [person (:phenotype-info/curator-confirmed holder)]
-           {:class "person"
-            :id (:person/id person)
-            :label (:person/standard-name person)
-            :taxonomy "all"}))
+    (seq
+      (for [person (:phenotype-info/curator-confirmed holder)]
+        {:class "person"
+         :id (:person/id person)
+         :keys (keys person)
+         :kp (pr-str (d/touch person))
+         :dbid (:db/id person)
+         :h (keys holder)
+         :label (:person/standard-name person)
+         :taxonomy "all"}))
 
     :Paper_evidence
     (seq
@@ -232,10 +237,10 @@
 
     :Male_mating_efficiency
     (if
-      (contains? variation :variation/male-mating-efficiency)
+      (contains? entity :variation/male-mating-efficiency)
       (obj/humanize-ident
         (:variation.male-mating-efficiency/value
-          (:variation/male-mating-efficiency variation))))
+          (:variation/male-mating-efficiency entity))))
 
     :Temperature_sensitive
     (if

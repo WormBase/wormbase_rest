@@ -189,7 +189,7 @@
              :id (:transgene/id transgene)
              :label (:transgene/public-name transgene)
              :taxonomy "c_elegans"}
-            :evidence (phenotype-core/var-evidence holder transgene pheno)})))))
+            :evidence (phenotype-core/get-evidence holder transgene pheno)})))))
 
 (defn- phenotype-table-entity
   [db pheno pato-key entity pid var-phenos rnai-phenos not-observed?]
@@ -221,7 +221,7 @@
                       "font-weight:bold"
                       0)
              :taxonomy "c_elegans"}
-            :evidence (phenotype-core/var-evidence holder var pheno)})))
+            :evidence (phenotype-core/get-evidence holder var pheno)})))
      "RNAi:"
      (if-let [rp (seq (rnai-phenos pid))]
        (for [r rp]
@@ -249,7 +249,7 @@
                 (let [paper-ref (:rnai/reference rnai)]
                   (if-let [paper (:rnai.reference/paper paper-ref)]
                     (paper-core/evidence paper)))}
-               (phenotype-core/var-evidence holder rnai pheno))})))))})
+               (phenotype-core/get-evidence holder rnai pheno))})))))})
 
 (defn- phenotype-table-overexpressed [db gene]
   (let [trans-phenos (into {} (d/q

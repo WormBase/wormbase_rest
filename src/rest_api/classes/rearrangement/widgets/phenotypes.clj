@@ -38,7 +38,7 @@
                 rearrangement-pato-key (first pato-keys)]]
       (if (= pato-key rearrangement-pato-key)
         {:text (pack-obj rearrangement)
-         :evidence (phenotype-core/var-evidence holder rearrangement pheno)}))))
+         :evidence (phenotype-core/get-evidence holder rearrangement pheno)}))))
 
 (defn- phenotype-table [db rearrangement not-observed?]
   (let [rearrangement-phenos (into {} (d/q (if not-observed?

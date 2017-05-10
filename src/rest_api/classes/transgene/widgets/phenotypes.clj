@@ -38,7 +38,7 @@
                 transgene-pato-key (first pato-keys)]]
       (if (= pato-key transgene-pato-key)
         {:text (pack-obj transgene)
-         :evidence (phenotype-core/var-evidence holder transgene pheno)}))))
+         :evidence (phenotype-core/get-evidence holder transgene pheno)}))))
 
 (defn- phenotype-table [db transgene not-observed?]
   (let [transgene-phenos (into {} (d/q (if not-observed?

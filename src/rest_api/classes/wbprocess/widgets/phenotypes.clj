@@ -30,7 +30,7 @@
                  wbprocess-pato-key (first pato-keys)]]
        (if (= pato-key wbprocess-pato-key)
          {:text (pack-obj wbprocess)
-          :evidence (phenotype-core/var-evidence holder wbprocess pheno)})))})
+          :evidence (phenotype-core/get-evidence holder wbprocess pheno)})))})
 
 (defn- phenotype-table [db wbprocess]
   (let [phenos (into {} (d/q q-wbprocess-pheno

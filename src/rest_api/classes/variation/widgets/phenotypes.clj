@@ -38,7 +38,7 @@
                  variation-pato-key (first pato-keys)]]
        (if (= pato-key variation-pato-key)
          {:text (pack-obj variation)
-          :evidence (phenotype-core/var-evidence holder variation pheno)})))})
+          :evidence (phenotype-core/get-evidence holder variation pheno)})))})
 
 (defn- phenotype-table [db variation not-observed?]
   (let [variation-phenos (into {} (d/q (if not-observed?
