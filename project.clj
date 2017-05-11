@@ -17,7 +17,7 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.5.1"]
-   [wormbase/wb-graphql "0.1.0-SNAPSHOT"]
+   [wormbase/wb-graphql "0.1.0"]
    [wormbase/pseudoace "0.4.15"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
