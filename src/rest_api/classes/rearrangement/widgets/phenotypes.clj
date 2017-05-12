@@ -21,24 +21,24 @@
 
 (defn- phenotype-table-entity
   [db pheno pato-key entity pid phenos not-observed?]
-  :entity entity
-  :phenotype {:class "phenotype"
-              :id (:phenotype/id pheno)
-              :label (:phenotype.primary-name/text
-                       (:phenotype/primary-name pheno))
-              :taxonomy "all"}
-  :evidence
-  (if-let [tp (seq (phenos pid))]
-    (for [t tp
-          :let [holder (d/entity db t)
-                rearrangement (if not-observed?
-                                (:rearrangement/_phenotype_not_observed holder)
-                                (:rearrangement/_phenotype holder))
-                pato-keys (keys (phenotype-core/get-pato-from-holder holder))
-                rearrangement-pato-key (first pato-keys)]]
-      (if (= pato-key rearrangement-pato-key)
-        {:text (pack-obj rearrangement)
-         :evidence (phenotype-core/get-evidence holder rearrangement pheno)}))))
+  {:entity entity
+   :phenotype {:class "phenotype"
+               :id (:phenotype/id pheno)
+               :label (:phenotype.primary-name/text
+                        (:phenotype/primary-name pheno))
+               :taxonomy "all"}
+   :evidence
+   (if-let [tp (seq (phenos pid))]
+     (for [t tp
+           :let [holder (d/entity db t)
+                 rearrangement (if not-observed?
+                                 (:rearrangement/_phenotype_not_observed holder)
+                                 (:rearrangement/_phenotype holder))
+                 pato-keys (keys (phenotype-core/get-pato-from-holder holder))
+                 rearrangement-pato-key (first pato-keys)]]
+       (if (= pato-key rearrangement-pato-key)
+         {:text (pack-obj rearrangement)
+          :evidence (phenotype-core/get-evidence holder rearrangement pheno)})))})
 
 (defn- phenotype-table [db rearrangement not-observed?]
   (let [rearrangement-phenos (into {} (d/q (if not-observed?
