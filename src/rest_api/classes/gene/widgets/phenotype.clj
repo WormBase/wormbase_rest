@@ -168,11 +168,11 @@
 
 (defn- phenotype-table-entity-overexpressed
   [db pheno pato-key entity pid trans-phenos]
-   :entity entity
+  {:entity entity
    :phenotype {:class "phenotype"
                :id (:phenotype/id pheno)
                :label (:phenotype.primary-name/text
-                       (:phenotype/primary-name pheno))
+                        (:phenotype/primary-name pheno))
                :taxonomy "all"}
    :evidence
    (pace-utils/vmap
@@ -189,7 +189,7 @@
              :id (:transgene/id transgene)
              :label (:transgene/public-name transgene)
              :taxonomy "c_elegans"}
-            :evidence (phenotype-core/get-evidence holder transgene pheno)})))))
+            :evidence (phenotype-core/get-evidence holder transgene pheno)}))))})
 
 (defn- phenotype-table-entity
   [db pheno pato-key entity pid var-phenos rnai-phenos not-observed?]

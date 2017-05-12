@@ -21,24 +21,24 @@
 
 (defn- phenotype-table-entity
   [db pheno pato-key entity pid phenos not-observed?]
-  :entity entity
-  :phenotype {:class "phenotype"
-              :id (:phenotype/id pheno)
-              :label (:phenotype.primary-name/text
-                       (:phenotype/primary-name pheno))
-              :taxonomy "all"}
-  :evidence
-  (if-let [tp (seq (phenos pid))]
-    (for [t tp
-          :let [holder (d/entity db t)
-                transgene (if not-observed?
-                            (:transgene/_phenotype_not_observed holder)
-                            (:transgene/_phenotype holder))
-                pato-keys (keys (phenotype-core/get-pato-from-holder holder))
-                transgene-pato-key (first pato-keys)]]
-      (if (= pato-key transgene-pato-key)
-        {:text (pack-obj transgene)
-         :evidence (phenotype-core/get-evidence holder transgene pheno)}))))
+  {:entity entity
+   :phenotype {:class "phenotype"
+               :id (:phenotype/id pheno)
+               :label (:phenotype.primary-name/text
+                        (:phenotype/primary-name pheno))
+               :taxonomy "all"}
+   :evidence
+   (if-let [tp (seq (phenos pid))]
+     (for [t tp
+           :let [holder (d/entity db t)
+                 transgene (if not-observed?
+                             (:transgene/_phenotype_not_observed holder)
+                             (:transgene/_phenotype holder))
+                 pato-keys (keys (phenotype-core/get-pato-from-holder holder))
+                 transgene-pato-key (first pato-keys)]]
+       (if (= pato-key transgene-pato-key)
+         {:text (pack-obj transgene)
+          :evidence (phenotype-core/get-evidence holder transgene pheno)})))})
 
 (defn- phenotype-table [db transgene not-observed?]
   (let [transgene-phenos (into {} (d/q (if not-observed?
