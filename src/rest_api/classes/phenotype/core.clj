@@ -70,10 +70,6 @@
       (for [person (:phenotype-info/curator-confirmed holder)]
         {:class "person"
          :id (:person/id person)
-         :keys (keys person)
-         :kp (pr-str (d/touch person))
-         :dbid (:db/id person)
-         :h (keys holder)
          :label (:person/standard-name person)
          :taxonomy "all"}))
 
