@@ -7,6 +7,7 @@
    [rest-api.classes.gene :as gene]
    [rest-api.classes.person :as person]
    [rest-api.classes.anatomy-term :as anatomy-term]
+   [rest-api.classes.antibody :as antibody]
    [rest-api.classes.analysis :as analysis]
    [rest-api.classes.variation :as variation]
    [rest-api.classes.transgene :as transgene]
@@ -34,6 +35,7 @@
   [gene/routes
    person/routes
    anatomy-term/routes
+   antibody/routes
    analysis/routes
    variation/routes
    transgene/routes

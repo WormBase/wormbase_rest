@@ -11,7 +11,9 @@
    :description "the person that conducted the analysis"})
 
 (defn subproject [analysis]
-  {:data (pack-obj (second (:analysis/project analysis)))
+  {:data (if-let [sub-projects (:analysis/_project analysis)]
+           (for [sub-project sub-projects]
+             (pack-obj sub-project)))
    :description "the subproject of the analysis if there is one"})
 
 (defn project [analysis]
@@ -38,12 +40,17 @@
   {:data (first (:analysis/based-on-db-release analysis))
    :description "the database release the analysis is based on"})
 
+(defn ddd [d]
+  (:db/id d)
+  )
+
 (def widget
   {:conducted_by conducted-by
    :subproject subproject
    :project project
    :name generic/name-field
    :description description
+   :keys ddd
    :url url
    :based_on_wb_release based-on-wb-release
    :title title
