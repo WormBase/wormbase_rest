@@ -39,6 +39,10 @@
   (or (:gene/public-name obj)
       (:gene/id obj)))
 
+(defmethod obj-label "laboratory" [_ obj]
+  (or (first (:laboratory/mail obj))
+      (:laboratory/id obj)))
+
 (defmethod obj-label "phenotype" [_ obj]
   (or (->> (:phenotype/primary-name obj)
            (:phenotype.primary-name/text))
@@ -298,7 +302,7 @@
             db  :evidence.accession-evidence/database} accs]
        {:id acc
         :label (format "%s:%s" (:database/id db) acc)
-        :class (:database/id acc)}))
+        :class (:database/id db)}))
 
 
    :Protein_id_evidence
