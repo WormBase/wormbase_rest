@@ -7,29 +7,48 @@
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-
-(defn canonical-for [clone]
-  {:data nil
+(defn canonical-for [clone] ; example C05B2
+  {:data (when-let [cfhs (:clone/canonical-for clone)]
+           (merge
+             (for [cfh cfhs :let [cclone (:clone.canonical-for/clone cfh)]]
+               {(:clone/id cclone) (pack-obj cclone)})))
    :description "clones that the requested clone is a canonical representative of"})
 
-(defn maps [clone] ; example B0272
-  {:data (if-let [m (:clone.map/map (first (:clone/map clone)))]
-           (pack-obj m))
+(defn maps [clone] ; example B0272 and C05B2
+  {:data (when-let [chs (or
+                          (:clone/map clone)
+                          (:contig/map (:clone.pmap/contig (:clone/pmap clone))))]
+           (merge
+             (for [h chs :let [m (or (:clone.map/map h)
+                                     (:contig.map/map h))]]
+               {(:map/id m) {:id (:map/id m)
+                             :label (:map/id m)
+                             :class "map"
+                             :taxonomy "all"}})))
    :description "maps assigned to this clone"})
 
 (defn sequence-status [clone]
-  {:data (if-let [sequences (:sequence/_clone clone)]
-           {:Finished (if-let [date-str (:sequence/finished (first sequences))]
-            (date/format-date5 date-str))
-            :Accession_number (:clone/accession-number clone)})
-   :description "sequencing status of clone"})
+  (let [data (merge
+               (if (contains? clone :clone/finished)
+                 {:Finished (date/format-date5 (:clone/finished clone))})
+               (if (contains? clone :clone/shotgun) ; found with DL2
+                 {:Shotgun nil})
+               (when-let [accession (:clone/accession-number clone)]
+                 {:Accession_number accession}))]
+    {:data data
+     :description "sequencing status of clone"}))
 
 (defn canonical-parent [clone]
-  {:data nil
+  {:data nil; (:clone/pmap )
    :description "canonical parent for clone"})
 
 (defn screened-negative [clone]
-  {:data nil
+  {:data (when-let [phs (:clone/negative-gene clone)]
+           (into {}
+               (for [ph phs :let [gene (:clone.negative-gene/gene ph)]]
+                 {(:gene/id gene) (merge
+                                    {:weak nil}
+                                    (pack-obj gene))})))
    :description "entities shown to NOT be contained within the requested clone"})
 
 (defn url [clone]
@@ -37,7 +56,7 @@
    :description "The website for this clone"})
 
 (defn remarks [clone]
-  {:data (if-let [remarks (:clone/general-remark clone)]
+  {:data (when-let [remarks (:clone/general-remark clone)]
            (for [remark remarks]
              {:text remark}))
    :description "Remarks"})
@@ -47,7 +66,7 @@
    :description "lengths relevant to this clone"})
 
 (defn sequences [clone]; example AB070577
-  {:data (if-let [sequences (:sequence/_clone clone)]
+  {:data (when-let [sequences (:sequence/_clone clone)]
            (for [s sequences] (pack-obj s)))
    :description "sequences associated with this clone"})
 
@@ -56,17 +75,17 @@
    :description "The current clone is found in this strain"})
 
 (defn pcr-product [clone]
-  {:data (if-let [pcrs (:pcr-product/_clone clone)]
-            (let [pcr (first pcrs)]
-           {:pcr_prodcut (pack-obj pcr)
-            :oligo (if-let [ohs (:pcr-product/oligo pcr)]
-                     (for [oh ohs :let [oligo
-                       (:pcr-product.oligo/oligo oh)]]
-                       {:obj {:id (:oligo/id oligo)  ; not using pack object because of custom class name
-                              :label (:oligo/id oligo)
-                              :class "pcr_oligo"
-                              :taxonomy "all"}
-                        :sequence (:oligo/sequence oligo)}))}))
+  {:data (when-let [pcrs (:pcr-product/_clone clone)]
+           (let [pcr (first pcrs)]
+             {:pcr_prodcut (pack-obj pcr)
+              :oligo (when-let [ohs (:pcr-product/oligo pcr)]
+                       (for [oh ohs
+                             :let [oligo (:pcr-product.oligo/oligo oh)]]
+                         {:obj {:id (:oligo/id oligo)  ; not using pack object because of custom class name
+                                :label (:oligo/id oligo)
+                                :class "pcr_oligo"
+                                :taxonomy "all"}
+                          :sequence (:oligo/sequence oligo)}))}))
    :description "PCR product associated with this clone"})
 
 (defn gridded-on [clone]
@@ -74,7 +93,7 @@
    :description "grid this clone was gridded on during fingerprinting"})
 
 (defn taxonomy [clone]
-  {:data (if-let [gspecies (:species/id (:clone/species clone))]
+  {:data (when-let [gspecies (:species/id (:clone/species clone))]
            (let [[genus species] (str/split gspecies #" ")]
              {:genus genus
               :species species}))
@@ -85,7 +104,7 @@
    :description "The genomic location of the sequence"})
 
 (defn type-field [clone]
-  {:data (if-let [t (:clone/type clone)]
+  {:data (when-let [t (:clone/type clone)]
            (let [n (name (:clone.type/value t))]
              (case n
                "cdna"
@@ -93,12 +112,18 @@
                (str/capitalize n))))
    :description "The type of this clone"})
 
-(defn screened-position [clone]
-  {:data (:db/id clone)
+(defn screened-positive [clone]
+  {:data (when-let [phs (:clone/positive-gene clone)]
+             (into {}
+               (for [ph phs :let [gene (:clone.positive-gene/gene ph)]]
+                 {(:gene/id gene) (merge
+                                    {:weak nil}
+                                    (pack-obj gene))})))
    :description "entities shown to be contained within this clone"})
 
 (defn expression-patterns [clone]
   {:data (keys clone)
+   :dbid (:db/id clone)
    :description (str "expression patterns associated with the Clone: " (:clone/id clone))})
 
 (def widget
@@ -118,5 +143,5 @@
    :taxonomy taxonomy
    :genomic_position genomic-position
    :type type-field
-   :screened_position screened-position
+   :screened_positive screened-positive
    :expression_patterns expression-patterns})
