@@ -374,3 +374,9 @@
     {:data (not-empty data)
      :description (format "The name and WormBase internal ID of %s"
                           (:id data))}))
+
+(defn tag-obj [label]
+  {:taxonomy "all"
+   :class "tag"
+   :label label
+   :id label})
