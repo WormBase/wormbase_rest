@@ -24,7 +24,7 @@
                   :let [[eq-key label] eq-annotations]]
               (for [eq-term ((keyword "phenotype-info" eq-key) holder)]
                 (let [make-pi-kw (partial keyword
-                                       (str "phenotype-info." eq-key))
+                                          (str "phenotype-info." eq-key))
                       pato-term-kw (make-pi-kw "pato-term")
                       label-kw (make-pi-kw label)
                       eq-kw (make-pi-kw eq-key)
