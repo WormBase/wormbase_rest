@@ -107,7 +107,8 @@
 
 (defmethod obj-label "construct" [_ cons]
   (or (first (:construct/public-name cons))
-      (:construct/id cons)))
+      (or (first (:construct/other-name cons))
+          (:construct/id cons))))
 
 (defmethod obj-label "transgene" [_ tg]
   (or (:transgene/public-name tg)
