@@ -201,55 +201,57 @@
                :taxonomy "all"}
    :evidence
    (pace-utils/vmap
-     "Allele:"
-     (if-let [vp (seq (var-phenos pid))]
-       (for [v vp
-             :let [holder (d/entity db v)
-                   var ((if not-observed?
-                          :variation/_phenotype-not-observed
-                          :variation/_phenotype)
-                        holder)
-                   pato-keys (keys (phenotype-core/get-pato-from-holder holder))
-                   var-pato-key (first pato-keys)]]
-         (if (= pato-key var-pato-key)
-           {:text
-            {:class "variation"
-             :id (:variation/id var)
-             :label (:variation/public-name var)
-             :style (if (= (:variation/seqstatus var)
-                           :variation.seqstatus/sequenced)
-                      "font-weight:bold"
-                      0)
-             :taxonomy "c_elegans"}
-            :evidence (phenotype-core/get-evidence holder var pheno)})))
-     "RNAi:"
-     (if-let [rp (seq (rnai-phenos pid))]
-       (for [r rp]
-         (let [holder (d/entity db r)
-               pato-keys (keys (phenotype-core/get-pato-from-holder holder))
-               rnai ((if not-observed?
-                       :rnai/_phenotype-not-observed
-                       :rnai/_phenotype) holder)
-               rnai-pato-key (first pato-keys)]
-           (if (= rnai-pato-key pato-key)
+     "Allele"
+     (when-let [vp (seq (var-phenos pid))]
+       (not-empty
+         (for [v vp
+               :let [holder (d/entity db v)
+                     var ((if not-observed?
+                            :variation/_phenotype-not-observed
+                            :variation/_phenotype)
+                          holder)
+                     pato-keys (keys (phenotype-core/get-pato-from-holder holder))
+                     var-pato-key (first pato-keys)]]
+           (if (= pato-key var-pato-key)
              {:text
-              {:class "rnai"
-               :id (:rnai/id rnai)
-               :label (str (parse-int (:rnai/id rnai)))
+              {:class "variation"
+               :id (:variation/id var)
+               :label (:variation/public-name var)
+               :style (if (= (:variation/seqstatus var)
+                             :variation.seqstatus/sequenced)
+                        "font-weight:bold"
+                        0)
                :taxonomy "c_elegans"}
-              :evidence
-              (merge
-               {:Genotype
-                (:rnai/genotype rnai)
+              :evidence (phenotype-core/get-evidence holder var pheno)}))))
+     "RNAi"
+     (when-let [rp (seq (rnai-phenos pid))]
+       (not-empty
+         (for [r rp]
+           (let [holder (d/entity db r)
+                 pato-keys (keys (phenotype-core/get-pato-from-holder holder))
+                 rnai ((if not-observed?
+                         :rnai/_phenotype-not-observed
+                         :rnai/_phenotype) holder)
+                 rnai-pato-key (first pato-keys)]
+             (if (= rnai-pato-key pato-key)
+               {:text
+                {:class "rnai"
+                 :id (:rnai/id rnai)
+                 :label (str (parse-int (:rnai/id rnai)))
+                 :taxonomy "c_elegans"}
+                :evidence
+                (merge
+                  {:Genotype
+                   (:rnai/genotype rnai)
 
-                :Strain
-                (:strain/id (:rnai/strain rnai))
+                   :Strain
+                   (:strain/id (:rnai/strain rnai))
 
-                :paper
-                (let [paper-ref (:rnai/reference rnai)]
-                  (if-let [paper (:rnai.reference/paper paper-ref)]
-                    (paper-core/evidence paper)))}
-               (phenotype-core/get-evidence holder rnai pheno))})))))})
+                   :paper
+                   (let [paper-ref (:rnai/reference rnai)]
+                     (if-let [paper (:rnai.reference/paper paper-ref)]
+                       (paper-core/evidence paper)))}
+                  (phenotype-core/get-evidence holder rnai pheno))}))))))})
 
 (defn- phenotype-table-overexpressed [db gene]
   (let [trans-phenos (into {} (d/q
