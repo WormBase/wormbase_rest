@@ -243,7 +243,8 @@
                          :taxonomy "c_elegans"}
                         :evidence
                         (merge
-                          {:Genotype
+                          (pace-utils/vmap
+                           :Genotype
                            (:rnai/genotype rnai)
 
                            :Strain
@@ -252,7 +253,7 @@
                            :paper
                            (let [paper-ref (:rnai/reference rnai)]
                              (if-let [paper (:rnai.reference/paper paper-ref)]
-                               (paper-core/evidence paper)))}
+                               (paper-core/evidence paper))))
                           (phenotype-core/get-evidence holder rnai pheno))})))))))})
 
 (defn- phenotype-table-overexpressed [db gene]
