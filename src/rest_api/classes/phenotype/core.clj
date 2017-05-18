@@ -24,7 +24,7 @@
                   :let [[eq-key label] eq-annotations]]
               (for [eq-term ((keyword "phenotype-info" eq-key) holder)]
                 (let [make-pi-kw (partial keyword
-                                       (str "phenotype-info." eq-key))
+                                          (str "phenotype-info." eq-key))
                       pato-term-kw (make-pi-kw "pato-term")
                       label-kw (make-pi-kw label)
                       eq-kw (make-pi-kw eq-key)
@@ -253,15 +253,15 @@
     (if
       (contains? holder :phenotype-info/treatment)
       (first (for [treatment-holder (:phenotype-info/treatment holder)
-        :let [text (:phenotype-info.treatment/text treatment-holder)]]
-        (if (= text "") nil text))))
+                   :let [text (:phenotype-info.treatment/text treatment-holder)]]
+               (if-not (str/blank? text) text))))
 
     :Temperature
     (if
       (contains? holder :phenotype-info/temperature)
       (first (for [temp-holder (:phenotype-info/temperature holder)
-        :let [text (:phenotype-info.temperature/text temp-holder)]]
-        (if (= text "") nil text))))
+                   :let [text (:phenotype-info.temperature/text temp-holder)]]
+               (if-not (str/blank? text) text))))
 
     :Ease_of_scoring
     nil))
