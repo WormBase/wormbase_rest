@@ -28,7 +28,10 @@
    :description "gene products for this construct"})
 
 (defn other-reporter [construct]
-  {:data nil
+  {:data (when-let [chs  (:construct/other-reporter construct)]
+                       {:class "text"
+                        :db "sace://localhost:2005"
+                        :name (first chs)})
    :description (str "The name and WormBase internal ID of " (:construct/id construct))})
 
 (defn remarks [construct]
