@@ -17,6 +17,7 @@
    [rest-api.classes.cds :as cds]
    [rest-api.classes.clone :as clone]
    [rest-api.classes.construct :as construct]
+   [rest-api.classes.expression-cluster :as expression-cluster]
    [rest-api.classes.disease :as disease]
    [rest-api.classes.homology-group :as homology-group]
 ;;   [rest-api.classes.interaction :as interaction] ; comment out for WS258
@@ -42,6 +43,7 @@
    transgene/routes
    strain/routes
    wbprocess/routes
+   expression-cluster/routes
    rearrangement/routes
    cds/routes
    clone/routes
