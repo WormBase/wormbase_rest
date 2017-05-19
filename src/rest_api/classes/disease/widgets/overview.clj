@@ -50,11 +50,13 @@
    :description "Type of this disease"})
 
 (def widget
-  {:gene_orthology gene-orthology
+{})
+
+(def d {:gene_orthology gene-orthology
    :parent parent
    :omim omim
    :status status
- ;  :name generic/name-field
+   :name generic/name-field
    :child child
    :definition definition
    :genes_biology genes-biology

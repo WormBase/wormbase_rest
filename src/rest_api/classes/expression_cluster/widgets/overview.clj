@@ -11,7 +11,7 @@
    :description "Algorithm used to determine cluster"})
 
 (defn taxonomy [ec]
-  {:data (if-let [species (:species/id (:expression-cluster/species ec))]
+  {:data (when-let [species (:species/id (:expression-cluster/species ec))]
            (let [[genus species] (str/split species #" ")]
              {:genus genus
               :species species}))
@@ -26,7 +26,7 @@
 
 (defn attribute-of [ec]
   {:data (when-let [mes (:expression-cluster/microarray-experiment ec)]
-           (for [me mes ] (pack-obj me)))
+           (for [me mes] (pack-obj me)))
    :description "Items attributed to this expression cluster"})
 
 (defn description [ec]
