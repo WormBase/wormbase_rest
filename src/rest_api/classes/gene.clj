@@ -28,7 +28,6 @@
     :genetics genetics/widget
     :history history/widget
     :interactions interactions/widget
-    :interactions interactions/widget
     :mapping_data mapping-data/widget
     :overview overview/widget
     :location location/widget
