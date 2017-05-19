@@ -69,7 +69,7 @@
     (cond
      (= (count authors) 1)
      (author-lastname (first authors))
-     
+
      (< (count authors) 6)
      (let [last-names (map author-lastname authors)]
        (str (str/join ", " (butlast last-names))
