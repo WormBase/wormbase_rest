@@ -58,7 +58,7 @@
       (testing "contains a correct strain"
         (is (some #(= "RW7080" (:id %)) (:strain allele1))))
       (testing "contains a correct citation"
-        (is (some #(= "Mori, Moerman, & Waterston, 1986"
+        (is (some #(= "Mori, Moerman & Waterston, 1986"
                       (:label %))
                   (:sources allele1))))
       (testing "correct location type"
