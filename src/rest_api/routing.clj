@@ -64,7 +64,8 @@
                        fields)
           route-data (assoc this :field field-defs)
           entity-ns (:entity-ns route-data)
-          entity-segment (str/replace entity-ns #"-" "_")]
+          entity-uri-name (get route-data :uri-name entity-ns)
+          entity-segment (str/replace entity-uri-name #"-" "_")]
       (flatten
         (for [kw [:widget :field]
               :let [scheme (name kw)
