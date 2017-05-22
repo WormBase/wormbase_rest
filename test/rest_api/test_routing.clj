@@ -4,7 +4,8 @@
    [compojure.api.routes :as c-routes]
    [compojure.api.sweet :as sweet]
    [rest-api.db-testing :as db-testing]
-   [rest-api.routing :as routing]))
+   [rest-api.routing :as routing]
+   [clojure.string :as str]))
 
 (use-fixtures :once db-testing/db-lifecycle)
 
@@ -30,7 +31,7 @@
       (is (= 200 (:status response)))
       (is (= (:body response) expected))))
   (testing
-    "Main request handler produces correct data structure (fields)"
+    "Main request handler produces correct data structure (fields)."
     (let [req {:uri "/rest/field/gene/WBGene00000001/xrefs"
                :context "/rest/widget/gene"
                :params {:id "WBGene00000001"}}
@@ -44,6 +45,26 @@
                     :uri "rest/field/gene/WBGene00000001/xrefs"
                     :class "gene"
                     :name "WBGene00000001"}]
+      (is (= (:body response) expected))))
+  (testing
+      "Entity namespace can be aliased in request URI."
+    (let [entity-id "DOID:7"
+          entity-ns "do-term"
+          req {:uri "/rest/widget/disease/DOID:7/overview"
+               :context "/rest/widget/disease"
+               :params {:id entity-id}}
+          disease-overview {:data {:info "Disease info"}
+                            :description "Some disease"}
+          entity-handler (fn [e]
+                           disease-overview)
+          widgets {:overview entity-handler}
+          handler (routing/make-request-handler :widget widgets
+                                                entity-ns)
+          response (handler req)
+          expected {:uri "rest/widget/disease/DOID:7/overview"
+                    :class entity-ns
+                    :name entity-id
+                    :fields {:overview disease-overview}}]
       (is (= (:body response) expected)))))
 
 (deftest test-conform-to-scheme
@@ -81,7 +102,8 @@
       widget {:x (mk-route-spec [:a :b :c :d])
               :y (mk-route-spec [:e :f :g])}
       fields {:z (mk-route-spec [:h :i])}]
-  (routing/defroutes {:entity-class "some-entity"
+  (routing/defroutes {:entity-ns "some-entity"
+                      :uri-name "different_to_entity_namespace"
                       :widget widget
                       :field fields})
 

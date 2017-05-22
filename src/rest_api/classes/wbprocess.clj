@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "wbprocess"
+  {:entity-ns "wbprocess"
    :widget
    {:phenotypes phenotypes/widget}})

@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "homology-group"
+  {:entity-ns "homology-group"
    :widget
    {:external_links external-links/widget}})

@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "transgene"
+  {:entity-ns "transgene"
    :widget
    {:phenotypes phenotypes/widget}})
