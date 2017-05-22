@@ -81,7 +81,7 @@
       widget {:x (mk-route-spec [:a :b :c :d])
               :y (mk-route-spec [:e :f :g])}
       fields {:z (mk-route-spec [:h :i])}]
-  (routing/defroutes {:entity-class "some-entity"
+  (routing/defroutes {:entity-ns "some-entity"
                       :widget widget
                       :field fields})
 

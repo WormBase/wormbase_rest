@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "clone"
+  {:entity-ns "clone"
    :widget
    {:external_links external-links/widget}})

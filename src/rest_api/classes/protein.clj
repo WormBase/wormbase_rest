@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "protein"
+  {:entity-ns "protein"
    :widget
    {:external_links external-links/widget}})

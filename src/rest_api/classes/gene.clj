@@ -19,7 +19,7 @@
    [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "gene"
+  {:entity-ns "gene"
    :widget
    {:external_links external-links/widget
     :expression expression/widget

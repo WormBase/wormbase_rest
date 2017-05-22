@@ -29,7 +29,7 @@
    :microarray_topology_map_position (delegate-to-gene exp/microarray-topology-map-position)})
 
 (routing/defroutes
-  {:entity-class "transcript"
+  {:entity-ns "transcript"
    :widget
    {:expression expression-widget
     :external_links external-links/widget}
