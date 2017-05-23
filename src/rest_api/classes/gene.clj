@@ -19,7 +19,7 @@
    [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "gene"
+  {:entity-ns "gene"
    :widget
    {:external_links external-links/widget
     :expression expression/widget
@@ -27,8 +27,7 @@
     :gene_ontology gene-ontology/widget
     :genetics genetics/widget
     :history history/widget
-    ;; DISABLED (Matt Russell, 2014-03-17)
-    ;; :interactions interactions/widget
+    :interactions interactions/widget
     :mapping_data mapping-data/widget
     :overview overview/widget
     :location location/widget
@@ -38,5 +37,6 @@
     :phenotype phenotype/widget}
    :field
    {:alleles_other variation/alleles-other
+    :interaction_details interactions/interaction-details
     :polymorphisms variation/polymorphisms
     :fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})

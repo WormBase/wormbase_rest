@@ -19,7 +19,7 @@
    [rest-api.classes.construct :as construct]
    [rest-api.classes.expression-cluster :as expression-cluster]
    [rest-api.classes.expr-pattern :as expr-pattern]
-   [rest-api.classes.disease :as disease]
+   [rest-api.classes.do-term :as do-term]
    [rest-api.classes.homology-group :as homology-group]
 ;;   [rest-api.classes.interaction :as interaction] ; comment out for WS258
    [rest-api.classes.molecule :as molecule]
@@ -50,7 +50,7 @@
    cds/routes
    clone/routes
    construct/routes
-   disease/routes
+   do-term/routes
    homology-group/routes
 ;;   interaction/routes ; comment out for WS258
    molecule/routes

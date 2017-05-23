@@ -67,7 +67,6 @@
 	     other-name))
    :description (str "other names that have been used to refer to " (:antibody/id antibody))})
 
-
 (def widget
   {:laboratory laboratory
    :name generic/name-field

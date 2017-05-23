@@ -1,4 +1,4 @@
-(ns rest-api.classes.disease.widgets.overview
+(ns rest-api.classes.do-term.widgets.overview
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
@@ -49,10 +49,7 @@
   {:data nil
    :description "Type of this disease"})
 
-(def widget
-{})
-
-(def d {:gene_orthology gene-orthology
+(def widget {:gene_orthology gene-orthology
    :parent parent
    :omim omim
    :status status

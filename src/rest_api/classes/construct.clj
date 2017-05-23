@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "construct"
+  {:entity-ns "construct"
    :widget
    {:overview overview/widget}})

@@ -1,12 +1,13 @@
-(ns rest-api.classes.disease
+(ns rest-api.classes.do-term
   (:require
     [rest-api.classes.gene.widgets.external-links :as external-links]
-    [rest-api.classes.disease.widgets.overview :as overview]
-    [rest-api.classes.disease.widgets.ontology-browser :as ontology-browser]
+    [rest-api.classes.do-term.widgets.overview :as overview]
+    [rest-api.classes.do-term.widgets.ontology-browser :as ontology-browser]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "do-term"
+  {:entity-ns "do-term"
+   :uri-name "disease"
    :widget
    {:overview overview/widget
     :ontology_browser ontology-browser/widget

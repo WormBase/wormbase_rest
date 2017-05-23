@@ -2,10 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.4] - (un-released)
+- Gene interactions widget.
+
 ## [0.1.3] - 2017-03-
-- Gene page widgets added: sequences, expression, phenotype-graph, reagents and location
-- Person page widgets added: laboratory, overview, publications, tracking
-- All exteranla links
+- Gene page widgets added: sequences, expression, phenotype-graph,
+  reagents and location.
+- Person page widgets added: laboratory, overview, publications, tracking.
+- All exteranla links.
 
 ## [0.1.2] - 2017-02-07
 - swagger UI will now display validator badge.

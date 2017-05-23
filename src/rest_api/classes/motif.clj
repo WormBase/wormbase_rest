@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "motif"
+  {:entity-ns "motif"
    :widget
    {:external_links external-links/widget}})

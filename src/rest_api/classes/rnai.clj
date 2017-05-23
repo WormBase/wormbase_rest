@@ -5,7 +5,7 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "rnai"
+  {:entity-ns "rnai"
    :widget
    {:phenotypes phenotypes/widget
     :external_links external-links/widget}})

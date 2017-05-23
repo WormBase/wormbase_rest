@@ -4,6 +4,6 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "antibody"
+  {:entity-ns "antibody"
    :widget
    {:overview overview/widget}})
