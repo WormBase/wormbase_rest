@@ -106,7 +106,9 @@
   (:do-term/name term))
 
 (defmethod obj-label "person" [_ person]
-  (:person/standard-name person))
+ (or (:person/standard-name person)
+     (or (:author/id (first (:person/possibly-publishes-as person)))
+         (:person/id person))))
 
 (defmethod obj-label "construct" [_ cons]
   (or (first (:construct/public-name cons))
