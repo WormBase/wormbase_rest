@@ -6,33 +6,46 @@
    [rest-api.classes.generic :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
+
+; testing with 0C24D10.5
+
 (defn pcr-data [ep]
-  {:data nil
+  {:data nil ; need sequence database
    :desciption "pcr data of the expression profile"})
 
 (defn expression-map [ep]
-  {:data nil
+  {:data (:sk-map/id (first (:expr-profile/expr-map ep)))
    :desciption "expression map data for expr_profile"})
 
 (defn remarks [ep]
-  {:data nil
+  {:data (when-let [rs (:expr-profile/remark ep)]
+           (for [r rs]
+            {:text (:expr-profile.remark/text r)
+             :evidence nil }))
    :desciption "curatorial remarks for the Expr_profile"})
 
 (defn method [ep]
-  {:data nil
+  {:data (:method/id (:locatable/method ep))
    :desciption "the method used to describe the Expr_profile"})
 
 (defn pcr-products [ep]
-  {:data nil
+  {:data nil ; can't find field
+   :keys (keys ep)
+   :dbid (:db/id ep)
    :desciption "pcr_products for the expression profile"})
 
 (defn profile [ep]
-  {:data nil
+  {:data nil ;need sequence database
    :desciption "expression profiles for set of genes"})
 
 (defn rnai  [ep]
-  {:data nil
-   :desciption "RNAis associated with this expression profile"})
+  {:data (when-let [rs (:expr-profile/rnai-result ep)]
+           (for [r rs]
+             {:strain (when-let [s (:rnai/strain r)]
+                        (pack-obj s))
+              :genotype (:rnai/genotype r)
+              :rnai (pack-obj r)}))
+  :desciption "RNAis associated with this expression profile"})
 
 (def widget
   {:name generic/name-field
