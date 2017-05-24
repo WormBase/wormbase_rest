@@ -84,11 +84,13 @@
      (str (author-lastname (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
-  (if (seq (:paper/publication-date paper))
-    (str (author-list paper)
-         ", "
-         (first (str/split (:paper/publication-date paper)
-                           #"-")))))
+  (if-let [year (when (seq (:paper/publication-date paper))
+                  (first
+                    (str/split
+                      (:paper/publication-date paper)
+                      #"-")))]
+    (str (author-list paper) ", " year)
+    (author-list paper)))
 
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
