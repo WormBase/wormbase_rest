@@ -23,6 +23,7 @@
    [rest-api.classes.do-term :as do-term]
    [rest-api.classes.go-term :as go-term]
    [rest-api.classes.gene-class :as gene-class]
+   [rest-api.classes.gene-cluster :as gene-cluster]
    [rest-api.classes.homology-group :as homology-group]
 ;;   [rest-api.classes.interaction :as interaction] ; comment out for WS258
    [rest-api.classes.molecule :as molecule]
@@ -57,6 +58,7 @@
    do-term/routes
    go-term/routes
    gene-class/routes
+   gene-cluster/routes
    homology-group/routes
 ;;   interaction/routes ; comment out for WS258
    molecule/routes
