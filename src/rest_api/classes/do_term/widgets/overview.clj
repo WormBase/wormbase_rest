@@ -7,6 +7,13 @@
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
+(defn- gene-disease-relevance [gene]
+  (when-let [drhs (:gene/disease-relevance gene)]
+    (for [drh drhs :let [note (:gene.disease-relevance/note drh)
+                         species (:gene.disease-relevance/species drh)]]
+      {:text note
+       :evidence (obj/get-evidence drh)})))
+
 (defn- gene-disease-orthologs [gene]
   (when-let [ohs (:gene/ortholog gene)]
     (remove
@@ -30,8 +37,7 @@
             (if (some? id)
               {:lebel (str "OMIM:" id)
                :class "OMIM"
-               :id id}))))))
-  )
+               :id id})))))))
 
 (defn gene-orthology [d] ; tested on DOID:0050432 - getting more results hear than ace version
   {:error nil
@@ -42,7 +48,7 @@
                (for [g gs :let [gene (:gene/_disease-potential-model g)]]
                  {(:gene/id gene)
                   {:gene (pack-obj gene)
-                   :relevance nil
+                   :relevance (gene-disease-relevance gene)
                    :human_orthologs (gene-disease-orthologs gene)}}))))
    :description "Genes by orthology to human disease gene"})
 
@@ -88,7 +94,8 @@
                (for [g gs :let [gene (:gene/_disease-experimental-model g)]]
                  {(:gene/id gene)
                   {:gene (pack-obj gene)
-                   :relevance nil
+                   :dbidg (keys g)
+                   :relevance (gene-disease-relevance gene)
                    :human_orthologs (gene-disease-orthologs gene)}}))))
    :description "Genes by orthology to human disease gene"})
 
