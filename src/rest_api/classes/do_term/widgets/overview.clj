@@ -113,7 +113,8 @@
            (for [t ts] (str/capitalize (name t))))
    :description "Type of this disease"})
 
-(def widget {:gene_orthology gene-orthology
+(def widget
+  {:gene_orthology gene-orthology
    :parent parent
    :omim omim
    :status status
