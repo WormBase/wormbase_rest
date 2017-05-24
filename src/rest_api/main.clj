@@ -19,6 +19,7 @@
    [rest-api.classes.construct :as construct]
    [rest-api.classes.expression-cluster :as expression-cluster]
    [rest-api.classes.expr-pattern :as expr-pattern]
+   [rest-api.classes.expr-profile :as expr-profile]
    [rest-api.classes.do-term :as do-term]
    [rest-api.classes.homology-group :as homology-group]
 ;;   [rest-api.classes.interaction :as interaction] ; comment out for WS258
@@ -46,6 +47,7 @@
    wbprocess/routes
    expression-cluster/routes
    expr-pattern/routes
+   expr-profile/routes
    rearrangement/routes
    cds/routes
    clone/routes
