@@ -27,6 +27,7 @@
    [rest-api.classes.homology-group :as homology-group]
 ;;   [rest-api.classes.interaction :as interaction] ; comment out for WS258
    [rest-api.classes.laboratory :as laboratory]
+   [rest-api.classes.life-stage :as life-stage]
    [rest-api.classes.molecule :as molecule]
    [rest-api.classes.motif :as motif]
    [rest-api.classes.paper :as paper]
@@ -61,6 +62,7 @@
    gene-class/routes
    gene-cluster/routes
    laboratory/routes
+   life-stage/routes
    homology-group/routes
 ;;   interaction/routes ; comment out for WS258
    molecule/routes
