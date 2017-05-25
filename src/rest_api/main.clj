@@ -33,6 +33,7 @@
    [rest-api.classes.motif :as motif]
    [rest-api.classes.operon :as operon]
    [rest-api.classes.paper :as paper]
+   [rest-api.classes.pcr-product :as pcr-product]
    [rest-api.classes.protein :as protein]
    [rest-api.classes.rnai :as rnai]
    [rest-api.classes.sequence :as seqs]
@@ -72,6 +73,7 @@
    motif/routes
    operon/routes
    paper/routes
+   pcr-product/routes
    protein/routes
    rnai/routes
    seqs/routes
