@@ -31,6 +31,7 @@
    [rest-api.classes.microarray-results :as microarray-results]
    [rest-api.classes.molecule :as molecule]
    [rest-api.classes.motif :as motif]
+   [rest-api.classes.operon :as operon]
    [rest-api.classes.paper :as paper]
    [rest-api.classes.protein :as protein]
    [rest-api.classes.rnai :as rnai]
@@ -69,6 +70,7 @@
 ;;   interaction/routes ; comment out for WS258
    molecule/routes
    motif/routes
+   operon/routes
    paper/routes
    protein/routes
    rnai/routes
