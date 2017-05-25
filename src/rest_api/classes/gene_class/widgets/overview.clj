@@ -37,7 +37,9 @@
    :description (str "description of the Gene_class " (:gene-class/id gc))})
 
 (defn other-names [gc]
-  {:data nil ; This field does not exist on this object
+  {:data (when-let [gcms (:gene-class/_main-name gc)]
+           (for [gcm gcms]
+             (:gene-class/id gcm)))
    :description (str "other names that have been used to refer to " (:gene-class/id gc))})
 
 (def widget
