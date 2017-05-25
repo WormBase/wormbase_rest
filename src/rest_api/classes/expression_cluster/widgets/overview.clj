@@ -17,13 +17,6 @@
               :species species}))
    :description "the genus and species of the current object"})
 
-(defn remarks [ec]
-  {:data (when-let [rhs (:expression-cluster/remark ec)]
-             (for [rh rhs]
-                {:text (:expression-cluster.remark/text rh)
-                 :evidence nil})) ; have not found example of filled in
-   :description "curatorial remarks for the Expression_cluster"})
-
 (defn attribute-of [ec]
   {:data (when-let [mes (:expression-cluster/microarray-experiment ec)]
            (for [me mes] (pack-obj me)))
@@ -37,6 +30,6 @@
   {:name generic/name-field
    :algorithm algorithm
    :taxonomy taxonomy
-   :remarks remarks
+   :remarks generic/remarks
    :attribute_of attribute-of
    :description description})

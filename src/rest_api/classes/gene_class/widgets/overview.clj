@@ -25,13 +25,6 @@
                       )}))
    :description "Former designating laboratory for the gene class and the date of retirement"})
 
-(defn remarks [gc]
-  {:data (when-let [rs (:gene-class/remark gc)]
-           (for [r rs]
-             {:text (:gene-class.remark/text r)
-              :evidence nil}))
-   :description "curatorial remarks for the Gene_class"})
-
 (defn description [gc]
   {:data (first (:gene-class/description gc))
    :description (str "description of the Gene_class " (:gene-class/id gc))})
@@ -46,6 +39,6 @@
   {:name generic/name-field
    :laboratory laboratory
    :former_laboratory former-laboratory
-   :remarks remarks
+   :remarks generic/remarks
    :description description
    :other_names other-names})

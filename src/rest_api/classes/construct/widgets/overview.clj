@@ -31,13 +31,6 @@
   {:data (when-let [chs  (:construct/other-reporter construct)] (first chs))
    :description (str "The name and WormBase internal ID of " (:construct/id construct))})
 
-(defn remarks [construct]
-  {:data (when-let [rhs (:construct/remark construct)]
-           (for [rh rhs]
-             {:text (:construct.remark/text rh)
-              :evidence nil}))
-   :description "curatorial remarks for the Construct"})
-
 (defn selection-marker [construct]
   {:data (:construct/selection-marker construct)
    :description "Coinjection marker for this transgene"})
@@ -74,7 +67,7 @@
    :fusion_reporter fusion-reporter
    :gene_product gene-product
    :other_reporter other-reporter
-   :remarks remarks
+   :remarks generic/remarks
    :selection_marker selection-marker
    :summary summary
    :type_of_construct type-of-construct

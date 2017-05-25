@@ -34,13 +34,6 @@
              (pack-obj ci)))
    :description "contained in life stage"})
 
-(defn remarks [ls]
-  {:data (if-let [rs (:life-stage/remark ls)]
-           (for [r rs]
-             {:text (:life-stage.remark/text r)
-              :evidence nil}))
-   :description "curatorial remarks for the Life_stage"})
-
 (defn substages [ls]
   {:data (when-let [ss (:life-stage/_contained-in ls)]
            (for [s ss]
@@ -65,7 +58,7 @@
    :cell_group cell-group
    :definition definition
    :contained_in_life_stage contained-in-life-stage
-   :remarks remarks
+   :remarks generic/remarks
    :substages substages
    :followed_by_life_stage followed-by-life-stage
    :other_names other-names})

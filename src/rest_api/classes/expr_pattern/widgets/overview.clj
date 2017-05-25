@@ -82,13 +82,6 @@
               :class database}))
    :description "Database for this expression pattern"})
 
-(defn remarks  [ep]
-  {:data (when-let [remarks (:expr-pattern/remark ep)]
-           (for [remark remarks]
-             {:text (:expr-pattern.remark/text remark)
-              :evidence nil}))
-   :description "curatorial remarks for the Expr_pattern"})
-
 (defn historical-gene [ep]
   {:data (when-let [hghs (:expr-pattern/historical-gene ep)]
            (for [hgh hghs
@@ -118,7 +111,7 @@
    :description description
    :ep_movies ep-movies
    :database database
-   :remarks remarks
+   :remarks generic/remarks
    :historical_gene historical-gene
    :subcellular_location subcellular-location
    :expression_image expression-image

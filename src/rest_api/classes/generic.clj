@@ -16,6 +16,22 @@
                                    species  (second species-name-parts)]
                 (str/join "_"  [g species])))
 
+
+(defn remarks [object]
+  (let [k (first (filter #(= (name %) "id") (keys object)))
+        data (when (some? k)
+               (let  [role (namespace k)
+                      remark-kw (keyword role "remark")]
+                 (when-let [remark-holders (remark-kw object)]
+                   (let [remark-text-kw (keyword (str role ".remark") "text")]
+                     (for [remark-holder remark-holders]
+                       {:text (remark-text-kw remark-holder)
+                        :evidence (obj/get-evidence remark-holder)})))))]
+       {:data (not-empty data)
+        :description (if (some? k)
+                       (str "Curatorial remarks for the " (namespace k))
+                       "Can not determine class for entity and can not determine remarks")}))
+
 (defn xrefs [object]
   (let [data
         (if-let [k (first (filter #(= (name %) "id") (keys object)))]

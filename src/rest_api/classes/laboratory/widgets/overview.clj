@@ -29,13 +29,6 @@
   {:data (first (:laboratory/mail lab))
    :description "institute or affiliation of the laboratory"})
 
-(defn remarks [lab]
-  {:data (when-let [rs (:laboratory/remark lab)]
-           (for [r rs]
-             {:text (:laboratory.remark/text r)
-              :evidence nil}))
-   :description "curatorial remarks for the Laboratory"})
-
 (defn strain-designation [lab]
   {:data (:laboratory/id lab) ; gets name in ace code. this is true at least most of the time
    :description "strain designation of the laboratory"})
@@ -47,5 +40,5 @@
    :email email
    :allele_designation allele-designation
    :affiliation affiliation
-   :remarks remarks
+   :remarks generic/remarks
    :strain_designation strain-designation})

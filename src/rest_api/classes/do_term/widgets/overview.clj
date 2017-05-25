@@ -104,10 +104,6 @@
            (for [sh shs] (:do-term.synonym/text sh)))
    :description "Synonym of this disease"})
 
-(defn remarks [d]
-  {:data (:db/id d)
-   :description "curatorial remarks for the DO_term"})
-
 (defn type-field [d]
   {:data (when-let [ts (:do-term/type d)]
            (for [t ts] (str/capitalize (name t))))
@@ -123,5 +119,5 @@
    :definition definition
    :genes_biology genes-biology
    :synonym synonym
-   :remarks remarks
+   :remarks generic/remarks
    :type type-field})

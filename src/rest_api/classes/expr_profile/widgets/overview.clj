@@ -17,13 +17,6 @@
   {:data (:sk-map/id (first (:expr-profile/expr-map ep)))
    :desciption "expression map data for expr_profile"})
 
-(defn remarks [ep]
-  {:data (when-let [rs (:expr-profile/remark ep)]
-           (for [r rs]
-            {:text (:expr-profile.remark/text r)
-             :evidence nil }))
-   :desciption "curatorial remarks for the Expr_profile"})
-
 (defn method [ep]
   {:data (:method/id (:locatable/method ep))
    :desciption "the method used to describe the Expr_profile"})
