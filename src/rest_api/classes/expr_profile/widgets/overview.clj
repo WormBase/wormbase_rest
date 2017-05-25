@@ -44,7 +44,7 @@
   {:name generic/name-field
    :pcr_data pcr-data
    :expression_map expression-map
-   :remarks remarks
+   :remarks generic/remarks
    :method method
    :pcr_products pcr-products
    :profile profile
