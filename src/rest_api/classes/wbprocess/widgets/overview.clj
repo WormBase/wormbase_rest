@@ -1,30 +1,37 @@
 (ns rest-api.classes.wbprocess.widgets.overview
   (:require
-   [clojure.string :as str]
-   [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic :as generic]
-   [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn summary [w]
-  {:data nil
+  {:data (:wbprocess.summary/text (:wbprocess/summary w))
    :description (str "A brief summary of the WBProcess: " (:wbprocess/id w))})
 
 (defn other-name [w]
-  {:data nil
+  {:data (first (:wbprocess/other-name w))
    :description "Term alias"})
 
 (defn life-stage [w]
-  {:data nil
+  {:data (when-let [ls (:wbprocess/life-stage w)]
+           (for [l ls]
+             {:text (pack-obj (:wbprocess.life-stage/life-stage l))
+              :evidence (obj/get-evidence l)}))
    :description "Life stages associated with this topic"})
 
 (defn historical-gene [w]
-  {:data nil
+  {:data nil ; no enteries for historical gene in the Datomic database
    :description "Historical record of the dead genes originally associated with this topic"})
 
 (defn related-process [w]
-  {:data nil
+  {:data (pace-utils/vmap
+           "Specialization of"
+           (when-let [ds (:wbprocess/specialisation-of w)]
+             (for [d ds] (pack-obj d)))
+
+           "Generalization of"
+           (when-let [ds (:wbprocess/_specialisation-of w)]
+             (for [d ds] (pack-obj d))))
    :description "Topics related to this record"})
 
 (def widget
