@@ -35,6 +35,7 @@
    [rest-api.classes.paper :as paper]
    [rest-api.classes.pcr-product :as pcr-product]
    [rest-api.classes.phenotype :as phenotype]
+   [rest-api.classes.position-matrix :as position-matrix]
    [rest-api.classes.protein :as protein]
    [rest-api.classes.rnai :as rnai]
    [rest-api.classes.sequence :as seqs]
@@ -76,6 +77,7 @@
    paper/routes
    pcr-product/routes
    phenotype/routes
+   position-matrix/routes
    protein/routes
    rnai/routes
    seqs/routes
