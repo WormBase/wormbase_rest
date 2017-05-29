@@ -37,6 +37,7 @@
    [rest-api.classes.phenotype :as phenotype]
    [rest-api.classes.position-matrix :as position-matrix]
    [rest-api.classes.protein :as protein]
+   [rest-api.classes.pseudogene :as pseudogene]
    [rest-api.classes.rnai :as rnai]
    [rest-api.classes.sequence :as seqs]
    [rest-api.classes.structure-data :as structure-data]
@@ -79,6 +80,7 @@
    phenotype/routes
    position-matrix/routes
    protein/routes
+   pseudogene/routes
    rnai/routes
    seqs/routes
    structure-data/routes
