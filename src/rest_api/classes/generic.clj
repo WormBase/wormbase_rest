@@ -16,6 +16,17 @@
                                    species  (second species-name-parts)]
                 (str/join "_"  [g species])))
 
+(defn laboratory [object]
+  (let [k (first (filter #(= (name %) "id") (keys object)))
+        role (namespace k)]
+    {:data (when-let [labs ((keyword role laboratory) object)]
+             (for [lab labs]
+               {:laboratory (pack-obj lab)
+                :representative (when-let [reps (:laboratory/representative lab)]
+                                  (for [rep reps] (pack-obj rep)))}))
+     :description (str "the laboratory where the " role "was isolated, created, or named")}))
+
+
 (defn description  [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))
         role (namespace k)]

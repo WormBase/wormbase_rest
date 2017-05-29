@@ -50,10 +50,6 @@
   {:data nil
    :description "PCR prodcuts associateed with this oligonucleotide"})
 
-(defn laboratory [po]
-  {:data nil
-   :description "the laboratory where the PCR_product was isolated, created, or named"})
-
 (defn is-sequences [po]
  {:data nil
   :description "Sequences containing this oligonucleotide"})
@@ -95,7 +91,7 @@
    :remarks generic/remarks
    :oligos oligos
    :pcr_products pcr-products
-   :laboratory laboratory
+   :laboratory generic/laboratory
    :is_sequences is-sequences
    :microarray_results microarray-results
    :overlaps_pseudogene overlaps-pseudogene

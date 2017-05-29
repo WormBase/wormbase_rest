@@ -7,7 +7,7 @@
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn laboratory [gc] ; according to the datomic schema this should return an array of results but returns only one
+(defn laboratory [gc]
   {:data (when-let [laboratory (:gene-class/designating-laboratory gc)]
            {:laborotory (pack-obj laboratory)
             :representative (when-let [reps (:laboratory/representative laboratory)]
