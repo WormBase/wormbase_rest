@@ -20,10 +20,6 @@
   {:data (pack-obj (first (:analysis/project analysis)))
    :description "the project that conducted the analysis"})
 
-(defn description [analysis]
-  {:data (first (:analysis/description analysis))
-   :description (str "description of the Analysis" (:analysis/id analysis))})
-
 (defn url [analysis]
   {:data (first (:analysis/url analysis))
    :description "the url of the analysis"})
@@ -45,7 +41,7 @@
    :subproject subproject
    :project project
    :name generic/name-field
-   :description description
+   :description generic/description
    :url url
    :based_on_wb_release based-on-wb-release
    :title title

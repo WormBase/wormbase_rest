@@ -25,10 +25,6 @@
                       )}))
    :description "Former designating laboratory for the gene class and the date of retirement"})
 
-(defn description [gc]
-  {:data (first (:gene-class/description gc))
-   :description (str "description of the Gene_class " (:gene-class/id gc))})
-
 (defn other-names [gc]
   {:data (when-let [gcms (:gene-class/_main-name gc)]
            (for [gcm gcms]
@@ -40,5 +36,5 @@
    :laboratory laboratory
    :former_laboratory former-laboratory
    :remarks generic/remarks
-   :description description
+   :description generic/description
    :other_names other-names})

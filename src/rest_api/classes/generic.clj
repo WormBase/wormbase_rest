@@ -16,6 +16,20 @@
                                    species  (second species-name-parts)]
                 (str/join "_"  [g species])))
 
+(defn description  [object]
+  (let [k (first (filter #(= (name %) "id") (keys object)))
+        role (namespace k)]
+    {:data  ((keyword role "description") object)
+     :description  (str "description of the " role " " ((keyword role "id") object))}))
+
+(defn taxonomy [object]
+  (let [k (first (filter #(= (name %) "id") (keys object)))
+        role (namespace k)]
+  {:data (if-let [species (:species/id ((keyword role "species") object))]
+           (let [[genus species] (str/split species #" ")]
+             {:genus genus
+              :species species}))
+   :description "the genus and species of the current object"}))
 
 (defn remarks [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))

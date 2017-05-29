@@ -99,13 +99,6 @@
   {:data nil ; fields are missing for this to work. I beleive we need the field grid.
    :description "grid this clone was gridded on during fingerprinting"})
 
-(defn taxonomy [clone]
-  {:data (when-let [gspecies (:species/id (:clone/species clone))]
-           (let [[genus species] (str/split gspecies #" ")]
-             {:genus genus
-              :species species}))
-   :description "the genus and species of the current object"})
-
 (defn genomic-position [clone]
   {:data nil ; sjj_F45D11.l has a genomic posistion
    :description "The genomic location of the sequence"})
@@ -161,7 +154,7 @@
    :pcr_product pcr-product
    :gridded_on gridded-on
    :name generic/name-field
-   :taxonomy taxonomy
+   :taxonomy generic/taxonomy
    :genomic_position genomic-position
    :type type-field
    :screened_positive screened-positive

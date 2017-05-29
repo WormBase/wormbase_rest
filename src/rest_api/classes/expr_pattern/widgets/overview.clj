@@ -64,8 +64,6 @@
 (defn description [ep]
   {:data (when-let [patterns (:expr-pattern/pattern ep)]
            (str/join "<br />" patterns))
-   :keys (keys ep)
-   :dbid (:db/id ep)
    :description (str "description of the Expr_pattern " (:expr-pattern/id ep))})
 
 (defn ep-movies [ep]

@@ -6,19 +6,12 @@
    [rest-api.classes.generic :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn taxonomy [cds]
-  {:data (if-let [species (:species/id (:cds/species cds))]
-           (let [[genus species] (str/split species #" ")]
-             {:genus genus
-              :species species}))
-   :description "the genus and species of the current object"})
-
 (defn sequence-type [cds]
   {:data {:data nil ; for C10F3.5a this is "Wormbase CDS" - I can't figure out how to get this string
           :description "the general type of the sequence"}
    :description "the general type of the sequence"})
 
-(defn description [cds] ; I can't find any in datomic
+(defn description [cds]
   {:data (:cds.detailed-description/text (first (:cds/detailed-description cds)))
    :description (str "description of the CDS " (:cds/id cds))})
 
@@ -97,7 +90,6 @@
                        "(no CDS)")
                 :gene (if-let [gh (:gene.corresponding-transcript/_transcript transcript)]
                         (pack-obj (:gene/_corresponding-transcript (first gh))))
-;                :dbid (:db/id transcript)
                 :length_protein (if-let [ph (:transcript/corresponding-protein transcript)]
                                   (:protein.peptide/length
                                     (:protein/peptide
@@ -105,9 +97,6 @@
                 :protein (if-let [ph (:transcript/corresponding-protein transcript)]
                            (pack-obj (:transcript.corresponding-protein/protein ph)))
                 :length_spliced length-spliced
-                :keys (keys transcript)
-                :dbid (:db/id transcript)
-                :cdsdbid (:db/id cds)
                 :type (if-let [type-field (:method/id (:locatable/method transcript))]
                         (str/replace type-field #"_" " "))
     })))
@@ -116,7 +105,7 @@
 
 (def widget
   {:name generic/name-field
-   :taxonomy taxonomy
+   :taxonomy generic/taxonomy
    :sequence_type sequence-type
    :description description
    :partial partial-field
