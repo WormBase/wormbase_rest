@@ -44,6 +44,7 @@
    [rest-api.classes.structure-data :as structure-data]
    [rest-api.classes.transcript :as transcript]
    [rest-api.classes.transposon :as transposon]
+   [rest-api.classes.transposon-family :as transposon-family]
    [ring.util.http-response :as res]
    [ring.middleware.gzip :as ring-gzip]))
 
@@ -88,7 +89,8 @@
    seqs/routes
    structure-data/routes
    transcript/routes
-   transposon/routes])
+   transposon/routes
+   transposon-family/routes])
 
 (def ^:private swagger-validator-url
   "The URL used to validate the swagger JSON produced by the application."
