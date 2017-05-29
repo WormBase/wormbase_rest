@@ -9,6 +9,7 @@
    [rest-api.classes.anatomy-term :as anatomy-term]
    [rest-api.classes.antibody :as antibody]
    [rest-api.classes.analysis :as analysis]
+   [rest-api.classes.feature :as feature]
    [rest-api.classes.variation :as variation]
    [rest-api.classes.transgene :as transgene]
    [rest-api.classes.strain :as strain]
@@ -52,6 +53,7 @@
    anatomy-term/routes
    antibody/routes
    analysis/routes
+   feature/routes
    variation/routes
    transgene/routes
    strain/routes
