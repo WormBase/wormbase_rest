@@ -27,11 +27,11 @@
      :description (str "the laboratory where the " role "was isolated, created, or named")}))
 
 
-(defn description  [object]
+(defn description [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))
         role (namespace k)]
-    {:data  ((keyword role "description") object)
-     :description  (str "description of the " role " " ((keyword role "id") object))}))
+    {:data ((keyword role "description") object)
+     :description (str "description of the " role " " ((keyword role "id") object))}))
 
 (defn taxonomy [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))
