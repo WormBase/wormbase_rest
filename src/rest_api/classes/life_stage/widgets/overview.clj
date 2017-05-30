@@ -46,11 +46,6 @@
              (pack-obj pb)))
    :description "next life stage after this"})
 
-(defn other-names [ls]
-  {:data (when-let [ons (:life-stage/other-name ls)]
-           ons)
-   :description (str "other names that have been used to refer to " (:life-stage/id ls))})
-
 (def widget
   {:name generic/name-field
    :preceded_by_life_stage preceded-by-life-stage
@@ -61,4 +56,4 @@
    :remarks generic/remarks
    :substages substages
    :followed_by_life_stage followed-by-life-stage
-   :other_names other-names})
+   :other_names generic/other-names})

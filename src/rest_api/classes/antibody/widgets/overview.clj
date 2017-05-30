@@ -54,12 +54,6 @@
                    (pack-obj (first gene)))
    :description "Historical record of the dead genes originally associated with this antibody"})
 
-(defn other-names [antibody]
-  {:data (if-let [other-names (:antibody/other-name antibody)]
-           (for [other-name other-names]
-             other-name))
-   :description (str "other names that have been used to refer to " (:antibody/id antibody))})
-
 (def widget
   {:laboratory laboratory
    :name generic/name-field
@@ -71,4 +65,4 @@
    :animal animal
    :remarks generic/remarks
    :historical_gene historical-gene
-   :other_names other-names})
+   :other_names generic/other-names})

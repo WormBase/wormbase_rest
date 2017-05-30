@@ -8,28 +8,49 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn sequence-ontology-terms [f]
-  {:data nil
+  {:data (when-let [sos (:feature/so-term f)]
+           (for [so sos] (pack-obj so)))
    :description "sequence ontology terms describing the feature"})
 
 (defn binds-gene-product [f]
-  {:data nil
+  {:data (when-let [ghs (:feature/bound-by-product-of f)]
+           (for [gh ghs
+                 :let [gene (:feature.bound-by-product-of/gene gh)]]
+             (pack-obj gene)))
    :description "gene products that bind to the feature"})
 
 (defn defined-by [f]
-  {:data nil
+  {:data (let [person (when-let [ps (:feature/defined-by-person f)]
+                        (for [p ps]
+                          {:object (pack-obj p)
+                           :label "Person"}))
+               paper (when-let [phs (:feature/defined-by-paper f)]
+                       (for [ph phs]
+                         {:object (pack-obj (:feature.defined-by-paper/paper ph))
+                          :label "Paper"}))
+               analysis (when-let [phs (:feature/defined-by-analysis f)]
+                          (for [ph phs]
+                            {:object (pack-obj (:feature.defined-by-analysis/analysis ph))
+                             :label "Analysis"}))
+               s (when-let [phs (:feature/defined-by-sequence f)]
+                   (for [ph phs]
+                     {:object (pack-obj (:feature.defined-by-sequence/sequence ph))
+                      :label "Sequence"}))]
+           (remove nil? [person paper analysis s]))
    :description "how the sequence feature was defined"})
 
+(defn description [f]
+  {:data (first (:feature/description f))
+   :desciption (str "description of the Feature " (:feature/id f))})
+
 (defn transcription-factor [f]
-  {:data nil
+  {:data (when-let [tfh (first (:feature/associated-with-transcription-factor f))]
+           (pack-obj (:feature.associated-with-transcription-factor/transcription-factor tfh)))
    :description "Transcription factor of the feature"})
 
 (defn method [f]
-  {:data nil
+  {:data (:method/id (:locatable/method f))
    :description "the method used to describe the Feature"})
-
-(defn other-names [f]
-  {:data nil
-   :description (str "other names that have been used to refer to " (:feature/id f))})
 
 (def widget
   {:name generic/name-field
@@ -37,8 +58,8 @@
    :binds_gene_product binds-gene-product
    :taxonomgy generic/taxonomy
    :defined_by defined-by
-   :description generic/description
+   :description description
    :transcription_factor transcription-factor
    :remarks generic/remarks
    :method method
-   :other_names other-names})
+   :other_names generic/other-names})

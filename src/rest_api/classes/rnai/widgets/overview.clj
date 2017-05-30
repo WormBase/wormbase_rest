@@ -9,7 +9,6 @@
 
 (defn historical-name [r]
   {:data (:rnai/history-name r)
-   :keys (keys r )
    :desciprition "historical name of the rnai"})
 
 (defn targets [r]

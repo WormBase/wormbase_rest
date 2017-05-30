@@ -70,11 +70,6 @@
            {:disease {:ids ids}})
    :description "link to OMIM record"})
 
-(defn status [d]
-  {:data (when-let [s (:do-term/status d)]
-           (name s))
-   :description (str "current status of the " (:do-term/id d) " if not Live or Valid")})
-
 (defn child [d]
   {:data (when-let [disease-children (:do-term/_is-a d)]
            (for [child disease-children]
@@ -113,7 +108,7 @@
   {:gene_orthology gene-orthology
    :parent parent
    :omim omim
-   :status status
+   :status generic/status
    :name generic/name-field
    :child child
    :definition definition

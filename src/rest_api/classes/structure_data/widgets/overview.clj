@@ -8,19 +8,29 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn sequence-field [s]
-  {:data nil
+  {:data (when-let [protein (:structure-data/protein s)]
+           (pack-obj protein))
    :description "sequence of structure"})
 
 (defn protein-homology [s]
-  {:data nil
+  {:data nil ; requires homology data
    :description "Protein homologs for this structure"})
 
 (defn status [s]
-  {:data nil
+  {:data (cond
+           (contains? s :structure-data/selected)
+           "Selected"
+
+           (contains? s :structure-data/cloned)
+           "cloned"
+
+           (contains? s :structure-data/expressed)
+           "Expressed")
    :description (str "current status of the Structure_data:" (:structure-data/id s) " if not Live or Valid")})
 
+
 (defn homology-data [s]
-  {:data nil
+  {:data nil ; requires homology data
    :description "homology data re: this structure"})
 
 (def widget

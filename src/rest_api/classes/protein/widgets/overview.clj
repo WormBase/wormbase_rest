@@ -12,10 +12,6 @@
       (format "%.1f" (:protein.molecular-weight/float (first mwh))))
    :description "the estimated molecular weight of the protein"})
 
-(defn status [p]
-  {:data nil ; field does not exist
-   :description (str "Current status of the Protein: " (:protein/id p) " if not Live or Valid")})
-
 (defn pfam-graph [p]
   {:data nil ; work needed
    :description "The motif graph of the protein"})
@@ -58,7 +54,7 @@
 (def widget
   {:name generic/name-field
    :estimated_molecular_weight estimated-molecular-weight
-   :status status
+ ;  :status generic/status status does not exist on this entity
    :pfam_graph pfam-graph
    :best_human_match best-human-match
    :taxonomy generic/taxonomy

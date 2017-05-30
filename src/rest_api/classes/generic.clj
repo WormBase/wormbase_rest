@@ -16,16 +16,34 @@
                                    species  (second species-name-parts)]
                 (str/join "_"  [g species])))
 
+(defn status [object]
+  (let [k (first (filter #(= (name %) "id") (keys object)))
+	role (namespace k)]
+    {:data (if-let [sh ((keyword role "status") object)]
+	     (:status/status sh))
+    :description (str "current status of the " (str/capitalize role) ": "
+                      ((keyword role "id") object) "if not Live or Valid")}))
+
+(defn other-names [object]
+  (let [k (first (filter #(= (name %) "id") (keys object)))
+	role (namespace k)
+        text-kw (keyword (str role ".other-name") "text")]
+    {:data (when-let [other-names ((keyword role "other-name") object)]
+            (for [other-name other-names]
+              (if (contains? other-name text-kw)
+                (text-kw other-name)
+                other-name)))
+     :description (str "other names that have been used to refer to " ((keyword role "id") object))}))
+
 (defn laboratory [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))
-        role (namespace k)]
-    {:data (when-let [labs ((keyword role laboratory) object)]
-             (for [lab labs]
-               {:laboratory (pack-obj lab)
-                :representative (when-let [reps (:laboratory/representative lab)]
-                                  (for [rep reps] (pack-obj rep)))}))
-     :description (str "the laboratory where the " role "was isolated, created, or named")}))
-
+	role (namespace k)]
+    {:data (when-let [labs ((keyword role "laboratory") object)]
+	     (for [lab labs]
+	       {:laboratory (pack-obj lab)
+		:representative (when-let [reps (:laboratory/representative lab)]
+				  (for [rep reps] (pack-obj rep)))}))
+     :description (str "the laboratory where the " role " was isolated, created, or named")}))
 
 (defn description [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))
