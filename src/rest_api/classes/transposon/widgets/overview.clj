@@ -8,15 +8,18 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn copy-status [t]
-  {:data nil
+  {:data (when-let [c (:transposon.copy-status/status
+                        (:transposon/copy-status t))]
+           (str/capitalize (name c)))
    :description "Copy status of this transposon"})
 
 (defn member-of [t]
-  {:data nil
+  {:data (when-let [m (:transposon/member-of t)]
+           (pack-obj (first m)))
    :description "The transposon family this transposon belongs to"})
 
 (defn old-name [t]
-  {:data nil
+  {:data (:transposon.old-name/text (first (:transposon/old-name t)))
    :description "Old name of the transposon"})
 
 (def widget

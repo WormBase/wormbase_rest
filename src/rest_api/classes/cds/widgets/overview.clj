@@ -98,8 +98,7 @@
                            (pack-obj (:transcript.corresponding-protein/protein ph)))
                 :length_spliced length-spliced
                 :type (if-let [type-field (:method/id (:locatable/method transcript))]
-                        (str/replace type-field #"_" " "))
-    })))
+                        (str/replace type-field #"_" " "))})))
    :description "corresponding cds, transcripts, gene for this protein"})
 
 

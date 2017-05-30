@@ -7,10 +7,6 @@
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn available-from [s]
-  {:data nil
-   :description "availability of clones of the sequence"})
-
 (defn source-clone [s]
   {:data (when-let [clones (:sequence/clone s)]
            (pack-obj (first clones)))
@@ -104,7 +100,7 @@
 
 (def widget
   {:name generic/name-field
-   :available_from available-from
+   :available_from generic/available-from
    :source_clone source-clone
    :cdss cdss
    :sequence_type sequence-type

@@ -16,6 +16,15 @@
                                    species  (second species-name-parts)]
                 (str/join "_"  [g species])))
 
+(defn available-from [object] ;need to find example
+  (let [k (first (filter #(= (name %) "id") (keys object)))
+	role (namespace k)]
+    {:data (when (= "Vancouver_fosmid"
+                    (:method/id (:locatable/method object)))
+	     {:label "GeneService"
+	      :class "Geneservice_fosmids"})
+     :description "availability of clones of the sequence"}))
+
 (defn status [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))
 	role (namespace k)]
@@ -37,12 +46,13 @@
 
 (defn laboratory [object]
   (let [k (first (filter #(= (name %) "id") (keys object)))
-	role (namespace k)]
-    {:data (when-let [labs ((keyword role "laboratory") object)]
-	     (for [lab labs]
-	       {:laboratory (pack-obj lab)
-		:representative (when-let [reps (:laboratory/representative lab)]
-				  (for [rep reps] (pack-obj rep)))}))
+        role (namespace k)]
+    {:data (when-let [labs (or ((keyword role "laboratory") object)
+                               [((keyword role "from-laboratory") object)])]
+             (for [lab labs]
+               {:laboratory (pack-obj lab)
+                :representative (when-let [reps (:laboratory/representative lab)]
+                                  (for [rep reps] (pack-obj rep)))}))
      :description (str "the laboratory where the " role " was isolated, created, or named")}))
 
 (defn description [object]
