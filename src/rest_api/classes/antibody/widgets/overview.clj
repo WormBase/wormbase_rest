@@ -6,18 +6,6 @@
    [rest-api.classes.generic :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn laboratory [antibody]
-  {:data (if-let [locations (:antibody/location antibody)]
-           (for [location locations]
-             {:laboratory
-              (pack-obj location)
-
-              :representative
-              (if-let [representatives (:laboratory/representative location)]
-                (for [person representatives]
-                  (pack-obj person)))}))
-   :description "the laboratory where the Antibody was isolated, created, or named"})
-
 (defn corresponding-gene [antibody]
   {:data (if-let [holders (:antibody/gene antibody)]
            (pack-obj (:antibody.gene/gene (first holders))))
@@ -30,7 +18,7 @@
                     (str/capitalize (name (:antibody.antigen/value antigen))))}
    :description "the type and decsription of antigen this antibody was generated against"})
 
-(defn constructed-by [antibody] ; have not found an example
+(defn constructed-by [antibody] ; no examples in datomic
   {:data (if-let [person (:antibody/person antibody)]
               (pack-obj (first person)))
    :description "the person who constructed the antibody"})
@@ -49,13 +37,16 @@
             (str/capitalize (name animal-value)))
    :description "the animal the antibody was generated in"})
 
-(defn historical-gene [antibody] ; have not found an example
-  {:data (if-let [gene (:antibody/historical-gene antibody)]
-                   (pack-obj (first gene)))
+(defn historical-gene [antibody]
+  {:data (if-let [ghs (:antibody/historical-gene antibody)]
+            (for [gh ghs]
+                {:text (pack-obj (:antibody.historical-gene/gene gh))
+                 :evidence (when-let [text (:antibody.historical-gene/text gh)]
+                             {text ""})}))
    :description "Historical record of the dead genes originally associated with this antibody"})
 
 (def widget
-  {:laboratory laboratory
+  {:laboratory generic/laboratory
    :name generic/name-field
    :corresponding_gene corresponding-gene
    :antigen antigen

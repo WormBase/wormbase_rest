@@ -48,7 +48,8 @@
   (let [k (first (filter #(= (name %) "id") (keys object)))
         role (namespace k)]
     {:data (when-let [labs (or ((keyword role "laboratory") object)
-                               [((keyword role "from-laboratory") object)])]
+                               (or ((keyword role "location") object)
+                                   [((keyword role "from-laboratory") object)]))]
              (for [lab labs]
                {:laboratory (pack-obj lab)
                 :representative (when-let [reps (:laboratory/representative lab)]

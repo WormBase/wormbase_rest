@@ -6,6 +6,24 @@
    [rest-api.classes.generic :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
+(def q-anatomy-functions-involved
+  '[:find ?af
+    :in $ ?at
+    :where [?ih :anatomy-function.involved/anatomy-term ?at]
+           [?af :anatomy-function/involved ?ih]])
+
+(def q-anatomy-function-not-involved
+  '[:find ?af
+    :in $ ?at
+    :where [?nih :anatomy-function.not-involved/anatomy-term ?at]
+           [?af :anatomy-function/not-involved ?nih]])
+
+(def q-anatomy-term-to-expression-cluster
+  '[:find ?e
+    :in $ ?a
+    :where [?eh :expression-cluster.anatomy-term/anatomy-term ?a]
+           [?e :expression-cluster/anatomy-term ?eh]])
+
 (defn transgenes [anatomy-term]
   {:data (if-let [expression-patterns (:anatomy-term/expr-descendent anatomy-term)]
            (filter
@@ -18,8 +36,14 @@
    :description "transgenes annotated with this anatomy_term"})
 
 (defn expression-clusters [anatomy-term]
-  {:data nil
-   :description "expression cluster data"})
+  (let [db (d/entity-db anatomy-term)]
+    {:data (when-let [eids (d/q q-anatomy-term-to-expression-cluster
+                                db (:db/id anatomy-term))]
+             (for [eid eids
+                   :let [expression-cluster (d/entity db (first eid))]]
+               {:expession_cluster (pack-obj expression-cluster)
+                :description (first (:expression-cluster/description expression-cluster))}))
+     :description "expression cluster data"}))
 
 (defn term [anatomy-term]
   {:data (if-let [holder (:anatomy-term/term anatomy-term)]
@@ -35,7 +59,12 @@
    :description "definition of the anatomy term"})
 
 (defn gene-ontology [anatomy-term]
-  {:data nil
+  {:data (when-let [ghs (:anatomy-term/go-term anatomy-term)]
+           (for [gh ghs
+                 :let [go-term (:anatomy-term.go-term/go-term gh)
+                       ao-code (:anatomy-term.go-term/ao-code gh)]]
+            {:ao_code (pack-obj ao-code)
+             :term (pack-obj go-term)}))
    :description "go_terms associated with this anatomy_term"})
 
 (defn synonyms [anatomy-term]
@@ -45,8 +74,33 @@
    :description "synonyms that have been used to describe the anatomy term"})
 
 (defn anatomy-function-nots [anatomy-term]
-  {:data nil
-   :description "anatomy_functions associatated with this anatomy_term"})
+  (let [db (d/entity-db anatomy-term)]
+    {:data (when-let [afids (d/q q-anatomy-function-not-involved
+                                 db (:db/id anatomy-term))]
+             (for [eid afids
+                   :let [anatomy-function (d/entity db (first eid))]]
+               {:assay (when-let [ahs (:anatomy-function/assay anatomy-function)]
+                         (for [ah ahs]
+                           (:ao-code/id
+                             (:anatomy-function.assay/ao-code ah))))
+                :bb_no_inv (when-let [hs (:anatomy-function/not-involved anatomy-function)]
+                             (for [h hs]
+                               {:text (pack-obj (:anatomy-function.not-involved/anatomy-term h))
+                                :evidence (obj/get-evidence h)}))
+                :reference (when-let [reference (:anatomy-function/reference anatomy-function)]
+                             (pack-obj reference))
+                :af_data (:anatomy-function/id anatomy-function)
+                :phenotype (when-let [phenotype (:anatomy-function.phenotype/phenotype
+                                                  (:anatomy-function/phenotype anatomy-function))]
+                             (pack-obj phenotype))
+                :gene (when-let [gene (:anatomy-function.gene/gene
+                                        (:anatomy-function/gene anatomy-function))]
+                        (pack-obj gene))
+                :bp_inv (when-let [hs (:anatomy-function/involved anatomy-function)]
+                          (for [h hs]
+                            {:text (pack-obj (:anatomy-function.involved/anatomy-term h))
+                             :evidence (obj/get-evidence h)}))}))
+     :description "anatomy_functions associatated with this anatomy_term"}))
 
 (defn wormatlas [anatomy-term]
   {:data (if-let [dbs (:anatomy-term/database anatomy-term)]
@@ -89,20 +143,19 @@
 
               :description
               (if-let [pattern (:expr-pattern/pattern expression-pattern)]
-                (first pattern))
-              }))
+                (first pattern))}))
    :description (str "expression patterns associated with the Anatomy_term: " (:anatomy-term/id anatomy-term))})
 
+; Commented out widgets do not get used by the template. This functionality should be discussed and possibly be used in another widget(s)
 (def widget
-  {:transgenes transgenes ; Doesn't appear to get used by UI code. Also the perl code was close but not quite correct.
-   :expression_clusters expression-clusters
+  {:name generic/name-field
+   ;:transgenes transgenes
+;   :expression_clusters expression-clusters
    :term term
-   :name generic/name-field
    :definition definition
-   :gene_ontology gene-ontology
+;   :gene_ontology gene-ontology
    :synonyms synonyms
-   :anatomy_function_nots anatomy-function-nots ; Example: WBbt:0006989; can't find link to anatomy function which is what is in perl code
-   :anatomy_functions anatomy-functions ; can't find link to anatomy-term
-   :expression_patterns expression-patterns ; Doesn't seem to get used by the widget
-   :wormatlas wormatlas
-   })
+;   :anatomy_function_nots anatomy-function-nots
+;   :anatomy_functions anatomy-functions
+;   :expression_patterns expression-patterns
+   :wormatlas wormatlas})
