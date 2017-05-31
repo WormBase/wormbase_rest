@@ -6,7 +6,29 @@
     [clojure.string :as str]))
 
 (defn name-field [object]
-    (obj/name-field object))
+  (obj/name-field object))
+
+(defn gene-product [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+    {:data (when-let [ghs ((keyword role "gene") object)]
+             (for [gh ghs :let  [gene ((keyword (str role ".gene") "gene") gh)]]
+               (pack-obj gene)))
+     :description (str "gene products for this " role)}))
+
+(defn fusion-reporter [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+	role (namespace id-kw)]
+    {:data (when-let [t ((keyword role "fusion-reporter") object)] (first t))
+     :description (str "reporter construct for this " role)}))
+
+(defn driven-by-gene [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+    {:data (when-let [gene ((keyword (str role ".driven-by-gene") "gene")
+             (first ((keyword role "driven-by-gene") object)))]
+        (pack-obj gene))
+     :description "gene that drives the construct"}))
 
 (defn genomic-position [object]
   {:data (if-let [position (sequence-fns/genomic-obj object)]

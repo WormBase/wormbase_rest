@@ -99,10 +99,6 @@
   {:data nil ; fields are missing for this to work. I beleive we need the field grid.
    :description "grid this clone was gridded on during fingerprinting"})
 
-(defn genomic-position [clone]
-  {:data nil ; sjj_F45D11.l has a genomic posistion
-   :description "The genomic location of the sequence"})
-
 (defn type-field [clone]
   {:data (when-let [t (:clone/type clone)]
            (let [n (name (:clone.type/value t))]
@@ -155,7 +151,7 @@
    :gridded_on gridded-on
    :name generic/name-field
    :taxonomy generic/taxonomy
-   :genomic_position genomic-position
+   :genomic_position generic/genomic-position
    :type type-field
    :screened_positive screened-positive
    :expression_patterns expression-patterns})

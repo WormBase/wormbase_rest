@@ -28,11 +28,6 @@
             "CLONES"])
    :description "tracks displayed in GBrowse"})
 
-(defn genomic-position [gene]
-  {:data (if-let [position (sequence-fns/genomic-obj gene)]
-           [position])
-   :description "The genomic location of the sequence"})
-
 (defn genomic-image [gene]
   {:data (sequence-fns/genomic-obj gene)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
@@ -41,5 +36,5 @@
     {:name generic/name-field
      :genetic_position genetic-position
      :tracks tracks
-     :genomic_position genomic-position
+     :genomic_position generic/genomic-position
      :genomic_image genomic-image})

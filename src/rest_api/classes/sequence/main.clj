@@ -10,21 +10,23 @@
  (let [db ((keyword db-name) wb-seq/sequence-dbs)]
    (wb-seq/get-features db gene-id)))
 
-(defn get-segments [gene]
-  (let  [species-name (->> gene :gene/species :species/id)
-         g-species (generic-functions/xform-species-name species-name)
-         sequence-database (seqdb/get-default-sequence-database g-species)]
-    (if sequence-database
-      (sequence-features sequence-database (:gene/id gene)))))
+(defn get-segments [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+	role (namespace id-kw)]
+    (let  [species-name (:species/id ((keyword role "species") object))
+	   g-species (generic-functions/xform-species-name species-name)
+	   sequence-database (seqdb/get-default-sequence-database g-species)]
+     (if sequence-database
+	(sequence-features sequence-database (id-kw object))))))
 
 (defn longest-segment [segments]
   (first
     (sort-by #(- (:start %) (:end %)) segments)))
 
-(defn get-longest-segment [gene]
-  (let [segments (get-segments gene)]
+(defn get-longest-segment [object]
+  (let [segments (get-segments object)]
     (if (seq segments)
-      (longest-segment segments))))
+     (longest-segment segments))))
 
 (defn create-genomic-location-obj [start stop gene segment tracks gbrowse]
   (let [calc-browser-pos (fn [x-op x y mult-offset]

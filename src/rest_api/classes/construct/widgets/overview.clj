@@ -11,22 +11,6 @@
   {:data (first (:construct/construction-summary construct))
    :description "Construction details for the transgene"})
 
-(defn driven-by-gene [construct]
-  {:data (when-let [gene (:construct.driven-by-gene/gene
-                           (first (:construct/driven-by-gene construct)))]
-           (pack-obj gene))
-   :description "gene that drives the construct"})
-
-(defn fusion-reporter [construct]
-  {:data (when-let [t (:construct/fusion-reporter construct)] (first t))
-   :description "reporter construct for this construct"})
-
-(defn gene-product [construct]
-  {:data (when-let [ghs (:construct/gene construct)]
-           (for [gh ghs :let  [gene (:construct.gene/gene gh)]]
-             (pack-obj gene)))
-   :description "gene products for this construct"})
-
 (defn other-reporter [construct]
   {:data (when-let [chs  (:construct/other-reporter construct)] (first chs))
    :description (str "The name and WormBase internal ID of " (:construct/id construct))})
@@ -39,7 +23,7 @@
   {:data (:construct/type-of-construct construct)
    :description "type of construct"})
 
-(defn used-for [construct]
+(defn used-for [construct] ; not finished
   {:data (when-let [tgs (:construct/transgene-construct construct)]
            (for [tg tgs]
              {:use_lab (for [lab (:transgene/laboratory tg)]
@@ -74,9 +58,9 @@
 
 (def widget
   {:construction_summary construction-summary
-   :driven_by_gene driven-by-gene
-   :fusion_reporter fusion-reporter
-   :gene_product gene-product
+   :driven_by_gene generic/driven-by-gene
+   :fusion_reporter generic/fusion-reporter
+   :gene_product generic/gene-product
    :other_reporter other-reporter
    :remarks generic/remarks
    :selection_marker selection-marker

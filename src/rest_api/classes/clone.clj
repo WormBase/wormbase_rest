@@ -7,5 +7,5 @@
 (routing/defroutes
   {:entity-ns "clone"
    :widget
-   {;:overview overview/widget needs access to field not available in datomic schema
+   {;:overview overview/widget; needs access to field not available in datomic schema
     :external_links external-links/widget}})

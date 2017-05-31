@@ -23,17 +23,9 @@
   {:data nil
    :description "rearrangements that the transgene can be used as a marker for"})
 
-(defn fusion-reporter [t]
-  {:data nil
-   :description "reporter construct for this construct"})
-
 (defn synonym [t]
   {:data nil
    :description "a synonym for the transgene"})
-
-(defn driven-by-gene [t]
-  {:data nil
-   :description "gene that drives the transgene"})
 
 (defn purification-tag [t]
   {:data nil
@@ -47,10 +39,6 @@
   {:data nil
    :description "map position of the integrated transgene"})
 
-(defn gene-product [s]
-  {:data nil
-   :description "gene products for this transgene"})
-
 (def widget
   {:name generic/name-field
    :other_reporter other-reporter
@@ -58,12 +46,12 @@
    :used_for used-for
    :marked_rearrangement marked-rearrangement
    :taxonomy generic/taxonomy
-   :fusion_reporter fusion-reporter
+   :fusion_reporter generic/fusion-reporter
    :summary generic/summary
    :synonym synonym
-   :driven_by_gene driven-by-gene
+   :driven_by_gene generic/driven-by-gene
    :purification_tag purification-tag
    :strains strains
    :remarks generic/remarks
    :recombination_site recombination-site
-   :gene_product gene-product})
+   :gene_product generic/gene-product})
