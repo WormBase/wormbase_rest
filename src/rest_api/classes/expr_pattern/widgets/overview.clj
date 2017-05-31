@@ -17,7 +17,6 @@
 (defn- split-at-index-fn
   [f c s]
   (let [i (f s c)]
-    ; I do not know what you want returned if no match is found
     (when-not (neg? i)
       [(.substring s 0 i) (.substring s (inc i))])))
 

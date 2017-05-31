@@ -9,6 +9,6 @@
   {:entity-ns "do-term"
    :uri-name "disease"
    :widget
-   {:overview overview/widget
+   {;:overview overview/widget ; two fields are getting more results than perl code
     :ontology_browser ontology-browser/widget
     :external_links external-links/widget}})

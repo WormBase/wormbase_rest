@@ -33,7 +33,6 @@
             (str/capitalize (name animal-value)))
    :description "the animal the antibody was generated in"})
 
-
 (def widget
   {:laboratory generic/laboratory
    :name generic/name-field

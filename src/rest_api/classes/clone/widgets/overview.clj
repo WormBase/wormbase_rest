@@ -120,7 +120,7 @@
 (defn expression-patterns [clone]
   {:data (when-let [ep (first (:expr-pattern/_clone clone))]
            (let [gene (:expr-pattern.gene/gene (first (:expr-pattern/gene ep)))]
-          {:certaint nil ; I am not certain about this but I think this is for anatomy_term - which does not occur here
+          {:certainty nil ; I am not certain about this but I think this is for anatomy_term - which does not occur here
            :expression_pattern {:taxonomy "all"
                                 :class "expr_pattern"
                                 :label (str "Expression pattern for "
