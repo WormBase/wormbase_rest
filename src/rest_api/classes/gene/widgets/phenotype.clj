@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.classes.paper.core :as paper-core]
    [rest-api.classes.phenotype.core :as phenotype-core]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))

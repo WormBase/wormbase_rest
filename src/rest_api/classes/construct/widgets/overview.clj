@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -35,10 +35,6 @@
   {:data (:construct/selection-marker construct)
    :description "Coinjection marker for this transgene"})
 
-(defn summary [construct]
-  {:data  (:construct.summary/text (:construct/summary construct))
-   :description (str "a brief summary of the Construct: " (:construct/id construct))})
-
 (defn type-of-construct [construct] ; not finished - need JSON to be fixed for this field
   {:data (:construct/type-of-construct construct)
    :description "type of construct"})
@@ -52,7 +48,22 @@
               :used_in (pack-obj tg)
               :used_in_type (cond
                              (contains? construct :construct/transgene-construct)
-                             "Transgene construct")}))
+                             "Transgene construct"
+
+                             (contains? construct :construct/transgene-coinjection)
+                             "Transgene coinjection"
+
+                             (contains? construct :variation/_derived-from-construct)
+                             "Engineered variation"
+
+                             (contains? construct :wbprocess/_marker-construct) ;not sure
+                             "Topic output indicator"
+
+                             (contains? construct :expr-pattern/_construct)
+                             "Expression-pattern"
+
+                             (contains? construct :interaction/_unaffiliated-construct) ; not sure if this is the right way
+                             "Interactor")}))
    :description "The Construct is used for"})
 
 (defn utr [construct]
@@ -69,7 +80,7 @@
    :other_reporter other-reporter
    :remarks generic/remarks
    :selection_marker selection-marker
-   :summary summary
+   :summary generic/summary
    :type_of_construct type-of-construct
    :used_for used-for
    :utr utr

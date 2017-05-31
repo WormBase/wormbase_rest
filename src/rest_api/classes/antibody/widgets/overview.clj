@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn corresponding-gene [antibody]
@@ -28,22 +28,11 @@
           (str/capitalize (name clonality-kw)))
    :description "the clonality of the antibody"})
 
-(defn summary [antibody]
-  {:data (:antibody.summary/text (:antibody/summary antibody))
-   :description (str "a brief summary of the Antibody:" (:antibody/id antibody))})
-
 (defn animal [antibody]
   {:data (if-let [animal-value (:antibody.animal/value (:antibody/animal antibody))]
             (str/capitalize (name animal-value)))
    :description "the animal the antibody was generated in"})
 
-(defn historical-gene [antibody]
-  {:data (if-let [ghs (:antibody/historical-gene antibody)]
-            (for [gh ghs]
-                {:text (pack-obj (:antibody.historical-gene/gene gh))
-                 :evidence (when-let [text (:antibody.historical-gene/text gh)]
-                             {text ""})}))
-   :description "Historical record of the dead genes originally associated with this antibody"})
 
 (def widget
   {:laboratory generic/laboratory
@@ -52,8 +41,8 @@
    :antigen antigen
    :constructed_by constructed-by
    :clonality clonality
-   :summary summary
+   :summary generic/summary
    :animal animal
    :remarks generic/remarks
-   :historical_gene historical-gene
+   :historical_gene generic/historical-gene
    :other_names generic/other-names})

@@ -1,7 +1,7 @@
 (ns rest-api.classes.person.widgets.tracking
   (:require
     [datomic.api :as d]
-    [rest-api.classes.generic :as generic]
+    [rest-api.classes.generic-fields :as generic]
     [rest-api.formatters.date :as date]))
 
 (defn last-verified [person]

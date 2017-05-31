@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn- index-of
@@ -80,15 +80,6 @@
               :class database}))
    :description "Database for this expression pattern"})
 
-(defn historical-gene [ep]
-  {:data (when-let [hghs (:expr-pattern/historical-gene ep)]
-           (for [hgh hghs
-                 :let [text (:expr-pattern.historical-gene/text hgh)
-                       gene (:expr-pattern.historical-gene/gene hgh)]]
-             {:text (pack-obj gene)
-              :evidence {text nil}}))
-   :description "Historical record of the dead genes originally associated with this expression pattern"})
-
 (defn subcellular-location [ep]
   {:data (:expr-pattern/subcellular-localization ep)
    :description "Subcellular locations of this expression pattern"})
@@ -110,7 +101,7 @@
    :ep_movies ep-movies
    :database database
    :remarks generic/remarks
-   :historical_gene historical-gene
+   :historical_gene generic/historical-gene
    :subcellular_location subcellular-location
    :expression_image expression-image
    :is_bs_strain is-bs-strain})

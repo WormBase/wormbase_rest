@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -26,10 +26,6 @@
 (defn fusion-reporter [t]
   {:data nil
    :description "reporter construct for this construct"})
-
-(defn summary [t]
-  {:data nil
-   :description (str "a brief summary of the Transgene: " (:transgene/id t))})
 
 (defn synonym [t]
   {:data nil
@@ -63,7 +59,7 @@
    :marked_rearrangement marked-rearrangement
    :taxonomy generic/taxonomy
    :fusion_reporter fusion-reporter
-   :summary summary
+   :summary generic/summary
    :synonym synonym
    :driven_by_gene driven-by-gene
    :purification_tag purification-tag

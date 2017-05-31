@@ -3,7 +3,8 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn sequence-type [cds]
@@ -32,26 +33,6 @@
            nil)
    :description "Whether the start or end of the CDS is found"})
 
-(defn identity-field [cds]
-  {:data (if-let [ident (:cds/brief-identification cds)]
-           {:text (:cds.brief-identification/text ident)
-            :evidence (obj/get-evidence ident)})
-   :description "Brief description of the WormBase CDS"})
-
-(defn remarks [cds]
-  {:data (if-let [remarks (concat (:cds/db-remark cds) (:cds/remark cds))]
-           (filter
-             some?
-             (for [remark remarks]
-               {:text (or (:cds.db-remark/text remark)
-                          (:cds.remark/text remark))
-                :evidence (obj/get-evidence remark)})))
-   :description "curatorial remarks for the CDS"})
-
-(defn method [cds]
-  {:data (:method/id (:locatable/method cds))
-   :description "the method used to describe the CDS"})
-
 (defn corresponding-all [cds] ; still trying to figure out
   {:data (if-let [holders  (:transcript.corresponding-cds/_cds cds)]
            (for [holder holders
@@ -76,7 +57,7 @@
                         :label (:transcript/id transcript)
                         :class "transcript"
                         :taxonomy (if-let [id (:species/id (:transcript/species transcript))]
-                                    (generic/xform-species-name id))}
+                                    (generic-functions/xform-species-name id))}
                 :cds (if (contains? transcript :transcript/corresponding-cds)
                        (let [ccds (:transcript.corresponding-cds/cds
                                     (:transcript/corresponding-cds transcript))]
@@ -85,7 +66,7 @@
                            :id (:cds/id ccds)
                            :label (:cds/id ccds)
                            :class "cds"
-                           :taxonomy (generic/xform-species-name (:species/id (:transcript/species transcript)))}
+                           :taxonomy (generic-functions/xform-species-name (:species/id (:transcript/species transcript)))}
                           :evidence {:status (name (:cds/prediction-status ccds))}})
                        "(no CDS)")
                 :gene (if-let [gh (:gene.corresponding-transcript/_transcript transcript)]
@@ -108,7 +89,7 @@
    :sequence_type sequence-type
    :description description
    :partial partial-field
-   :identity identity-field
-   :remarks remarks
-   :method method
+   :identity generic/identity-field
+   :remarks generic/remarks
+   :method generic/method
    :corresponding_all corresponding-all})

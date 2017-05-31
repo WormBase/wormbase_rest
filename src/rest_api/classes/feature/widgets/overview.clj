@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -48,10 +48,6 @@
            (pack-obj (:feature.associated-with-transcription-factor/transcription-factor tfh)))
    :description "Transcription factor of the feature"})
 
-(defn method [f]
-  {:data (:method/id (:locatable/method f))
-   :description "the method used to describe the Feature"})
-
 (def widget
   {:name generic/name-field
    :sequence_ontology_terms sequence-ontology-terms
@@ -61,5 +57,5 @@
    :description description
    :transcription_factor transcription-factor
    :remarks generic/remarks
-   :method method
+   :method generic/method
    :other_names generic/other-names})

@@ -1,6 +1,6 @@
 (ns rest-api.classes.microarray-results.widgets.overview
   (:require
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn cds [mr]

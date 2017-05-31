@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -43,17 +43,6 @@
              (pack-obj (:pseudogene/_matching-cdna ph)))
    :description "Matching Pseudogenes"})
 
-(defn remarks [s]
-  {:data (if-let [rhs (:sequence/db-remark s)]
-           (for [rh rhs]
-             {:text (:sequence.db-remark/text rh)
-              :evidence (obj/get-evidence rh)})
-           (when-let [rhs (:sequence/remark s)]
-             (for [rh rhs]
-               {:text (:sequence.remark/text rh)
-                :evidence (obj/get-evidence rh)})))
-   :description "curatorial remarks for the Sequence"})
-
 (defn method [s]
   {:data (when-let [method (:locatable/method s)]
            {:method (:method/id method)
@@ -66,13 +55,6 @@
                  :let [t (:transcript/_matching-cdna th)]]
              {(:transcript/id t) (pack-obj t)}))
    :description "Matching Transcripts"})
-
-(defn laboratory [s]
-  {:data (when-let [lab (:sequence/from-laboratory s)]
-           {:laboratory  (pack-obj lab)
-            :representative (when-let [reps (:laboratory/representative lab)]
-                               (for [rep reps] (pack-obj rep)))})
-   :description "the laboratory where the Sequence was isolated, created, or named"})
 
 (defn paired-read [s] ;OSTR077F5_1
   {:data (when-let [p (:sequence/paired-read s)]
@@ -88,10 +70,6 @@
            (pack-obj a))
    :dscription "The Analysis info of the sequence"})
 
-(defn identity-field [s]
-  {:data nil ; no brief-identification field
-   :description "Brief description of the genomic"})
-
 (defn subsequence [s]
   {:data nil ; no subsequence field
    :key (keys s)
@@ -105,13 +83,13 @@
    :cdss cdss
    :sequence_type sequence-type
    :pseudogenes pseudogenes
-   :remarks remarks
+   :remarks generic/remarks
    :method method
    :transcripts transcripts
-   :laboratory laboratory
+   :laboratory generic/laboratory
    :paired_read paired-read
    :taxonomy generic/taxonomy
    :description description
    :analysis analysis
-   :identity identity-field
+   :identity generic/identity-field
    :subsequence subsequence})

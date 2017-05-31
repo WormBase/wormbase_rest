@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 
@@ -16,10 +16,6 @@
 (defn expression-map [ep]
   {:data (:sk-map/id (first (:expr-profile/expr-map ep)))
    :desciption "expression map data for expr_profile"})
-
-(defn method [ep]
-  {:data (:method/id (:locatable/method ep))
-   :desciption "the method used to describe the Expr_profile"})
 
 (defn pcr-products [ep]
   {:data nil ; can't find field
@@ -45,7 +41,7 @@
    :pcr_data pcr-data
    :expression_map expression-map
    :remarks generic/remarks
-   :method method
+   :method generic/method
    :pcr_products pcr-products
    :profile profile
    :rnai rnai})

@@ -4,12 +4,13 @@
    [datomic.api :as d]
    [rest-api.db.sequence :as seqdb]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj humanize-ident]]))
 
 (defn- get-features-from-sequence [sequence]
   (if-let [species-name (->> sequence :transcript/species :species/id)]
-    (let [g-species (generic/xform-species-name species-name)
+    (let [g-species (generic-functions/xform-species-name species-name)
          sequence-database (seqdb/get-default-sequence-database g-species)
          db-spec ((keyword sequence-database) seqdb/sequence-dbs)
          method (:method/id (:locatable/method sequence))
