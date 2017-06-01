@@ -1,7 +1,7 @@
 (ns rest-api.classes.paper
   (:require
     [rest-api.classes.gene.widgets.external-links :as external-links]
-    [rest-api.classes.paper.widgets.overiew :as overiew]
+    [rest-api.classes.paper.widgets.overview :as overview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes

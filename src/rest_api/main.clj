@@ -4,29 +4,25 @@
    [environ.core :as environ]
    [mount.core :as mount]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.gene :as gene]
-   [rest-api.classes.person :as person]
+   [ring.util.http-response :as res]
+   [ring.middleware.gzip :as ring-gzip]
+   [rest-api.classes.analysis :as analysis]
    [rest-api.classes.anatomy-term :as anatomy-term]
    [rest-api.classes.antibody :as antibody]
-   [rest-api.classes.analysis :as analysis]
-   [rest-api.classes.feature :as feature]
-   [rest-api.classes.variation :as variation]
-   [rest-api.classes.transgene :as transgene]
-   [rest-api.classes.strain :as strain]
-   [rest-api.classes.wbprocess :as wbprocess]
-   [rest-api.classes.rearrangement :as rearrangement]
    [rest-api.classes.cds :as cds]
    [rest-api.classes.clone :as clone]
    [rest-api.classes.construct :as construct]
+   [rest-api.classes.do-term :as do-term]
    [rest-api.classes.expression-cluster :as expression-cluster]
    [rest-api.classes.expr-pattern :as expr-pattern]
    [rest-api.classes.expr-profile :as expr-profile]
-   [rest-api.classes.do-term :as do-term]
-   [rest-api.classes.go-term :as go-term]
+   [rest-api.classes.feature :as feature]
+   [rest-api.classes.gene :as gene]
    [rest-api.classes.gene-class :as gene-class]
    [rest-api.classes.gene-cluster :as gene-cluster]
+   [rest-api.classes.go-term :as go-term]
    [rest-api.classes.homology-group :as homology-group]
-;;   [rest-api.classes.interaction :as interaction] ; comment out for WS258
+   [rest-api.classes.interaction :as interaction]
    [rest-api.classes.laboratory :as laboratory]
    [rest-api.classes.life-stage :as life-stage]
    [rest-api.classes.microarray-results :as microarray-results]
@@ -35,62 +31,66 @@
    [rest-api.classes.operon :as operon]
    [rest-api.classes.paper :as paper]
    [rest-api.classes.pcr-product :as pcr-product]
+   [rest-api.classes.person :as person]
    [rest-api.classes.phenotype :as phenotype]
    [rest-api.classes.position-matrix :as position-matrix]
    [rest-api.classes.protein :as protein]
    [rest-api.classes.pseudogene :as pseudogene]
+   [rest-api.classes.rearrangement :as rearrangement]
    [rest-api.classes.rnai :as rnai]
    [rest-api.classes.sequence :as seqs]
+   [rest-api.classes.strain :as strain]
    [rest-api.classes.structure-data :as structure-data]
    [rest-api.classes.transcript :as transcript]
+   [rest-api.classes.transgene :as transgene]
    [rest-api.classes.transposon :as transposon]
    [rest-api.classes.transposon-family :as transposon-family]
-   [ring.util.http-response :as res]
-   [ring.middleware.gzip :as ring-gzip]))
+   [rest-api.classes.variation :as variation]
+   [rest-api.classes.wbprocess :as wbprocess]))
 
 (def ^:private all-routes
   "A collection of all routes to served by the application."
-  [gene/routes
-   person/routes
+  [analysis/routes
    anatomy-term/routes
    antibody/routes
-   analysis/routes
-   feature/routes
-   variation/routes
-   transgene/routes
-   strain/routes
-   wbprocess/routes
-   expression-cluster/routes
-   expr-pattern/routes
-   expr-profile/routes
-   rearrangement/routes
    cds/routes
    clone/routes
    construct/routes
    do-term/routes
-   go-term/routes
+   expr-pattern/routes
+   expr-profile/routes
+   expression-cluster/routes
+   feature/routes
    gene-class/routes
    gene-cluster/routes
+   gene/routes
+   go-term/routes
+   homology-group/routes
+   interaction/routes
    laboratory/routes
    life-stage/routes
    microarray-results/routes
-   homology-group/routes
-;;   interaction/routes ; comment out for WS258
    molecule/routes
    motif/routes
    operon/routes
    paper/routes
    pcr-product/routes
+   person/routes
    phenotype/routes
    position-matrix/routes
    protein/routes
    pseudogene/routes
+   rearrangement/routes
    rnai/routes
    seqs/routes
+   strain/routes
    structure-data/routes
    transcript/routes
+   transgene/routes
+   transposon-family/routes
    transposon/routes
-   transposon-family/routes])
+   variation/routes
+   wbprocess/routes])
 
 (def ^:private swagger-validator-url
   "The URL used to validate the swagger JSON produced by the application."
