@@ -1,8 +1,6 @@
 (ns rest-api.classes.cds.widgets.overview
   (:require
    [clojure.string :as str]
-   [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))

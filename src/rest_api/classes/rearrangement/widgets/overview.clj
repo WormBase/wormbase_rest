@@ -1,10 +1,8 @@
 (ns rest-api.classes.rearrangement.widgets.overview
   (:require
    [clojure.string :as str]
-   [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn mapping-data [r]

@@ -1,10 +1,7 @@
 (ns rest-api.classes.molecule.widgets.overview
   (:require
    [clojure.string :as str]
-   [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn detection-status [m]
@@ -110,21 +107,20 @@
    :description "Controlled vocabulary for specific role of molecule in nematode biology, with particular regards to biological pathways"})
 
 (def widget
-  {;:name generic/name-field
-;   :detection_status detection-status
-;   :extraction_method extraction-method
-;   :chembi_id chembi-id
-;   :detection_method detection-method
-;   :monoisotopic_mass monoisotopic-mass
-;   :formula formula
-;   :synonyms synonyms
-;   :remarks generic/remarks
-;   :iupac iupac
-;   :inchi_key inchi-key
-;   :nonspecies-source nonspecies-source
-;   :molecule_use molecule-use
+  {:name generic/name-field
+   :detection_status detection-status
+   :extraction_method extraction-method
+   :chembi_id chembi-id
+   :detection_method detection-method
+   :monoisotopic_mass monoisotopic-mass
+   :formula formula
+   :synonyms synonyms
+   :remarks generic/remarks
+   :iupac iupac
+   :inchi_key inchi-key
+   :nonspecies-source nonspecies-source
+   :molecule_use molecule-use
    :biological_role biological-role
-;   :smiles smiles
-;   :inchi inchi
-;   :biofunction_role biofunction-role
-})
+   :smiles smiles
+   :inchi inchi
+   :biofunction_role biofunction-role})

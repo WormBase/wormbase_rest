@@ -1,11 +1,7 @@
 (ns rest-api.classes.expr-profile.widgets.overview
   (:require
-   [clojure.string :as str]
-   [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
-
 
 ; testing with 0C24D10.5
 

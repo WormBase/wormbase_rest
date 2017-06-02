@@ -1,7 +1,6 @@
 (ns rest-api.classes.clone.widgets.overview
   (:require
    [clojure.string :as str]
-   [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.date :as date]
@@ -9,7 +8,7 @@
 
 (defn canonical-for [clone] ; example C05B2
   {:data (when-let [cfhs (:clone/canonical-for clone)]
-           (merge
+           (into {}
              (for [cfh cfhs :let [cclone (:clone.canonical-for/clone cfh)]]
                {(:clone/id cclone) (pack-obj cclone)})))
    :description "clones that the requested clone is a canonical representative of"})
@@ -18,7 +17,7 @@
   {:data (when-let [chs (or
                           (:clone/map clone)
                           (:contig/map (:clone.pmap/contig (:clone/pmap clone))))]
-           (merge
+           (into {}
              (for [h chs :let [m (or (:clone.map/map h)
                                      (:contig.map/map h))]]
                {(:map/id m) {:id (:map/id m)

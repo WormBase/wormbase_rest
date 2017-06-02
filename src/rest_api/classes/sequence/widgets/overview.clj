@@ -1,10 +1,6 @@
 (ns rest-api.classes.sequence.widgets.overview
   (:require
-   [clojure.string :as str]
-   [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn source-clone [s]
@@ -33,7 +29,7 @@
                "capped-5" "Capped_5"
                "tsl-tag" "TSL_tag"
                cdna))
-           
+
            (contains? s :sequence/genomic)
            "Genomic")
    :description "the general type of the sequence"})

@@ -1,8 +1,6 @@
 (ns rest-api.classes.antibody.widgets.overview
   (:require
    [clojure.string :as str]
-   [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 

@@ -1,11 +1,6 @@
 (ns rest-api.classes.transcript.widgets.overview
   (:require
-   [clojure.string :as str]
-   [datomic.api :as d]
-   [pseudoace.utils :as pace-utils]
-   [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.date :as date]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+  [rest-api.classes.generic-fields :as generic]))
 
 (defn sequence-type [t]
   {:data nil ; This comes from properties section, found on another page too

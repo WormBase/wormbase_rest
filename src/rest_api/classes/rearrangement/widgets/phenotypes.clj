@@ -1,8 +1,6 @@
 (ns rest-api.classes.rearrangement.widgets.phenotypes
   (:require
-    [clojure.string :as str]
     [datomic.api :as d]
-    [pseudoace.utils :as pace-utils]
     [rest-api.classes.phenotype.core :as phenotype-core]
     [rest-api.classes.generic-fields :as generic]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))

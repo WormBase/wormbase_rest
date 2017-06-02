@@ -1,6 +1,5 @@
 (ns rest-api.classes.rnai.widgets.phenotypes
   (:require
-    [clojure.string :as str]
     [datomic.api :as d]
     [pseudoace.utils :as pace-utils]
     [rest-api.classes.paper.core :as paper-core]

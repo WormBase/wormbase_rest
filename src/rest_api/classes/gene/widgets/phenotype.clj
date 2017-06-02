@@ -1,6 +1,5 @@
 (ns rest-api.classes.gene.widgets.phenotype
   (:require
-   [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]

@@ -1,7 +1,5 @@
 (ns rest-api.classes.motif.widgets.overview
   (:require
-   [clojure.string :as str]
-   [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
