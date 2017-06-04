@@ -31,3 +31,9 @@
    (.format
      (java.text.SimpleDateFormat. "dd MMM yyyy")
         date-str))
+
+(defn format-date5
+  [date-str]
+   (.format
+     (java.text.SimpleDateFormat. "yyyy")
+        date-str))
