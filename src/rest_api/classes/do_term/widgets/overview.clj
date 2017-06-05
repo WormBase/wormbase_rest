@@ -6,8 +6,9 @@
 
 (defn- gene-disease-relevance [gene]
   (when-let [drhs (:gene/disease-relevance gene)]
-    (for [drh drhs :let [note (:gene.disease-relevance/note drh)
-                         species (:gene.disease-relevance/species drh)]]
+    (for [drh drhs
+          :let [note (:gene.disease-relevance/note drh)
+                species (:gene.disease-relevance/species drh)]]
       {:text note
        :evidence (obj/get-evidence drh)})))
 
@@ -22,20 +23,20 @@
         (if (= species-id 9606)
           (let [ortholog (:gene.ortholog/gene oh)
                 dhs (:gene/database ortholog)
-                id  (first
-                      (remove
-                        nil?
-                        (for [dh dhs
-                              :let [source-db (:database/id (:gene.database/database dh))
-                                    source-type  (:database-field/id (:gene.database/field dh))]]
-                          (if (and
-                                (= source-db "OMIM")
-                                (= source-type "gene"))
-                            (:gene.database/accession dh)))))]
-            (if (some? id)
-              {:lebel (str "OMIM:" id)
-               :class "OMIM"
-               :id id})))))))
+                id (first
+                     (remove
+                       nil?
+                       (for [dh dhs
+                             :let [source-db (:database/id (:gene.database/database dh))
+                                   source-type  (:database-field/id (:gene.database/field dh))]]
+                         (if (and
+                               (= source-db "OMIM")
+                               (= source-type "gene"))
+                           (:gene.database/accession dh)))))]
+           (if id
+             {:lebel (str "OMIM:" id)
+              :class "OMIM"
+              :id id})))))))
 
 (defn gene-orthology [d] ; tested on DOID:0050432 - getting more results hear than ace version
   {:error nil
