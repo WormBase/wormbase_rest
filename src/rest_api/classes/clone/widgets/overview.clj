@@ -30,7 +30,7 @@
   {:data (not-empty
            (merge
              (if (contains? clone :clone/finished)
-               {:Finished (date/format-date5 (:clone/finished clone))})
+               {:Finished (date/format-date6 (:clone/finished clone))})
              (if (contains? clone :clone/shotgun) ; found with DL2
                {:Shotgun nil})
              (when-let [accession (:clone/accession-number clone)]

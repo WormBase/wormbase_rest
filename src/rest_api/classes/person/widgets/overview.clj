@@ -87,7 +87,7 @@
                       (pace-utils/vmap
                         :date-modified (date/format-date (:person.old-address/datetype old-address))
                         :email (:address/email old-address)
-                        ;;                        :institution (:address/institution old-address)
+                        :institution (first (:address/institution old-address))
                         :street-address (:address/street-address old-address)
                         :country (:address/country old-address)
                         :main-phone (:address/main-phone old-address)
@@ -124,7 +124,7 @@
   {:name                     name-field
    :email                    email
    :orcid                    orcid
-   ;;    :institution              institution
+   :institution              institution
    :web_page                 web-page
    :street_address           street-address
    :aka                      also-known-as
