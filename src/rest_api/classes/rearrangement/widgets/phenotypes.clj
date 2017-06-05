@@ -15,7 +15,7 @@
   '[:find ?pheno  (distinct ?ph)
     :in $ ?r
     :where [?r :rearrangement/phenotype-not-observed ?ph]
-    [?ph :rearrangement.phenotype-not-observed/phenotype ?pheno]])
+           [?ph :rearrangement.phenotype-not-observed/phenotype ?pheno]])
 
 (defn- phenotype-table-entity
   [db pheno pato-key entity pid phenos not-observed?]
