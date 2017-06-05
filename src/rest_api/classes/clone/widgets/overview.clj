@@ -18,8 +18,9 @@
                           (:clone/map clone)
                           (:contig/map (:clone.pmap/contig (:clone/pmap clone))))]
            (into {}
-             (for [h chs :let [m (or (:clone.map/map h)
-                                     (:contig.map/map h))]]
+             (for [h chs
+                   :let [m (or (:clone.map/map h)
+                               (:contig.map/map h))]]
                {(:map/id m) {:id (:map/id m)
                              :label (:map/id m)
                              :class "map"
