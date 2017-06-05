@@ -36,11 +36,11 @@
            (for [holder holders
                  :let [transcript (:transcript/_corresponding-cds holder)]]
              (let [length-unspliced (if (contains? transcript :transcript/corresponding-cds)
-                                    (let [ccds (:transcript.corresponding-cds/cds
+                                      (let [ccds (:transcript.corresponding-cds/cds
                                                  (:transcript/corresponding-cds transcript))]
-                                      (- (:locatable/max ccds)
-                                         (:locatable/min ccds)))
-                                    "-")
+                                        (- (:locatable/max ccds)
+                                           (:locatable/min ccds)))
+                                      "-")
                    length (let [hs (:transcript/source-exons transcript)]
                             (reduce +
                                     (for [h hs]
