@@ -23,7 +23,7 @@
            [?e :expression-cluster/anatomy-term ?eh]])
 
 (defn transgenes [anatomy-term]
-  {:data (if-let [expression-patterns (:anatomy-term/expr-descendent anatomy-term)]
+  {:data (when-let [expression-patterns (:anatomy-term/expr-descendent anatomy-term)]
            (filter
              some?
              (flatten
@@ -44,7 +44,7 @@
      :description "expression cluster data"}))
 
 (defn term [anatomy-term]
-  {:data (if-let [holder (:anatomy-term/term anatomy-term)]
+  {:data (when-let [holder (:anatomy-term/term anatomy-term)]
              {:id (:anatomy-term.term/text holder)
               :label (:anatomy-term.term/text holder)
               :class "anatomy_name"
@@ -52,7 +52,7 @@
    :description "Term in the Anatomy ontology"})
 
 (defn definition [anatomy-term]
-  {:data (if-let [holder (:anatomy-term/definition anatomy-term)]
+  {:data (when-let [holder (:anatomy-term/definition anatomy-term)]
            (:anatomy-term.definition/text holder))
    :description "definition of the anatomy term"})
 
@@ -66,7 +66,7 @@
    :description "go_terms associated with this anatomy_term"})
 
 (defn synonyms [anatomy-term]
-  {:data (if-let [synonyms (:anatomy-term/synonym anatomy-term)]
+  {:data (when-let [synonyms (:anatomy-term/synonym anatomy-term)]
            (for [synonym synonyms]
              (:anatomy-term.synonym/text synonym)))
    :description "synonyms that have been used to describe the anatomy term"})
@@ -101,8 +101,8 @@
      :description "anatomy_functions associatated with this anatomy_term"}))
 
 (defn wormatlas [anatomy-term]
-  {:data (if-let [dbs (:anatomy-term/database anatomy-term)]
-           (if-let [data (remove
+  {:data (when-let [dbs (:anatomy-term/database anatomy-term)]
+           (when-let [data (remove
                            nil?
                            (for [db dbs]
                              (if (= (:database-field/id (:anatomy-term.database/field db)) "html")
@@ -115,20 +115,20 @@
    :description "anatomy_functions associatated with this anatomy_term"})
 
 (defn expression-patterns [anatomy-term]
-  {:data (if-let [expression-patterns (:anatomy-term/expr-descendent anatomy-term)]
+  {:data (when-let [expression-patterns (:anatomy-term/expr-descendent anatomy-term)]
            (for [expression-pattern expression-patterns]
              {:expression_pattern
               (pack-obj expression-pattern)
 
               :gene
-              (if-let [holders (:expr-pattern/gene expression-pattern)]
+              (when-let [holders (:expr-pattern/gene expression-pattern)]
                 (pack-obj (:expr-pattern.gene/gene (first holders))))
 
               :keys
               (keys expression-pattern)
 
               :reference
-              (if-let [holder (:expr-pattern/reference expression-pattern)]
+              (when-let [holder (:expr-pattern/reference expression-pattern)]
                 (:paper/id
                   (:expr-pattern.reference/paper (first holder))))
 
@@ -136,11 +136,11 @@
               nil
 
               :author
-              (if-let [authors (:expr-pattern/author expression-pattern)]
+              (when-let [authors (:expr-pattern/author expression-pattern)]
                (:author/id  (last authors)))
 
               :description
-              (if-let [pattern (:expr-pattern/pattern expression-pattern)]
+              (when-let [pattern (:expr-pattern/pattern expression-pattern)]
                 (first pattern))}))
    :description (str "expression patterns associated with the Anatomy_term: " (:anatomy-term/id anatomy-term))})
 
