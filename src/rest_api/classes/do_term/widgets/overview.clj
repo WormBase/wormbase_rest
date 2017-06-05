@@ -85,7 +85,8 @@
            (vals
              (apply
                merge
-               (for [g gs :let [gene (:gene/_disease-experimental-model g)]]
+               (for [g gs
+                     :let [gene (:gene/_disease-experimental-model g)]]
                  {(:gene/id gene)
                   {:gene (pack-obj gene)
                    :dbidg (keys g)
