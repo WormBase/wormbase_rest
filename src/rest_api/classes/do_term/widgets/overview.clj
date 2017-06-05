@@ -42,7 +42,8 @@
            (vals
              (apply
                merge
-               (for [g gs :let [gene (:gene/_disease-potential-model g)]]
+               (for [g gs
+                     :let [gene (:gene/_disease-potential-model g)]]
                  {(:gene/id gene)
                   {:gene (pack-obj gene)
                    :relevance (gene-disease-relevance gene)
