@@ -15,7 +15,8 @@
   (when-let [ohs (:gene/ortholog gene)]
     (remove
       nil?
-      (for [oh ohs :let [sh (:gene.ortholog/species oh)
+      (for [oh ohs
+            :let [sh (:gene.ortholog/species oh)
 
                          species-id (:species/ncbi-taxonomy sh)]]
         (if (= species-id 9606)
