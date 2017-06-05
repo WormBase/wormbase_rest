@@ -9,7 +9,8 @@
 (defn canonical-for [clone] ; example C05B2
   {:data (when-let [cfhs (:clone/canonical-for clone)]
            (into {}
-             (for [cfh cfhs :let [cclone (:clone.canonical-for/clone cfh)]]
+             (for [cfh cfhs
+                   :let [cclone (:clone.canonical-for/clone cfh)]]
                {(:clone/id cclone) (pack-obj cclone)})))
    :description "clones that the requested clone is a canonical representative of"})
 
