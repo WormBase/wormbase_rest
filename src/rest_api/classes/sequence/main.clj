@@ -55,8 +55,8 @@
       id
 
       :taxonomy
-      (if-let [class (:gene/species gene)]
-        (if-let [[_ genus species]
+      (when-let [class (:gene/species gene)]
+        (when-let [[_ genus species]
                   (re-matches #"^(.*)\s(.*)$"
                               (:species/id class))]
           (str/lower-case
@@ -66,7 +66,7 @@
       tracks)))
 
 (defn genomic-obj [object]
-  (if-let [segment (get-longest-segment object)]
+  (when-let [segment (get-longest-segment object)]
     (let [[start stop] (->> segment
                              ((juxt :start :end))
                              (sort-by +))]
