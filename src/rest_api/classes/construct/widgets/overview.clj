@@ -8,7 +8,7 @@
    :description "Construction details for the transgene"})
 
 (defn other-reporter [construct]
-  {:data (when-let [chs  (:construct/other-reporter construct)] (first chs))
+  {:data (when-let [chs (:construct/other-reporter construct)] (first chs))
    :description (str "The name and WormBase internal ID of " (:construct/id construct))})
 
 (defn selection-marker [construct]
