@@ -2,8 +2,8 @@
   (:require
    [clojure.string :as str]
    [rest-api.formatters.object :refer [pack-obj]]
-   [rest-api.classes.gene.sequence :as sequence-fns]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.sequence.main :as sequence-fns]
+   [rest-api.classes.generic-fields :as generic]
    [datomic.api :as d]))
 
 (defn- not-nil [xs]

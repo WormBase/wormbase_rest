@@ -1,8 +1,6 @@
 (ns rest-api.classes.gene.widgets.expression
   (:require
-   [clojure.string :as str]
-   [datomic.api :as d]
-   [rest-api.classes.generic :as generic]
+   [rest-api.classes.generic-fields :as generic]
    [rest-api.classes.gene.expression :as expression]))
 
 (def widget
