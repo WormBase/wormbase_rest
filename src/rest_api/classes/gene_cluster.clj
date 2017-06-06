@@ -6,4 +6,5 @@
 (routing/defroutes
   {:entity-ns "gene-cluster"
    :widget
-   {;:overview overview/widget}})
+   {;:overview overview/widget
+    }})

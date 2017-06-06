@@ -6,4 +6,5 @@
 (routing/defroutes
   {:entity-ns "expr-pattern"
    :widget
-   {;:overview overview/widget}})
+   {;:overview overview/widget
+    }})

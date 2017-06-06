@@ -6,4 +6,5 @@
 (routing/defroutes
   {:entity-ns "construct"
    :widget
-   {;:overview overview/widget}})
+   {;:overview overview/widget
+    }})
