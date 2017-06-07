@@ -39,6 +39,13 @@
   {:data (first (:feature/description f))
    :desciption (str "description of the Feature " (:feature/id f))})
 
+(defn associated-gene [f]
+  {:data (when-let [ghs (:feature/associated-with-gene f)]
+           (for [gh ghs
+                 :let [gene (:feature.associated-with-gene/gene gh)]]
+             (pack-obj gene)))
+   :description "Associated gene of the sequence feature"})
+
 (defn transcription-factor [f]
   {:data (when-let [tfh (first (:feature/associated-with-transcription-factor f))]
            (pack-obj (:feature.associated-with-transcription-factor/transcription-factor tfh)))
@@ -48,9 +55,10 @@
   {:name generic/name-field
    :sequence_ontology_terms sequence-ontology-terms
    :binds_gene_product binds-gene-product
-   :taxonomgy generic/taxonomy
+   :taxonomy generic/taxonomy
    :defined_by defined-by
    :description description
+   :associated_gene associated-gene
    :transcription_factor transcription-factor
    :remarks generic/remarks
    :method generic/method

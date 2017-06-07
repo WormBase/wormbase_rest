@@ -7,17 +7,26 @@
   {:data (:rnai/history-name r)
    :desciprition "historical name of the rnai"})
 
+(defn- get-target-type [object]
+  (when-let [ia (first (:evidence/inferred-automatically object))]
+    (if (re-find #"primary" ia)
+      "Primary target"
+      "Secondary target")))
+
 (defn targets [r]
   {:data (not-empty
-           (vals
-             (into
-               {}
-               ((comp vec flatten vector)
-                (when-let [gene (:rnai.gene/gene (first (:rnai/gene r)))]
-                  {(:gene/id gene) (pack-obj gene)})
-                (when-let [ghs (:rnai/predicted-gene r)]
-                  (for [gh ghs :let [cds (:rnai.predicted-gene/cds gh)]]
-                    {(:cds/id cds) (pack-obj cds)}))))))
+           (remove
+             nil?
+             (flatten
+             (conj
+               (for [gh (:rnai/predicted-gene r)
+                     :let [cds (:rnai.predicted-gene/cds gh)]]
+                 {:target_type (get-target-type gh)
+                  :gene (pack-obj cds)})
+               (for [h (:rnai/gene r)
+                     :let [gene (:rnai.gene/gene h) ]]
+                 {:target_type (get-target-type h)
+                  :gene (pack-obj gene)})))))
    :description "gene targets of the RNAi experiment"})
 
 (def widget

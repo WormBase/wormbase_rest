@@ -8,7 +8,7 @@
    :description "the person that conducted the analysis"})
 
 (defn subproject [analysis]
-  {:data (if-let [sub-projects (:analysis/_project analysis)]
+  {:data (when-let [sub-projects (:analysis/_project analysis)]
            (for [sub-project sub-projects]
              (pack-obj sub-project)))
    :description "the subproject of the analysis if there is one"})

@@ -39,6 +39,10 @@
   (or (:gene/public-name obj)
       (:gene/id obj)))
 
+(defmethod obj-label "wbprocess" [_ obj]
+  (or (:wbprocess/public-name obj)
+      (:wbprocess/id obj)))
+
 (defmethod obj-label "laboratory" [_ obj]
   (or (first (:laboratory/mail obj))
       (:laboratory/id obj)))

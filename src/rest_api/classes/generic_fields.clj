@@ -107,7 +107,7 @@
 (defn description [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-    {:data ((keyword role "description") object)
+    {:data (first ((keyword role "description") object))
      :description (str "description of the " role " " ((keyword role "id") object))}))
 
 (defn taxonomy [object]
