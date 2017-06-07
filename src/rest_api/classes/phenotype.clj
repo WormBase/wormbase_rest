@@ -8,4 +8,4 @@
   {:entity-ns "phenotype"
    :widget
    {;:overview overview/widget
-    :ontology-browser ontology-browser/widget}})
+    :ontology_browser ontology-browser/widget}})
