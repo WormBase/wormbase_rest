@@ -102,11 +102,12 @@
 
 (defn wormatlas [anatomy-term]
   {:data (when-let [dbs (:anatomy-term/database anatomy-term)]
-           (when-let [data (remove
-                           nil?
-                           (for [db dbs]
-                             (if (= (:database-field/id (:anatomy-term.database/field db)) "html")
-                               (:anatomy-term.database/accession db))))]
+           (when-let [data (not-empty
+                             (remove
+                               nil?
+                               (for [db dbs]
+                                 (if (= (:database-field/id (:anatomy-term.database/field db)) "html")
+                                   (:anatomy-term.database/accession db)))))]
              {:html {:ids data}}))
    :description "link to WormAtlas record"})
 
