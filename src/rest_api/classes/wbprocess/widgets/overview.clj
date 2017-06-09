@@ -5,7 +5,7 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn other-name [w]
-  {:data (first (:wbprocess/other-name w))
+  {:data (:wbprocess/other-name w)
    :description "Term alias"})
 
 (defn life-stage [w]

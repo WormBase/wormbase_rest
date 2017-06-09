@@ -7,7 +7,8 @@
   {:data (when-let [ghs (:variation/gene v)]
            (for [gh ghs
                  :let [gene (:variation.gene/gene gh)]]
-             (pack-obj gene)))
+             [(pack-obj gene)
+              (if (contains? gene :gene/reference-allele) " (reference allele)" "")]))
    :description "gene in which this variation is found (if any)"})
 
 (defn evidence [v]
@@ -47,7 +48,6 @@
 
                         (contains? v :variatino/tandem-duplication)
                         "Tandem Duplication"))}
-   :k (keys v)
    :description "the general type of the variation"})
 
 (def widget

@@ -1,10 +1,12 @@
 (ns rest-api.classes.laboratory.widgets.overview
   (:require
+   [clojure.string :as str]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn website [lab]
-  {:data (first (:laboratory/url lab))
+  {:data (when-let [url (first (:laboratory/url lab))]
+           (str/replace url #"https?:\/\/" ""))
    :description "website of the lab"})
 
 (defn representatives [lab]
