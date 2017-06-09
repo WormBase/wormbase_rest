@@ -86,10 +86,12 @@
 	role (namespace id-kw)
         text-kw (keyword (str role ".other-name") "text")]
     {:data (when-let [other-names ((keyword role "other-name") object)]
-            (for [other-name other-names]
-              (if (contains? other-name text-kw)
-                (text-kw other-name)
-                other-name)))
+             (for [other-name other-names]
+               (if (string? other-name)
+                 other-name
+                 (if (contains? other-name text-kw)
+                   (text-kw other-name)
+                   other-name))))
      :description (str "other names that have been used to refer to " (id-kw object))}))
 
 (defn laboratory [object]

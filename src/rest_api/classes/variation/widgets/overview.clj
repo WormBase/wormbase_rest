@@ -18,8 +18,6 @@
 (defn evidence [v]
   {:data (when-let [evidence (:variation/evidence v)]
            {:text ""
-            :d (:db/id evidence)
-            :db (:db/id v)
             :evidence (obj/get-evidence evidence)})
    :description "Evidence for this Variation"})
 
