@@ -299,11 +299,9 @@
            :label pa}))
 
    :Author_evidence
-   (seq (for [a (:evidence/author-evidence holder)
-              :let [author (:evidence.author-evidence/author holder)]]
-          {:evidence
-           ;; Notes seem to be ignored here.
-           (pack-obj "author" author)}))
+   (seq (for [ah (:evidence/author-evidence holder)
+              :let [author (:evidence.author-evidence/author ah)]]
+          {:evidence (pack-obj "author" author)}))
 
    :Accession_evidence
    (if-let [accs (:evidence/accession-evidence holder)]

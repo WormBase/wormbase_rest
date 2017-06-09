@@ -8,12 +8,18 @@
            (for [gh ghs
                  :let [gene (:variation.gene/gene gh)]]
              [(pack-obj gene)
-              (if (contains? gene :gene/reference-allele) " (reference allele)" "")]))
+              (if (some?
+                    (for [h (:gene/reference-allele gene)
+                          :let [ref-variation (:gene.reference-allele/variation h)]]
+                      (if (= (:variation/id ref-variation) (:variation/id v)) true false)))
+               " (reference allele)" "")]))
    :description "gene in which this variation is found (if any)"})
 
 (defn evidence [v]
   {:data (when-let [evidence (:variation/evidence v)]
            {:text ""
+            :d (:db/id evidence)
+            :db (:db/id v)
             :evidence (obj/get-evidence evidence)})
    :description "Evidence for this Variation"})
 
@@ -28,6 +34,8 @@
                           "Allele")
                         (when (:variation/snp v)
                           "SNP")
+                        (when (:variation/transposon-insertion v)
+                          "Transposon insertion")
                         (when (:variation/confirmed-snp v)
                           "Confirmed SNP")
                         (when (:variation/predicted-snp v)
