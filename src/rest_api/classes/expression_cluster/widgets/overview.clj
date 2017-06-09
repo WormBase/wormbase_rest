@@ -7,6 +7,9 @@
   {:data (first (:expression-cluster/algorithm ec))
    :description "Algorithm used to determine cluster"})
 
+(defn- pad-zero [s n]
+  (str (reduce str (repeat (- n (count s)) "0")) s))
+
 (defn- create-attribute-list [objects]
   (vals
     (into
@@ -14,7 +17,10 @@
       (into {}
 	    (for [object objects]
 	      (let [id-kw (first (filter #(= (name %) "id") (keys object)))]
-		{(id-kw object)
+		{(let [i (id-kw object)]
+		   (if-let [result (re-find #":(\d+)_min" i)]
+		     (do (println (second result))
+			 (pad-zero (second result) 10)) i))
 		 (pack-obj object)}))))))
 
 (defn attribute-of [ec]

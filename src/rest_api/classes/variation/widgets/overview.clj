@@ -8,7 +8,7 @@
            (for [gh ghs
                  :let [gene (:variation.gene/gene gh)]]
              [(pack-obj gene)
-              (if (some?
+              (if (some identity
                     (for [h (:gene/reference-allele gene)
                           :let [ref-variation (:gene.reference-allele/variation h)]]
                       (if (= (:variation/id ref-variation) (:variation/id v)) true false)))

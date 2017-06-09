@@ -37,6 +37,6 @@
    :representatives representatives
    :email email
    :allele_designation allele-designation
-   :affiliation affiliation
+ ;  :affiliation affiliation
    :remarks generic/remarks
    :strain_designation strain-designation})
