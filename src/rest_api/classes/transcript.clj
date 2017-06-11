@@ -1,7 +1,7 @@
 (ns rest-api.classes.transcript
   (:require
-   [datomic.api :as d]
    [rest-api.classes.gene.widgets.external-links :as external-links]
+   ;[rest-api.classes.transcript.widgets.overview :as overview]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.formatters.object :as obj]
    [rest-api.routing :as routing]))
@@ -31,7 +31,8 @@
 (routing/defroutes
   {:entity-ns "transcript"
    :widget
-   {:expression expression-widget
+   {;:overview overview/widget
+    :expression expression-widget
     :external_links external-links/widget}
    :field
    {:fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})

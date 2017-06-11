@@ -2,8 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.1.5] - (unreleased)
-- Overview widgets (not sure how many
+
+## [0.1.6] - (unreleased)
+- 11 more overview widgets
+
+## [0.1.5] - 2017-06-11
+- Half of the Overview widgets
 - Gene pages Disease widget
 - Ontology widgets
 

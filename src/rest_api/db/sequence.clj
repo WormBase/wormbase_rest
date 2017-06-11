@@ -51,8 +51,8 @@
                             "useSSL=false&"
                             "useLocalSessionState=true"))}})))))))
 
-(defn gene-features [db-spec gene-name]
-  (sequencesql/gene-features db-spec {:name gene-name}))
+(defn get-features [db-spec feature-name]
+  (sequencesql/get-features db-spec {:name feature-name}))
 
 (defn sequence-features-where-type [db-spec feature-name method]
   (sequencesql/sequence-features-where-type
