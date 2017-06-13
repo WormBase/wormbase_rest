@@ -127,8 +127,8 @@
   (->> (d/q '[:find ?int (count ?ng)
               :in $ % ?gene
               :where
-              (gene-interaction ?ng ?int)
-              (gene-neighbour ?gene ?ng)]
+              (gene-neighbour ?gene ?ng)
+              (gene-interaction ?ng ?int)]
             db int-rules gene)
        (filter (fn [[_ cnt]]
                  (> cnt 1)))
@@ -141,8 +141,8 @@
       (d/q '[:find (count ?ng) .
              :in $ % ?int ?gene ?ng
              :where
-             (gene-interaction ?ng ?int)
-             (gene-neighbour ?gene ?ng)]
+             (gene-neighbour ?gene ?ng)
+             (gene-interaction ?ng ?int)]
              db
              int-rules
              ix-id
