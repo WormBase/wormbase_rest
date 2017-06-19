@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "0.1.5"
+(defproject wormbase/rest-api "0.1.6"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -55,7 +55,8 @@
            ["do"
             ["eastwood"]
             "test"]}
-          :dependencies [[ring/ring-devel "1.5.1"]]
+          :dependencies [[org.clojure/tools.trace "0.7.9"]
+                         [ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
           :env
           {:wb-db-uri "datomic:ddb://us-east-1/WS259/wormbase"

@@ -3,8 +3,12 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [0.1.6] - (unreleased)
+## [0.1.7] - (unreleased)
 - 11 more overview widgets
+
+## [0.1.6] - 2017-06-19
+- Includes fixes by Matt for the gene interaction widget
+- commenting out the person widget
 
 ## [0.1.5] - 2017-06-11
 - Half of the Overview widgets
