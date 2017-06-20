@@ -6,6 +6,7 @@
    [rest-api.db.main :refer [datomic-conn]]
    [ring.util.request :as req]
    [ring.util.http-response :as res]
+   [ring.swagger.schema :as swagger-schema]
    [schema.core :as schema]))
 
 (defn- entity-not-found [schema-name id]
@@ -55,6 +56,10 @@
     [route-spec]
     [route-spec opts]))
 
+(defn swagger-id-field [entity-type]
+  (let [description (format "WormBase %s ID" (str/capitalize entity-type))]
+    (swagger-schema/field schema/Str {:description description})))
+
 (defrecord RouteSpec [datatype widget field]
   RouteSpecification
   (-create-routes [this {:keys [publish-widget-fields?] :as opts}]
@@ -75,7 +80,7 @@
             (sweet/context (str "/" scheme "/" entity-segment) []
               :tags [(str entity-segment " " scheme "s")]
               (sweet/GET (str "/:id/" ep-name) []
-                :path-params [id :- schema/Str]
+                :path-params [id :- (swagger-id-field entity-segment)]
                 (make-request-handler kw entity-handler entity-ns))))))))
 
   (-create-routes [this]
