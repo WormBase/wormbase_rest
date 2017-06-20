@@ -11,7 +11,6 @@
    [environ "1.1.0"]
    [hiccup "1.0.5"]
    [metosin/compojure-api "1.1.10"]
-   [metosin/ring-swagger "0.24.0"]
    [mount "0.1.11"]
    [mysql/mysql-connector-java "6.0.5"]
    [org.clojure/clojure "1.8.0"]
