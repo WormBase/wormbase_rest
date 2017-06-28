@@ -55,8 +55,8 @@
     [route-spec]
     [route-spec opts]))
 
-(defn swagger-id-field [entity-type]
-  (let [description (format "WormBase %s ID" (str/capitalize entity-type))]
+(defn swagger-id-field [entity-type-alias]
+  (let [description (format "WormBase %s ID" (str/capitalize entity-type-alias))]
     (sweet/describe schema/Str description)))
 
 (defrecord RouteSpec [datatype widget field]
