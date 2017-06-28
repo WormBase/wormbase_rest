@@ -6,7 +6,7 @@
 
 (defn laboratory [gc]
   {:data (when-let [laboratory (:gene-class/designating-laboratory gc)]
-           {:laborotory (pack-obj laboratory)
+           {:laboratory (pack-obj laboratory)
             :representative (when-let [reps (:laboratory/representative laboratory)]
                               (for [rep reps]
                                 (pack-obj rep)))})
