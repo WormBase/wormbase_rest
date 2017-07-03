@@ -65,8 +65,11 @@
   {:data (:paper/title p)
    :description "The title of the publication"})
 
-(defn editors [p] ; needs more work. have to parse response
-  {:data (:paper/editor p) ; WBPaper00035863
+(defn editors [p]
+  {:data (if (= (:paper.type/type (:paper/type p)) :wormbook)
+           (:paper/editor p)
+           "") ; WBPaper00035863 - need to setup new util for parse name
+   :p (:db/id p)
    :description "Editor of publication"})
 
 (defn abstract [p]
@@ -74,7 +77,13 @@
    :description "The abstract of the publication"})
 
 (defn pmid [p]
-  {:data nil ; need to check database refs for if there is a PMID in list
+  {:data (first
+           (remove
+             nil?
+             (for [d (:paper/database p)]
+               (when (= (:database/id (:paper.database/database d))
+                        "MEDLINE")
+                 (:paper.database/accession d)))))
    :description "PubMed ID of publication"})
 
 (defn pages [p]
