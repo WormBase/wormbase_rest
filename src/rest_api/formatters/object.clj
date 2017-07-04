@@ -359,7 +359,7 @@
 
    :Sequence_evidence
    (if-let [seqs (:evidence/sequence-evidence holder)]
-     (map (partial pack-obj "sequence" seqs)))))
+     (map (partial pack-obj "sequence") seqs))))
 
 (defn pack-text
   "Normalize text to behave like a pack object."
