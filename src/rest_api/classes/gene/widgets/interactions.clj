@@ -103,7 +103,7 @@
       ;; TODO: Perhaps the proposed module system should be able to address
       ;;       this and produce a cleaner solution.
       (str/includes? (str/lower-case type-name) "regulat")
-      (when-let [reg-res (regulatory-result interaction)]
+      (if-let [reg-res (regulatory-result interaction)]
         (let [reg-res-match (re-seq #"^(.*tive)-regulate" (name reg-res))]
           (cond
             (= reg-res does-not-regulate-kw)
