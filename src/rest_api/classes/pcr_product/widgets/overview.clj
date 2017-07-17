@@ -117,22 +117,22 @@
 
 (def widget
   {:name generic/name-field
-;   :source source
-;   :overlaps_CDS overlaps-cds
-;   :canonical_parent canonical-parent
-;   :on_orfeome_project on-orfeome-project
-;   :overlapping_genes overlapping-genes
+   :source source
+   :overlaps_CDS overlaps-cds
+   :canonical_parent canonical-parent
+   :on_orfeome_project on-orfeome-project
+   :overlapping_genes overlapping-genes
    :segment segment
-;   :overlaps_variation overlaps-variation
-;   :amplified amplified
-;   :remarks generic/remarks
-;   :oligos oligos
-;   :pcr_products pcr-products
-;   :laboratory generic/laboratory
-;   :in_sequences in-sequences
-;   :microarray_results microarray-results
-;   :overlaps_pseudogene overlaps-pseudogene
-;   :overlaps_transcript overlaps-transcript
-;   :assay_conditions assay-conditions
-;   :SNP_loci snp-loci
+   :overlaps_variation overlaps-variation
+   :amplified amplified
+   :remarks generic/remarks
+   :oligos oligos
+   :pcr_products pcr-products
+   :laboratory generic/laboratory
+   :in_sequences in-sequences
+   :microarray_results microarray-results
+   :overlaps_pseudogene overlaps-pseudogene
+   :overlaps_transcript overlaps-transcript
+   :assay_conditions assay-conditions
+   :SNP_loci snp-loci
    :rnai rnai})
