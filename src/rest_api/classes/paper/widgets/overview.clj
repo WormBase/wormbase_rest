@@ -1,13 +1,12 @@
 (ns rest-api.classes.paper.widgets.overview
   (:require
-   [clojure.string :as str]
-   [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+    [clojure.string :as str]
+    [rest-api.classes.generic-fields :as generic]
+    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn intext-citation [p]
   {:data {:paper (:paper/id p)
-          :citation nil ; will take work but easy
-          }
+          :citation (:label (pack-obj p))}
    :description "APA in-text citation"})
 
 (defn keywords [p]
@@ -40,10 +39,42 @@
                  (second (re-matches #"^(?:doi[^/]*)?(10\.[^/]+.+)$" n))))))
    :description "DOI of publication"})
 
+(defn- parse-initials [firstname]
+  (str
+    (str/join
+      ". "
+      (for [part (str/split firstname #"")]
+        (get part 0)))
+    "."))
+
+(defn- create-initials [firstname]
+  (str
+    (str/join
+      ". "
+      (for [part (str/split firstname #" ")]
+        (get part 0)))
+    "."))
+
+
+
+(defn- person-parsed-name [p]
+  (let [lastname (:person/last-name p)
+        firstname (:person/first-name p)
+        initials (if (some? firstname)
+                   (create-initials firstname))
+        ]
+    (if (some? initials)
+      (str/join ", " [lastname initials])
+      lastname)))
+
 (defn authors [p]
   {:data (when-let [hs (:paper/author p)]
-           (for [h hs]
-             (pack-obj (:paper.author/author h))))
+           (for [h hs
+                 :let [person (first (:affiliation/person h))]]
+             {:taxonomy "all"
+              :class "person"
+              :label (person-parsed-name person)
+              :id (:person/id person)}))
    :description "The authors of the publication"})
 
 (defn volume [p]
@@ -66,10 +97,33 @@
    :description "The title of the publication"})
 
 (defn editors [p]
-  {:data (if (= (:paper.type/type (:paper/type p)) :wormbook)
-           (:paper/editor p)
-           "") ; WBPaper00035863 - need to setup new util for parse name
-   :p (:db/id p)
+  {:data (when-let [editors (:paper/editor p)]
+           (flatten
+             (for [editor-str (into [] editors)
+                   :let [editor-str-parsed (str/replace
+                                             (str/replace
+                                               (str/replace editor-str #"\, and " ", ")
+                                               #" and " ", ")
+                                             #"\."  "")
+                         editor-names (str/split editor-str-parsed #"\, ")]]
+               (for [editor (str/split editor-str-parsed #"\, ")]
+                 (let [name-parts (str/split editor #" ")
+                       lastname (str/join " "
+                                          (remove nil?
+                                                  (for [name-part name-parts]
+                                                    (if (every? #(Character/isUpperCase %) name-part)
+                                                      nil
+                                                      name-part))))
+                       firstname (first
+                                   (remove nil?
+                                           (for [name-part name-parts]
+                                             (when (every? #(Character/isUpperCase %) name-part)
+                                               name-part))))
+                       initials  (when (some? firstname)
+                                   (parse-initials firstname))]
+                   (if (some? initials)
+                     (str/join ", " [lastname initials])
+                     lastname))))))
    :description "Editor of publication"})
 
 (defn abstract [p]
@@ -100,7 +154,7 @@
    :intext_citation intext-citation
    :keywords keywords
    :merged_into merged-into
-   :is_wormbaook_paper is-wormbook-paper
+   :is_wormbook_paper is-wormbook-paper
    :remarks generic/remarks
    :publisher publisher
    :journal journal
