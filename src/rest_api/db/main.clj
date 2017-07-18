@@ -4,8 +4,11 @@
    [environ.core :as environ]
    [mount.core :as mount]))
 
+(defn datomic-uri []
+  (environ/env :wb-db-uri))
+
 (defn- connect []
-  (let [db-uri (environ/env :trace-db)]
+  (let [db-uri (datomic-uri)]
     (d/connect db-uri)))
 
 (defn- disconnect [conn]

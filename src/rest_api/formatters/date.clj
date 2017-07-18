@@ -25,3 +25,21 @@
         (.parse
         (java.text.SimpleDateFormat. "EEE MMM dd HH:mm:ss Z yyyy")
           date-str))))
+
+(defn format-date4
+  [date-str]
+   (.format
+     (java.text.SimpleDateFormat. "dd MMM yyyy")
+        date-str))
+
+(defn format-date5
+  [date-str]
+   (.format
+     (java.text.SimpleDateFormat. "yyyy")
+        date-str))
+
+(defn format-date6
+  [date-str]
+   (.format
+     (java.text.SimpleDateFormat. "dd MMM yyyy HH:mm:ss")
+        date-str))

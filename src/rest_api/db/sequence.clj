@@ -3,11 +3,12 @@
    [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [environ.core :refer [env]]
+   [pseudoace.utils :as pace-utils]
+   [rest-api.db.main :as db]
    [rest-api.db.sequencesql :as sequencesql]))
 
 (defn database-version []
-  (env :ws-version))
+  (pace-utils/wbdb-name (db/datomic-uri)))
 
 (def species-assemblies
   (->> "ASSEMBLIES.json"
@@ -41,7 +42,8 @@
                              (database-version)])]
 
               {(keyword db-name)
-               {:connection-uri
+               {:subprotocol "mysql"
+                :connection-uri
                  (str "jdbc:mysql://10.0.0.181:3306/"
 		       db-name
                        (str "?user=wormbase&"
@@ -49,8 +51,8 @@
                             "useSSL=false&"
                             "useLocalSessionState=true"))}})))))))
 
-(defn gene-features [db-spec gene-name]
-  (sequencesql/gene-features db-spec {:name gene-name}))
+(defn get-features [db-spec feature-name]
+  (sequencesql/get-features db-spec {:name feature-name}))
 
 (defn sequence-features-where-type [db-spec feature-name method]
   (sequencesql/sequence-features-where-type

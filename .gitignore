@@ -1,3 +1,6 @@
+#vim
+*.swp
+
 blib/
 .build/
 _build/

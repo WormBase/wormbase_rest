@@ -1,10 +1,9 @@
 (ns rest-api.classes.gene.widgets.feature
   (:require
    [clojure.string :as str]
-   [rest-api.db.sequence :as seqdb]
    [rest-api.formatters.object :refer [pack-obj]]
-   [rest-api.classes.gene.generic :as generic]
-   [rest-api.classes.gene.sequence :as seqfeat]
+   [rest-api.classes.sequence.main :as sequence-fns]
+   [rest-api.classes.generic-fields :as generic]
    [datomic.api :as d]))
 
 (defn- not-nil [xs]
@@ -78,68 +77,31 @@
      :description
      "Features associated with this Gene"}))
 
-(defn- get-segments [gene]
-  (let [species-name (->> gene :gene/species :species/id)
-        g-species (seqfeat/xform-species-name species-name)
-        sequence-database (seqdb/get-default-sequence-database g-species)]
-    (if sequence-database
-      (seqfeat/sequence-features sequence-database (:gene/id gene)))))
-
-(defn- longest-segment [segments]
-  (first
-      (sort-by #(- (:start %) (:end %)) segments)))
-
-(defn- get-segment [gene]
-  (let [segments (get-segments gene)]
-     (if (seq segments)
-       (longest-segment segments))))
-
 (defn- segment-to-position [gene segment gbrowse]
   (let [[start, stop] (->> segment
                            ((juxt :start :end))
                            (sort-by +))
         padded-start (- start 2000)
         padded-stop (+ stop 2000)
-        calc-browser-pos (fn [x-op x y mult-offset]
-                           (if gbrowse
-                             (->> (reduce - (sort-by - [x y]))
-                                  (double)
-                                  (* mult-offset)
-                                  (int)
-                                  (x-op x))
-                             y))
-        browser-start (calc-browser-pos - padded-start padded-stop 0.2)
-        browser-stop (calc-browser-pos + padded-stop padded-start 0.5)
-        id (str (:seqname segment) ":" browser-start ".." browser-stop)]
-    {:class "genomic_location" ;; To populate this correctly we will
-                               ;; need sequence data
-     :id id
-     :label id
-     :pos_string id
-     :taxonomy (if-let [class (:gene/species gene)]
-                 (if-let [[_ genus species]
-                          (re-matches #"^(.*)\s(.*)$"
-                                      (:species/id class))]
-                   (str/lower-case
-                    (str/join [(first genus) "_" species]))))
-     :tracks ["GENES"
-              "RNASEQ_ASYMMETRIES"
-              "RNASEQ"
-              "RNASEQ_SPLICE"
-              "POLYSOMES"
-              "MICRO_ORF"
-              "DNASEI_HYPERSENSITIVE_SITE"
-              "REGULATORY_REGIONS"
-              "PROMOTER_REGIONS"
-              "HISTONE_BINDING_SITES"
-              "TRANSCRIPTION_FACTOR_BINDING_REGION"
-              "TRANSCRIPTION_FACTOR_BINDING_SITE"
-              "BINDING_SITES_PREDICTED"
-              "BINDING_SITES_CURATED"
-              "BINDING_REGIONS"]}))
+        tracks ["GENES"
+                "RNASEQ_ASYMMETRIES"
+                "RNASEQ"
+                "RNASEQ_SPLICE"
+                "POLYSOMES"
+                "MICRO_ORF"
+                "DNASEI_HYPERSENSITIVE_SITE"
+                "REGULATORY_REGIONS"
+                "PROMOTER_REGIONS"
+                "HISTONE_BINDING_SITES"
+                "TRANSCRIPTION_FACTOR_BINDING_REGION"
+                "TRANSCRIPTION_FACTOR_BINDING_SITE"
+                "BINDING_SITES_PREDICTED"
+                "BINDING_SITES_CURATED"
+                "BINDING_REGIONS"]]
+    (sequence-fns/create-genomic-location-obj padded-start padded-stop gene segment tracks gbrowse)))
 
 (defn feature-image [gene]
-  (let [segment (get-segment gene)
+  (let [segment (sequence-fns/get-longest-segment gene)
         data (if (not (empty? segment))
                (segment-to-position gene segment true))]
     (if (not (empty? data))
