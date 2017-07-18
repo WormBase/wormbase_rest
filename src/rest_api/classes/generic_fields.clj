@@ -174,3 +174,56 @@
     {:data (not-empty data)
      :description  (str "external databases and IDs containing "
                         "additional information on the object")}))
+
+(defn references [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)
+        data (when (some? id-kw)
+               (let [reference-kw (keyword role "reference")]
+                 (when-let [papers (reference-kw object)]
+                   (let [number-of-papers (count papers)]
+                     {:count number-of-papers
+                      :results (for [ph (if (contains? papers :paper/id) [papers] papers)
+                                     :let [paper (if (contains? ph :paper/id)
+                                                   ph
+                                                   ((keyword (str role ".reference") "paper") ph))]]
+                                   (:db/id ph)
+;                                 (keys ((keyword (str role ".reference") "paper") ph))
+;                                 (let [abstract (:paper/abstract paper)
+;                                       publication-date (:paper/publication-date paper)
+;                                       pt (:paper/type paper)
+;                                       author-holder (:paper/author paper)
+;                                       year (if (nil? publication-date) nil (first (str/split publication-date #"-")))]
+;                                   {:page (:paper/page paper)
+;                                    :volume (:paper/volume paper)
+;                                    :name {:coord
+;                                           {:strand ""
+;                                            :end ""
+;                                            :taxonomy ""}
+;                                           :class "paper"
+;                                           :label (if-let [people (:affiliation/person author-holder)]
+;                                                    (let [person (first people)] (str (:person/last-name person) " " (first (:person/first-name person)) " et al. (" year  ")" )))
+;                                           :id (:paper/id paper)}
+;                                    :taxonomy {}
+;                                    :title  [(:paper/title paper)]
+;                                    :author (let [author (:paper.author/author author-holder)
+;                                                  people (:affiliation/person author-holder)
+;                                                  person (first people)]
+;                                              (if (nil? (:person/id person))
+;                                                {:class "person"
+;                                                 :label (:author/id author)
+;                                                 :id (:author/id author)}
+;                                                {:class "person"
+;                                                 :label (str (:person/last-name person) " " (first (:person/first-name person)))
+;                                                 :id (:person/id person)}))
+;                                    :ptype (if (nil? paper) nil (:paper.type  pt))
+;                                    :abstract (if (nil? abstract) nil [(:longtext/text (first abstract))])
+;                                    :year year
+;                                    :journal [(:paper/journal paper)]}))})
+                   )}))))
+                      ]
+    {:data (not-empty data)
+     :description (if (some? id-kw)
+                    (str "Reference papers for this " role)
+                    "Could not identify the identity of the object")}))
+

@@ -1,4 +1,4 @@
-(ns rest-api.classes.gene.widgets.references
+(ns rest-api.classes.rnai.widgets.references
   (:require
     [rest-api.classes.generic-fields :as generic]))
 
