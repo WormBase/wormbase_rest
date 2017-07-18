@@ -78,7 +78,7 @@
                        :let [author (cond
                                       (contains? h :affiliation/person)
                                       (first (:affiliation/person h))
-                                      
+
                                       (contains? h :paper.author/author)
                                       (:paper.author/author h))]]
                    {(:ordered/index h)
