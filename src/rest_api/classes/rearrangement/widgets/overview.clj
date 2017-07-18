@@ -44,15 +44,24 @@
                                 (for [author authors]
                                   (pack-obj author)))
                       :genotype (:pos-neg-data/genotype pnd)
-                      :position (if (or (= reference :pos-neg-data/gene-1)
-                                        (= reference :pos-neg-data/gene-2))
-                                  nil ; need map infor off of the gene to get the proper data - no Map_info
+                      :position (if-let [gene (or (when (= reference :pos-neg-data/gene-1)
+                                                    (:pos-neg-data.gene-1/gene
+                                                      (:pos-neg-data/gene-1 pnd)))
+                                                  (when (= reference :pos-neg-data/gene-2)
+                                                    (:pos-neg-data.gene-2/gene
+                                                      (:pos-neg-data/gene-2 pnd))))]
+                                  (let [position (:map-position/position (:gene/map gene))
+                                        position-float (:map-position.position/float position)
+                                        map-error (:map-error/error position)
+                                        map_id (:map/id (:gene.map/map (:gene/map gene)))
+                                        result (format "%s: %.2f" map_id position-float)]
+                                    (if (some? map-error)
+                                      (format "%s +/- %.3f" result map-error)
+                                      result))
                                   "-")
-                      :d (:db/id pnd)
                       :remark (when-let [rhs (:pos-neg-data/remark pnd)]
                                 (for [rh rhs]
-                                  {:text (:pos-neg-data.remark/text rh)
-                                   :evidence (obj/get-evidence rh)}))
+                                  (:pos-neg-data.remark/text rh)))
                       :results (:pos-neg-data/results pnd)}))))))
    :description "the mapping data of the rearrangement"})
 
