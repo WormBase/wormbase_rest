@@ -5,10 +5,10 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn gene [pg]
-  {:data (when-let [pghs (:gene.corresponding-pseudogene/_pseudogene pg)]
-           (for [pgh pghs
-                 :let [gene (:gene/_corresponding-pseudogene pgh)]]
-             (pack-obj gene)))
+  {:data (when-let [gene (:gene/_corresponding-pseudogene
+                           (first
+                             (:gene.corresponding-pseudogene/_pseudogene pg)))]
+           (pack-obj gene))
    :description "Gene corresponding to this pseudogene"})
 
 (defn remarks [pg]

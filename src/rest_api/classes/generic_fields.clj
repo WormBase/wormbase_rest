@@ -100,10 +100,14 @@
     {:data (when-let [labs (or ((keyword role "laboratory") object)
                                (or ((keyword role "location") object)
                                    [((keyword role "from-laboratory") object)]))]
-             (for [lab labs]
-               {:laboratory (pack-obj lab)
-                :representative (when-let [reps (:laboratory/representative lab)]
-                                  (for [rep reps] (pack-obj rep)))}))
+             (not-empty
+               (remove
+                 nil?
+                 (for [lab labs]
+                   (when-let [laboratory (pack-obj lab)]
+                     {:laboratory laboratory
+                      :representative (when-let [reps (:laboratory/representative lab)]
+                                        (for [rep reps] (pack-obj rep)))})))))
      :description (str "the laboratory where the " role " was isolated, created, or named")}))
 
 (defn description [object]

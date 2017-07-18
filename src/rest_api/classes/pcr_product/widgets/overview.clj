@@ -20,8 +20,9 @@
    :description "CDSs that this PCR product overlaps"})
 
 (defn canonical-parent [p]
-  {:daat (when-let [parent-sequence (:locatable/parent p)]
-           (pack-obj parent-sequence))
+  {:data (when-let [parent-sequence (:locatable/parent p)]
+           (when-let [parent (first (:sequence/clone parent-sequence))]
+             (pack-obj parent)))
    :description "Canonical parent of this PCR product"})
 
 (defn on-orfeome-project [p]
@@ -40,14 +41,20 @@
    :description "Overlapping genes of this PCR product"})
 
 (defn segment [p]
-  {:data  (when-let [species-name (:species/id
-                                    (:transcript/species
-                                      (first (:transcript/_corresponding-pcr-product p))))]
-            (let [pcr-product-name (:pcr-product/id p)
-                  g-species (generic-functions/xform-species-name species-name)
-                  sequence-database (seqdb/get-default-sequence-database g-species)
-                  db-spec ((keyword sequence-database) seqdb/sequence-dbs)]
-              (into {} (seqdb/get-features db-spec pcr-product-name))))
+  {:data (when-let [species-name (:species/id
+                                   (:transcript/species
+                                     (first (:transcript/_corresponding-pcr-product p))))]
+           (let [pcr-product-name (:pcr-product/id p)
+                 g-species (generic-functions/xform-species-name species-name)
+                 sequence-database (seqdb/get-default-sequence-database g-species)
+                 db-spec ((keyword sequence-database) seqdb/sequence-dbs)]
+             (when-let [seq-info (into
+                              {}
+                              (seqdb/get-features db-spec pcr-product-name))]
+               (conj
+                 {:length (+ 1
+                             (- (:end seq-info) (:start seq-info)))}
+                 seq-info))))
    :description "Sequence/segment data about this PCR product"})
 
 (defn overlaps-variation [p]

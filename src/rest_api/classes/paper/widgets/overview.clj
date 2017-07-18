@@ -165,7 +165,7 @@
    :affiliation affiliation
    :title title
    :editors editors
-   :abstact abstract
+   :abstract abstract
    :pmid pmid
    :pages pages
    :year year})

@@ -25,6 +25,26 @@
                    (when-let [entity (reference pnd)]
                      {:type (if (= "positive"(name (:pos-neg-data/calculation pnd)))
                               "+" "-")
+                      :class (cond
+                               (or (= reference :pos-neg-data/locus-1)
+                                   (= reference :pos-neg-data/locus-2))
+                               "Locus"
+
+                                (or (= reference :pos-neg-data/gene-1)
+                                   (= reference :pos-neg-data/gene-2))
+                               "Gene"
+
+                               (or (= reference :pos-neg-data/rearrangement-1)
+                                   (= reference :pos-neg-data/rearrangement-2))
+                               "Rearrangement"
+
+                               (or (= reference :pos-neg-data/allele-1)
+                                   (= reference :pos-neg-data/allele-2))
+                               "Allele"
+
+                               (or (= reference :pos-neg-data/clone-1)
+                                   (= reference :pos-neg-data/clone-2))
+                               "Clone")
                       :name (cond
                               (= reference :pos-neg-data/locus-1)
                               (pack-obj (:pos-neg-data.locus-1/locus entity))
@@ -100,33 +120,34 @@
   {:data (when-let [strains (:rearrangement/strain r)]
            (for [strain strains]
              {:info
-              {:str (:strain/genotype strain)
+              {:genotype
+               {:str (:strain/genotype strain)
 
-               :data (flatten
-                       (remove
-                         nil?
-                         (conj
-                           (when-let [genes (:gene/_strain strain)]
-                             (for [gene genes]
-                               {(:label (pack-obj gene))
-                                (pack-obj gene)}))
-                           (when-let [rearrangements (:rearrangement/_strain strain)]
-                             (for [rearrangement rearrangements]
-                               {(:label (pack-obj rearrangement))
-                                (pack-obj rearrangement)}))
-                           (when-let [vhs (:variation.strain/_strain strain)] ;arDf1
-                             (for [vh vhs
-                                   :let [v (:variation/_strain vh)]]
-                               {(:label (pack-obj v))
-                                (pack-obj v)}))
-                           (when-let [clones (:clone/_in-strain strain)]
-                             (for [clone clones]
-                               {(:label (pack-obj clone))
-                                (pack-obj clone)}))
-                           (when-let [tgs (:transgene/_strain strain)]
-                             (for [tg tgs]
-                               {(:label (pack-obj tg))
-                                (pack-obj tg)})))))}
+                :data (flatten
+                        (remove
+                          nil?
+                          (conj
+                            (when-let [genes (:gene/_strain strain)]
+                              (for [gene genes]
+                                {(:label (pack-obj gene))
+                                 (pack-obj gene)}))
+                            (when-let [rearrangements (:rearrangement/_strain strain)]
+                              (for [rearrangement rearrangements]
+                                {(:label (pack-obj rearrangement))
+                                 (pack-obj rearrangement)}))
+                            (when-let [vhs (:variation.strain/_strain strain)] ;arDf1
+                              (for [vh vhs
+                                    :let [v (:variation/_strain vh)]]
+                                {(:label (pack-obj v))
+                                 (pack-obj v)}))
+                            (when-let [clones (:clone/_in-strain strain)]
+                              (for [clone clones]
+                                {(:label (pack-obj clone))
+                                 (pack-obj clone)}))
+                            (when-let [tgs (:transgene/_strain strain)]
+                              (for [tg tgs]
+                                {(:label (pack-obj tg))
+                                 (pack-obj tg)})))))}}
               :strain (pack-obj strain)}))
    :description "Strains associated with the Rearrangement"})
 
@@ -138,26 +159,26 @@
 
 (defn positive [r]
   {:data (when-let [gihs (:rearrangement/gene-inside r)]
-           {"Gene inside"
+           {"Genes inside"
             (for [gih gihs]
               (pack-obj (:rearrangement.gene-inside/gene gih)))})
    :description "Covered by rearrangement"})
 
 (defn negative [r]
   {:data (when-let [gihs (:rearrangement/gene-outside r)]
-           {"Gene outside"
+           {"Genes outside"
             (for [gih gihs]
               (pack-obj (:rearrangement.gene-outside/gene gih)))})
    :description "Not covered by rearrangement"})
 
 (def widget
   {:name generic/name-field
-   :mapping_data mapping-data })
- ;  :display display
-  ; :choromosome chromosome
- ;  :reference_strain reference-strain
- ;  :strains strains
-;   :remarks generic/remarks
- ;  :type type-field
-  ; :positive positive
-   ;:negative negative})
+   :mapping_data mapping-data
+   :display display
+   :chromosome chromosome
+   :reference_strain reference-strain
+   :strains strains
+   :remarks generic/remarks
+   :type type-field
+   :positive positive
+   :negative negative})
