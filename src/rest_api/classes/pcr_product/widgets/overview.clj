@@ -1,7 +1,9 @@
 (ns rest-api.classes.pcr-product.widgets.overview
   (:require
    [clojure.string :as str]
+   [rest-api.db.sequence :as seqdb]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn source [p]
@@ -38,7 +40,14 @@
    :description "Overlapping genes of this PCR product"})
 
 (defn segment [p]
-  {:data nil ; need to get from database
+  {:data  (when-let [species-name (:species/id
+                                    (:transcript/species
+                                      (first (:transcript/_corresponding-pcr-product p))))]
+            (let [pcr-product-name (:pcr-product/id p)
+                  g-species (generic-functions/xform-species-name species-name)
+                  sequence-database (seqdb/get-default-sequence-database g-species)
+                  db-spec ((keyword sequence-database) seqdb/sequence-dbs)]
+              (into {} (seqdb/get-features db-spec pcr-product-name))))
    :description "Sequence/segment data about this PCR product"})
 
 (defn overlaps-variation [p]
@@ -104,8 +113,6 @@
 (defn rnai [p]
   {:data (when-let [rs (:rnai/_pcr-product p)]
            (for [r rs] (pack-obj r)))
-   :k (keys p)
-   :d (:db/id p)
    :description "associated RNAi experiments"})
 
 (def widget

@@ -5,8 +5,8 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn is-dead [p]
- {:data (if (contains? :phenotype/dead p)
-          (:db/id p) ; next have to get the Alternate phentoype but don't know how : WBPhenotype_0001976
+ {:data (when (contains? p :phenotype/dead)
+         nil ; requires Alternate phentoype : WBPhenotype_0001976 - will be available in WS261
           )
   :description "The Note of the phenotype when it's retired and replaced by another."})
 

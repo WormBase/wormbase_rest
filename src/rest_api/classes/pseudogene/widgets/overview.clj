@@ -28,7 +28,7 @@
    :description "The laboratory of origin"})
 
 (defn related-seqs [pg]
-  {:data nil ; need sequence database
+  {:data nil ; need sequence database (e.g. CRE31928) - not working through catalyst code.
    :description "Sequences related to this pseudogene"})
 
 (defn parent-sequence [pg]
