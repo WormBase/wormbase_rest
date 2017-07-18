@@ -69,12 +69,20 @@
 
 (defn authors [p]
   {:data (when-let [hs (:paper/author p)]
-           (for [h hs
-                 :let [person (first (:affiliation/person h))]]
-             {:taxonomy "all"
-              :class "person"
-              :label (person-parsed-name person)
-              :id (:person/id person)}))
+           (vals
+             (into
+               (sorted-map)
+               (into
+                 {}
+                 (for [h hs
+                       :let [author (cond
+                                      (contains? h :affiliation/person)
+                                      (first (:affiliation/person h))
+                                      
+                                      (contains? h :paper.author/author)
+                                      (:paper.author/author h))]]
+                   {(:ordered/index h)
+                    (pack-obj author)})))))
    :description "The authors of the publication"})
 
 (defn volume [p]

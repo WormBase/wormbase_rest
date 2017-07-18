@@ -9,8 +9,7 @@
 (routing/defroutes
   {:entity-ns "person"
    :widget
-   {
-    :laboratory laboratory/widget
+   {:laboratory laboratory/widget
     ;:overview overview/widget
     :publications publications/widget
     :tracking tracking/widget}})
