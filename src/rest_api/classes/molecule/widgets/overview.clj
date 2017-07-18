@@ -75,7 +75,7 @@
 ; Biofunction_role', 'Status', 'Detection_method', 'Extraction_method'
 (defn biological-role [m] ; This is not complete. I can not find the paper evidence.
   {:data (not-empty
-           (let [biofunction (for [br (:molecule/biofunction-role m)]
+           (when-let [biofunction (for [br (:molecule/biofunction-role m)]
                                {:val (str/capitalize
                                        (name
                                          (:molecule.biofunction-role/value br)))
