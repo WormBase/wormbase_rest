@@ -200,25 +200,29 @@
                                        year (if (nil? publication-date) nil (first (str/split publication-date #"-")))]
                                    {:page (:paper/page paper)
                                     :volume (:paper/volume paper)
-                                    :name {:coord
-                                           {:strand ""
-                                            :end ""
-                                            :taxonomy ""}
-                                           :class "paper"
-                                           :label (if-let [people (:affiliation/person author-holder)]
-                                                    (let [person (first people)] (str (:person/last-name person) " " (first (:person/first-name person)) " et al. (" year  ")" )))
-                                           :id (:paper/id paper)}
-                                    :taxonomy {}
+                                    :name  (pack-obj paper)
                                     :title  [(:paper/title paper)]
-                                    :author (let [author (:paper.author/author author-holder)
-                                                  people (:affiliation/person author-holder)
-                                                  person (first people)]
-                                              ())
+                                    :author (when-let [hs (:paper/author paper)]
+                                              (vals
+                                                (into
+                                                  (sorted-map)
+                                                  (into
+                                                    {}
+                                                    (for [h hs
+                                                          :let [author (cond
+                                                                         (contains? h :affiliation/person)
+                                                                         (first (:affiliation/person h))
+
+                                                                         (contains? h :paper.author/author)
+                                                                         (:paper.author/author h))]]
+                                                      {(:ordered/index h)
+                                                       (pack-obj author)})))))
                                     :ptype (if (nil? paper) nil (:paper.type  pt))
                                     :abstract (if (nil? abstract) nil [(:longtext/text (first abstract))])
                                     :year year
                                     :journal [(:paper/journal paper)]}))}))))]
     {:data (not-empty data)
+     :dbid (:db/id object)
      :description (if (some? id-kw)
                     (str "Reference papers for this " role)
                     "Could not identify the identity of the object")}))
