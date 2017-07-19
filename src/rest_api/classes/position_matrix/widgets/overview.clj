@@ -9,7 +9,10 @@
    :description "feature associated with motif"})
 
 (defn bound-by-gene-product [pm]
-  {:data nil ; not working on main site - 500 error
+  {:data (when-let [ghs (:position-matrix/bound-by-gene-product pm)]
+           (for [gh ghs
+                 :let [gene (:position-matrix.bound-by-gene-product/gene gh)]]
+             (pack-obj gene)))
    :description "gene products that bind to the motif"})
 
 (defn description [pm]
@@ -55,4 +58,4 @@
    :transcription_factor transcription-factor
    :remarks generic/remarks
    :associated_positon_matrix associated-position-matrix
-   :position_dat position-data})
+   :position_data position-data})

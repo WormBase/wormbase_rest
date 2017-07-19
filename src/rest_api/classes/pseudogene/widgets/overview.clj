@@ -5,10 +5,10 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn gene [pg]
-  {:data (when-let [pghs (:gene.corresponding-pseudogene/_pseudogene pg)]
-           (for [pgh pghs
-                 :let [gene (:gene/_corresponding-pseudogene pgh)]]
-             (pack-obj gene)))
+  {:data (when-let [gene (:gene/_corresponding-pseudogene
+                           (first
+                             (:gene.corresponding-pseudogene/_pseudogene pg)))]
+           (pack-obj gene))
    :description "Gene corresponding to this pseudogene"})
 
 (defn remarks [pg]
@@ -28,7 +28,7 @@
    :description "The laboratory of origin"})
 
 (defn related-seqs [pg]
-  {:data nil ; need sequence database
+  {:data nil ; need sequence database (e.g. CRE31928) - not working through catalyst code.
    :description "Sequences related to this pseudogene"})
 
 (defn parent-sequence [pg]
