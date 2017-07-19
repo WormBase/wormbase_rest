@@ -55,8 +55,6 @@
         (get part 0)))
     "."))
 
-
-
 (defn- person-parsed-name [p]
   (let [lastname (:person/last-name p)
         firstname (:person/first-name p)
@@ -82,7 +80,26 @@
                                       (contains? h :paper.author/author)
                                       (:paper.author/author h))]]
                    {(:ordered/index h)
-                    (pack-obj author)})))))
+                      {:id (or (:author/id author)
+                               (:person/id author))
+                       :class "author"
+                       :label (if (:person/id author)
+                                (let [lastname (cond
+                                                 (contains? author :person/last-name)
+                                                 (:person/last-name author)
+
+                                                 (contains? author :d)
+                                                 "d"
+                                                 )
+                                      initial (cond
+                                                (contains? author :person/first-name)
+                                                (if-let [firstname (:person/first-name author)]
+                                                 (str/capitalize (get firstname 0))))]
+                                  (str lastname ", " initial "."))
+                                (if-let [[lastname initial] (str/split (:author/id author) #" ")]
+                                  (str lastname ", " initial ".")))
+                       :taxonomy "all"
+                       }})))))
    :description "The authors of the publication"})
 
 (defn volume [p]
@@ -158,22 +175,22 @@
    :description "The year of publication"})
 
 (def widget
-  {:name generic/name-field
-   :intext_citation intext-citation
-   :keywords keywords
-   :merged_into merged-into
-   :is_wormbook_paper is-wormbook-paper
-   :remarks generic/remarks
-   :publisher publisher
-   :journal journal
-   :doi doi
+  {;:name generic/name-field
+;   :intext_citation intext-citation
+;   :keywords keywords
+;   :merged_into merged-into
+;   :is_wormbook_paper is-wormbook-paper
+;   :remarks generic/remarks
+;   :publisher publisher
+;   :journal journal
+;   :doi doi
    :authors authors
-   :volume volume
-   :publication_type publication-type
-   :affiliation affiliation
-   :title title
-   :editors editors
-   :abstract abstract
-   :pmid pmid
-   :pages pages
+;   :volume volume
+;   :publication_type publication-type
+;   :affiliation affiliation
+;   :title title
+;   :editors editors
+;   :abstract abstract
+;   :pmid pmid
+;   :pages pages
    :year year})

@@ -24,12 +24,16 @@
   return the short name of the species, otherwise \"all\"."
   [class obj]
   (let [species-ident (keyword class "species")]
-    (if-let [species (species-ident obj)]
+    (if-let [species (first (species-ident obj))]
+      (let [species-obj (let [species-kw (keyword (str class ".species") "species")]
+                           (if (species-kw species)
+                             (species-kw species)
+                             species))]
       (if-let [[_ g species] (re-matches #"(.).*[ _](.+)"
-                                         (:species/id species))]
+                                         (:species/id species-obj))]
         (.toLowerCase (str g "_" species))
         "unknown")
-      "all")))
+      "all"))))
 
 (defmulti obj-label
   "Build a human-readable label for `obj`"
