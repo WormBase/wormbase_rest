@@ -181,47 +181,39 @@
         data (when (some? id-kw)
                (let [reference-kw (keyword role "reference")]
                  (when-let [papers (reference-kw object)]
-                   (let [number-of-papers (count papers)]
+                   (let [number-of-papers (count papers)
+                         kw-reference-paper (keyword (str role ".reference") "paper")]
                      {:count number-of-papers
-                      :results (for [ph (if (contains? papers :paper/id) [papers] papers)
-                                     :let [paper (if (contains? ph :paper/id)
-                                                   ph
-                                                   ((keyword (str role ".reference") "paper") ph))]]
-                                   (:db/id ph)
-;                                 (keys ((keyword (str role ".reference") "paper") ph))
-;                                 (let [abstract (:paper/abstract paper)
-;                                       publication-date (:paper/publication-date paper)
-;                                       pt (:paper/type paper)
-;                                       author-holder (:paper/author paper)
-;                                       year (if (nil? publication-date) nil (first (str/split publication-date #"-")))]
-;                                   {:page (:paper/page paper)
-;                                    :volume (:paper/volume paper)
-;                                    :name {:coord
-;                                           {:strand ""
-;                                            :end ""
-;                                            :taxonomy ""}
-;                                           :class "paper"
-;                                           :label (if-let [people (:affiliation/person author-holder)]
-;                                                    (let [person (first people)] (str (:person/last-name person) " " (first (:person/first-name person)) " et al. (" year  ")" )))
-;                                           :id (:paper/id paper)}
-;                                    :taxonomy {}
-;                                    :title  [(:paper/title paper)]
-;                                    :author (let [author (:paper.author/author author-holder)
-;                                                  people (:affiliation/person author-holder)
-;                                                  person (first people)]
-;                                              (if (nil? (:person/id person))
-;                                                {:class "person"
-;                                                 :label (:author/id author)
-;                                                 :id (:author/id author)}
-;                                                {:class "person"
-;                                                 :label (str (:person/last-name person) " " (first (:person/first-name person)))
-;                                                 :id (:person/id person)}))
-;                                    :ptype (if (nil? paper) nil (:paper.type  pt))
-;                                    :abstract (if (nil? abstract) nil [(:longtext/text (first abstract))])
-;                                    :year year
-;                                    :journal [(:paper/journal paper)]}))})
-                   )}))))
-                      ]
+                      :results (for [ph (if (or (kw-reference-paper papers)
+                                                (:paper/id papers)) [papers] papers)
+                                     :let [paper (if (contains? ph kw-reference-paper)
+                                                   (kw-reference-paper ph)
+                                                   ph)]]
+                                 (let [abstract (:paper/abstract paper)
+                                       publication-date (:paper/publication-date paper)
+                                       pt (:paper/type paper)
+                                       author-holder (:paper/author paper)
+                                       year (if (nil? publication-date) nil (first (str/split publication-date #"-")))]
+                                   {:page (:paper/page paper)
+                                    :volume (:paper/volume paper)
+                                    :name {:coord
+                                           {:strand ""
+                                            :end ""
+                                            :taxonomy ""}
+                                           :class "paper"
+                                           :label (if-let [people (:affiliation/person author-holder)]
+                                                    (let [person (first people)] (str (:person/last-name person) " " (first (:person/first-name person)) " et al. (" year  ")" )))
+                                           :id (:paper/id paper)}
+                                    :taxonomy {}
+                                    :title  [(:paper/title paper)]
+                                    :author (let [author (:paper.author/author author-holder)
+                                                  people (:affiliation/person author-holder)
+                                                  person (first people)]
+                                              ())
+                                    :ptype (if (nil? paper) nil (:paper.type  pt))
+                                    :abstract (if (nil? abstract) nil [(:longtext/text (first abstract))])
+                                    :year year
+                                    :journal [(:paper/journal paper)]}))}))))]
     {:data (not-empty data)
      :description (if (some? id-kw)
                     (str "Reference papers for this " role)
