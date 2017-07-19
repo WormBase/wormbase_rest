@@ -175,22 +175,22 @@
    :description "The year of publication"})
 
 (def widget
-  {;:name generic/name-field
-;   :intext_citation intext-citation
-;   :keywords keywords
-;   :merged_into merged-into
-;   :is_wormbook_paper is-wormbook-paper
-;   :remarks generic/remarks
-;   :publisher publisher
-;   :journal journal
-;   :doi doi
+  {:name generic/name-field
+   :intext_citation intext-citation
+   :keywords keywords
+   :merged_into merged-into
+   :is_wormbook_paper is-wormbook-paper
+   :remarks generic/remarks
+   :publisher publisher
+   :journal journal
+   :doi doi
    :authors authors
-;   :volume volume
-;   :publication_type publication-type
-;   :affiliation affiliation
-;   :title title
-;   :editors editors
-;   :abstract abstract
-;   :pmid pmid
-;   :pages pages
+   :volume volume
+   :publication_type publication-type
+   :affiliation affiliation
+   :title title
+   :editors editors
+   :abstract abstract
+   :pmid pmid
+   :pages pages
    :year year})
