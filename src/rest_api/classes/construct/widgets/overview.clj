@@ -32,6 +32,7 @@
                                  (pack-obj (:transgene.laboratory/laboratory lab)))
                       :use_summary (:transgene.summary/text (:transgene/summary tg))
                       :used_in (pack-obj tg)
+                      :evidence (obj/get-evidence tg)
                       :used_in_type "Transgene construct"}))
                  (when-let [tgs (:construct/transgene-coinjection construct)]
                    (for [tg tgs]
@@ -39,6 +40,7 @@
                                  (pack-obj (:transgene.laboratory/laboratory lab)))
                       :use_summary (:transgene.summary/text (:transgene/summary tg))
                       :used_in (pack-obj tg)
+                      :evidence (obj/get-evidence tg)
                       :used_in_type "Transgene coinjection"}))
                  (when-let [eps (:expr-pattern/_construct construct)]
                    (for [ep eps]
@@ -52,14 +54,16 @@
                                                                             (:gene/id gene))
                                                                           "")))
                                 :id (:expr-pattern/id ep)}
+                      :evidence (obj/get-evidence ep)
                       :used_in_type "Expression pattern"}))
                  (when-let [vs (:variation/_derived-from-construct construct)]
                    (for [v vs]
                      {:use_lab (for [lab (:variation/laboratory v)] (pack-obj(lab)))
                       :use_summary nil
                       :used_in (pack-obj v)
+                      :evidence (obj/get-evidence v)
                       :used_in_type "Engineered variation"}))
-                 (when-let [ihs (:interactor-info/_construct construct)] 
+                 (when-let [ihs (:interactor-info/_construct construct)]
                    (for [ih ihs]
                      {:use_lab []
                       :use_summary nil
@@ -73,12 +77,14 @@
                                                        (or (:gene/public-name gene)
                                                            (:gene/id gene))))
                                     :id (:interaction/id i)})
+                      :evidence (obj/get-evidence ih)
                       :used_in_type "interaction"}))
                  (when-let [wbps (:wbprocess/_marker-construct construct)] ;; no examples in database
                    (for [wbp wbps]
                      {:use_lab []
                       :use_summary (:wbprocess.summary/text (:wbprocess/summary wbp))
                       :used_in (pack-obj wbp)
+                      :evidence (obj/get-evidence wbp)
                       :used_in_type "Topic output_indica"}))))))
    :description "The Construct is used for"})
 
