@@ -3,6 +3,7 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
     [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.paper.core :as generic-paper]
     [clojure.string :as str]))
 
 (defn name-field [object]
@@ -202,21 +203,7 @@
                                     :volume (:paper/volume paper)
                                     :name  (pack-obj paper)
                                     :title  [(:paper/title paper)]
-                                    :author (when-let [hs (:paper/author paper)]
-                                              (vals
-                                                (into
-                                                  (sorted-map)
-                                                  (into
-                                                    {}
-                                                    (for [h hs
-                                                          :let [author (cond
-                                                                         (contains? h :affiliation/person)
-                                                                         (first (:affiliation/person h))
-
-                                                                         (contains? h :paper.author/author)
-                                                                         (:paper.author/author h))]]
-                                                      {(:ordered/index h)
-                                                       (pack-obj author)})))))
+                                    :author (generic-paper/get-authors paper)
                                     :ptype (when paper (:paper.type  pt))
                                     :abstract (when abstract [(:longtext/text (first abstract))])
                                     :year year
