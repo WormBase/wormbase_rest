@@ -217,12 +217,11 @@
                                                                          (:paper.author/author h))]]
                                                       {(:ordered/index h)
                                                        (pack-obj author)})))))
-                                    :ptype (if (nil? paper) nil (:paper.type  pt))
-                                    :abstract (if (nil? abstract) nil [(:longtext/text (first abstract))])
+                                    :ptype (when paper (:paper.type  pt))
+                                    :abstract (when abstract [(:longtext/text (first abstract))])
                                     :year year
                                     :journal [(:paper/journal paper)]}))}))))]
     {:data (not-empty data)
-     :dbid (:db/id object)
      :description (if (some? id-kw)
                     (str "Reference papers for this " role)
                     "Could not identify the identity of the object")}))
