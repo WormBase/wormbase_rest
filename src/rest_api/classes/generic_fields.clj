@@ -12,13 +12,13 @@
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (when-let [ghs ((keyword role "gene") object)]
-             (for [gh ghs :let  [gene ((keyword (str role ".gene") "gene") gh)]]
+             (for [gh ghs :let [gene ((keyword (str role ".gene") "gene") gh)]]
                (pack-obj gene)))
      :description (str "gene products for this " role)}))
 
 (defn fusion-reporter [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-	role (namespace id-kw)]
+        role (namespace id-kw)]
     {:data (when-let [t ((keyword role "fusion-reporter") object)] (first t))
      :description (str "reporter construct for this " role)}))
 
@@ -26,8 +26,8 @@
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (when-let [gene ((keyword (str role ".driven-by-gene") "gene")
-             (first ((keyword role "driven-by-gene") object)))]
-        (pack-obj gene))
+                            (first ((keyword role "driven-by-gene") object)))]
+             (pack-obj gene))
      :description "gene that drives the construct"}))
 
 (defn genomic-position [object]
@@ -37,27 +37,27 @@
 
 (defn method [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-	role (namespace id-kw)]
+        role (namespace id-kw)]
     {:data (:method/id (:locatable/method object))
      :description (str "the method used to describe the" role)}))
 
 (defn identity-field [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-	role (namespace id-kw)]
+        role (namespace id-kw)]
     {:data (if-let [ident ((keyword role "brief-identification") object)]
-	     {:text (or (:cds.brief-identification/text ident)
+             {:text (or (:cds.brief-identification/text ident)
                         ident)
-	      :evidence (obj/get-evidence ident)})
+              :evidence (obj/get-evidence ident)})
      :description (str "Brief description of the WormBase " role)}))
 
 (defn historical-gene [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-	role (namespace id-kw)]
+        role (namespace id-kw)]
     {:data (if-let [ghs ((keyword role "historical-gene") object)]
-	     (for [gh ghs]
-	       {:text (pack-obj ((keyword (str role ".historical-gene") "gene") gh))
-		:evidence (when-let [text ((keyword (str role ".historical-gene") "text") gh)]
-			    {text ""})}))
+             (for [gh ghs]
+               {:text (pack-obj ((keyword (str role ".historical-gene") "gene") gh))
+                :evidence (when-let [text ((keyword (str role ".historical-gene") "text") gh)]
+                            {text ""})}))
      :description (str "Historical record of the dead genes originally associated with this " role)}))
 
 (defn summary [object]
@@ -75,15 +75,15 @@
 
 (defn status [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-	role (namespace id-kw)]
+        role (namespace id-kw)]
     {:data (if-let [sh ((keyword role "status") object)]
-	     (:status/status sh))
-    :description (str "current status of the " (str/capitalize role) ": "
-                      (id-kw object) "if not Live or Valid")}))
+             (:status/status sh))
+     :description (str "current status of the " (str/capitalize role) ": "
+                       (id-kw object) "if not Live or Valid")}))
 
 (defn other-names [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-	role (namespace id-kw)
+        role (namespace id-kw)
         text-kw (keyword (str role ".other-name") "text")]
     {:data (when-let [other-names ((keyword role "other-name") object)]
              (for [other-name other-names]
@@ -119,11 +119,11 @@
 (defn taxonomy [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-  {:data (if-let [species (:species/id ((keyword role "species") object))]
-           (let [[genus species] (str/split species #" ")]
-             {:genus genus
-              :species species}))
-   :description "the genus and species of the current object"}))
+    {:data (if-let [species (:species/id ((keyword role "species") object))]
+             (let [[genus species] (str/split species #" ")]
+               {:genus genus
+                :species species}))
+     :description "the genus and species of the current object"}))
 
 (defn remarks [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
@@ -138,10 +138,10 @@
                        {:text (or (remark-text-kw remark-holder)
                                   (db-remark-text-kw remark-holder))
                         :evidence (obj/get-evidence remark-holder)})))))]
-       {:data (not-empty data)
-        :description (if (some? id-kw)
-                       (str "Curatorial remarks for the " role)
-                       "Can not determine class for entity and can not determine remarks")}))
+    {:data (not-empty data)
+     :description (if (some? id-kw)
+                    (str "Curatorial remarks for the " role)
+                    "Can not determine class for entity and can not determine remarks")}))
 
 (defn xrefs [object]
   (let [data
