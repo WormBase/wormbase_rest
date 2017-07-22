@@ -26,10 +26,21 @@
 
 (defn interaction-type [i]
   {:data (when-let [types (:interaction/type i)]
-          (str/join
-            ": "
-            (for [part (str/split (name  (first types)) #":")]
-             (str/replace (str/capitalize part) #"-" " "))))
+           (str/join
+             ": "
+             (for [part (str/split (name  (first types)) #":")]
+               (cond
+                 (= part "proteindna")
+                 "Protein-DNA"
+
+                 (= part "proteinprotein")
+                 "Protein-protein"
+
+                 (= part "proteinrna")
+                 "Protein-RNA"
+
+                 :else
+                 (str/replace (str/capitalize part) #"-" " ")))))
    :description "Type of the interaction"})
 
 (defn interaction-phenotype [i]
@@ -52,9 +63,13 @@
    :description "WBProcess for the interaction"})
 
 (defn detection-method [i]
-  {:data (when-let [method (:interaction.detection-method/value
-                             (first (:interaction/detection-method i)))]
-           (str/capitalize (str/replace (name method) #"-" " ")))
+  {:data (when-let [dmethods (:interaction/detection-method i)]
+           (for [dmethod dmethods
+                 :let [method-kw (:interaction.detection-method/value dmethod)]]
+             (let [method-str (str/capitalize (str/replace (name method-kw) #"-" " "))]
+               (if-let [text (:interaction.detection-method/text dmethod)]
+                  (str/join ": " [method-str text])
+                  method-str))))
    :description "Method(s) by which the interaction was detected"})
 
 (defn regulation-level [i]
@@ -72,7 +87,6 @@
            (for [rh rhs] (pack-obj rh)))
    :description "RNAi details for the interaction"})
 
-; looked for interactors with field variation-interactor and non were filled in by prod
 (defn interactor [i]
   {:data (not-empty
            (remove
@@ -81,13 +95,14 @@
              (conj
               (when-let [hs (:interaction/rearrangement i)]
                  (for [h hs]
-                   {:interactor (when-let [f (:interaction.feature-interactor/feature h)]
-                                  (pack-obj f))
+                   {:interactor (when-let [r (:interaction.rearrangement/rearrangement h)]
+                                  (pack-obj r))
                     :interactor_type "Rearrangement"
                     :role (when-let [roles (:interactor-info/interactor-type h)]
                             (for [role roles] (str/capitalize (name role))))
-                    :transgene (when-let [tg (:interactor-info/transgene h)]
-                                 (pack-obj (first tg)))
+                    :transgene (when-let [tgs (:interactor-info/transgene h)]
+                                 (for [tg tgs]
+                                   (pack-obj tg)))
                     :variation nil }))
                (when-let [hs (:interaction/feature-interactor i)]
                  (for [h hs]
@@ -96,9 +111,32 @@
                     :interactor_type "Feature interactor"
                     :role (when-let [roles (:interactor-info/interactor-type h)]
                             (for [role roles] (str/capitalize (name role))))
-                    :transgene (when-let [tg (:interactor-info/transgene h)]
-                                 (pack-obj (first tg)))
+                    :transgene (when-let [tgs (:interactor-info/transgene h)]
+                                 (for [tg tgs]
+                                   (pack-obj tg)))
                     :variation nil }))
+               (when-let [hs (:interaction/molecule-interactor i)]
+                 (for [h hs]
+                   {:interactor (when-let [gene (:interaction.molecule-interactor/molecule h)]
+                                  (pack-obj gene))
+                    :interactor_type "Molecule interactor"
+                    :role (when-let [roles (:interactor-info/interactor-type h)]
+                            (for [role roles] (str/capitalize (name role))))
+                    :transgene (when-let [tgs (:interactor-info/transgene h)]
+                                 (for [tg tgs]
+                                   (pack-obj tg)))
+                    :variation nil }))
+               (when-let [hs (:interaction/other-interactor i)]
+                 (for [h hs]
+                   {:interactor (:interaction.other-interactor/text h)
+                    :interactor_type "Other interactor"
+                    :role (when-let [roles (:interactor-info/interactor-type h)]
+                            (for [role roles] (str/capitalize (name role))))
+                    :transgene (when-let [tgs (:interactor-info/transgene h)]
+                                 (for [tg tgs]
+                                   (pack-obj tg)))
+                    :variation nil }))
+
                (when-let [hs (:interaction/interactor-overlapping-gene i)]
                  (for [h hs]
                    {:interactor (when-let [gene (:interaction.interactor-overlapping-gene/gene h)]
@@ -106,8 +144,9 @@
                     :interactor_type "Interactor overlapping gene"
                     :role (when-let [roles (:interactor-info/interactor-type h)]
                             (for [role roles] (str/capitalize (name role))))
-                    :transgene (when-let [tg (:interactor-info/transgene h)]
-                                 (pack-obj (first tg)))
+                    :transgene (when-let [tgs (:interactor-info/transgene h)]
+                                 (for [tg tgs]
+                                   (pack-obj tg)))
                     :variation nil }))))))
    :description "interactors in this interaction"})
 

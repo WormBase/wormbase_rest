@@ -2,6 +2,7 @@
   (:require
     [clojure.string :as str]
     [rest-api.classes.generic-fields :as generic]
+    [rest-api.classes.paper.core :as paper-generic]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn intext-citation [p]
@@ -66,40 +67,7 @@
       lastname)))
 
 (defn authors [p]
-  {:data (when-let [hs (:paper/author p)]
-           (vals
-             (into
-               (sorted-map)
-               (into
-                 {}
-                 (for [h hs
-                       :let [author (cond
-                                      (contains? h :affiliation/person)
-                                      (first (:affiliation/person h))
-
-                                      (contains? h :paper.author/author)
-                                      (:paper.author/author h))]]
-                   {(:ordered/index h)
-                      {:id (or (:author/id author)
-                               (:person/id author))
-                       :class "author"
-                       :label (if (:person/id author)
-                                (let [lastname (cond
-                                                 (contains? author :person/last-name)
-                                                 (:person/last-name author)
-
-                                                 (contains? author :d)
-                                                 "d"
-                                                 )
-                                      initial (cond
-                                                (contains? author :person/first-name)
-                                                (if-let [firstname (:person/first-name author)]
-                                                 (str/capitalize (get firstname 0))))]
-                                  (str lastname ", " initial "."))
-                                (if-let [[lastname initial] (str/split (:author/id author) #" ")]
-                                  (str lastname ", " initial ".")))
-                       :taxonomy "all"
-                       }})))))
+  {:data (paper-generic/get-authors p)
    :description "The authors of the publication"})
 
 (defn volume [p]
