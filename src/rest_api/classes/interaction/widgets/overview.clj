@@ -66,7 +66,12 @@
   {:data (when-let [dmethods (:interaction/detection-method i)]
            (for [dmethod dmethods
                  :let [method-kw (:interaction.detection-method/value dmethod)]]
-             (let [method-str (str/capitalize (str/replace (name method-kw) #"-" " "))]
+             (let [method-str (str/replace
+                                (str/replace
+                                  (str/capitalize
+                                    (str/replace (name method-kw) #"-" " "))
+                                  #"rna" "RNA")
+                                #"dna" "DNA")]
                (if-let [text (:interaction.detection-method/text dmethod)]
                   (str/join ": " [method-str text])
                   method-str))))
@@ -98,6 +103,17 @@
                    {:interactor (when-let [r (:interaction.rearrangement/rearrangement h)]
                                   (pack-obj r))
                     :interactor_type "Rearrangement"
+                    :role (when-let [roles (:interactor-info/interactor-type h)]
+                            (for [role roles] (str/capitalize (name role))))
+                    :transgene (when-let [tgs (:interactor-info/transgene h)]
+                                 (for [tg tgs]
+                                   (pack-obj tg)))
+                    :variation nil }))
+               (when-let [hs (:interaction/variation-interactor i)]
+                 (for [h hs]
+                   {:interactor (when-let [f (:interaction.variation-interactor/variation h)]
+                                  (pack-obj f))
+                    :interactor_type "Variation interactor"
                     :role (when-let [roles (:interactor-info/interactor-type h)]
                             (for [role roles] (str/capitalize (name role))))
                     :transgene (when-let [tgs (:interactor-info/transgene h)]
@@ -148,6 +164,8 @@
                                  (for [tg tgs]
                                    (pack-obj tg)))
                     :variation nil }))))))
+   :dbid (:db/id i)
+   :k (keys i)
    :description "interactors in this interaction"})
 
 

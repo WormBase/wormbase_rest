@@ -25,7 +25,6 @@
 
 (def widget
   {:name generic/name-field
-;   :laboratory generic/laboratory
 ;   :available_from generic/available-from
 ;   :taxonomy generic/taxonomy
    :sequnece_type sequence-type

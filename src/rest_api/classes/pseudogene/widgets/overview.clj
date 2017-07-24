@@ -55,18 +55,24 @@
            (let  [n (name (:pseudogene.type/type th))]
              (case n
                "rna" "RNA pseudogene"
+               "dna" "DNA pseudogene"
                (str (str/capitalize n) " pseudogene"))))
-   :k (keys pg)
    :description "The type of the pseudogene"})
+
+(defn subtype-field [ps]
+  {:data (when-let [st (:pseudogene/unprocessed-pseudogene ps)]
+           {:type "Unprocessed Pseudogene"
+            :evidence (obj/get-evidence st)})
+   :description "The unprocessed pseudogene of the pseudogene"})
 
 (def widget
   {:name generic/name-field
    :gene gene
-   :from_lab from-lab
    :taxonomy generic/taxonomy
    :related_seqs related-seqs
    :parent_sequence parent-sequence
    :transposon transposon
    :remarks remarks
    :brief_id brief-id
-   :type type-field})
+   :type type-field
+   :subtype subtype-field})
