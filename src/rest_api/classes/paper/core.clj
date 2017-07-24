@@ -37,8 +37,9 @@
                                       first-initial (when-let [firstname (:person/first-name author)]
                                                       (str/capitalize (get firstname 0)))]
                                   (if-let [middlenames (:person/middle-name author)]
-                                    (let [middle-initials (str/join ". " middlenames)]
-                                      (str lastname ", " first-initial ". " middle-initials "."))
+                                    (let [middle-initials (map (fn [middlename] (str (str/capitalize (get middlename 0)))) middlenames)
+                                          middle-initials-str (str/join ". " middle-initials)]
+                                      (str lastname ", " first-initial ". " middle-initials-str "."))
                                     (str lastname ", " first-initial ".")))
                                 (if-let [[lastname initial] (str/split (:author/id author) #" ")]
                                   (str lastname ", " initial ".")))
