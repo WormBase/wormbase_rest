@@ -60,9 +60,12 @@
    :description "The type of the pseudogene"})
 
 (defn subtype-field [ps]
-  {:data (when-let [st (:pseudogene/unprocessed-pseudogene ps)]
-           {:type "Unprocessed Pseudogene"
-            :evidence (obj/get-evidence st)})
+  {:data (or (when-let [st (:pseudogene/unprocessed-pseudogene ps)]
+               {:type "Unprocessed Pseudogene"
+                :evidence (obj/get-evidence st)})
+             (when-let [st (:pseudogene/processed-pseudogene ps)]
+               {:type "Processed Pseudogene"
+                :evidence (obj/get-evidence st)}))
    :description "The unprocessed pseudogene of the pseudogene"})
 
 (def widget
