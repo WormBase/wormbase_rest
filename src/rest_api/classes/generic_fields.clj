@@ -13,8 +13,10 @@
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (when-let [ghs ((keyword role "gene") object)]
-             (for [gh ghs :let [gene ((keyword (str role ".gene") "gene") gh)]]
-               (pack-obj gene)))
+             (let [gp-holder-gene-kw (keyword (str role ".gene") "gene")]
+               (for [gh ghs
+                     :let [gene (gp-holder-gene-kw gh)]]
+                 (pack-obj gene))))
      :description (str "gene products for this " role)}))
 
 (defn fusion-reporter [object]
