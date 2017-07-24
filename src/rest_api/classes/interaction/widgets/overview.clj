@@ -108,18 +108,7 @@
                     :transgene (when-let [tgs (:interactor-info/transgene h)]
                                  (for [tg tgs]
                                    (pack-obj tg)))
-                    :variation nil }))
-               (when-let [hs (:interaction/variation-interactor i)]
-                 (for [h hs]
-                   {:interactor (when-let [f (:interaction.variation-interactor/variation h)]
-                                  (pack-obj f))
-                    :interactor_type "Variation interactor"
-                    :role (when-let [roles (:interactor-info/interactor-type h)]
-                            (for [role roles] (str/capitalize (name role))))
-                    :transgene (when-let [tgs (:interactor-info/transgene h)]
-                                 (for [tg tgs]
-                                   (pack-obj tg)))
-                    :variation nil }))
+                    :variation nil}))
                (when-let [hs (:interaction/feature-interactor i)]
                  (for [h hs]
                    {:interactor (when-let [f (:interaction.feature-interactor/feature h)]
@@ -130,7 +119,7 @@
                     :transgene (when-let [tgs (:interactor-info/transgene h)]
                                  (for [tg tgs]
                                    (pack-obj tg)))
-                    :variation nil }))
+                    :variation nil}))
                (when-let [hs (:interaction/molecule-interactor i)]
                  (for [h hs]
                    {:interactor (when-let [gene (:interaction.molecule-interactor/molecule h)]
@@ -141,7 +130,7 @@
                     :transgene (when-let [tgs (:interactor-info/transgene h)]
                                  (for [tg tgs]
                                    (pack-obj tg)))
-                    :variation nil }))
+                    :variation nil}))
                (when-let [hs (:interaction/other-interactor i)]
                  (for [h hs]
                    {:interactor (:interaction.other-interactor/text h)
@@ -151,24 +140,31 @@
                     :transgene (when-let [tgs (:interactor-info/transgene h)]
                                  (for [tg tgs]
                                    (pack-obj tg)))
-                    :variation nil }))
+                    :variation nil}))
 
                (when-let [hs (:interaction/interactor-overlapping-gene i)]
-                 (for [h hs]
-                   {:interactor (when-let [gene (:interaction.interactor-overlapping-gene/gene h)]
-                                  (pack-obj gene))
+                 (for [h hs
+                       :let [gene (:interaction.interactor-overlapping-gene/gene h)]]
+                   {:interactor (pack-obj gene)
                     :interactor_type "Interactor overlapping gene"
                     :role (when-let [roles (:interactor-info/interactor-type h)]
                             (for [role roles] (str/capitalize (name role))))
                     :transgene (when-let [tgs (:interactor-info/transgene h)]
                                  (for [tg tgs]
                                    (pack-obj tg)))
-                    :variation nil }))))))
-   :dbid (:db/id i)
-   :k (keys i)
+                    :variation (when-let [vhs (:interaction/variation-interactor i)]
+                                 (not-empty
+                                   (remove
+                                     nil?
+                                     (flatten
+                                     (for [vh vhs
+                                           :let [v (:interaction.variation-interactor/variation vh)
+                                                 vghs (:variation/gene v)]]
+                                       (for [vgh vghs
+                                             :let [var-gene (:variation.gene/gene vgh)]]
+                                         (if (= (:gene/id gene) (:gene/id var-gene))
+                                           (pack-obj v))))))))}))))))
    :description "interactors in this interaction"})
-
-
 
 (def widget
   {:name generic/name-field
