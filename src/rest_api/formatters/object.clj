@@ -25,10 +25,11 @@
   [class obj]
   (let [species-ident (keyword class "species")]
     (if-let [species (species-ident obj)]
-      (if-let [[_ g species] (re-matches #"(.).*[ _](.+)"
-                                         (:species/id species))]
-        (.toLowerCase (str g "_" species))
-        "unknown")
+      (if-let [species-id (:species/id species)]
+        (if-let [[_ g species] (re-matches #"(.).*[ _](.+)" species-id)]
+          (.toLowerCase (str g "_" species))
+          "unknown")
+        "all")
       "all")))
 
 (defmulti obj-label
