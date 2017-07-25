@@ -162,20 +162,20 @@
 (defn- pack-image [picture]
   (let [prefix (if (re-find #"<Journal_URL>" (or (:picture/acknowledgement-template picture) ""))
                  (:paper/id (first (:picture/reference picture)))
-                 (:person/id (first (:picture/contact picture))))
-        [_ picture-name format-name] (re-matches #"(.+)\.(.+)" (:picture/name picture))]
-    (-> picture
-        (pack-obj)
-        (assoc :thumbnail
-               {:format (or format-name "")
-                :name (str prefix "/" (or picture-name (:picture/name picture)))
-                :class "/img-static/pictures"}
+                 (:person/id (first (:picture/contact picture))))]
+    (if-let [[_ picture-name format-name] (re-matches #"(.+)\.(.+)" (or (:picture/name picture) ""))]
+      (-> picture
+          (pack-obj)
+          (assoc :thumbnail
+                 {:format (or format-name "")
+                  :name (str prefix "/" (or picture-name (:picture/name picture)))
+                  :class "/img-static/pictures"}
 
-               :description
-               (if-let [expr-patterns (seq (:picture/expr-pattern picture))]
-                 (->> (map :expr-pattern/id expr-patterns)
-                      (str/join ", ")
-                      (str "curated pictures for ")))))))
+                 :description
+                 (if-let [expr-patterns (seq (:picture/expr-pattern picture))]
+                   (->> (map :expr-pattern/id expr-patterns)
+                        (str/join ", ")
+                        (str "curated pictures for "))))))))
 
 (defn- expression-table-row [db ontology-term-dbid relations]
   (let [ontology-term (d/entity db ontology-term-dbid)]
