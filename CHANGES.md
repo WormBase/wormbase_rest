@@ -3,8 +3,12 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [0.1.8] - (unreleased)
+## [0.2.0] - (unreleased)
 - 11 more overview widgets
+
+## [0.1.8] - 2017-07-25
+- Fix bug in utility functions that affects links to papers
+- Fix bug in expression widget image display
 
 ## [0.1.7] - 2017-07-05
 - Minor Bug fixes
