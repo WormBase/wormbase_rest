@@ -1,4 +1,4 @@
-(ns rest-api.classes.anatomy_term.widgets.ontology-browser
+(ns rest-api.classes.anatomy-term.widgets.ontology-browser
   (:require
    [rest-api.classes.generic-fields :as generic]))
 
