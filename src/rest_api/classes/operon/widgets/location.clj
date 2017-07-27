@@ -1,19 +1,15 @@
-(ns rest-api.classes.gene.widgets.location
+(ns rest-api.classes.operon.widgets.location
   (:require
     [rest-api.classes.sequence.main :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]))
 
-(defn tracks [gene]
-  {:data (if (:gene/corresponding-transposon gene)
-           ["TRANSPOSONS"
-            "TRANSPOSON_GENES"]
-           ["GENES"
-            "VARIATIONS_CLASSICAL_ALLELES"
-            "CLONES"])
+(defn tracks [operon]
+  {:data ["GENES"
+          "OPERONS"]
    :description "tracks displayed in GBrowse"})
 
-(defn genomic-image [gene]
-  {:data (sequence-fns/genomic-obj gene)
+(defn genomic-image [operon]
+  {:data (sequence-fns/genomic-obj operon)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget
