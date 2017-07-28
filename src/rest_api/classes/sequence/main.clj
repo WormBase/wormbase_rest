@@ -66,9 +66,8 @@
       tracks)))
 
 (defn genomic-obj [object]
-  (do (println (keys object))
   (when-let [segment (get-longest-segment object)]
     (let [[start stop] (->> segment
                              ((juxt :start :end))
                              (sort-by +))]
-      (create-genomic-location-obj start stop object segment nil true)))))
+      (create-genomic-location-obj start stop object segment nil true))))

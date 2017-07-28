@@ -28,40 +28,59 @@
                                   (contains?
                                     object
                                     :variation/interpolated-map-position)))
-        [entity entity-role] (if variation-with-imp
-                               [(:variation.gene/gene (first (:variation/gene object))) "gene"]
-                               [object role])]
-    (let [[chr position error method] (let [kw-imp (keyword entity-role str-imp)
-                                            str-imp-component (str entity-role "." str-imp)
-                                            kw-map (keyword entity-role "map")
-                                            kw-map-map (keyword (str entity-role ".map") "map")
-                                            kw-imp-map (keyword str-imp-component "map")
-                                            kw-imp-position (keyword
-                                                              str-imp-component
-                                                              (if (= role "sequence") "float" "position"))]
-                                        (if
-                                          (or (= "sequence" entity-role)
-                                              (= "variation" entity-role)
-                                              (not (contains? entity kw-map)))
-                                          [(:map/id (kw-imp-map (kw-imp entity)))
-                                           (kw-imp-position (kw-imp entity))
-                                           nil
-                                           "interpolated"]
-                                          (let [map-position (:map-position/position (kw-map entity))]
-                                            [(:map/id (kw-map-map (kw-map entity)))
-                                             (:map-position.position/float map-position)
-                                             (:map-error/error map-position)
-                                             (if (= role entity-role) "" "interpolated")])))]
-      {:data [{:chromosome chr
-               :position position
-               :error error
-               :formatted (when (not-any? nil? [chr position])
-                            (if (nil? error)
-                              (format "%s:%2.2f +/- (unknown)f cM" chr position)
-                              (format "%s:%2.2f +/- %2.3f cM" chr position error)))
-               :method method}]
-       :db (:db/id entity)
-       :description (str "Genetic position of " role ": " (id-kw object))})))
+        [entities entity-role] (cond
+                                 variation-with-imp
+                                 [[(:variation.gene/gene
+                                     (first
+                                       (:variation/gene object)))]
+                                  "gene"]
+
+                                 (= role "protein")
+                                 (let [cdss (some->>
+                                              (:cds.corresponding-protein/_protein object)
+                                              (map :cds/_corresponding-protein))]
+                                   [(some->>
+                                      cdss
+                                      (filter #(not= "history" (:method/id (:locatable/method %))))
+                                      (map :gene.corresponding-cds/_cds)
+                                      first
+                                      (map :gene/_corresponding-cds))
+                                    "gene"])
+
+                                 :else
+                                 [[object] role])]
+    {:data
+       (not-empty
+        (for [entity entities
+              :let [[chr position error method]
+                     (let [kw-imp (keyword entity-role str-imp)
+                           str-imp-component (str entity-role "." str-imp)
+                           kw-map (keyword entity-role "map")
+                           kw-map-map (keyword (str entity-role ".map") "map")
+                           kw-imp-map (keyword str-imp-component "map")
+                           kw-imp-position (keyword
+                                             str-imp-component
+                                             (if (= role "sequence") "float" "position"))]
+                       (if
+                         (or (= "sequence" entity-role)
+                             (= "variation" entity-role)
+                             (not (contains? entity kw-map)))
+                         [(:map/id (kw-imp-map (kw-imp entity)))
+                          (kw-imp-position (kw-imp entity))
+                          nil
+                          "interpolated"]
+                         (let [map-position (:map-position/position (kw-map entity))]
+                           [(:map/id (kw-map-map (kw-map entity)))
+                            (:map-position.position/float map-position)
+                            (:map-error/error map-position)
+                            (if (= role entity-role) "" "interpolated")])))]]
+          {:chromosome chr
+           :position position
+           :error error
+           :formatted (when (not-any? nil? [chr position])
+                          (format "%s:%2.2f +/- %2.3f cM" chr position (or error (double 0))))
+           :method method}))
+     :description (str "Genetic position of " role ": " (id-kw object))}))
 
 (defn fusion-reporter [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
