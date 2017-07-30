@@ -1,19 +1,21 @@
-(ns rest-api.classes.gene.widgets.location
+(ns rest-api.classes.cds.widgets.location
   (:require
     [rest-api.classes.sequence.main :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]))
 
-(defn tracks [gene]
-  {:data (if (:gene/corresponding-transposon gene)
-           ["TRANSPOSONS"
-            "TRANSPOSON_GENES"]
-           ["GENES"
-            "VARIATIONS_CLASSICAL_ALLELES"
-            "CLONES"])
+(defn tracks [cds]
+  {:data (when (= "Caenorhabditis elegans" (:species/id (:cds/species cds)))
+           (if (= "history" (:method/id (:locatable/method cds)))
+             ["HISTORICAL_GENES"]
+             ["GENES"
+              "TRANSPOSONS"
+              "TRANSPOSON_GENES"
+              "EST_BEST"
+              "PROTEIN_MOTIFS"]))
    :description "tracks displayed in GBrowse"})
 
-(defn genomic-image [gene]
-  {:data (sequence-fns/genomic-obj gene)
+(defn genomic-image [cds]
+  {:data (sequence-fns/genomic-obj cds)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget

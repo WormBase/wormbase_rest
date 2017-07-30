@@ -1,19 +1,18 @@
-(ns rest-api.classes.gene.widgets.location
+(ns rest-api.classes.pcr-product.widgets.location
   (:require
     [rest-api.classes.sequence.main :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]))
 
-(defn tracks [gene]
-  {:data (if (:gene/corresponding-transposon gene)
-           ["TRANSPOSONS"
-            "TRANSPOSON_GENES"]
-           ["GENES"
-            "VARIATIONS_CLASSICAL_ALLELES"
-            "CLONES"])
+(defn tracks [pcr-product]
+  {:data ["GENES"
+          "MICROARRAY_OLIGO_PROBES"
+          "PCR_PRODUCTS"
+          "ORFEOME_PCR_PRODUCTS"
+          "CLONES"]
    :description "tracks displayed in GBrowse"})
 
-(defn genomic-image [gene]
-  {:data (sequence-fns/genomic-obj gene)
+(defn genomic-image [pcr-product]
+  {:data (sequence-fns/genomic-obj pcr-product)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget
