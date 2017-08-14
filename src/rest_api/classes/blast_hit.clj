@@ -42,7 +42,6 @@
                       (:gene.corresponding-cds/_cds)
                       (first)
                       (:gene/_corresponding-cds))]
-    (prn gene)
     {:gene (pack-obj "gene" gene :label "[Gene Summary]")
      :protein (pack-obj "protein" protein :label "[Protein Summary]")
      :sequence (pack-obj cds)}))
