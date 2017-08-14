@@ -69,5 +69,5 @@
 (def routes
   [(sweet/GET "/convert/:id" []
               :path-params [id :- (sweet/describe schema/Str "WB ID of a BLAST hit")]
-;;              :no-doc true
+              :no-doc true
               (response/ok (convert-id id)))])
