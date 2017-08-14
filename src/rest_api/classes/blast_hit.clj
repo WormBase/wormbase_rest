@@ -31,7 +31,19 @@
      :sequence (pack-obj transcript)}))
 
 (defmethod convert-id :cds/id [id]
-  )
+  (let [db (d/db datomic-conn)
+        cds (d/entity db [:cds/id id])
+        protein (some->> cds
+                         (:cds/corresponding-protein)
+                         (:cds.corresponding-protein/protein))
+        gene (some->> cds
+                      (:gene.corresponding-cds/_cds)
+                      (first)
+                      (:gene/_corresponding-cds))]
+    (prn gene)
+    {:gene (pack-obj "gene" gene :label "[Gene Summary]")
+     :protein (pack-obj "protein" protein :label "[Protein Summary]")
+     :sequence (pack-obj cds)}))
 
 (def routes
   [(sweet/GET "/convert/:id" []
