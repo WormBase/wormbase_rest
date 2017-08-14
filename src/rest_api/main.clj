@@ -9,6 +9,7 @@
    [rest-api.classes.analysis :as analysis]
    [rest-api.classes.anatomy-term :as anatomy-term]
    [rest-api.classes.antibody :as antibody]
+   [rest-api.classes.blast-hit :as blast-hit]
    [rest-api.classes.cds :as cds]
    [rest-api.classes.clone :as clone]
    [rest-api.classes.construct :as construct]
@@ -53,6 +54,7 @@
   [analysis/routes
    anatomy-term/routes
    antibody/routes
+   blast-hit/routes
    cds/routes
    clone/routes
    construct/routes
