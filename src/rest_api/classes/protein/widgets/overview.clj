@@ -25,29 +25,6 @@
   {:data (keys p)
    :description "The type of the protein"})
 
-(defn corresponding-all [p] ; need to add in sequence database and more work needed
-  {:data (when-let [cphs (:cds.corresponding-protein/_protein p)]
-           (for [cph cphs
-                 :let [phs (:cds.corresponding-protein/protein p)
-                       cds (first (:cds/_corresponding-protein phs))]]
-             {:length_unspliced nil
-              :model nil
-              :gene (when-let [cds (:cds/_corresponding-protein cph)]
-                      (when-let [gene (:gene/_corresponding-cds
-                                        (first (:gene.corresponding-cds/_cds cds)))]
-                        (pack-obj gene)))
-              :keys (keys cph)
-              :length_protein (:protein.peptide/length (:protein/peptide p))
-              :protein (pack-obj (:cds.corresponding-protein/protein cph))
-              :cds (when-let [cds (:cds/_corresponding-protein cph)]
-                    {:text (pack-obj cds)
-                     :evidence (obj/get-evidence cds)})
-              :length_spliced nil
-              :type (when-let [cds (:cds/_corresponding-protein cph)]
-                      (if-let [type-field (:method/id (:locatable/method cds))]
-                        (str/replace type-field #"_" " ")))}))
-   :description "corresponding cds, transcripts, gene for this protein"})
-
 (def widget
   {:name generic/name-field
    :estimated_molecular_weight estimated-molecular-weight
@@ -59,4 +36,4 @@
    :estimated_isoelectric_point estimated-isoelectric-point
    :remarks generic/remarks
    :type type-field
-   :corresponding_all corresponding-all})
+   :corresponding_all generic/corresponding-all})
