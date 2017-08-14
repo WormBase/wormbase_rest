@@ -7,23 +7,31 @@
    [ring.util.http-response :as response]
    [schema.core :as schema]))
 
+(defmulti convert-id
+  (fn [id]
+    (let [db (d/db datomic-conn)]
+      (->> [:transcript/id :cds/id :sequence/id :protein/id]
+           (filter #(d/entity db [% id]))
+           (first)))))
 
-(defn- convert-id [id]
-  (let [db (d/db datomic-conn)]
-    (or (if-let [transcript (d/entity db [:transcript/id id])]
-          (let [protein (some->> transcript
-                                 (:transcript/corresponding-cds)
-                                 (:transcript.corresponding-cds/cds)
-                                 (:cds/corresponding-protein)
-                                 (:cds.corresponding-protein/protein))
-                gene (some->> transcript
-                              (:gene.corresponding-transcript/_transcript)
-                              (first)
-                              (:gene/_corresponding-transcript))]
-            {:gene (pack-obj "gene" gene :label "[Gene Summary]")
-             :protein (pack-obj "protein" protein :label "[Protein Summary]")
-             :sequence (pack-obj transcript)}))
-        )))
+(defmethod convert-id :transcript/id [id]
+  (let [db (d/db datomic-conn)
+        transcript (d/entity db [:transcript/id id])
+        protein (some->> transcript
+                         (:transcript/corresponding-cds)
+                         (:transcript.corresponding-cds/cds)
+                         (:cds/corresponding-protein)
+                         (:cds.corresponding-protein/protein))
+        gene (some->> transcript
+                      (:gene.corresponding-transcript/_transcript)
+                      (first)
+                      (:gene/_corresponding-transcript))]
+    {:gene (pack-obj "gene" gene :label "[Gene Summary]")
+     :protein (pack-obj "protein" protein :label "[Protein Summary]")
+     :sequence (pack-obj transcript)}))
+
+(defmethod convert-id :cds/id [id]
+  )
 
 (def routes
   [(sweet/GET "/convert/:id" []
