@@ -7,10 +7,12 @@
    [ring.util.http-response :as response]
    [schema.core :as schema]))
 
+(def id-types [:transcript/id :cds/id :sequence/id :protein/id])
+
 (defmulti convert-id
   (fn [id]
     (let [db (d/db datomic-conn)]
-      (->> [:transcript/id :cds/id :sequence/id :protein/id]
+      (->> id-types
            (filter #(d/entity db [% id]))
            (first)))))
 
@@ -44,6 +46,26 @@
     {:gene (pack-obj "gene" gene :label "[Gene Summary]")
      :protein (pack-obj "protein" protein :label "[Protein Summary]")
      :sequence (pack-obj cds)}))
+
+(defmethod convert-id :sequence/id [id]
+  (let [db (d/db datomic-conn)
+        sequence (d/entity db [:sequence/id id])
+        gene (some->> sequence
+                      (:locatable/_parent)
+                      (filter :gene/id)
+                      (first))]
+    {:corresponding_gene (pack-obj "gene" gene :label "[Corr. Gene]")
+     :sequence (pack-obj sequence)}))
+
+(defmethod convert-id nil [id]
+  {:sequence {:label id}})
+
+(defmethod convert-id :default [id]
+  (let [db (d/db datomic-conn)
+        sequence (some #(d/entity db [% id]) id-types)]
+    {:sequence (pack-obj sequence)}))
+
+
 
 (def routes
   [(sweet/GET "/convert/:id" []
