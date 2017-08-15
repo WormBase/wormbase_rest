@@ -2,7 +2,9 @@
   (:require
     [rest-api.classes.variation.widgets.overview :as overview]
     [rest-api.classes.variation.widgets.phenotypes :as phenotypes]
+    [rest-api.classes.variation.widgets.location :as location]
     [rest-api.classes.gene.widgets.external-links :as external-links]
+    [rest-api.classes.gene.widgets.references :as references]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
@@ -10,4 +12,6 @@
    :widget
    {:overview overview/widget
     :phenotypes phenotypes/widget
-    :external_links external-links/widget}})
+    :external_links external-links/widget
+    :location location/widget
+    :references references/widget}})
