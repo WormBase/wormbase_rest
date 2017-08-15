@@ -13,6 +13,7 @@
   (fn [entity]
     (first (filter (partial contains? entity) id-types))))
 
+;; wormpep
 (defmethod convert-entity :transcript/id [entity]
   (let [transcript entity
         protein (some->> transcript
@@ -28,6 +29,7 @@
      :protein (pack-obj "protein" protein :label "[Protein Summary]")
      :sequence (pack-obj transcript)}))
 
+;; wormpep
 (defmethod convert-entity :cds/id [entity]
   (let [cds entity
         protein (some->> cds
@@ -41,6 +43,7 @@
      :protein (pack-obj "protein" protein :label "[Protein Summary]")
      :sequence (pack-obj cds)}))
 
+;; est
 (defmethod convert-entity :sequence/id [entity]
   (let [sequence entity
         gene (some->> sequence
