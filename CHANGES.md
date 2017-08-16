@@ -2,9 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.1] - (unreleased)
+- Fix for corresponding-all tables
 
-## [0.2.0] - (unreleased)
+## [0.2.0] - 2017-08-16
 - 11 more overview widgets
+- all location widgets
 
 ## [0.1.8] - 2017-07-25
 - Fix bug in utility functions that affects links to papers
