@@ -41,15 +41,6 @@
      :protein (pack-obj "protein" protein :label "[Protein Summary]")
      :sequence (pack-obj cds)}))
 
-;; est
-(defmethod convert-entity :sequence/id [sequence]
-  (let [gene (some->> sequence
-                      (:locatable/_parent)
-                      (filter :gene/id)
-                      (first))]
-    {:corresponding_gene (pack-obj "gene" gene :label "[Corr. Gene]")
-     :sequence (pack-obj sequence)}))
-
 (defmethod convert-entity :default [entity]
   {:sequence (pack-obj entity)})
 
