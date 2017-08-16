@@ -27,13 +27,13 @@
 
 (def widget
   {:name generic/name-field
-   :estimated_molecular_weight estimated-molecular-weight
+ ;  :estimated_molecular_weight estimated-molecular-weight
  ;  :status generic/status status does not exist on this entity
-   :pfam_graph pfam-graph
-   :best_human_match best-human-match
-   :taxonomy generic/taxonomy
-   :description generic/description
-   :estimated_isoelectric_point estimated-isoelectric-point
-   :remarks generic/remarks
+ ;  :pfam_graph pfam-graph
+ ;  :best_human_match best-human-match
+ ;  :taxonomy generic/taxonomy
+ ;  :description generic/description
+ ;  :estimated_isoelectric_point estimated-isoelectric-point
+ ;  :remarks generic/remarks
    :type type-field
    :corresponding_all generic/corresponding-all})

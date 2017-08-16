@@ -105,16 +105,25 @@
 (defn method [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-    {:data (:method/id (:locatable/method object))
+    {:data (let [text (:method/id (:locatable/method object))]
+             (if (= role "transcript")
+               {:method text
+                :details (:method.remark/text
+                               (first
+                                 (:method/remark
+                                   (:locatable/method object))))}
+               text))
      :description (str "the method used to describe the" role)}))
 
 (defn identity-field [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (if-let [ident ((keyword role "brief-identification") object)]
-             {:text (or (:cds.brief-identification/text ident)
-                        ident)
-              :evidence (obj/get-evidence ident)})
+             (if (= role "transcript")
+               ident
+               {:text (or (:cds.brief-identification/text ident)
+                          ident)
+                :evidence (obj/get-evidence ident)}))
      :description (str "Brief description of the WormBase " role)}))
 
 (defn historical-gene [object]
@@ -279,100 +288,136 @@
                     (str "Reference papers for this " role)
                     "Could not identify the identity of the object")}))
 
-(defn- corresponding-all-gene [gene object role]
-  (for [cdsh (if (= role "cds")
-               [object]
-               (if (contains? gene :gene/corresponding-cds)
-                 (:gene/corresponding-cds gene)
-                 [nil]))
-        :let [cds (or (:gene.corresponding-cds/cds cdsh)
-                      cdsh)]]
-
-    (let [transcripts (if (some? cds)
+(defn- corresponding-all-gene [gene object role all-cds-remark-holders]
+  (remove
+    nil?
+    (for [cdsh (if (= role "cds")
+                 [object]
+                 (if (contains? gene :gene/corresponding-cds)
+                   (:gene/corresponding-cds gene)
+                   [nil]))
+          :let [cds (or (:gene.corresponding-cds/cds cdsh)
+                        cdsh)]]
+      (let [sequences (if (some? cds)
                         (for [th (:transcript.corresponding-cds/_cds cds)]
                           (:transcript/_corresponding-cds th))
-                        (for [th (:gene/corresponding-transcript gene)]
-                          (:gene.corresponding-transcript/transcript th)))]
-      {:length_spliced
-       (let [length-spliced (if-let [exons (seq (:cds/source-exons cds))]
-                              (->>
-                                (map
-                                  (fn [ex]
-                                    (- (:cds.source-exons/end ex)
-                                       (:cds.source-exons/start ex) -1))
-                                  exons)
-                                (reduce +)))]
-         (if (= length-spliced 0)
-           "-"
-           length-spliced))
+                        (remove
+                          nil?
+                          (flatten
+                            (conj
+                              (for [pgh (:gene/corresponding-pseudogene gene)]
+                                (:gene.corresponding-pseudogene/pseudogene pgh))
+                              (for [th (:gene/corresponding-transcript gene)]
+                                (:gene.corresponding-transcript/transcript th))))))]
+        (if (or (not= role "transcript")
+              (not (= (.indexOf sequences object) -1)))
+          {:length_spliced
+           (let [length-spliced (if-let [exons (seq (:cds/source-exons cds))]
+                                  (->>
+                                    (map
+                                      (fn [ex]
+                                        (- (:cds.source-exons/end ex)
+                                           (:cds.source-exons/start ex) -1))
+                                      exons)
+                                    (reduce +)))]
+             (if (= length-spliced 0)
+               "-"
+               length-spliced))
 
-       :model
-       (for [transcript transcripts]
-         {:style (if (= object transcript)
-                   "font-weight:bold"
-                   0)
-          :id (:transcript/id transcript)
-          :label (:transcript/id transcript)
-          :class "transcript"
-          :taxonomy (if-let [id (:species/id (:transcript/species transcript))]
-                      (generic-functions/xform-species-name id))})
+           :model
+           (for [s sequences]
+             (conj
+               {:style (if (= object s)
+                         "font-weight:bold"
+                         0)}
+               (pack-obj s)))
 
-       :cds
-       (if (some? cds)
-         {:text
-          {:style "font-weight:bold"
-           :id (:cds/id cds)
-           :label (:cds/id cds)
-           :class "cds"
-           :taxonomy (generic-functions/xform-species-name
-                       (:species/id (:cds/species cds)))}
-          :evidence {:status (name (:cds/prediction-status cds))}}
-         "(no CDS)")
+           :cds
+           (if (some? cds)
+             {:text
+              (conj
+                (pace-utils/vmap
+                  :style
+                  (if (= object cds)
+                    "font-weight:bold"
+                    0)
+                  :footnotes
+                  (if (= role "gene")
+                    (for [rh (:cds/remark cds)]
+                      (+ 1 (.indexOf all-cds-remark-holders rh)))))
+                (pack-obj cds))
+              :evidence {:status (name (:cds/prediction-status cds))}}
+             "(no CDS)")
 
-       :gene
-       (pack-obj gene)
+           :gene
+           (pack-obj gene)
 
-       :length_protein
-       (when-let [protein (:cds.corresponding-protein/protein
-                            (:cds/corresponding-protein cds))]
-         (:protein.peptide/length
-           (:protein/peptide protein)))
+           :length_protein
+           (when-let [protein (:cds.corresponding-protein/protein
+                                (:cds/corresponding-protein cds))]
+             (:protein.peptide/length
+               (:protein/peptide protein)))
 
-       :protein
-       (if-let [protein (:cds.corresponding-protein/protein
-                          (:cds/corresponding-protein cds))]
-         (pack-obj protein))
+           :protein
+           (if-let [protein (:cds.corresponding-protein/protein
+                              (:cds/corresponding-protein cds))]
+             (pack-obj protein))
 
-       :length_unspliced ;; transcript length
-       (for [transcript transcripts
-             :let [hs (:transcript/source-exons transcript)]]
-         (if-let [length
-                  (reduce
-                    +
-                    (for [h hs]
-                      (+ 1
-                         (- (:transcript.source-exons/max h)
-                            (:transcript.source-exons/min h)))))]
-           length
-           "-"))
+           :length_unspliced ;; transcript length
+           (for [s sequences
+                 :let [id-kw  (first (filter #(= (name %) "id") (keys s)))
+                       role (namespace id-kw)
+                       hs ((keyword role "source-exons") s)]]
+             (if-let [length
+                      (reduce
+                        +
+                        (for [h hs]
+                          (+ 1
+                             (- (or ((keyword (str role ".source-exons") "max") h)
+                                    (:pseudogene.source-exons/end h))
+                                (or ((keyword (str role ".source-exons") "min") h)
+                                    (:pseudogene.source-exons/start h))))))]
+               length
+               "-"))
 
-       :type
-       (for [transcript transcripts]
-         (if-let [type-field (:method/id (:locatable/method transcript))]
-           (str/replace type-field #"_" " ")))})))
+           :type
+           (for [s sequences]
+             (let [type-str (if-let [type-field (:method/id
+                                                  (:locatable/method s))]
+                              (str/replace type-field #"_" " ")
+                              "-")]
+               type-str))})))))
+
+(defn- create-remarks [cds-remark-holders]
+  (into
+    {}
+    (for [rh cds-remark-holders]
+      {(str (+ 1 (.indexOf cds-remark-holders rh)))
+       (if-let [ev (obj/get-evidence rh)]
+         {:text (:cds.remark/text rh)
+          :evidence ev}
+         (:cds.remark/text rh))})))
 
 (defn corresponding-all [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     (let [data (case role
                  "gene"
-                 (corresponding-all-gene object nil role)
+                 (let [cdshs (:gene/corresponding-cds object)
+                       all-cds-remark-holders (distinct
+                                                (flatten
+                                                  (for [cdsh cdshs
+                                                        :let [cds (:gene.corresponding-cds/cds cdsh)]]
+                                                    (seq (:cds/remark cds)))))]
+                   {:table (corresponding-all-gene object nil role all-cds-remark-holders)
+                    :remarks (create-remarks all-cds-remark-holders)})
 
                  "transcript"
                  (when-let [ghs (:gene.corresponding-transcript/_transcript object)]
-                   (for [gh ghs
-                         :let [gene (:gene/_corresponding-transcript gh)]]
-                     (corresponding-all-gene gene object role)))
+                   (flatten
+                     (for [gh ghs
+                           :let [gene (:gene/_corresponding-transcript gh)]]
+                       (corresponding-all-gene gene object role nil))))
 
                  "cds"
                  (when-let [ths (:transcript.corresponding-cds/_cds object)]
@@ -385,24 +430,25 @@
                                (for [gh ghs
                                      :let [gene (:gene/_corresponding-transcript gh)]]
                                  gene))))]
-                     (for [gene genes]
-                       (corresponding-all-gene gene object role))))
-
-                 "protein"
-                 (when-let [cds (:cds/_corresponding-protein object)]
-                   (when-let [ths (:transcript.corresponding-cds/_cds cds)]
-                     (let [genes
-                           (distinct
-                             (flatten
-                               (for [th ths
-                                     :let [ghs (:gene.corresponding-transcript/_transcript
-                                                 (:transcript/_corresponding-cds th))]]
-                                 (for [gh ghs
-                                       :let [gene (:gene/_corresponding-transcript gh)]]
-                                   gene))))]
+                     (flatten
                        (for [gene genes]
-                         (corresponding-all-gene gene cds "cds"))))))
-          ]
+                         (corresponding-all-gene gene object role nil)))))
+
+                 "protein" ;; need to make it filter for only the row with the protein
+                 (when-let [cdshs (:cds.corresponding-protein/_protein object)]
+                   (for [cdsh cdshs
+                         :let [cds (:cds/_corresponding-protein cdsh)]]
+                     (when-let [ths (:transcript.corresponding-cds/_cds cds)]
+                       (let [genes
+                             (distinct
+                               (flatten
+                                 (for [th ths
+                                       :let [ghs (:gene.corresponding-transcript/_transcript
+                                                   (:transcript/_corresponding-cds th))]]
+                                   (for [gh ghs]
+                                     (:gene/_corresponding-transcript gh)))))]
+                         (for [gene genes]
+                           (corresponding-all-gene gene cds "cds" nil)))))))]
       {:data (not-empty data)
        :description (str "corresponding cds, transcripts, gene for this " role)})))
 
