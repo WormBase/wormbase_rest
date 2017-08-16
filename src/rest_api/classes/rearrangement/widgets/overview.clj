@@ -7,22 +7,82 @@
 
 (defn mapping-data [r]
   {:data (when-let [pnds (:rearrangement/pos-neg-data r)]
-           (for [pnd pnds]
-             {:type (if (= "positive"(name (:pos-neg-data/calculation pnd)))
-                      "+" "-")
-              :author (when-let [authors (:pos-neg-data/mapper pnd)]
-                        (for [author authors]
-                          (pack-obj author)))
-              :genotype (:pos-neg-data/genotype pnd)
-              :remark (when-let [rhs (:pos-neg-data/remark pnd)]
-                        (for [rh rhs]
-                          {:text (:pos-neg-data.remark/text rh)
-                           :evidence (obj/get-evidence rh)}))
-              :results (:pos-neg-data/results pnd)}
+           (remove
+             nil?
+             (flatten
+               (for [pnd pnds]
+                 (for [reference [:pos-neg-data/gene-1
+                                  :pos-neg-data/gene-2
+                                  :pos-neg-data/locus-1
+                                  :pos-neg-data/locus-2
+                                  :pos-neg-data/rearrangement-1
+                                  :pos-neg-data/rearrangement-2
+                                  :pos-neg-data/allele-1
+                                  :pos-neg-data/allele-2
+                                  :pos-neg-data/clone-1
+                                  :pos-neg-data/clone-2
+                                  ]]
+                   (when-let [entity (reference pnd)]
+                     {:type (if (= "positive"(name (:pos-neg-data/calculation pnd)))
+                              "+" "-")
+                      :class (cond
+                               (or (= reference :pos-neg-data/locus-1)
+                                   (= reference :pos-neg-data/locus-2))
+                               "Locus"
 
-              ; need to check all  Gene_1 Locus_1 Rearrangement_1 Allele_1 Clone_1  and then same for 2
-             )
-           )
+                                (or (= reference :pos-neg-data/gene-1)
+                                   (= reference :pos-neg-data/gene-2))
+                               "Gene"
+
+                               (or (= reference :pos-neg-data/rearrangement-1)
+                                   (= reference :pos-neg-data/rearrangement-2))
+                               "Rearrangement"
+
+                               (or (= reference :pos-neg-data/allele-1)
+                                   (= reference :pos-neg-data/allele-2))
+                               "Allele"
+
+                               (or (= reference :pos-neg-data/clone-1)
+                                   (= reference :pos-neg-data/clone-2))
+                               "Clone")
+                      :name (cond
+                              (= reference :pos-neg-data/locus-1)
+                              (pack-obj (:pos-neg-data.locus-1/locus entity))
+
+                              (= reference :pos-neg-data/locus-2)
+                              (pack-obj (:pos-neg-data.locus-2/locus entity))
+
+                              (= reference :pos-neg-data/gene-1)
+                              (pack-obj (:pos-neg-data.gene-1/gene entity))
+
+                              (= reference :pos-neg-data/gene-2)
+                              (pack-obj (:pos-neg-data.gene-2/gene entity))
+
+                              :else
+                              (pack-obj entity))
+                      :author (when-let [authors (:pos-neg-data/mapper pnd)]
+                                (for [author authors]
+                                  (pack-obj author)))
+                      :genotype (:pos-neg-data/genotype pnd)
+                      :position (if-let [gene (or (when (= reference :pos-neg-data/gene-1)
+                                                    (:pos-neg-data.gene-1/gene
+                                                      (:pos-neg-data/gene-1 pnd)))
+                                                  (when (= reference :pos-neg-data/gene-2)
+                                                    (:pos-neg-data.gene-2/gene
+                                                      (:pos-neg-data/gene-2 pnd))))]
+                                  (let [position (:map-position/position (:gene/map gene))
+                                        position-float (:map-position.position/float position)
+                                        map-error (:map-error/error position)
+                                        map_id (:map/id (:gene.map/map (:gene/map gene)))
+                                        result (format "%s: %.2f" map_id position-float)]
+                                    (if (some? map-error)
+                                      (format "%s +/- %.3f" result map-error)
+                                      result))
+                                  "-")
+                      :remark (when-let [rhs (:pos-neg-data/remark pnd)]
+                                (for [rh rhs]
+                                  (:pos-neg-data.remark/text rh)))
+                      :results (:pos-neg-data/results pnd)}))))))
    :description "the mapping data of the rearrangement"})
 
 (defn display [r]
@@ -59,12 +119,35 @@
 (defn strains [r]
   {:data (when-let [strains (:rearrangement/strain r)]
            (for [strain strains]
-             {:info (let [genotype (:strain/genotype strain)
-                          elements nil] ; need to check Gene, variation, rearrangement, clone, transgene
-                          {:str genotype
-                           :data elements})
-              :keys (keys strain)
-              :deb (:db/id strain)
+             {:info
+              {:genotype
+               {:str (:strain/genotype strain)
+
+                :data (flatten
+                        (remove
+                          nil?
+                          (conj
+                            (when-let [genes (:gene/_strain strain)]
+                              (for [gene genes]
+                                {(:label (pack-obj gene))
+                                 (pack-obj gene)}))
+                            (when-let [rearrangements (:rearrangement/_strain strain)]
+                              (for [rearrangement rearrangements]
+                                {(:label (pack-obj rearrangement))
+                                 (pack-obj rearrangement)}))
+                            (when-let [vhs (:variation.strain/_strain strain)] ;arDf1
+                              (for [vh vhs
+                                    :let [v (:variation/_strain vh)]]
+                                {(:label (pack-obj v))
+                                 (pack-obj v)}))
+                            (when-let [clones (:clone/_in-strain strain)]
+                              (for [clone clones]
+                                {(:label (pack-obj clone))
+                                 (pack-obj clone)}))
+                            (when-let [tgs (:transgene/_strain strain)]
+                              (for [tg tgs]
+                                {(:label (pack-obj tg))
+                                 (pack-obj tg)})))))}}
               :strain (pack-obj strain)}))
    :description "Strains associated with the Rearrangement"})
 
@@ -76,14 +159,14 @@
 
 (defn positive [r]
   {:data (when-let [gihs (:rearrangement/gene-inside r)]
-           {"Gene inside"
+           {"Genes inside"
             (for [gih gihs]
               (pack-obj (:rearrangement.gene-inside/gene gih)))})
    :description "Covered by rearrangement"})
 
 (defn negative [r]
   {:data (when-let [gihs (:rearrangement/gene-outside r)]
-           {"Gene outside"
+           {"Genes outside"
             (for [gih gihs]
               (pack-obj (:rearrangement.gene-outside/gene gih)))})
    :description "Not covered by rearrangement"})
@@ -92,9 +175,9 @@
   {:name generic/name-field
    :mapping_data mapping-data
    :display display
-   :choromosome chromosome
+   :chromosome chromosome
    :reference_strain reference-strain
-;   :strains strains
+   :strains strains
    :remarks generic/remarks
    :type type-field
    :positive positive

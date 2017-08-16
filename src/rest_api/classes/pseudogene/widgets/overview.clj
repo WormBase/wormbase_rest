@@ -5,10 +5,10 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn gene [pg]
-  {:data (when-let [pghs (:gene.corresponding-pseudogene/_pseudogene pg)]
-           (for [pgh pghs
-                 :let [gene (:gene/_corresponding-pseudogene pgh)]]
-             (pack-obj gene)))
+  {:data (when-let [gene (:gene/_corresponding-pseudogene
+                           (first
+                             (:gene.corresponding-pseudogene/_pseudogene pg)))]
+           (pack-obj gene))
    :description "Gene corresponding to this pseudogene"})
 
 (defn remarks [pg]
@@ -28,7 +28,7 @@
    :description "The laboratory of origin"})
 
 (defn related-seqs [pg]
-  {:data nil ; need sequence database
+  {:data nil ; need sequence database (e.g. CRE31928) - not working through catalyst code.
    :description "Sequences related to this pseudogene"})
 
 (defn parent-sequence [pg]
@@ -55,18 +55,27 @@
            (let  [n (name (:pseudogene.type/type th))]
              (case n
                "rna" "RNA pseudogene"
+               "dna" "DNA pseudogene"
                (str (str/capitalize n) " pseudogene"))))
-   :k (keys pg)
    :description "The type of the pseudogene"})
+
+(defn subtype-field [ps]
+  {:data (or (when-let [st (:pseudogene/unprocessed-pseudogene ps)]
+               {:type "Unprocessed Pseudogene"
+                :evidence (obj/get-evidence st)})
+             (when-let [st (:pseudogene/processed-pseudogene ps)]
+               {:type "Processed Pseudogene"
+                :evidence (obj/get-evidence st)}))
+   :description "The unprocessed pseudogene of the pseudogene"})
 
 (def widget
   {:name generic/name-field
    :gene gene
-   :from_lab from-lab
    :taxonomy generic/taxonomy
    :related_seqs related-seqs
    :parent_sequence parent-sequence
    :transposon transposon
    :remarks remarks
    :brief_id brief-id
-   :type type-field})
+   :type type-field
+   :subtype subtype-field})

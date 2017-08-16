@@ -19,8 +19,7 @@
 	      (let [id-kw (first (filter #(= (name %) "id") (keys object)))]
 		{(let [i (id-kw object)]
 		   (if-let [result (re-find #":(\d+)_min" i)]
-		     (do (println (second result))
-			 (pad-zero (second result) 10)) i))
+			 (pad-zero (second result) 10)) i)
 		 (pack-obj object)}))))))
 
 (defn attribute-of [ec]

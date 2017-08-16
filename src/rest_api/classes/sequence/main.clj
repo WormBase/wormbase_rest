@@ -16,7 +16,7 @@
     (let  [species-name (:species/id ((keyword role "species") object))
 	   g-species (generic-functions/xform-species-name species-name)
 	   sequence-database (seqdb/get-default-sequence-database g-species)]
-     (if sequence-database
+     (when sequence-database
 	(sequence-features sequence-database (id-kw object))))))
 
 (defn longest-segment [segments]
@@ -24,12 +24,15 @@
     (sort-by #(- (:start %) (:end %)) segments)))
 
 (defn get-longest-segment [object]
+
   (let [segments (get-segments object)]
     (if (seq segments)
      (longest-segment segments))))
 
-(defn create-genomic-location-obj [start stop gene segment tracks gbrowse]
-  (let [calc-browser-pos (fn [x-op x y mult-offset]
+(defn create-genomic-location-obj [start stop object segment tracks gbrowse]
+  (let [id-kw  (first  (filter #(=  (name %) "id")  (keys object)))
+        role  (namespace id-kw)
+        calc-browser-pos (fn [x-op x y mult-offset]
                             (if gbrowse
                               (->> (reduce - (sort-by - [x y]))
                                    (double)
@@ -55,7 +58,7 @@
       id
 
       :taxonomy
-      (when-let [class (:gene/species gene)]
+      (when-let [class ((keyword role "species") object)]
         (when-let [[_ genus species]
                   (re-matches #"^(.*)\s(.*)$"
                               (:species/id class))]

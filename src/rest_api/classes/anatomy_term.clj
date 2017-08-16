@@ -1,8 +1,8 @@
 (ns rest-api.classes.anatomy-term
   (:require
     [rest-api.classes.gene.widgets.external-links :as external-links]
-    ;[rest-api.classes.anatomy_term.widgets.overview :as overview]
-    [rest-api.classes.anatomy_term.widgets.ontology-browser :as ontology-browser]
+    ;[rest-api.classes.anatomy-term.widgets.overview :as overview]
+    [rest-api.classes.anatomy-term.widgets.ontology-browser :as ontology-browser]
     [rest-api.routing :as routing]))
 
 (routing/defroutes

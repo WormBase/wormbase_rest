@@ -9,6 +9,7 @@
    [rest-api.classes.gene.widgets.interactions :as interactions]
    [rest-api.classes.gene.widgets.mapping-data :as mapping-data]
    [rest-api.classes.gene.widgets.ontology :as gene-ontology]
+   [rest-api.classes.gene.widgets.references :as references]
    [rest-api.classes.gene.widgets.overview :as overview]
    [rest-api.classes.gene.widgets.phenotype :as phenotype]
    [rest-api.classes.gene.widgets.location :as location]
@@ -34,6 +35,7 @@
     :location location/widget
     :human_diseases human-diseases/widget
     :sequences sequences/widget
+    :references references/widget
     :reagents reagents/widget
     :phenotype_graph phenotype-graph/widget
     :phenotype phenotype/widget}

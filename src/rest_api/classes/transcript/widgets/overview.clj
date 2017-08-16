@@ -3,7 +3,14 @@
   [rest-api.classes.generic-fields :as generic]))
 
 (defn sequence-type [t]
-  {:data nil ; This comes from properties section, found on another page too
+  {:data (cond
+           (=  "a" "b")
+           "Wormbase Transcript"
+
+           :else
+           "unknown"
+           )
+   :t (:transcript/type t)
    :description "the general type of the sequence"})
 
 (defn feature [t]
@@ -18,13 +25,12 @@
 
 (def widget
   {:name generic/name-field
-   :laboratory generic/laboratory
-   :available_from generic/available-from
-   :taxonomy generic/taxonomy
+;   :available_from generic/available-from
+;   :taxonomy generic/taxonomy
    :sequnece_type sequence-type
-   :description generic/description
+;   :description generic/description
    :feature feature
-   :identity generic/identity-field
-   :remarks generic/remarks
-   :method generic/method
+;   :identity generic/identity-field
+;   :remarks generic/remarks
+;   :method generic/method
    :corresponding_all corresponding-all})

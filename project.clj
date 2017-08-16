@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "0.1.8"
+(defproject wormbase/rest-api "0.2.0"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -39,14 +39,14 @@
              "-Ddatomic.txTimeoutMsec=1000000"]
   :profiles
   {:datomic-free
-   {:dependencies [[com.datomic/datomic-free "0.9.5554"
+   {:dependencies [[com.datomic/datomic-free "0.9.5561.50"
                     :exclusions [joda-time]]]}
    :datomic-pro
-   {:dependencies [[com.datomic/datomic-pro "0.9.5554"
+   {:dependencies [[com.datomic/datomic-pro "0.9.5561.50"
                     :exclusions [joda-time]]]}
    :ddb
    {:dependencies
-    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
+    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.82"
       :exclusions [joda-time]]]}
    :dev [:datomic-pro
          :ddb
@@ -59,7 +59,7 @@
                          [ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
           :env
-          {:wb-db-uri "datomic:ddb://us-east-1/WS259/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS260/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"
