@@ -10,8 +10,7 @@
 (routing/defroutes
   {:entity-class "person"
    :widget
-   {
-    :laboratory laboratory/widget
+   {:laboratory laboratory/widget
     :lineage lineage/widget
     :overview overview/widget
     :publications publications/widget
