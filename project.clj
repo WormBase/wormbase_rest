@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "0.1.3-SNAPSHOT"
+(defproject wormbase/rest-api "0.2.0"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -17,7 +17,7 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.5.1"]
-   [wormbase/pseudoace "0.4.14"]]
+   [wormbase/pseudoace "0.4.15"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
             [lein-pprint "1.1.1"]
@@ -39,14 +39,14 @@
              "-Ddatomic.txTimeoutMsec=1000000"]
   :profiles
   {:datomic-free
-   {:dependencies [[com.datomic/datomic-free "0.9.5554"
+   {:dependencies [[com.datomic/datomic-free "0.9.5561.50"
                     :exclusions [joda-time]]]}
    :datomic-pro
-   {:dependencies [[com.datomic/datomic-pro "0.9.5554"
+   {:dependencies [[com.datomic/datomic-pro "0.9.5561.50"
                     :exclusions [joda-time]]]}
    :ddb
    {:dependencies
-    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
+    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.82"
       :exclusions [joda-time]]]}
    :dev [:datomic-pro
          :ddb
@@ -55,10 +55,11 @@
            ["do"
             ["eastwood"]
             "test"]}
-          :dependencies [[ring/ring-devel "1.5.1"]]
+          :dependencies [[org.clojure/tools.trace "0.7.9"]
+                         [ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
           :env
-          {:trace-db "datomic:ddb://us-east-1/WS257/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS260/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"
@@ -68,7 +69,7 @@
            [lein-ns-dep-graph "0.1.0-SNAPSHOT"]
            [venantius/yagni "0.1.4"]
            [com.jakemccrary/lein-test-refresh "0.17.0"]]
-          :eastwood {:add-linters [:unused-namespaces]
-                     :exclude-namespaces [user]}
-          :ring {:nrepl {:start? true}}}]}
+          :ring {:nrepl {:start? true}}}]
+      :test
+      {:resource-paths ["test/resources"]}}
   :repl-options {:init (set! *print-length* 10)})

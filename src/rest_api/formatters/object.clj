@@ -24,11 +24,21 @@
   return the short name of the species, otherwise \"all\"."
   [class obj]
   (let [species-ident (keyword class "species")]
-    (if-let [species (species-ident obj)]
-      (if-let [[_ g species] (re-matches #"(.).*[ _](.+)"
-                                         (:species/id species))]
-        (.toLowerCase (str g "_" species))
-        "unknown")
+    (if-let [species-many (species-ident obj)]
+      (let [species (if (contains? species-many :species/id)
+                      species-many
+                      (first species-many))]
+        (if-let [species-obj (let [species-kw (keyword (str class ".species") "species")]
+                               (if (contains? species species-kw)
+                                 (species-kw species)
+                                 species))]
+          (if-let [species-id (:species/id species-obj)]
+            (if-let [[_ g species-str]
+                     (re-matches #"(.).*[ _](.+)" species-id)]
+              (.toLowerCase (str g "_" species-str))
+              "unknown")
+            "unknown")
+          "unknown"))
       "all")))
 
 (defmulti obj-label
@@ -38,6 +48,14 @@
 (defmethod obj-label "gene" [_ obj]
   (or (:gene/public-name obj)
       (:gene/id obj)))
+
+(defmethod obj-label "wbprocess" [_ obj]
+  (or (:wbprocess/public-name obj)
+      (:wbprocess/id obj)))
+
+(defmethod obj-label "laboratory" [_ obj]
+  (or (first (:laboratory/mail obj))
+      (:laboratory/id obj)))
 
 (defmethod obj-label "phenotype" [_ obj]
   (or (->> (:phenotype/primary-name obj)
@@ -65,25 +83,28 @@
        (first))))
 
 (defn author-list [paper]
-  (let [authors (->> (:paper/author paper)
-                     (sort-by :ordered/index))]
+  (let [authors (sort-by :ordered/index (:paper/author paper))]
     (cond
      (= (count authors) 1)
      (author-lastname (first authors))
 
      (< (count authors) 6)
-     (let [names (map author-lastname authors)]
-       (str (str/join ", " (butlast names)) ", & " (last names)))
+     (let [last-names (map author-lastname authors)]
+       (str (str/join ", " (butlast last-names))
+            " & "
+            (last last-names)))
 
      :default
      (str (author-lastname (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
-  (if (seq (:paper/publication-date paper))
-    (str (author-list paper)
-         ", "
-         (first (str/split (:paper/publication-date paper)
-                           #"-")))))
+  (if-let [year (when (seq (:paper/publication-date paper))
+                  (first
+                    (str/split
+                      (:paper/publication-date paper)
+                      #"-")))]
+    (str (author-list paper) ", " year)
+    (author-list paper)))
 
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
@@ -99,11 +120,14 @@
   (:do-term/name term))
 
 (defmethod obj-label "person" [_ person]
-  (:person/standard-name person))
+ (or (:person/standard-name person)
+     (or (:author/id (first (:person/possibly-publishes-as person)))
+         (:person/id person))))
 
 (defmethod obj-label "construct" [_ cons]
   (or (first (:construct/public-name cons))
-      (:construct/id cons)))
+      (or (first (:construct/other-name cons))
+          (:construct/id cons))))
 
 (defmethod obj-label "transgene" [_ tg]
   (or (:transgene/public-name tg)
@@ -160,18 +184,17 @@
   ;; computing the display name.
   (let [db (d/entity-db int)]
     (if-let [il (seq (d/q q-interactor db (:db/id int)))]
-      (->>
-       (map
-        (fn [interactor]
-          (cond
-            (string? interactor)
-            interactor
+      (->> il
+           (map
+            (fn [interactor]
+              (cond
+                (string? interactor)
+                interactor
 
-            :default
-            (:label (pack-obj (d/entity db interactor)))))
-        il)
-       (sort)
-       (str/join " : "))
+                :default
+                (:label (pack-obj (d/entity db interactor))))))
+           (sort)
+           (str/join " : "))
       (:interaction/id int))))
 
 (defmethod obj-label "motif" [_ motif]
@@ -286,11 +309,9 @@
            :label pa}))
 
    :Author_evidence
-   (seq (for [a (:evidence/author-evidence holder)
-              :let [author (:evidence.author-evidence/author holder)]]
-          {:evidence
-           ;; Notes seem to be ignored here.
-           (pack-obj "author" author)})) 
+   (seq (for [ah (:evidence/author-evidence holder)
+              :let [author (:evidence.author-evidence/author ah)]]
+          {:evidence (pack-obj "author" author)}))
 
    :Accession_evidence
    (if-let [accs (:evidence/accession-evidence holder)]
@@ -298,7 +319,7 @@
             db  :evidence.accession-evidence/database} accs]
        {:id acc
         :label (format "%s:%s" (:database/id db) acc)
-        :class (:database/id acc)}))
+        :class (:database/id db)}))
 
 
    :Protein_id_evidence
@@ -348,7 +369,7 @@
 
    :Sequence_evidence
    (if-let [seqs (:evidence/sequence-evidence holder)]
-     (map (partial pack-obj "sequence" seqs)))))
+     (map (partial pack-obj "sequence") seqs))))
 
 (defn pack-text
   "Normalize text to behave like a pack object."
@@ -368,3 +389,15 @@
         (last)
         (str/replace #"-" " ")
         (str/capitalize))))
+
+(defn name-field [object]
+  (let [data (pack-obj object)]
+    {:data (not-empty data)
+     :description (format "The name and WormBase internal ID of %s"
+                          (:id data))}))
+
+(defn tag-obj [label]
+  {:taxonomy "all"
+   :class "tag"
+   :label label
+   :id label})

@@ -14,8 +14,7 @@
 Run following commands and test each step happens correctly.
 
 ```bash
-export WS_VERSION=WS257
-export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS260/wormbase"
 lein ring server-headless 8130
 lein do eastwood, test
 make docker-build
@@ -34,8 +33,7 @@ eb deploy
 ## Setting environment variables
 
 ```bash
-export WS_VERSION=WS257
-export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS260/wormbase"
 ```
 
 ## Starting server in development
@@ -43,10 +41,23 @@ export TRACE_DB="datomic:ddb://us-east-1/WS257/wormbase"
 lein ring server-headless 8130
 ```
 
-### Code linting
-Check for code purity, unused namespaces et al.
+### Code quality
+To run code-quality checks (linting and runs all tests):
+  * Before submitting a pull request.
+  * Before deploying a release.
+
 ```bash
-lein eastwood
+lein code-qa
+```
+
+### Code linting
+Run `lein eastwood` to run the linting checks.
+
+To have linting check for unused namespaces:
+
+```bash
+lein eastwood \
+  '{:add-linter [:ununsed-namespaces] :exclude-namespace [user]}'
 ```
 
 ### Running unit tests

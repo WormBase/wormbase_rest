@@ -2,7 +2,7 @@
   (:require
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.classes.gene.generic :as gene-fields]
+   [rest-api.classes.generic-fields :as gene-fields]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 

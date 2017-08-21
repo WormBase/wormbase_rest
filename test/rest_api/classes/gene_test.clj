@@ -1,25 +1,19 @@
 (ns rest-api.classes.gene-test
   (:require
    [clojure.test :refer :all]
-   [datomic.api :as d]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.classes.gene.widgets.genetics :as genetics]
-   [rest-api.db.main :refer [datomic-conn]]
-   [rest-api.db-testing :as db-testing]
-   ))
+   [rest-api.db-testing :as db-testing]))
+
+(def get-gene (partial db-testing/entity "gene"))
 
 ;; Here we register my-test-fixture to be called once, wrapping ALL tests
 ;; in the namespace
 (use-fixtures :once db-testing/db-lifecycle)
 
-(defn get-gene [id]
-  (d/entity (d/db datomic-conn) [:gene/id id]))
-
 (defn find-variation-in [id variations]
-  (first (filter #(= id (-> (:variation %)
-                            (:id)))
+  (first (filter #(= id (-> (:variation %) (:id)))
                  (:data variations))))
-
 
 ;;This is a regular test function, which is to be wrapped using
 ;;my-test-fixture
@@ -34,9 +28,9 @@
         allele1 (find-variation-in "WBVar00248722" alleles)
         allele-other1 (find-variation-in "WBVar00278273" alleles-other)
         allele-other2 (find-variation-in "WBVar01495296" alleles-other)
-        allele-other3 (->> (get-gene "WBGene00018307")
-                           (#'variation/alleles-other)
-                           (find-variation-in "WBVar00601075"))
+        allele2 (->> (get-gene "WBGene00003657")
+                     (#'variation/alleles)
+                     (find-variation-in "WBVar00600733"))
         polymorphism1 (find-variation-in "WBVar01858901" polymorphisms)]
     (testing "reference allele"
       (is (some #(= "e66" (:label %)) (:data reference-allele))))
@@ -64,7 +58,7 @@
       (testing "contains a correct strain"
         (is (some #(= "RW7080" (:id %)) (:strain allele1))))
       (testing "contains a correct citation"
-        (is (some #(= "Mori, Moerman, & Waterston, 1986"
+        (is (some #(= "Mori, Moerman & Waterston, 1986"
                       (:label %))
                   (:sources allele1))))
       (testing "correct location type"
@@ -86,7 +80,7 @@
           (is (some #(= "A1774T" %)
                     (:composite_change allele-other2)))))
       (testing "effects outside of CDS"
-        (is (some #(= "Promoter" %) (:effects allele-other3)))))))
+        (is (some #(= "Promoter" %) (:effects allele2)))))))
 
 
 (deftest test-strains
