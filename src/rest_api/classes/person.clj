@@ -8,7 +8,7 @@
     [rest-api.routing :as routing]))
 
 (routing/defroutes
-  {:entity-class "person"
+  {:entity-ns "person"
    :widget
    {:laboratory laboratory/widget
     :lineage lineage/widget

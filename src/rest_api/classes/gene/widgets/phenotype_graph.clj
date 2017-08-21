@@ -1,5 +1,5 @@
 (ns rest-api.classes.gene.widgets.phenotype-graph
-  (:require [rest-api.classes.gene.generic :as generic]))
+  (:require [rest-api.classes.generic-fields :as generic]))
 
 (defn phenotype-graph [gene]
   {:data (:gene/id gene)
