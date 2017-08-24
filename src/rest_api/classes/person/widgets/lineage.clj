@@ -8,101 +8,98 @@
     [rest-api.formatters.date :as date]))
 
 (defn- generate-map [oid]
-  (let [otherpersonid (get oid 0)
-        otherpersonname (get oid 1)
-        jsondata (get oid 2)
-        roles (filter #(re-find #"role" (str %)) (keys jsondata))
+  (let [other-person-id (get oid 0)
+        other-person-name (get oid 1)
+        json-data (get oid 2)
+        roles (filter #(re-find #"role" (str %)) (keys json-data))
         level
         (for [role roles
               :let
-              [level (clojure.string/capitalize
-                       (clojure.string/replace
-                         (clojure.string/replace
+              [level (str/capitalize
+                       (str/replace
+                         (str/replace
                            (str role) #":role/" "") #"-" " "))]] level)
         duration
         (for [role roles
               :let [rfrom (keyword
                             (str
-                              (clojure.string/replace 
-                                (clojure.string/replace 
-                                  (str role) #"/" ".") #":" "") "/from"))]
-              :let [rto (keyword
+                              (str/replace 
+                                (str/replace 
+                                  (str role) #"/" ".") #":" "") "/from"))
+                    rto (keyword
                           (str
-                            (clojure.string/replace 
-                              (clojure.string/replace 
-                                (str role) #"/" ".") #":" "") "/to"))]
-              :let [from (if (contains? (first (jsondata role)) rfrom)
-                           (date/format-date5 ((first (jsondata role)) rfrom))
-                           nil )]
-              :let [to (if (contains? (first (jsondata role)) rto) 
-                         (date/format-date5 ((first (jsondata role)) rto)) 
-                         nil )]
-              :let [duration (str from " - " to)]] duration)]
+                            (str/replace 
+                              (str/replace 
+                                (str role) #"/" ".") #":" "") "/to"))
+                    from (if (contains? (first (json-data role)) rfrom)
+                           (date/format-date5 ((first (json-data role)) rfrom))
+                           nil )
+                    to (if (contains? (first (json-data role)) rto) 
+                         (date/format-date5 ((first (json-data role)) rto)) 
+                         nil )
+                    duration (str from " - " to)]] duration)]
     (pace-utils/vmap
       :level level
       :duration duration
       :name
       (pace-utils/vmap
-        :label otherpersonname
-        :id otherpersonid
+        :label other-person-name
+        :id other-person-id
         :taxonomy "all"
         :class "person"))))
 
 (defn supervised-by [person]
   (let [db (d/entity-db person)
-        data (->> (d/q '[:find ?otherpersonid ?otherpersonname (pull ?personsupervisedbyent [*])
+        data (->> (d/q '[:find ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
                          :in $ ?person
                          :where
-                         [?person :person/supervised-by ?personsupervisedbyent]
-                         [?personsupervisedbyent :person.supervised-by/person ?otherpersonent]
-                         [?otherpersonent :person/id ?otherpersonid]
-                         [?otherpersonent :person/standard-name ?otherpersonname]
-                         ]
+                         [?person :person/supervised-by ?person-supervised-by-ent]
+                         [?person-supervised-by-ent :person.supervised-by/person ?other-person-ent]
+                         [?other-person-ent :person/id ?other-person-id]
+                         [?other-person-ent :person/standard-name ?other-person-name]]
                        db (:db/id person))
                   (map (fn [oid]
                          (generate-map oid)))
                   (seq))]
-    {:data (if (empty? data) nil data)
+    {:data (if data data)
      :description "people who supervised this person"}))
 
 (defn supervised [person]
   (let [db (d/entity-db person)
-        data (->> (d/q '[:find ?otherpersonid ?otherpersonname (pull ?personsupervisedbyent [*])
+        data (->> (d/q '[:find ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
                          :in $ ?person
                          :where
-                         [?otherpersonent :person/supervised-by ?personsupervisedbyent]
-                         [?personsupervisedbyent :person.supervised-by/person ?person]
-                         [?otherpersonent :person/id ?otherpersonid]
-                         [?otherpersonent :person/standard-name ?otherpersonname]
-                         ]
+                         [?other-person-ent :person/supervised-by ?person-supervised-by-ent]
+                         [?person-supervised-by-ent :person.supervised-by/person ?person]
+                         [?other-person-ent :person/id ?other-person-id]
+                         [?other-person-ent :person/standard-name ?other-person-name]]
                        db (:db/id person))
                   (map (fn [oid]
                          (generate-map oid)))
                   (seq))]
-    {:data (if (empty? data) nil data)
+    {:data (if data data)
      :description "people supervised by this person"}))
 
 (defn worked-with [person]
   (let [db (d/entity-db person)
-        data (->> (d/q '[:find ?otherpersonid ?otherpersonname (pull ?personworkedwithent [*])
+        data (->> (d/q '[:find ?other-person-id ?other-person-name (pull ?personworkedwithent [*])
                          :in $ ?person
                          :where
-                         [?otherpersonent :person/worked-with ?personworkedwithent]
+                         [?other-person-ent :person/worked-with ?personworkedwithent]
                          [?personworkedwithent :person.worked-with/person ?person]
-                         [?otherpersonent :person/id ?otherpersonid]
-                         [?otherpersonent :person/standard-name ?otherpersonname]
-                         ]
+                         [?other-person-ent :person/id ?other-person-id]
+                         [?other-person-ent :person/standard-name ?other-person-name]]
                        db (:db/id person))
                   (map (fn [oid]
                          (generate-map oid)))
                   (seq))]
-    {:data (if (empty? data) nil data)
+    {:data (if data data)
      :description "people with whom this person worked"}))
 
-(def scalingHash
+(def scaling-hash
   (json/parse-string (slurp "http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/wbpersonLineageScaling.json") true))
 
-(def roleColour
+(def role-colour
   (hash-map
     :Phd                            "#B40431"
     :Postdoc                        "#00E300"
@@ -115,12 +112,12 @@
   (Integer. (re-find #"\d+" s)))
 
 (defn- generate-map-nodes-edges [oid]
-  (let [personid (get oid 0)
-        personname (str/replace (get oid 1) #"'" "")
-        otherpersonid (get oid 2)
-        otherpersonname (str/replace (get oid 3) #"'" "")
-        jsondata (get oid 4)
-        roles (filter #(re-find #"role" (str %)) (keys jsondata))
+  (let [person-id (get oid 0)
+        person-name (str/replace (get oid 1) #"'" "")
+        other-person-id (get oid 2)
+        other-person-name (str/replace (get oid 3) #"'" "")
+        json-data (get oid 4)
+        roles (filter #(re-find #"role" (str %)) (keys json-data))
         levels
         (for [role roles
               :let
@@ -130,216 +127,214 @@
                             (str/replace
                               (str role) #":role/" "") #"-" " ") #"'" ""))]] levels)]
     (for [level levels
-          data (if ((keyword level) roleColour) 
+          data (if ((keyword level) role-colour) 
                  (vector
                    (hash-map
-                     :personid personid
-                     :personname personname
-                     :otherpersonid otherpersonid
-                     :otherpersonname otherpersonname
+                     :person-id person-id
+                     :person-name person-name
+                     :other-person-id other-person-id
+                     :other-person-name other-person-name
                      :level level))
                  nil )] data)))
 
 (defn- generate-map-this-person [oid]
-  (let [personid (get oid 0)
-        personname (get oid 1)
+  (let [person-id (get oid 0)
+        person-name (get oid 1)
         data (vector
                (hash-map
-                 :personid personid
-                 :personname personname))] data))
+                 :person-id person-id
+                 :person-name person-name))] data))
 
-(defn- get-this-node-scaling [queriedData]
-  (let [value (first queriedData)
+(defn- get-this-node-scaling [queried-data]
+  (let [value (first queried-data)
         data  (if (nil? value)
                 1
-                (if (nil? ((keyword (:personid value)) scalingHash))
+                (if (nil? ((keyword (:person-id value)) scaling-hash))
                   1 
-                  (parse-int ((keyword (:personid value)) scalingHash))))] data))
+                  (parse-int ((keyword (:person-id value)) scaling-hash))))] data))
 
-(defn- get-other-node-scaling [queriedData] 
-  (if (empty? queriedData) nil
-    (for [value queriedData
+(defn- get-other-node-scaling [queried-data] 
+  (if queried-data
+    (for [value queried-data
           :let [data 
                 (if (nil? value)
                   1
-                  (if (nil? ((keyword (:otherpersonid value)) scalingHash))
+                  (if (nil? ((keyword (:other-person-id value)) scaling-hash))
                     1 
-                    (parse-int ((keyword (:otherpersonid value)) scalingHash))))]] data)))
+                    (parse-int ((keyword (:other-person-id value)) scaling-hash))))]] data)))
 
-(defn- filter-this-node [directOrFull queriedData]
-  (let [value (first queriedData)
-        scaling (if (nil? ((keyword (:personid value)) scalingHash))
+(defn- filter-this-node [direct-or-full queried-data]
+  (let [value (first queried-data)
+        scaling (if (nil? ((keyword (:person-id value)) scaling-hash))
                   1 
-                  (parse-int ((keyword (:personid value)) scalingHash)))
-        data (str "id: '" directOrFull (:personid value) "', name: '" (:personname value) "', url: '" (:personid value) "', scaling: '" scaling "', radius: '100', nodeshape: 'rectangle'")]
+                  (parse-int ((keyword (:person-id value)) scaling-hash)))
+        data (str "id: '" direct-or-full (:person-id value) "', name: '" (:person-name value) "', url: '" (:person-id value) "', scaling: '" scaling "', radius: '100', nodeshape: 'rectangle'")]
     data))
 
-(defn- filter-other-nodes [directOrFull largestNodeScaling queriedData]
-  (for [value queriedData
+(defn- filter-other-nodes [direct-or-full largest-node-scaling queried-data]
+  (for [value queried-data
         :let [scaling (if (nil? value) 
                         1
-                        (if (nil? ((keyword (:otherpersonid value)) scalingHash))
+                        (if (nil? ((keyword (:other-person-id value)) scaling-hash))
                           1 
-                          (parse-int ((keyword (:otherpersonid value)) scalingHash))))
+                          (parse-int ((keyword (:other-person-id value)) scaling-hash))))
               radius 100
-              radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largestNodeScaling))))
-              data (if (nil? value) nil (str "id: '" directOrFull(:otherpersonid value) "', name: '" (:otherpersonname value) "', url: '" (:otherpersonid value) "', scaling: '" scaling "', radius: '" radius "', nodeshape: 'ellipse'"))]] data))
+              radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
+              data (if (nil? value) nil (str "id: '" direct-or-full(:other-person-id value) "', name: '" (:other-person-name value) "', url: '" (:other-person-id value) "', scaling: '" scaling "', radius: '" radius "', nodeshape: 'ellipse'"))]] data))
 
-(defn- get-existing-roles [queriedData]
-  (for [value queriedData
+(defn- get-existing-roles [queried-data]
+  (for [value queried-data
         :let [data (str (:level value))]] data))
 
-(defn- filter-existing-roles [existingRolesUnique]
-  (apply merge (for [role existingRolesUnique
+(defn- filter-existing-roles [existing-roles-unique]
+  (apply merge (for [role existing-roles-unique
                      :let [data  
                            (pace-utils/vmap
-                             (keyword role) ((keyword role) roleColour))]] data)))
+                             (keyword role) ((keyword role) role-colour))]] data)))
 
-(defn- filter-edges-supervisees [directOrFull queriedData]
-  (if (empty? queriedData)
-    nil
-    (for [value queriedData
+(defn- filter-edges-supervisees [direct-or-full queried-data]
+  (if queried-data
+    (for [value queried-data
           :let [data 
                 (if (nil? value)
                   nil 
-                  (str "source: '" directOrFull (:personid value) "', target: '" directOrFull (:otherpersonid value) "', role: '" (:level value) "', targetArrowShape: 'triangle', lineStyle: 'solid', lineColor: '" ((keyword (:level value)) roleColour) "'"))]] data)))
+                  (str "source: '" direct-or-full (:person-id value) "', target: '" direct-or-full (:other-person-id value) "', role: '" (:level value) "', targetArrowShape: 'triangle', lineStyle: 'solid', lineColor: '" ((keyword (:level value)) role-colour) "'"))]] data)))
 
-(defn- filter-edges-supervisors [directOrFull queriedData]
-  (if (empty? queriedData)
-    nil
-    (for [value queriedData
-          :let [lineStyle (if (= directOrFull "Direct") "dashed" "solid")
+(defn- filter-edges-supervisors [direct-or-full queried-data]
+  (if queried-data
+    (for [value queried-data
+          :let [line-style (if (= direct-or-full "Direct") "dashed" "solid")
                 data 
                 (if (nil? value)
                   nil 
-                  (str "source: '" directOrFull (:otherpersonid value) "', target: '" directOrFull (:personid value) "', role: '" (:level value) "', targetArrowShape: 'triangle', lineStyle: '" lineStyle "', lineColor: '" ((keyword (:level value)) roleColour) "'"))]] data)))
+                  (str "source: '" direct-or-full (:other-person-id value) "', target: '" direct-or-full (:person-id value) "', role: '" (:level value) "', targetArrowShape: 'triangle', lineStyle: '" line-style "', lineColor: '" ((keyword (:level value)) role-colour) "'"))]] data)))
 
-(defn- query-supervisors [personid]
+(defn- query-supervisors [person-id]
   (let [db (d/db datomic-conn)
-        queriedDataSupervisors (->> (d/q '[:find ?personid ?personname ?otherpersonid ?otherpersonname (pull ?personsupervisedbyent [*])
-                                           :in $ ?personid
-                                           :where
-                                           [?person :person/id ?personid]
-                                           [?person :person/supervised-by ?personsupervisedbyent]
-                                           [?person :person/standard-name ?personname]
-                                           [?personsupervisedbyent :person.supervised-by/person ?otherpersonent]
-                                           [?otherpersonent :person/id ?otherpersonid]
-                                           [?otherpersonent :person/standard-name ?otherpersonname]
-                                           ] db personid)
-                                    (map (fn [oid]
-                                           (generate-map-nodes-edges oid)))
-                                    (flatten))]
-    (if (empty? queriedDataSupervisors) nil queriedDataSupervisors)))
+        queried-data-supervisors (->> (d/q '[:find ?person-id ?person-name ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
+                                             :in $ ?person-id
+                                             :where
+                                             [?person :person/id ?person-id]
+                                             [?person :person/supervised-by ?person-supervised-by-ent]
+                                             [?person :person/standard-name ?person-name]
+                                             [?person-supervised-by-ent :person.supervised-by/person ?other-person-ent]
+                                             [?other-person-ent :person/id ?other-person-id]
+                                             [?other-person-ent :person/standard-name ?other-person-name]]
+                                           db person-id)
+                                      (map (fn [oid]
+                                             (generate-map-nodes-edges oid)))
+                                      (flatten))]
+    (if queried-data-supervisors queried-data-supervisors)))
 
-(defn- recurse-supervisors [queriedData]
-  (if (nil? queriedData) nil
-    (for [value queriedData
-          :let [supervisorsData (query-supervisors (:otherpersonid value)) 
-                data (flatten (conj supervisorsData (recurse-supervisors supervisorsData)))]] data)))
+(defn- recurse-supervisors [queried-data]
+  (if (nil? queried-data) nil
+    (for [value queried-data
+          :let [supervisors-data (query-supervisors (:other-person-id value)) 
+                data (flatten (conj supervisors-data (recurse-supervisors supervisors-data)))]] data)))
 
-(defn- query-supervisees [personid]
+(defn- query-supervisees [person-id]
   (let [db (d/db datomic-conn)
-        queriedDataSupervisees (->> (d/q '[:find ?personid ?personname ?otherpersonid ?otherpersonname (pull ?personsupervisedbyent [*])
-                                           :in $ ?personid
-                                           :where
-                                           [?person :person/id ?personid]
-                                           [?otherpersonent :person/supervised-by ?personsupervisedbyent]
-                                           [?person :person/standard-name ?personname]
-                                           [?personsupervisedbyent :person.supervised-by/person ?person]
-                                           [?otherpersonent :person/id ?otherpersonid]
-                                           [?otherpersonent :person/standard-name ?otherpersonname]] db personid)
-                                    (map (fn [oid]
-                                           (generate-map-nodes-edges oid)))
-                                    (flatten))]
-    (if (empty? queriedDataSupervisees) nil queriedDataSupervisees)))
+        queried-data-supervisees (->> (d/q '[:find ?person-id ?person-name ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
+                                             :in $ ?person-id
+                                             :where
+                                             [?person :person/id ?person-id]
+                                             [?other-person-ent :person/supervised-by ?person-supervised-by-ent]
+                                             [?person :person/standard-name ?person-name]
+                                             [?person-supervised-by-ent :person.supervised-by/person ?person]
+                                             [?other-person-ent :person/id ?other-person-id]
+                                             [?other-person-ent :person/standard-name ?other-person-name]]
+                                           db person-id)
+                                      (map (fn [oid]
+                                             (generate-map-nodes-edges oid)))
+                                      (flatten))]
+    (if queried-data-supervisees queried-data-supervisees)))
 
-(defn- recurse-supervisees [queriedData]
-  (if (nil? queriedData)
+(defn- recurse-supervisees [queried-data]
+  (if (nil? queried-data)
     nil
-    (for [value queriedData
-          :let [superviseesData (query-supervisees (:otherpersonid value)) 
-                data (flatten (conj superviseesData (recurse-supervisees superviseesData)))]] data)))
+    (for [value queried-data
+          :let [supervisees-data (query-supervisees (:other-person-id value)) 
+                data (flatten (conj supervisees-data (recurse-supervisees supervisees-data)))]] data)))
 
 (defn- query-this-person [person]
   (let [db (d/entity-db person)
-        queriedDataThisPerson (->> (d/q '[:find ?personid ?personname 
-                                          :in $ ?person
-                                          :where
-                                          [?person :person/standard-name ?personname]
-                                          [?person :person/id ?personid]
-                                          ]
-                                        db (:db/id person))
-                                   (map (fn [oid]
-                                          (generate-map-this-person oid)))
-                                   (flatten))]
-    (if (empty? queriedDataThisPerson) nil queriedDataThisPerson)))
+        queried-data-this-person (->> (d/q '[:find ?person-id ?person-name 
+                                             :in $ ?person
+                                             :where
+                                             [?person :person/standard-name ?person-name]
+                                             [?person :person/id ?person-id]]
+                                           db (:db/id person))
+                                      (map (fn [oid]
+                                             (generate-map-this-person oid)))
+                                      (flatten))]
+    (if queried-data-this-person queried-data-this-person)))
 
 (defn ancestors-data [person]
   (let [db (d/entity-db person)
-        queriedDataThisPerson (query-this-person person)
-        thisPersonId (:personid (first queriedDataThisPerson))
-        thisPersonSupervisors (query-supervisors thisPersonId)
-        thisPersonSupervisees (query-supervisees thisPersonId)
-        edgesDirect
+        queried-data-this-person (query-this-person person)
+        this-person-id (:person-id (first queried-data-this-person))
+        this-person-supervisors (query-supervisors this-person-id)
+        this-person-supervisees (query-supervisees this-person-id)
+        edges-direct
         (str "edges: [ { data: { " 
              (str/join " } },{ data: { " 
                        (remove str/blank? 
                                (flatten
-                                 (conj (filter-edges-supervisees "Direct" thisPersonSupervisees) (filter-edges-supervisors "Direct" thisPersonSupervisors))))) " } } ]")
-        existingRolesDirect
+                                 (conj (filter-edges-supervisees "Direct" this-person-supervisees) (filter-edges-supervisors "Direct" this-person-supervisors))))) " } } ]")
+        existing-roles-direct
         (filter-existing-roles 
           (distinct 
             (flatten 
-              (conj (get-existing-roles thisPersonSupervisors) (get-existing-roles thisPersonSupervisees)))))
-        largestNodeScalingDirect
+              (conj (get-existing-roles this-person-supervisors) (get-existing-roles this-person-supervisees)))))
+        largest-node-scaling-direct
         (apply max 
                (flatten 
-                 (conj (get-other-node-scaling thisPersonSupervisees) 
-                       (conj (get-other-node-scaling thisPersonSupervisors) (get-this-node-scaling queriedDataThisPerson)))))
-        nodesDirect
+                 (conj (get-other-node-scaling this-person-supervisees) 
+                       (conj (get-other-node-scaling this-person-supervisors) (get-this-node-scaling queried-data-this-person)))))
+        nodes-direct
         (str "nodes: [ { data: { " 
              (str/join " } },{ data: { " 
                        (remove str/blank? 
                                (flatten 
-                                 (conj (filter-other-nodes "Direct" largestNodeScalingDirect thisPersonSupervisees)
-                                       (conj (filter-other-nodes "Direct" largestNodeScalingDirect thisPersonSupervisors) (filter-this-node "Direct" queriedDataThisPerson)))))) " } } ]")
-        queriedDataRecurseSupervisors
+                                 (conj (filter-other-nodes "Direct" largest-node-scaling-direct this-person-supervisees)
+                                       (conj (filter-other-nodes "Direct" largest-node-scaling-direct this-person-supervisors) (filter-this-node "Direct" queried-data-this-person)))))) " } } ]")
+        queried-data-recurse-supervisors
         (distinct
           (flatten
-            (conj (recurse-supervisors thisPersonSupervisors) thisPersonSupervisors )))
-        queriedDataRecurseSupervisees
+            (conj (recurse-supervisors this-person-supervisors) this-person-supervisors )))
+        queried-data-recurse-supervisees
         (distinct
           (flatten 
-            (conj (recurse-supervisees thisPersonSupervisees) thisPersonSupervisees )))
-        edgesFull
+            (conj (recurse-supervisees this-person-supervisees) this-person-supervisees )))
+        edges-full
         (str "edges: [ { data: { " 
              (str/join " } },{ data: { " 
                        (flatten 
-                         (conj (filter-edges-supervisees "Full" queriedDataRecurseSupervisees) (filter-edges-supervisors "Full" queriedDataRecurseSupervisors)))) " } } ]")
-        existingRolesFull
+                         (conj (filter-edges-supervisees "Full" queried-data-recurse-supervisees) (filter-edges-supervisors "Full" queried-data-recurse-supervisors)))) " } } ]")
+        existing-roles-full
         (filter-existing-roles 
           (distinct 
             (flatten 
-              (conj (get-existing-roles thisPersonSupervisors) (get-existing-roles queriedDataRecurseSupervisees) 
-                    (conj (get-existing-roles thisPersonSupervisors) (get-existing-roles queriedDataRecurseSupervisors))))))
-        largestNodeScalingFull
+              (conj (get-existing-roles this-person-supervisors) (get-existing-roles queried-data-recurse-supervisees) 
+                    (conj (get-existing-roles this-person-supervisors) (get-existing-roles queried-data-recurse-supervisors))))))
+        largest-node-scaling-full
         (apply max 
                (flatten 
-                 (conj (get-other-node-scaling queriedDataRecurseSupervisors) (get-this-node-scaling queriedDataThisPerson))))
-        nodesFull
+                 (conj (get-other-node-scaling queried-data-recurse-supervisors) (get-this-node-scaling queried-data-this-person))))
+        nodes-full
         (str "nodes: [ { data: { " 
              (str/join " } },{ data: { " 
                        (remove str/blank? 
                                (flatten 
-                                 (conj (filter-other-nodes "Full" largestNodeScalingFull queriedDataRecurseSupervisees) 
-                                       (conj (filter-other-nodes "Full" largestNodeScalingFull queriedDataRecurseSupervisors) (filter-this-node "Full" queriedDataThisPerson))))))" } } ]")
-        elementsFull (str "{ " nodesFull ", " edgesFull " }")
-        elementsDirect (str "{ " nodesDirect ", " edgesDirect " }")]
-    {:existingRolesFull existingRolesFull
-     :existingRolesDirect existingRolesDirect
-     :thisPerson thisPersonId 
-     :elementsFull (if (empty? elementsFull) nil elementsFull)
-     :elementsDirect (if (empty? elementsDirect) nil elementsDirect)
+                                 (conj (filter-other-nodes "Full" largest-node-scaling-full queried-data-recurse-supervisees) 
+                                       (conj (filter-other-nodes "Full" largest-node-scaling-full queried-data-recurse-supervisors) (filter-this-node "Full" queried-data-this-person))))))" } } ]")
+        elements-full (str "{ " nodes-full ", " edges-full " }")
+        elements-direct (str "{ " nodes-direct ", " edges-direct " }")]
+    {:existingRolesFull existing-roles-full
+     :existingRolesDirect existing-roles-direct
+     :thisPerson this-person-id 
+     :elementsFull (if elements-full elements-full)
+     :elementsDirect (if elements-direct elements-direct)
      :description "ancestors_data"}))
 
 (def widget
