@@ -134,8 +134,7 @@
                      :person-name person-name
                      :other-person-id other-person-id
                      :other-person-name other-person-name
-                     :level level))
-                 nil )] data)))
+                     :level level)))] data)))
 
 (defn- generate-map-this-person [oid]
   (let [person-id (get oid 0)
