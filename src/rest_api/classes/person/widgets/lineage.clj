@@ -26,11 +26,15 @@
                               (str/replace 
                                 (str/replace 
                                   (str role) #"/" ".") #":" "") "/from"))
-                    rto (keyword
-                          (str
-                            (str/replace 
-                              (str/replace 
-                                (str role) #"/" ".") #":" "") "/to"))
+;;                     rto (keyword
+;;                           (str
+;;                             (str/replace 
+;;                               (str/replace 
+;;                                 (str role) #"/" ".") #":" "") "/to"))
+;;                     r (-> role (str/replace #"/" ".") (str/replace #":" ""))
+;;                     rto (keyword (str r "/to"))
+                    rto (keyword (str (-> role (str/replace #"/" ".") (str/replace #":" "")) "/to"))
+
                     from (if (contains? (first (json-data role)) rfrom)
                            (date/format-date5 ((first (json-data role)) rfrom))
                            nil )
@@ -167,19 +171,41 @@
         scaling (if (nil? ((keyword (:person-id value)) scaling-hash))
                   1 
                   (parse-int ((keyword (:person-id value)) scaling-hash)))
-        data (str "id: '" direct-or-full (:person-id value) "', name: '" (:person-name value) "', url: '" (:person-id value) "', scaling: '" scaling "', radius: '100', nodeshape: 'rectangle'")]
-    data))
+        data (str "id: '" 
+                  direct-or-full 
+                  (:person-id value) 
+                  "', name: '" 
+                  (:person-name value) 
+                  "', url: '" 
+                  (:person-id value) 
+                  "', scaling: '" 
+                  scaling 
+                  "', radius: '100', nodeshape: 'rectangle'")] data))
 
 (defn- filter-other-nodes [direct-or-full largest-node-scaling queried-data]
   (for [value queried-data
-        :let [scaling (if (nil? value) 
-                        1
-                        (if (nil? ((keyword (:other-person-id value)) scaling-hash))
-                          1 
-                          (parse-int ((keyword (:other-person-id value)) scaling-hash))))
+        :let [scaling
+              (if (nil? value) 
+                1
+                (if (nil? ((keyword (:other-person-id value)) scaling-hash))
+                  1 
+                  (parse-int ((keyword (:other-person-id value)) scaling-hash))))
               radius 100
               radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
-              data (if (nil? value) nil (str "id: '" direct-or-full(:other-person-id value) "', name: '" (:other-person-name value) "', url: '" (:other-person-id value) "', scaling: '" scaling "', radius: '" radius "', nodeshape: 'ellipse'"))]] data))
+              data 
+              (if-not (nil? value) 
+                (str "id: '" 
+                     direct-or-full
+                     (:other-person-id value) 
+                     "', name: '" 
+                     (:other-person-name value) 
+                     "', url: '" 
+                     (:other-person-id value) 
+                     "', scaling: '" 
+                     scaling 
+                     "', radius: '" 
+                     radius 
+                     "', nodeshape: 'ellipse'"))]] data))
 
 (defn- get-existing-roles [queried-data]
   (for [value queried-data
@@ -195,18 +221,36 @@
   (if queried-data
     (for [value queried-data
           :let [data 
-                (if (nil? value)
-                  nil 
-                  (str "source: '" direct-or-full (:person-id value) "', target: '" direct-or-full (:other-person-id value) "', role: '" (:level value) "', targetArrowShape: 'triangle', lineStyle: 'solid', lineColor: '" ((keyword (:level value)) role-colour) "'"))]] data)))
+                (if-not (nil? value)
+                  (str "source: '" 
+                       direct-or-full 
+                       (:person-id value) 
+                       "', target: '" 
+                       direct-or-full 
+                       (:other-person-id value) 
+                       "', role: '" 
+                       (:level value) 
+                       "', targetArrowShape: 'triangle', lineStyle: 'solid', lineColor: '" 
+                       ((keyword (:level value)) role-colour) "'"))]] data)))
 
 (defn- filter-edges-supervisors [direct-or-full queried-data]
   (if queried-data
     (for [value queried-data
           :let [line-style (if (= direct-or-full "Direct") "dashed" "solid")
                 data 
-                (if (nil? value)
-                  nil 
-                  (str "source: '" direct-or-full (:other-person-id value) "', target: '" direct-or-full (:person-id value) "', role: '" (:level value) "', targetArrowShape: 'triangle', lineStyle: '" line-style "', lineColor: '" ((keyword (:level value)) role-colour) "'"))]] data)))
+                (if-not (nil? value)
+                  (str "source: '" 
+                       direct-or-full 
+                       (:other-person-id value) 
+                       "', target: '" 
+                       direct-or-full 
+                       (:person-id value) 
+                       "', role: '" 
+                       (:level value) 
+                       "', targetArrowShape: 'triangle', lineStyle: '" 
+                       line-style 
+                       "', lineColor: '" 
+                       ((keyword (:level value)) role-colour) "'"))]] data)))
 
 (defn- query-supervisors [person-id]
   (let [db (d/db datomic-conn)
