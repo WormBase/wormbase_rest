@@ -15,26 +15,18 @@
         level
         (for [role roles
               :let
-              [level (str/capitalize
-                       (str/replace
-                         (str/replace
-                           (str role) #":role/" "") #"-" " "))]] level)
+              [level (-> role
+                         (str/replace #":role/" "")
+                         (str/replace #"-" " ")
+                         (str/capitalize))]] level)
         duration
         (for [role roles
               :let [rfrom (keyword
                             (str
-                              (str/replace 
-                                (str/replace 
-                                  (str role) #"/" ".") #":" "") "/from"))
-                    ;;                     rto (keyword
-                    ;;                           (str
-                    ;;                             (str/replace 
-                    ;;                               (str/replace 
-                    ;;                                 (str role) #"/" ".") #":" "") "/to"))
-                    ;;                     r (-> role (str/replace #"/" ".") (str/replace #":" ""))
-                    ;;                     rto (keyword (str r "/to"))
-                    rto (keyword (str (-> role (str/replace #"/" ".") (str/replace #":" "")) "/to"))
-
+                              (-> role (str/replace #"/" ".") (str/replace #":" "")) "/from"))
+                    rto (keyword
+                          (str
+                            (-> role (str/replace #"/" ".") (str/replace #":" "")) "/to"))
                     from (if (contains? (first (json-data role)) rfrom)
                            (date/format-date5 ((first (json-data role)) rfrom)))
                     to (if (contains? (first (json-data role)) rto) 
@@ -122,12 +114,12 @@
         roles (filter #(re-find #"role" (str %)) (keys json-data))
         levels
         (for [role roles
-              :let
-              [levels (str/capitalize
-                        (str/replace
-                          (str/replace
-                            (str/replace
-                              (str role) #":role/" "") #"-" " ") #"'" ""))]] levels)]
+              :let [levels 
+                    (-> role 
+                        (str/replace #":role/" "") 
+                        (str/replace #"-" " ") 
+                        (str/replace #"'" "") 
+                        (str/capitalize))]] levels)]
     (for [level levels
           data (if ((keyword level) role-colour) 
                  (vector
@@ -181,8 +173,7 @@
                     (:person-id value) 
                     "', scaling: '" 
                     scaling 
-                    "', radius: '100', nodeshape: 'rectangle'"
-                    ))] data))
+                    "', radius: '100', nodeshape: 'rectangle'"))] data))
 
 (defn- filter-other-nodes [direct-or-full largest-node-scaling queried-data]
   (for [value queried-data
@@ -192,7 +183,6 @@
                 (if (nil? ((keyword (:other-person-id value)) scaling-hash))
                   1 
                   (parse-int ((keyword (:other-person-id value)) scaling-hash))))
-              radius 100
               radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
               data 
               (if-not (nil? value) 
@@ -256,19 +246,20 @@
 
 (defn- query-supervisors [person-id]
   (let [db (d/db datomic-conn)
-        queried-data-supervisors (->> (d/q '[:find ?person-id ?person-name ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
-                                             :in $ ?person-id
-                                             :where
-                                             [?person :person/id ?person-id]
-                                             [?person :person/supervised-by ?person-supervised-by-ent]
-                                             [?person :person/standard-name ?person-name]
-                                             [?person-supervised-by-ent :person.supervised-by/person ?other-person-ent]
-                                             [?other-person-ent :person/id ?other-person-id]
-                                             [?other-person-ent :person/standard-name ?other-person-name]]
-                                           db person-id)
-                                      (map (fn [oid]
-                                             (generate-map-nodes-edges oid)))
-                                      (flatten))]
+        queried-data-supervisors
+        (->> (d/q '[:find ?person-id ?person-name ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
+                    :in $ ?person-id
+                    :where
+                    [?person :person/id ?person-id]
+                    [?person :person/supervised-by ?person-supervised-by-ent]
+                    [?person :person/standard-name ?person-name]
+                    [?person-supervised-by-ent :person.supervised-by/person ?other-person-ent]
+                    [?other-person-ent :person/id ?other-person-id]
+                    [?other-person-ent :person/standard-name ?other-person-name]]
+                  db person-id)
+             (map (fn [oid]
+                    (generate-map-nodes-edges oid)))
+             (flatten))]
     (if queried-data-supervisors queried-data-supervisors)))
 
 (defn- recurse-supervisors [queried-data]
@@ -279,19 +270,20 @@
 
 (defn- query-supervisees [person-id]
   (let [db (d/db datomic-conn)
-        queried-data-supervisees (->> (d/q '[:find ?person-id ?person-name ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
-                                             :in $ ?person-id
-                                             :where
-                                             [?person :person/id ?person-id]
-                                             [?other-person-ent :person/supervised-by ?person-supervised-by-ent]
-                                             [?person :person/standard-name ?person-name]
-                                             [?person-supervised-by-ent :person.supervised-by/person ?person]
-                                             [?other-person-ent :person/id ?other-person-id]
-                                             [?other-person-ent :person/standard-name ?other-person-name]]
-                                           db person-id)
-                                      (map (fn [oid]
-                                             (generate-map-nodes-edges oid)))
-                                      (flatten))]
+        queried-data-supervisees
+        (->> (d/q '[:find ?person-id ?person-name ?other-person-id ?other-person-name (pull ?person-supervised-by-ent [*])
+                    :in $ ?person-id
+                    :where
+                    [?person :person/id ?person-id]
+                    [?other-person-ent :person/supervised-by ?person-supervised-by-ent]
+                    [?person :person/standard-name ?person-name]
+                    [?person-supervised-by-ent :person.supervised-by/person ?person]
+                    [?other-person-ent :person/id ?other-person-id]
+                    [?other-person-ent :person/standard-name ?other-person-name]]
+                  db person-id)
+             (map (fn [oid]
+                    (generate-map-nodes-edges oid)))
+             (flatten))]
     (if queried-data-supervisees queried-data-supervisees)))
 
 (defn- recurse-supervisees [queried-data]
@@ -302,15 +294,16 @@
 
 (defn- query-this-person [person]
   (let [db (d/entity-db person)
-        queried-data-this-person (->> (d/q '[:find ?person-id ?person-name 
-                                             :in $ ?person
-                                             :where
-                                             [?person :person/standard-name ?person-name]
-                                             [?person :person/id ?person-id]]
-                                           db (:db/id person))
-                                      (map (fn [oid]
-                                             (generate-map-this-person oid)))
-                                      (flatten))]
+        queried-data-this-person
+        (->> (d/q '[:find ?person-id ?person-name 
+                    :in $ ?person
+                    :where
+                    [?person :person/standard-name ?person-name]
+                    [?person :person/id ?person-id]]
+                  db (:db/id person))
+             (map (fn [oid]
+                    (generate-map-this-person oid)))
+             (flatten))]
     (if queried-data-this-person queried-data-this-person)))
 
 (defn ancestors-data [person]
