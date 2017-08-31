@@ -26,21 +26,19 @@
                               (str/replace 
                                 (str/replace 
                                   (str role) #"/" ".") #":" "") "/from"))
-;;                     rto (keyword
-;;                           (str
-;;                             (str/replace 
-;;                               (str/replace 
-;;                                 (str role) #"/" ".") #":" "") "/to"))
-;;                     r (-> role (str/replace #"/" ".") (str/replace #":" ""))
-;;                     rto (keyword (str r "/to"))
+                    ;;                     rto (keyword
+                    ;;                           (str
+                    ;;                             (str/replace 
+                    ;;                               (str/replace 
+                    ;;                                 (str role) #"/" ".") #":" "") "/to"))
+                    ;;                     r (-> role (str/replace #"/" ".") (str/replace #":" ""))
+                    ;;                     rto (keyword (str r "/to"))
                     rto (keyword (str (-> role (str/replace #"/" ".") (str/replace #":" "")) "/to"))
 
                     from (if (contains? (first (json-data role)) rfrom)
-                           (date/format-date5 ((first (json-data role)) rfrom))
-                           nil )
+                           (date/format-date5 ((first (json-data role)) rfrom)))
                     to (if (contains? (first (json-data role)) rto) 
-                         (date/format-date5 ((first (json-data role)) rto)) 
-                         nil )
+                         (date/format-date5 ((first (json-data role)) rto)))
                     duration (str from " - " to)]] duration)]
     (pace-utils/vmap
       :level level
@@ -168,19 +166,23 @@
 
 (defn- filter-this-node [direct-or-full queried-data]
   (let [value (first queried-data)
-        scaling (if (nil? ((keyword (:person-id value)) scaling-hash))
-                  1 
-                  (parse-int ((keyword (:person-id value)) scaling-hash)))
-        data (str "id: '" 
-                  direct-or-full 
-                  (:person-id value) 
-                  "', name: '" 
-                  (:person-name value) 
-                  "', url: '" 
-                  (:person-id value) 
-                  "', scaling: '" 
-                  scaling 
-                  "', radius: '100', nodeshape: 'rectangle'")] data))
+        scaling (if (nil? value)
+                  1
+                  (if (nil? ((keyword (:person-id value)) scaling-hash))
+                    1 
+                    (parse-int ((keyword (:person-id value)) scaling-hash))))
+        data (if-not (nil? value)
+               (str "id: '" 
+                    direct-or-full 
+                    (:person-id value) 
+                    "', name: '" 
+                    (:person-name value) 
+                    "', url: '" 
+                    (:person-id value) 
+                    "', scaling: '" 
+                    scaling 
+                    "', radius: '100', nodeshape: 'rectangle'"
+                    ))] data))
 
 (defn- filter-other-nodes [direct-or-full largest-node-scaling queried-data]
   (for [value queried-data
@@ -270,7 +272,7 @@
     (if queried-data-supervisors queried-data-supervisors)))
 
 (defn- recurse-supervisors [queried-data]
-  (if (nil? queried-data) nil
+  (if-not (nil? queried-data)
     (for [value queried-data
           :let [supervisors-data (query-supervisors (:other-person-id value)) 
                 data (flatten (conj supervisors-data (recurse-supervisors supervisors-data)))]] data)))
@@ -293,8 +295,7 @@
     (if queried-data-supervisees queried-data-supervisees)))
 
 (defn- recurse-supervisees [queried-data]
-  (if (nil? queried-data)
-    nil
+  (if-not (nil? queried-data)
     (for [value queried-data
           :let [supervisees-data (query-supervisees (:other-person-id value)) 
                 data (flatten (conj supervisees-data (recurse-supervisees supervisees-data)))]] data)))
@@ -316,8 +317,8 @@
   (let [db (d/entity-db person)
         queried-data-this-person (query-this-person person)
         this-person-id (:person-id (first queried-data-this-person))
-        this-person-supervisors (query-supervisors this-person-id)
-        this-person-supervisees (query-supervisees this-person-id)
+        this-person-supervisors (if-not (nil? this-person-id) (query-supervisors this-person-id))
+        this-person-supervisees (if-not (nil? this-person-id) (query-supervisees this-person-id))
         edges-direct
         (str "edges: [ { data: { " 
              (str/join " } },{ data: { " 
@@ -334,13 +335,14 @@
                (flatten 
                  (conj (get-other-node-scaling this-person-supervisees) 
                        (conj (get-other-node-scaling this-person-supervisors) (get-this-node-scaling queried-data-this-person)))))
-        nodes-direct
+        nodes-direct 
         (str "nodes: [ { data: { " 
              (str/join " } },{ data: { " 
                        (remove str/blank? 
                                (flatten 
                                  (conj (filter-other-nodes "Direct" largest-node-scaling-direct this-person-supervisees)
                                        (conj (filter-other-nodes "Direct" largest-node-scaling-direct this-person-supervisors) (filter-this-node "Direct" queried-data-this-person)))))) " } } ]")
+
         queried-data-recurse-supervisors
         (distinct
           (flatten
@@ -372,7 +374,8 @@
                                  (conj (filter-other-nodes "Full" largest-node-scaling-full queried-data-recurse-supervisees) 
                                        (conj (filter-other-nodes "Full" largest-node-scaling-full queried-data-recurse-supervisors) (filter-this-node "Full" queried-data-this-person))))))" } } ]")
         elements-full (str "{ " nodes-full ", " edges-full " }")
-        elements-direct (str "{ " nodes-direct ", " edges-direct " }")]
+        elements-direct (str "{ " nodes-direct ", " edges-direct " }")
+        ]
     {:existingRolesFull existing-roles-full
      :existingRolesDirect existing-roles-direct
      :thisPerson this-person-id 
