@@ -21,12 +21,8 @@
                          (str/capitalize))]] level)
         duration
         (for [role roles
-              :let [rfrom (keyword
-                            (str
-                              (-> role (str/replace #"/" ".") (str/replace #":" "")) "/from"))
-                    rto (keyword
-                          (str
-                            (-> role (str/replace #"/" ".") (str/replace #":" "")) "/to"))
+              :let [rfrom (keyword (-> role (str/replace #"/" ".") (str/replace #":" "")) "from")
+                    rto (keyword (-> role (str/replace #"/" ".") (str/replace #":" "")) "to")
                     from (if (contains? (first (json-data role)) rfrom)
                            (date/format-date5 ((first (json-data role)) rfrom)))
                     to (if (contains? (first (json-data role)) rto) 
@@ -55,7 +51,7 @@
                   (map (fn [oid]
                          (generate-map oid)))
                   (seq))]
-    {:data (if data data)
+    {:data data
      :description "people who supervised this person"}))
 
 (defn supervised [person]
@@ -71,7 +67,7 @@
                   (map (fn [oid]
                          (generate-map oid)))
                   (seq))]
-    {:data (if data data)
+    {:data data
      :description "people supervised by this person"}))
 
 (defn worked-with [person]
@@ -87,7 +83,7 @@
                   (map (fn [oid]
                          (generate-map oid)))
                   (seq))]
-    {:data (if data data)
+    {:data data
      :description "people with whom this person worked"}))
 
 (def scaling-hash
