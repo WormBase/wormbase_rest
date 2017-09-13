@@ -23,9 +23,10 @@
                                   :pos-neg-data/clone-2
                                   ]]
                    (when-let [entity (reference pnd)]
-                     {:type (if (= "positive"(name (:pos-neg-data/calculation pnd)))
-                              "+" "-")
-                      :class (cond
+		     {:type (when-let [calc (:pos-neg-data/calculation pnd)]
+			      (if (= "positive"(name calc))
+				"+" "-"))
+		      :class (cond
                                (or (= reference :pos-neg-data/locus-1)
                                    (= reference :pos-neg-data/locus-2))
                                "Locus"
