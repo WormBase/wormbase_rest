@@ -6,43 +6,39 @@
 
 (defn former-gene-classes [laboratory]
   (let [db (d/entity-db laboratory)
-        data (->> (d/q '[:find ?gene-class ?description
+        data (->> (d/q '[:find [?gc ...]
                          :in $ ?laboratory
                          :where 
                          [?laboratoryent :gene-class.former-designating-laboratory/laboratory ?laboratory]
-                         [?gc :gene-class/former-designating-laboratory ?laboratoryent]
-                         [?gc :gene-class/id ?gene-class]
-                         [?gc :gene-class/description ?description]]
+                         [?gc :gene-class/former-designating-laboratory ?laboratoryent]]
                        db (:db/id laboratory))
-                  (map (fn [result]
-                         (let [[gene-class description] result]
-                           {:description description
+                  (map (fn [gc]
+                         (let [gene-class (d/entity db gc)]
+                           {:description (:gene-class/description gene-class)
                             :former_gene_class
                             {:taxonomy "all"
                              :class "gene_class"
-                             :label gene-class
-                             :id gene-class}})))
+                             :label (:gene-class/id gene-class)
+                             :id (:gene-class/id gene-class)}})))
                   (seq))]
     {:data data
      :description "former gene classes assigned to laboratory"}))
 
 (defn gene-classes [laboratory]
   (let [db (d/entity-db laboratory)
-        data (->> (d/q '[:find ?gene-class ?description
+        data (->> (d/q '[:find [?gc ...]
                          :in $ ?laboratory
                          :where 
-                         [?gc :gene-class/designating-laboratory ?laboratory]
-                         [?gc :gene-class/id ?gene-class]
-                         [?gc :gene-class/description ?description]]
+                         [?gc :gene-class/designating-laboratory ?laboratory]]
                        db (:db/id laboratory))
-                  (map (fn [result]
-                         (let [[gene-class description] result]
-                           {:description description
+                  (map (fn [gc]
+                         (let [gene-class (d/entity db gc)]
+                           {:description (:gene-class/description gene-class)
                             :gene_class
                             {:taxonomy "all"
                              :class "gene_class"
-                             :label gene-class
-                             :id gene-class}})))
+                             :label (:gene-class/id gene-class)
+                             :id (:gene-class/id gene-class)}})))
                   (seq))]
     {:data data
      :description "gene classes assigned to laboratory"}))
