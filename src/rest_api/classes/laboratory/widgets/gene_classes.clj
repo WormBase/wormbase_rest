@@ -15,11 +15,7 @@
                   (map (fn [gc]
                          (let [gene-class (d/entity db gc)]
                            {:description (:gene-class/description gene-class)
-                            :former_gene_class
-                            {:taxonomy "all"
-                             :class "gene_class"
-                             :label (:gene-class/id gene-class)
-                             :id (:gene-class/id gene-class)}})))
+                            :former_gene_class (pack-obj "gene-class" gene-class)})))
                   (seq))]
     {:data data
      :description "former gene classes assigned to laboratory"}))
@@ -34,11 +30,7 @@
                   (map (fn [gc]
                          (let [gene-class (d/entity db gc)]
                            {:description (:gene-class/description gene-class)
-                            :gene_class
-                            {:taxonomy "all"
-                             :class "gene_class"
-                             :label (:gene-class/id gene-class)
-                             :id (:gene-class/id gene-class)}})))
+                            :gene_class (pack-obj "gene-class" gene-class)})))
                   (seq))]
     {:data data
      :description "gene classes assigned to laboratory"}))
