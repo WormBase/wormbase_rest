@@ -371,9 +371,6 @@
    (when-let [seqs (:evidence/sequence-evidence holder)]
      (map (partial pack-obj "sequence") seqs))
 
-   :k
-   (keys holder)
-
    :genotype
    (when-let [c (:anatomy-function.assay/condition holder)]
      (first (:condition/genotype c)))
