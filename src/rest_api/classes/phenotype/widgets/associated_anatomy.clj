@@ -12,19 +12,22 @@
                (when-let [afhs (:anatomy-function.phenotype/_phenotype p)]
                  (for [afh afhs
                        :let [af (:anatomy-function/_phenotype afh)]]
-                   (pace-utils/vmap
-                     :k (keys af)
+                   {:reference
+                    (when-let [reference (:anatomy-function/reference af)]
+                      (pack-obj reference))
+
+                    :af_data (:anatomy-function/id af)
 
                     :gene
                     (when-let [gene (:anatomy-function.gene/gene
-                                    (:anatomy-function/gene af))]
+                                      (:anatomy-function/gene af))]
                       (pack-obj gene))
 
                     :assay
                     (when-let [ahs (:anatomy-function/assay af)]
                       (for [ah ahs]
-                       {:text (:ao-code/id (:anatomy-function.assay/ao-code ah))
-                        :evidence (obj/get-evidence ah)}))
+                        {:text (:ao-code/id (:anatomy-function.assay/ao-code ah))
+                         :evidence (obj/get-evidence ah)}))
 
                     :phenotype
                     (when-let [phs (:anatomy-function.phenotype/phenotype af)]
@@ -42,10 +45,7 @@
                       (for [ih ihs]
                         {:text (when-let [at (:anatomy-function.involved/anatomy-term ih)]
                                  (pack-obj at))
-                         :evidence (obj/get-evidence ih)}))
-
-                   )
-                 )))))
+                         :evidence (obj/get-evidence ih)}))})))))
    :description "anatomy_functions associatated with this anatomy_term"})
 
 (def widget
