@@ -35,7 +35,13 @@
                "Transposon Insertion"
 
                (:variation/natural-variant variation)
-               "Natural Variant")})))
+               "Natural Variant")
+
+               (:variation/polymorphic-strain-digest variation)
+               "Polymorphic Strain Digest"
+
+               (:variation/reference-strain-digest variation)
+               "Reference Strain Digest"})))
 
 (defn variation [v]
   {:data (variation-info v true)
