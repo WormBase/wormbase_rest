@@ -38,10 +38,10 @@
                "Natural Variant")
 
                (:variation/polymorphic-strain-digest variation)
-               "Polymorphic Strain Digest"
+               "RFLP"
 
                (:variation/reference-strain-digest variation)
-               "Reference Strain Digest"})))
+               "RFLP"})))
 
 (defn variation [v]
   {:data (variation-info v true)
