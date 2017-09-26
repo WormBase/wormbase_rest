@@ -30,8 +30,7 @@
   {:data (rnai-info p false)
    :description (str "The name and WormBase internal ID of " (:db/id p))})
 
-
 (def widget
   {:rnai rnai
- ;  :rnai_not rnai-not
+   :rnai_not rnai-not
    :name generic/name-field})
