@@ -46,7 +46,7 @@
 
 (defn isolated-by [s]
   {:data (when-let [ps (:strain/isolated-by s)]
-             (map pack-obj ps))
+             (pack-obj (first ps)))
    :description "the person who isolated the strain"})
 
 (defn life-stage [s]

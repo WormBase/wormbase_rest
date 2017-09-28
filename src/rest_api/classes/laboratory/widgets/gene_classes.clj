@@ -2,13 +2,14 @@
   (:require
     [datomic.api :as d]
     [pseudoace.utils :as pace-utils]
+    [rest-api.formatters.object :as obj :refer [pack-obj]]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn former-gene-classes [laboratory]
   (let [db (d/entity-db laboratory)
         data (->> (d/q '[:find [?gc ...]
                          :in $ ?laboratory
-                         :where 
+                         :where
                          [?laboratoryent :gene-class.former-designating-laboratory/laboratory ?laboratory]
                          [?gc :gene-class/former-designating-laboratory ?laboratoryent]]
                        db (:db/id laboratory))
@@ -24,7 +25,7 @@
   (let [db (d/entity-db laboratory)
         data (->> (d/q '[:find [?gc ...]
                          :in $ ?laboratory
-                         :where 
+                         :where
                          [?gc :gene-class/designating-laboratory ?laboratory]]
                        db (:db/id laboratory))
                   (map (fn [gc]

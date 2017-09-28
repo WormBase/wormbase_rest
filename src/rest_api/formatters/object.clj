@@ -294,7 +294,7 @@
           (pack-obj "paper" paper)))
 
    :Date_last_updated
-   (if-let [last-updated (:evidence/date-last-updated holder)]
+   (when-let [last-updated (:evidence/date-last-updated holder)]
      (let [ds (-> last-updated dates/format-date str)]
        [{:id ds
          :label ds
@@ -314,7 +314,7 @@
           {:evidence (pack-obj "author" author)}))
 
    :Accession_evidence
-   (if-let [accs (:evidence/accession-evidence holder)]
+   (when-let [accs (:evidence/accession-evidence holder)]
      (for [{acc :evidence.accession-evidence/accession
             db  :evidence.accession-evidence/database} accs]
        {:id acc
@@ -333,43 +333,103 @@
              (:evidence/go-term-evidence holder)))
 
    :Expr_pattern_evidence
-   (if-let [epe (:evidence/expr-pattern-evidence holder)]
+   (when-let [epe (:evidence/expr-pattern-evidence holder)]
      (map (partial pack-obj "expr-pattern") epe))
 
    :Microarray_results_evidence
-   (if-let [e (:evidence/microarray-results-evidence holder)]
+   (when-let [e (:evidence/microarray-results-evidence holder)]
      (map (partial pack-obj "microarray-results") e))
 
    :RNAi_evidence   ;; could be multiples?
-   (if-let [rnai (first (:evidence/rnai-evidence holder))]
+   (when-let [rnai (first (:evidence/rnai-evidence holder))]
      {:id (:rnai/id rnai)
       :label (if-let [hn (:rnai/history-name rnai)]
                (format "%s (%s)" (:rnai/id rnai) hn)
                (:rnai/id rnai))})
 
    :Feature_evidence
-   (if-let [features (:evidence/feature-evidence holder)]
+   (when-let [features (:evidence/feature-evidence holder)]
      (map (partial pack-obj "feature") features))
 
    :Laboratory_evidence
-   (if-let [labs (:evidence/laboratory-evidence holder)]
+   (when-let [labs (:evidence/laboratory-evidence holder)]
      (map (partial pack-obj "laboratory") labs))
 
    :From_analysis
-   (if-let [anas (:evidence/from-analysis holder)]
+   (when-let [anas (:evidence/from-analysis holder)]
      (map (partial pack-obj "analysis") anas))
 
    :Variation_evidence
-   (if-let [vars (:evidence/variation-evidence holder)]
+   (when-let [vars (:evidence/variation-evidence holder)]
      (map (partial pack-obj "variation") vars))
 
    :Mass_spec_evidence
-   (if-let [msps (:evidence/mass-spec-evidence holder)]
+   (when-let [msps (:evidence/mass-spec-evidence holder)]
      (map (partial pack-obj "mass-spec-peptide") msps))
 
    :Sequence_evidence
-   (if-let [seqs (:evidence/sequence-evidence holder)]
-     (map (partial pack-obj "sequence") seqs))))
+   (when-let [seqs (:evidence/sequence-evidence holder)]
+     (map (partial pack-obj "sequence") seqs))
+
+   :genotype
+   (when-let [c (:anatomy-function.assay/condition holder)]
+     (first (:condition/genotype c)))
+
+   :Autonomous
+   (when-let [ss (:anatomy-function-info/autonomous holder)]
+     (for [s ss]
+       {:taxonomy "all"
+        :class "txt"
+        :label s
+        :id s}))
+
+   :Necessary
+   (when-let [ss (:anatomy-function-info/necessary holder)]
+     (for [s ss]
+       {:taxonomy "all"
+        :class "txt"
+        :label s
+        :id s}))
+
+   :Unnecessary
+   (when-let [ss (:anatomy-function-info/unnecessary holder)]
+     (for [s ss]
+       {:taxonomy "all"
+        :class "txt"
+        :label s
+        :id s}))
+
+   :Nonautonomous
+   (when-let [ss (:anatomy-function-info/nonautonomous holder)]
+     (for [s ss]
+       {:taxonomy "all"
+        :class "txt"
+        :label s
+        :id s}))
+
+   :Function-remark
+   (when-let [ss (:anatomy-function-info/remark holder)]
+     (for [s ss]
+       {:taxonomy "all"
+        :class "txt"
+        :label s
+        :id s}))
+
+   :Sufficient
+   (when-let [ss (:anatomy-function-info/sufficient holder)]
+     (for [s ss]
+       {:taxonomy "all"
+        :class "txt"
+        :label s
+        :id s}))
+
+   :Insufficient
+   (when-let [iss (:anatomy-function-info/insufficient holder)]
+     (for [is iss]
+       {:taxonomy "all"
+        :class "txt"
+        :label is
+        :id is}))))
 
 (defn pack-text
   "Normalize text to behave like a pack object."
