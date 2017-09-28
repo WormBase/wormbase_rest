@@ -399,7 +399,6 @@
         :label s
         :id s}))
 
-
    :Nonautonomous
    (when-let [ss (:anatomy-function-info/nonautonomous holder)]
      (for [s ss]
@@ -424,14 +423,13 @@
         :label s
         :id s}))
 
-   :Insaufficient
+   :Insufficient
    (when-let [iss (:anatomy-function-info/insufficient holder)]
      (for [is iss]
        {:taxonomy "all"
         :class "txt"
         :label is
-        :id is}))
-))
+        :id is}))))
 
 (defn pack-text
   "Normalize text to behave like a pack object."
