@@ -30,9 +30,10 @@
                          :evidence (obj/get-evidence ah)}))
 
                     :phenotype
-                    (when-let [phs (:anatomy-function.phenotype/phenotype af)]
-                      (keys phs)
-                      )
+                    (when-let [ph (:anatomy-function/phenotype af)]
+                      {:text (pack-obj p)
+                       :evidence (obj/get-evidence ph)})
+
                     :bp_not_inv
                     (when-let [nihs (:anatomy-function/not-involved af)]
                       (for [nih nihs]
