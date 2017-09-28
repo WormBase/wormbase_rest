@@ -3,10 +3,10 @@
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
     [rest-api.classes.generic-fields :as generic]))
 
-(defn transgene-info [t obs]
+(defn transgene-info [p obs]
   (when-let [holders (if obs
-                       (:transgene.phenotype/_phenotype t)
-                       (:transgene.phenotype-not-observed/_phenotype t))]
+                       (:transgene.phenotype/_phenotype p)
+                       (:transgene.phenotype-not-observed/_phenotype p))]
     (for [holder holders
           :let [transgene (if obs
                             (:transgene/_phenotype holder)
@@ -29,13 +29,13 @@
                               {:text (:phenotype-info.caused-by-other/text cbo)
                                :evidence (obj/get-evidence cbo)}))))))})))
 
-(defn transgene [t]
-  {:data (transgene-info t true)
-   :description (str "The name and WormBase internal ID of " (:db/id t))})
+(defn transgene [p]
+  {:data (transgene-info p true)
+   :description (str "The name and WormBase internal ID of " (:db/id p))})
 
-(defn transgene-not [t]
-  {:data (transgene-info t false)
-   :description (str "The name and WormBase internal ID of " (:db/id t))})
+(defn transgene-not [p]
+  {:data (transgene-info p false)
+   :description (str "The name and WormBase internal ID of " (:db/id p))})
 
 (def widget
   {:transgene transgene
