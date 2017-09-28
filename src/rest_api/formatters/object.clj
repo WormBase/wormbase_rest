@@ -447,6 +447,7 @@
     (-> (name ident)
         (str/split #":")
         (last)
+        (str/replace #"_" " ")
         (str/replace #"-" " ")
         (str/capitalize))))
 
