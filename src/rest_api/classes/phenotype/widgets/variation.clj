@@ -37,10 +37,8 @@
                (:variation/natural-variant variation)
                "Natural Variant")
 
-               (:variation/polymorphic-strain-digest variation)
-               "RFLP"
-
-               (:variation/reference-strain-digest variation)
+               (or (:variation/polymorphic-strain-digest variation)
+                   (:variation/reference-strain-digest variation))
                "RFLP"})))
 
 (defn variation [p]
