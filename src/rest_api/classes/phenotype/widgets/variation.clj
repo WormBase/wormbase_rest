@@ -3,10 +3,10 @@
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
     [rest-api.classes.generic-fields :as generic]))
 
-(defn variation-info [v obs]
+(defn variation-info [p obs]
   (when-let [holders (if obs
-                       (:variation.phenotype/_phenotype v)
-                       (:variation.phenotype-not-observed/_phenotype v))]
+                       (:variation.phenotype/_phenotype p)
+                       (:variation.phenotype-not-observed/_phenotype p))]
     (for [holder holders
           :let [variation (if obs
                        (:variation/_phenotype holder)
@@ -43,13 +43,13 @@
                (:variation/reference-strain-digest variation)
                "RFLP"})))
 
-(defn variation [v]
-  {:data (variation-info v true)
-   :description (str "The name and WormBase internal ID of " (:db/id v))})
+(defn variation [p]
+  {:data (variation-info p true)
+   :description (str "The name and WormBase internal ID of " (:db/id p))})
 
-(defn variation-not [v]
-  {:data (variation-info v false)
-   :description (str "The name and WormBase internal ID of " (:db/id v))})
+(defn variation-not [p]
+  {:data (variation-info p false)
+   :description (str "The name and WormBase internal ID of " (:db/id p))})
 
 (def widget
   {:variation variation
