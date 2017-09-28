@@ -10,7 +10,6 @@
               (pack-obj go-term)))
    :description (str "The name and WormBase internal ID of " (:db/id p))})
 
-
 (def widget
   {:go_term go-term
    :name generic/name-field})
