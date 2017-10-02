@@ -37,6 +37,6 @@
   {:name generic/name-field
    :rearrangements rearrangements
    :clones clones
-;   :alleles alleles
+   :alleles alleles
    :genes genes
    :transgenes transgenes})
