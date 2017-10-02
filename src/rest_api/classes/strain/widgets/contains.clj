@@ -11,7 +11,9 @@
 
 (defn clones [s]
   {:data (when-let [clones (:clone/_in-strain s)]
-           (map pack-obj clones))
+           (if (> (count clones) 500)
+             (str (count clones) " found")
+             (map pack-obj clones)))
    :description "clones contained in the strain"})
 
 (defn alleles [s]
