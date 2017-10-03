@@ -9,5 +9,5 @@
   {:entity-ns "transposon"
    :widget
    {:overview overview/widget
-    :feature feautre/widget
+    :feature feature/widget
     :location location/widget}})
