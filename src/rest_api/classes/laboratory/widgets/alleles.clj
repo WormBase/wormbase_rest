@@ -16,13 +16,11 @@
                          (let [allele (d/entity db wbvar)]
                            (pace-utils/vmap
                              :sequenced 
-                             (if (= (str (:variation/seqstatus allele))
+                             (if (= (:variation/seqstatus allele)
                                     ":variation.seqstatus/sequenced") "yes" "no")
-                             :type 
-                             (if (:method/id (:locatable/method allele))
-                               (-> (:method/id (:locatable/method allele))
-                                   (str/replace #"_allele" "")
-                                   (str/replace #"Allele" "")))
+                             :type (some-> (:method/id (:locatable/method allele))
+                                           (str/replace #"_allele" "")
+                                           (str/replace #"Allele" ""))
                              :allele (pack-obj "variation" allele)
                              :gene 
                              (first (->> (d/q '[:find [?gene ...]
