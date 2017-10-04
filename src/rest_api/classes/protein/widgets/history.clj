@@ -14,4 +14,4 @@
 
 (def widget
   {:name generic/name-field
-     :history history})
+   :history history})
