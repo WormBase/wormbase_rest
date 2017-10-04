@@ -6,18 +6,17 @@
 
 (defn associated-features [transposon]
   (let [db (d/entity-db transposon)
-        data  (->>
-                (d/q '[:find [?f ...]
-                       :in $ ?transposon
-                       :where
-                       [?fg :feature.associated-with-transposon/transposon ?transposon]
-                       [?f :feature/associated-with-transposon ?fg]]
-                   db (:db/id transposon))
-                (map (partial feature/associated-feature db))
-                (seq))]
-    {:data (not-empty data)
+        data (->> (d/q '[:find [?f ...]
+                         :in $ ?transposon
+                         :where
+                         [?fg :feature.associated-with-transposon/transposon ?transposon]
+                         [?f :feature/associated-with-transposon ?fg]]
+                       db (:db/id transposon))
+                  (map (partial feature/associated-feature db))
+                  (seq))]
+    {:data data
      :description "Features associated with this transposon"}))
 
 (def widget
-    {:name generic/name-field
-     :features associated-features})
+  {:name generic/name-field
+   :features associated-features})

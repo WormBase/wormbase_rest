@@ -6,18 +6,17 @@
 
 (defn associated-features [pseudogene]
   (let [db (d/entity-db pseudogene)
-        data  (->>
-                (d/q '[:find [?f ...]
-                       :in $ ?pseudogene
-                       :where
-                       [?fg :feature.associated-with-pseudogene/pseudogene ?pseudogene]
-                       [?f :feature/associated-with-pseudogene ?fg]]
-                   db (:db/id pseudogene))
-                (map (partial feature/associated-feature db))
-                (seq))]
-    {:data (not-empty data)
+        data (->> (d/q '[:find [?f ...]
+                         :in $ ?pseudogene
+                         :where
+                         [?fg :feature.associated-with-pseudogene/pseudogene ?pseudogene]
+                         [?f :feature/associated-with-pseudogene ?fg]]
+                       db (:db/id pseudogene))
+                  (map (partial feature/associated-feature db))
+                  (seq))]
+    {:data data
      :description "Features associated with this pseudogene"}))
 
 (def widget
-    {:name generic/name-field
-     :features associated-features})
+  {:name generic/name-field
+   :features associated-features})

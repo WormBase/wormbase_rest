@@ -6,18 +6,17 @@
 
 (defn associated-features [operon]
   (let [db (d/entity-db operon)
-        data  (->>
-                (d/q '[:find [?f ...]
-                       :in $ ?operon
-                       :where
-                       [?fg :feature.associated-with-operon/operon ?operon]
-                       [?f :feature/associated-with-operon ?fg]]
-                   db (:db/id operon))
-                (map (partial feature/associated-feature db))
-                (seq))]
-    {:data (not-empty data)
+        data (->> (d/q '[:find [?f ...]
+                         :in $ ?operon
+                         :where
+                         [?fg :feature.associated-with-operon/operon ?operon]
+                         [?f :feature/associated-with-operon ?fg]]
+                       db (:db/id operon))
+                  (map (partial feature/associated-feature db))
+                  (seq))]
+    {:data data
      :description "Features associated with this operon"}))
 
 (def widget
-    {:name generic/name-field
-     :features associated-features})
+  {:name generic/name-field
+   :features associated-features})

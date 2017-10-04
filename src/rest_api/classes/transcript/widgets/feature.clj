@@ -6,18 +6,17 @@
 
 (defn associated-features [transcript]
   (let [db (d/entity-db transcript)
-        data  (->>
-                (d/q '[:find [?f ...]
-                       :in $ ?transcript
-                       :where
-                       [?fg :feature.associated-with-transcript/transcript ?transcript]
-                       [?f :feature/associated-with-transcript ?fg]]
-                   db (:db/id transcript))
-                (map (partial feature/associated-feature db))
-                (seq))]
-    {:data (not-empty data)
+        data (->> (d/q '[:find [?f ...]
+                         :in $ ?transcript
+                         :where
+                         [?fg :feature.associated-with-transcript/transcript ?transcript]
+                         [?f :feature/associated-with-transcript ?fg]]
+                       db (:db/id transcript))
+                  (map (partial feature/associated-feature db))
+                  (seq))]
+    {:data data
      :description "Features associated with this transcript"}))
 
 (def widget
-    {:name generic/name-field
-     :features associated-features})
+  {:name generic/name-field
+   :features associated-features})

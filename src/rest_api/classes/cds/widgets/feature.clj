@@ -6,18 +6,17 @@
 
 (defn associated-features [cds]
   (let [db (d/entity-db cds)
-        data  (->>
-                (d/q '[:find [?f ...]
-                       :in $ ?cds
-                       :where
-                       [?fg :feature.associated-with-cds/cds ?cds]
-                       [?f :feature/associated-with-cds ?fg]]
-                   db (:db/id cds))
-                (map (partial feature/associated-feature db))
-                (seq))]
-    {:data (not-empty data)
+        data (->> (d/q '[:find [?f ...]
+                         :in $ ?cds
+                         :where
+                         [?fg :feature.associated-with-cds/cds ?cds]
+                         [?f :feature/associated-with-cds ?fg]]
+                       db (:db/id cds))
+                  (map (partial feature/associated-feature db))
+                  (seq))]
+    {:data data
      :description "Features associated with this CDS"}))
 
 (def widget
-    {:name generic/name-field
-     :features associated-features})
+  {:name generic/name-field
+   :features associated-features})
