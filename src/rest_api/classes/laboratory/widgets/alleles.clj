@@ -17,7 +17,7 @@
                            (pace-utils/vmap
                              :sequenced 
                              (if (= (:variation/seqstatus allele)
-                                    ":variation.seqstatus/sequenced") "yes" "no")
+                                    :variation.seqstatus/sequenced) "yes" "no")
                              :type (some-> (:method/id (:locatable/method allele))
                                            (str/replace #"_allele" "")
                                            (str/replace #"Allele" ""))
