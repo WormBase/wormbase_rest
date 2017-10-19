@@ -375,7 +375,7 @@
 
    :genotype
    (when-let [c (:anatomy-function.assay/condition holder)]
-     (first (:condition/genotype c)))
+     (str/join "<br /> " (:condition/genotype c)))
 
    :Autonomous
    (when-let [ss (:anatomy-function-info/autonomous holder)]

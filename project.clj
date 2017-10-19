@@ -39,15 +39,14 @@
              "-Ddatomic.txTimeoutMsec=1000000"]
   :profiles
   {:datomic-free
-   {:dependencies [[com.datomic/datomic-free "0.9.5561.50"
+   {:dependencies [[com.datomic/datomic-free "0.9.5561.56"
                     :exclusions [joda-time]]]}
    :datomic-pro
-   {:dependencies [[com.datomic/datomic-pro "0.9.5561.50"
+   {:dependencies [[com.datomic/datomic-pro "0.9.5561.56"
                     :exclusions [joda-time]]]}
    :ddb
    {:dependencies
-    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.82"
-      :exclusions [joda-time]]]}
+    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.82"]]}
    :dev [:datomic-pro
          :ddb
          {:aliases

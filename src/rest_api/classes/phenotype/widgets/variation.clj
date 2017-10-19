@@ -26,7 +26,7 @@
                "Confirmed SNP"
 
                (:variation/snp variation)
-                 "SNP"
+               "SNP"
 
                (:variation/predicted-snp variation)
                "Predicted SNP"

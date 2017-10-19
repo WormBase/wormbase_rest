@@ -27,8 +27,10 @@
                       :assay
                       (when-let [ahs (:anatomy-function/assay af)]
                         (for [ah ahs]
-                          {:text (:ao-code/id (:anatomy-function.assay/ao-code ah))
-                           :evidence (obj/get-evidence ah)}))
+                          (pace-utils/vmap
+                            :text (obj/humanize-ident
+                                    (:ao-code/id (:anatomy-function.assay/ao-code ah)))
+                            :evidence (obj/get-evidence ah))))
 
                       :phenotype
                       (when-let [ph (:anatomy-function/phenotype af)]
@@ -44,10 +46,11 @@
 
                       :bp_inv
                       (when-let [ihs (:anatomy-function/involved af)]
-                        (for [ih ihs]
-                          {:text (when-let [at (:anatomy-function.involved/anatomy-term ih)]
-                                   (pack-obj at))
+                        (for [ih ihs
+                              :let [at (:anatomy-function.involved/anatomy-term ih)]                             ]
+                          {:text (pack-obj at)
                            :evidence (obj/get-evidence ih)}))}))))))
+
    :description "anatomy_functions associatated with this anatomy_term"})
 
 (def widget

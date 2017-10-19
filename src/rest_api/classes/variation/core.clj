@@ -96,8 +96,10 @@
                    "")
                (str/replace (:method/id method) #"_" " ")))
 
-     ;; don't populate since we're coming from gene...
-     :gene nil
+     :gene (when-let [ghs (:variation/gene var)]
+             (for [gh ghs
+                   :let [gene (:variation.gene/gene gh)]]
+               (pack-obj gene)))
 
      :molecular_change
      (cond
