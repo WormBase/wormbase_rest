@@ -11,7 +11,7 @@
                          (:microarray-results/min mr))
               :experiment (when-let [result (:microarray-results.results/microarray-experiment
                                               (first (:microarray-results/results mr)))]
-                              (pack-obj result))
+                              (:microarray-experiment/id result))
               :maximum (:microarray-results.max/value
                          (:microarray-results/max mr))
               :microarray (pack-obj mr)}))
