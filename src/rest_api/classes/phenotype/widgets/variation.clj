@@ -12,10 +12,10 @@
                        (:variation/_phenotype holder)
                        (:variation/_phenotype-not-observed holder))]]
       {:variation (pack-obj variation)
-       :gene (when-let [ghs (:variation/gene variation)]
-               (for [gh ghs
-                     :let [gene (:variation.gene/gene gh)]]
-                 (pack-obj gene)))
+       :gene (when-let [gene (:variation.gene/gene
+                              (first
+                                (:variation/gene variation)))]
+                 (pack-obj gene))
        :species (when-let [species (:variation/species variation)]
                   (pack-obj species))
        :type (cond
@@ -26,7 +26,7 @@
                "Confirmed SNP"
 
                (:variation/snp variation)
-                 "SNP"
+               "SNP"
 
                (:variation/predicted-snp variation)
                "Predicted SNP"

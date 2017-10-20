@@ -12,10 +12,10 @@
              []
              (when-let [pmi (:paper/merged-into p)]
                {:action "Merged into"
-                :remarks (pack-obj pmi)})
-             (when-let [pam (:paper/_merge-into p)]
+                :remark (pack-obj pmi)})
+             (when-let [pam (:paper/_merged-into p)]
                {:action "Acquires merge"
-                :remarks (pack-obj pam)})))
+                :remark (map pack-obj pam)})))
    :description "the curatorial history of the gene"})
 
 (def widget

@@ -13,9 +13,9 @@
   {:entity-ns "phenotype"
    :widget
    {:overview overview/widget
-    :associated_anatomy associated-anatomy/widget
+    ;:associated_anatomy associated-anatomy/widget
     :go_term go-term/widget
     :rnai rnai/widget
-    :transgene transgene/widget
-    :variation variation/widget
+    ;:transgene transgene/widget
+    ;:variation variation/widget
     :ontology_browser ontology-browser/widget}})

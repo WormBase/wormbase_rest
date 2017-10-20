@@ -13,7 +13,7 @@
            (for [v vs]
              {:id (pack-obj v)
               :species (when-let [s (:variation/species v)]
-                         (pack-obj s))
+                         (:species/id s))
               :gene (when-let [ghs (:variation/gene v)]
                       (for [g ghs
                             :let [gene (:variation.gene/gene g)]]

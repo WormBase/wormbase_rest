@@ -303,7 +303,13 @@
          :class "text"}]))
 
    :Remark
-   (seq (:evidence/remark holder))
+   (or (seq (:evidence/remark holder))
+       (when-let [ss (:anatomy-function-info/remark holder)]
+	 (for [s ss]
+	   {:taxonomy "all"
+	    :class "txt"
+	    :label s
+	    :id s})))
 
    :Published_as
    (seq (for [pa (:evidence/published-as holder)]
@@ -375,7 +381,7 @@
 
    :genotype
    (when-let [c (:anatomy-function.assay/condition holder)]
-     (first (:condition/genotype c)))
+     (str/join "<br /> " (:condition/genotype c)))
 
    :Autonomous
    (when-let [ss (:anatomy-function-info/autonomous holder)]
@@ -403,14 +409,6 @@
 
    :Nonautonomous
    (when-let [ss (:anatomy-function-info/nonautonomous holder)]
-     (for [s ss]
-       {:taxonomy "all"
-        :class "txt"
-        :label s
-        :id s}))
-
-   :Function-remark
-   (when-let [ss (:anatomy-function-info/remark holder)]
      (for [s ss]
        {:taxonomy "all"
         :class "txt"
