@@ -16,6 +16,6 @@
     ;:associated_anatomy associated-anatomy/widget
     :go_term go-term/widget
     :rnai rnai/widget
-    ;:transgene transgene/widget
+    :transgene transgene/widget
     ;:variation variation/widget
     :ontology_browser ontology-browser/widget}})
