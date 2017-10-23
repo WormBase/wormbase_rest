@@ -6,9 +6,11 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.db.sequence :as wb-seq]))
 
-(defn sequence-features [db-name gene-id]
- (let [db ((keyword db-name) wb-seq/sequence-dbs)]
-   (wb-seq/get-features db gene-id)))
+(defn sequence-features [db-name id role]
+  (let [db ((keyword db-name) wb-seq/sequence-dbs)]
+    (if (= role "variation")
+      (wb-seq/get-features-by-attribute db id)
+      (wb-seq/get-features db id))))
 
 (defn get-segments [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
@@ -17,7 +19,7 @@
 	   g-species (generic-functions/xform-species-name species-name)
 	   sequence-database (seqdb/get-default-sequence-database g-species)]
      (when sequence-database
-	(sequence-features sequence-database (id-kw object))))))
+	(sequence-features sequence-database (id-kw object) role)))))
 
 (defn longest-segment [segments]
   (first

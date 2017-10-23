@@ -169,7 +169,18 @@
              (not-empty
                (remove
                  nil?
-                 (for [lab labs]
+                 (for [l labs
+                       :let [kw-loc (keyword (str role ".location") "laboratory")
+                             kw-lab (keyword (str role ".laboratory") "laboratory")
+                             lab (cond
+                                   (contains? l kw-lab)
+                                   (kw-lab l)
+
+                                   (contains? l kw-loc)
+                                   (kw-loc l)
+
+                                   :else
+                                   l)]]
                    (when-let [laboratory (pack-obj lab)]
                      {:laboratory laboratory
                       :representative (when-let [reps (:laboratory/representative lab)]

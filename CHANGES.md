@@ -2,8 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.2.2] - (unreleased)
+## [0.2.3] - (unreleased)
 - Fix for corresponding-all tables
+
+## [0.2.2] - 2017-10-23
+- Adding phenotype widgets
+- Adding association widgets
+- Adding expresion cluster widgets
+- Adding some other ones as well
 
 ## [0.2.1] - 2017-09-13
 - Fix for rearrangement overview widget 500 error

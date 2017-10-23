@@ -1,6 +1,7 @@
 (ns rest-api.classes.pseudogene
   (:require
     [rest-api.classes.pseudogene.widgets.overview :as overview]
+    [rest-api.classes.pseudogene.widgets.feature :as feature]
     [rest-api.classes.pseudogene.widgets.location :as location]
     [rest-api.routing :as routing]))
 
@@ -8,4 +9,5 @@
   {:entity-ns "pseudogene"
    :widget
    {:overview overview/widget
+    :feature feature/widget
     :location location/widget}})
