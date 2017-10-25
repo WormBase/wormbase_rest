@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.2.3] - (unreleased)
 - Fix for corresponding-all tables
 
+## [0.2.4] - 2017-10-25
+- uncommenting phenotype variation widget
+
 ## [0.2.2] - 2017-10-23
 - Adding phenotype widgets
 - Adding association widgets

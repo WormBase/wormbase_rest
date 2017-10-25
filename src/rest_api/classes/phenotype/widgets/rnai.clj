@@ -4,23 +4,24 @@
     [rest-api.classes.generic-fields :as generic]))
 
 (defn rnai-info [p obs]
-  (when-let [holders (if obs
-                       (:rnai.phenotype/_phenotype p)
-                       (:rnai.phenotype-not-observed/_phenotype p))]
-    (for [holder holders
-          :let [rnai (if obs
-                       (:rnai/_phenotype holder)
-                       (:rnai/_phenotype-not-observed holder))]]
-      {:rnai (pack-obj rnai)
-       :sequence (when-let [ss (:rnai/sequence rnai)] ; in Perl API this single instance not array
-                   (for [s ss]
-                     (pack-obj s)))
-       :species (when-let [species (:rnai/species rnai)]
-                  (pack-obj species))
-       :genotype (:rnai/genotype rnai)
-       :treatment (:rnai/treatment rnai)
-       :strain (when-let [strain (:rnai/strain rnai)]
-                 (pack-obj strain))})))
+  (some->> (if obs
+             (map
+               :rnai/_phenotype
+               (:rnai.phenotype/_phenotype p))
+             (map
+               :rnai/_phenotype-not-observed
+               (:rnai.phenotype-not-observed/_phenotype p)))
+           (map
+             (fn [rnai]
+               {:rnai (pack-obj rnai)
+                :sequence (when-let [ss (:rnai/sequence rnai)]
+                            (map pack-obj ss))
+                :species (when-let [species (:rnai/species rnai)]
+                           (pack-obj species))
+                :genotype (:rnai/genotype rnai)
+                :treatment (:rnai/treatment rnai)
+                :strain (when-let [strain (:rnai/strain rnai)]
+                          (pack-obj strain))}))))
 
 (defn rnai [p]
   {:data (rnai-info p true)

@@ -20,9 +20,10 @@
                       nil?
                       (flatten
                         (conj
-                          (when-let [cbs (:phenotype-info/caused-by holder)]
+                          (when-let [cbs (:phenotype-info/caused-by-gene holder)]
                             (for [cb cbs]
-                              {:text (:phenotype-info.caused-by/text cb)
+                              {:text (:gene/public-name
+                                       (:phenotype-info.caused-by-gene/gene cb))
                                :evidence (obj/get-evidence cb)}))
                           (when-let [cbos (:phenotype-info/caused-by-other holder)]
                             (for [cbo cbos]
