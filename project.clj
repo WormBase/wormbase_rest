@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "0.2.3"
+(defproject wormbase/rest-api "0.2.4"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -31,11 +31,10 @@
          :init rest-api.main/init}
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
-  :jvm-opts ["-Xmx6G"
+  :jvm-opts ["-Xmx28G"
              ;; same GC options as the transactor,
              ;; should minimize long pauses.
              "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"
-             "-Ddatomic.objectCacheMax=2500000000"
              "-Ddatomic.txTimeoutMsec=1000000"]
   :profiles
   {:datomic-free
