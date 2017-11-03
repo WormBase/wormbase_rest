@@ -55,7 +55,7 @@ eb-create: $(call print-help,eb-create,\
 	@eb create datomic-to-catalyst-${WS_VERSION} \
 		--region=us-east-1 \
 		--tags="CreatedBy=${AWS_EB_PROFILE},Role=RestAPI" \
-		--instance_type="c3.xlarge" \
+		--instance_type="m4.2xlarge" \
 		--cname="datomic-to-catalyst-${LOWER_WS_VERSION}" \
 		--vpc.id="vpc-8e0087e9" \
 		--vpc.ec2subnets="subnet-a33a2bd5" \
