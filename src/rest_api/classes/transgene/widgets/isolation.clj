@@ -55,7 +55,9 @@
    :description "integrated from"})
 
 (defn laboratory [tg]
-  (generic/laboratory (first (:construct/_transgene-construct tg))))
+  (if-let [construct (first (:construct/_transgene-construct tg))]
+    (generic/laboratory construct)
+    (generic/laboratory tg)))
 
 
 (def widget
@@ -68,4 +70,5 @@
    :recombination_site recombination-site
    :construction_summary construction-summary
    :coinjection_marker_other coinjection-marker-other
-   :integrated_from integrated-from})
+   :integrated_from integrated-from
+})

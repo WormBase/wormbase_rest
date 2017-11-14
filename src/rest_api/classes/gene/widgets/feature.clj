@@ -1,7 +1,7 @@
 (ns rest-api.classes.gene.widgets.feature
   (:require
     [rest-api.classes.feature.core :as feature]
-    [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]
     [datomic.api :as d]))
 

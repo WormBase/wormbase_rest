@@ -2,7 +2,7 @@
   (:require
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
-    [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.paper.core :as generic-paper]
     [clojure.string :as str]))
 
