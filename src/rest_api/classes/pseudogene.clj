@@ -2,6 +2,7 @@
   (:require
     [rest-api.classes.pseudogene.widgets.overview :as overview]
     [rest-api.classes.pseudogene.widgets.feature :as feature]
+    [rest-api.classes.pseudogene.widgets.genetics :as genetics]
     [rest-api.classes.pseudogene.widgets.location :as location]
     [rest-api.routing :as routing]))
 
@@ -10,4 +11,5 @@
    :widget
    {:overview overview/widget
     :feature feature/widget
+    :genetics genetics/widget
     :location location/widget}})
