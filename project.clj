@@ -56,6 +56,7 @@
           :dependencies [[org.clojure/tools.trace "0.7.9"]
                          [ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
+          :jvm-opts ["-Xmx1G"]
           :env
           {:wb-db-uri "datomic:ddb://us-east-1/WS261/wormbase"
            :swagger-validator-url "http://localhost:8002"}
