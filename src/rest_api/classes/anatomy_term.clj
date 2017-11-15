@@ -2,6 +2,7 @@
   (:require
     [rest-api.classes.gene.widgets.external-links :as external-links]
     ;[rest-api.classes.anatomy-term.widgets.overview :as overview]
+    [rest-api.classes.anatomy-term.widgets.associations :as associations]
     [rest-api.classes.anatomy-term.widgets.ontology-browser :as ontology-browser]
     [rest-api.routing :as routing]))
 
@@ -10,4 +11,5 @@
    :widget
    {;:overview overview/widget
     :ontology_browser ontology-browser/widget
+    :associations associations/widget
     :external_links external-links/widget}})
