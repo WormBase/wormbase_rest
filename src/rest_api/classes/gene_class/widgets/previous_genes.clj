@@ -1,20 +1,28 @@
 (ns rest-api.classes.gene-class.widgets.previous-genes
   (:require
-   [datomic.api :as d]
-   [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+    [datomic.api :as d]
+    [rest-api.classes.generic-fields :as generic]
+    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (def q-former-genes-other-name
   '[:find [?gene ...]
     :in $ ?name
     :where [?gene :gene/other-name ?h]
-    [?h :gene.other-name/text ?name]])
+           [?h :gene.other-name/text ?name]])
 
 (def q-former-genes-public-name
   '[:find [?gene ...]
     :in $ ?name
     :where [?gene :gene/public-name ?name]])
 
+(def q-reassigned-genes
+  '[:find [?gene ...]
+    :in $ ?name
+    :where [?gene :gene/other-name ?h]
+           [?h :gene.other-name/text ?on]
+           [(str "(" ?name ".*)") ?matcher]
+           [(re-pattern ?matcher) ?regex]
+           [(re-find ?regex ?on)]])
 
 (defn stash-former-member [gene-name old-gene]
   {:former_name gene-name
@@ -32,8 +40,25 @@
    :species-name (:species/id (:gene/species old-gene))
    :reason "reassigned to new class"})
 
-(defn reasigned-genes [g]
-  {:data nil
+(defn reassigned-genes [g]
+  {:data (not-empty
+           (let [db (d/entity-db g)
+                 gene-name (:gene-class/id g)]
+             (some->> (d/q q-reassigned-genes db gene-name)
+                      (map
+                        (fn [id]
+                          (let [gene (d/entity db id)
+                                public-name (:gene/public-name gene)]
+                            (some->> (:gene/other-name gene)
+                                     (map :gene.other-name/text)
+                                     (filter
+                                       (fn [n]
+                                         (.contains n public-name)))
+                                     (map
+                                       (fn [other-name]
+                                         (stash-former-member other-name gene)))))))
+                      (flatten)
+                      (group-by :species-name))))
    :description "genes that have been reassigned a new name in the same class"})
 
 (defn former-genes [g]
@@ -53,5 +78,5 @@
 
 (def widget
   {:name generic/name-field
-   :reasigned_genes reasigned-genes
+   :reassigned_genes reassigned-genes
    :former_genes former-genes})
