@@ -6,15 +6,15 @@
 (defn affected-strains [m]
   {:data (some->> (:molecule/affects-phenotype-of-strain m)
                   (map (fn [h]
-                         (let [obj
+                         (let [hobj
                                {:affected
                                 (pack-obj (:molecule.affects-phenotype-of-strain/strain h))
 
                                 :phenotype
                                 (pack-obj (:molecule.affects-phenotype-of-strain/phenotype h))}]
                            (if-let [ev (obj/get-evidence h)]
-                             (conj obj {:evidence ev})
-                             obj)))))
+                             (conj hobj {:evidence ev})
+                             hobj)))))
    :description "strain affected by molecule"})
 
 (def widget

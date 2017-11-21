@@ -4,6 +4,7 @@
     ;[rest-api.classes.molecule.widgets.overview :as overview]
     [rest-api.classes.molecule.widgets.structure :as structure]
     [rest-api.classes.molecule.widgets.strains :as strains]
+    [rest-api.classes.molecule.widgets.affected :as affected]
     [rest-api.classes.molecule.widgets.references :as references]
     [rest-api.routing :as routing]))
 
@@ -13,5 +14,6 @@
    {;:overview overview/widget
     :structure structure/widget
     :strains strains/widget
+    :affected affected/widget
     :external_links external-links/widget
     :references references/widget}})
