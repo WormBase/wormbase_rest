@@ -2,6 +2,7 @@
   (:require
     [rest-api.classes.gene.widgets.external-links :as external-links]
     ;[rest-api.classes.molecule.widgets.overview :as overview]
+    [rest-api.classes.molecule.widgets.structure :as structure]
     [rest-api.classes.molecule.widgets.references :as references]
     [rest-api.routing :as routing]))
 
@@ -9,5 +10,6 @@
   {:entity-ns "molecule"
    :widget
    {;:overview overview/widget
+    :structure structure/widget
     :external_links external-links/widget
     :references references/widget}})
