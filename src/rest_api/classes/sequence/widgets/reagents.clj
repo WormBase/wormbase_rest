@@ -12,7 +12,6 @@
 
 (defn matching-cdnas [s]
   {:data nil;(some->> (map :sequence/matching-cdna s)
-          ;        "ss")
                  ; (map pack-obj))
    :description "cDNAs that match the sequence"})
 

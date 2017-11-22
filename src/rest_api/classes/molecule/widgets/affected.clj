@@ -205,10 +205,7 @@
                                                (variation-phenotype-not-observed variation phenotype gene))))))))
                     (into [])
                     (flatten)
-                    (remove nil?))
-           
-           )
-   :d (:db/id m)
+                    (remove nil?)))
    :description "genes affected by the molecule"})
 
 (def widget

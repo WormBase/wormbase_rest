@@ -59,7 +59,6 @@
     (generic/laboratory construct)
     (generic/laboratory tg)))
 
-
 (def widget
   {:name generic/name-field
    :laboratory laboratory
@@ -70,5 +69,4 @@
    :recombination_site recombination-site
    :construction_summary construction-summary
    :coinjection_marker_other coinjection-marker-other
-   :integrated_from integrated-from
-})
+   :integrated_from integrated-from})

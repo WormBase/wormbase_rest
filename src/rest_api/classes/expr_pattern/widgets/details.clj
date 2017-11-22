@@ -18,7 +18,7 @@
                    "Genome Editing"
                    (when (contains? e :expr-pattern/genome-editing) "")
 
-                   "In-Situ";
+                   "In-Situ"
                    (:expr-pattern/in-situ e)
 
                    "Localizome"
