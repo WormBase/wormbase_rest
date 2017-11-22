@@ -19,6 +19,9 @@
                                               (when-let [reference (:anatomy-function/reference af)]
                                                 (pack-obj reference))
 
+                                              :name
+                                              (pack-obj gene)
+
                                               :assay
                                               (some->> (:anatomy-function/assay af)
                                                        (map (fn [a]
@@ -42,9 +45,13 @@
                                                                 :evidence (obj/get-evidence bp)))))
 
                                               :type
-                                              so-type})))
+                                              (if (= so-type "Protein coding gene")
+                                                "Protein coding"
+                                                so-type)})))
                              {:name (pack-obj gene)
-                              :type so-type}))))
+                              :type (if (= so-type "Protein coding gene")
+                                      "Protein coding"
+                                      so-type)}))))
                   (flatten))
    :description "genes found within this topic"})
 

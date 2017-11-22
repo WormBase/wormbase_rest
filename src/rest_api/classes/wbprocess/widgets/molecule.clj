@@ -10,7 +10,8 @@
                       (let [molecule (pack-obj (:wbprocess.molecule/molecule h))]
                         {:molecule molecule
                          :label (:label molecule)
-                         :evidence (obj/get-evidence h)})))
+                         :evidence (when-let [ev (obj/get-evidence h)]
+                                     {:evidence ev})})))
                   (sort-by :label))
    :description "Molecules related to this topic"})
 

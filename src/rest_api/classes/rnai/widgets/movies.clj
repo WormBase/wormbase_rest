@@ -6,13 +6,10 @@
 (defn movies [r]
   {:data (some->> (:movie/_rnai r)
                   (map (fn [m]
-                         {:name (:movie/id m)
-                          :file (:movie.db-info/accession
-                                  (first
-                                    (:movie/db-info m)))
-                          :class (:movie.db-info/accession
-                                   (first
-                                     (:movie/db-info m)))
+                         {:name (:movie.remark/text (first (:movie/remark m)))
+                          :file (:movie/public-name m)
+                          :id (:movie/public-name m)
+                          :class "Movie"
                           :label (:movie/id m)}))
                   (sort-by :label))
    :description "movies documenting effect of rnai"})

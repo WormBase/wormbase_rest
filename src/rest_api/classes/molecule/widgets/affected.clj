@@ -168,44 +168,46 @@
                       (pack-obj gene)))))))
 
 (defn affected-genes [m]
-  {:data (conj
-           (some->> (:molecule/affects-phenotype-of-rnai m)
-                    (map (fn [holder]
-                           (let [rnai (:molecule.affects-phenotype-of-rnai/rnai holder)
-                                 phenotype (:molecule.affects-phenotype-of-rnai/phenotype holder)]
-                             (some->> (:rnai/gene rnai)
-                                      (map :rnai.gene/gene)
-                                      (map (fn [gene]
-                                             (conj
-                                               (rnai-phenotype rnai phenotype gene)
-                                               (rnai-phenotype-not-observed rnai phenotype gene))))))))
-                    (into [])
-                    (flatten)
-                    (remove nil?))
-           (some->> (:molecule/affects-phenotype-of-transgene m)
-                    (map (fn [holder]
-                           (let [transgene (:molecule.affects-phenotype-of-transgene/transgene holder)
-                                 phenotype (:molecule.affects-phenotype-of-transgene/phenotype holder)]
-                             (conj
-                               (transgene-phenotype transgene phenotype)
-                       ;        (transgene-phenotype-not-observed transgene phenotype)
-                       ))))
-                    (into [])
-                    (flatten)
-                    (remove nil?))
-           (some->> (:molecule/affects-phenotype-of-variation m)
-                    (map (fn [holder]
-                           (let [variation (:molecule.affects-phenotype-of-variation/variation holder)
-                                 phenotype (:molecule.affects-phenotype-of-variation/phenotype holder)]
-                             (some->> (:variation/gene variation)
-                                      (map :variation.gene/gene)
-                                      (map (fn [gene]
-                                             (conj
-                                               (variation-phenotype variation phenotype gene)
-                                               (variation-phenotype-not-observed variation phenotype gene))))))))
-                    (into [])
-                    (flatten)
-                    (remove nil?)))
+  {:data (remove
+           nil?
+           (flatten
+             (conj
+               (some->> (:molecule/affects-phenotype-of-rnai m)
+                        (map (fn [holder]
+                               (let [rnai (:molecule.affects-phenotype-of-rnai/rnai holder)
+                                     phenotype (:molecule.affects-phenotype-of-rnai/phenotype holder)]
+                                 (some->> (:rnai/gene rnai)
+                                          (map :rnai.gene/gene)
+                                          (map (fn [gene]
+                                                 (conj
+                                                   (rnai-phenotype rnai phenotype gene)
+                                                   (rnai-phenotype-not-observed rnai phenotype gene))))))))
+                        (into [])
+                        (flatten)
+                        (remove nil?))
+               (some->> (:molecule/affects-phenotype-of-transgene m)
+                        (map (fn [holder]
+                               (let [transgene (:molecule.affects-phenotype-of-transgene/transgene holder)
+                                     phenotype (:molecule.affects-phenotype-of-transgene/phenotype holder)]
+                                 (conj
+                                   (transgene-phenotype transgene phenotype)
+                                   (transgene-phenotype-not-observed transgene phenotype)))))
+                        (into [])
+                        (flatten)
+                        (remove nil?))
+               (some->> (:molecule/affects-phenotype-of-variation m)
+                        (map (fn [holder]
+                               (let [variation (:molecule.affects-phenotype-of-variation/variation holder)
+                                     phenotype (:molecule.affects-phenotype-of-variation/phenotype holder)]
+                                 (some->> (:variation/gene variation)
+                                          (map :variation.gene/gene)
+                                          (map (fn [gene]
+                                                 (conj
+                                                   (variation-phenotype variation phenotype gene)
+                                                   (variation-phenotype-not-observed variation phenotype gene))))))))
+                        (into [])
+                        (flatten)
+                        (remove nil?)))))
    :description "genes affected by the molecule"})
 
 (def widget
