@@ -9,7 +9,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn genomic-image [protein]
-  {:data (sequence-fns/genomic-obj protein)
+  {:data (first (:data (generic/genomic-position protein)))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget
