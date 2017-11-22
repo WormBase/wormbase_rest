@@ -1,4 +1,4 @@
-(ns rest-api.classes.sequence.main
+(ns rest-api.classes.sequence.core
   (:require
     [clojure.string :as str]
     [rest-api.classes.generic-functions :as generic-functions]

@@ -1,6 +1,6 @@
 (ns rest-api.classes.gene.widgets.location
   (:require
-    [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn tracks [gene]
