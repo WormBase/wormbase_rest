@@ -26,7 +26,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn genomic-image [variation]
-  {:data (sequence-fns/genomic-obj variation)
+  {:data (first (:data (generic/genomic-position variation)))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget
