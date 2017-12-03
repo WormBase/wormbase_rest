@@ -14,7 +14,7 @@
    :d (:db/id c)
    :description "Construction details for the transgene"})
 
-(defn historical-genes [c]
+(defn historical-gene [c]
   {:data (some->> (:construct/historical-gene c)
                   (map (fn [h]
                          (let [gene (:construct.historical-gene/gene h)]
@@ -30,5 +30,5 @@
   {:laboratory generic/laboratory
    :clone clone
    :construction_summary construction-summary
-   :historical_genes historical-genes
+   :historical_gene historical-gene
    :name generic/name-field})

@@ -11,6 +11,13 @@
                       (vals
                         (pace-utils/vmap
                           :cds
+                          (some->> (:feature/associated-with-construct f)
+                                   (map :feature.associated-with-construct/construct)
+                                   (map #(hash-map
+                                           :association (pack-obj %)
+                                           :label "Construct")))
+
+                          :cds
                           (some->> (:feature/associated-with-cds f)
                                    (map :feature.associated-with-cds/cds)
                                    (map #(hash-map
@@ -90,7 +97,7 @@
                                    (map :interaction/_feature-interactor)
                                    (map #(hash-map
                                            :association (pack-obj %)
-                                           :label "Variation"))))))))
+                                           :label "Interaction"))))))))
    :description "objects that define this feature"})
 
 (defn binds-gene-product [f]

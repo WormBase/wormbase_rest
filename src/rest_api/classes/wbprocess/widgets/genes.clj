@@ -25,10 +25,13 @@
                                               :assay
                                               (some->> (:anatomy-function/assay af)
                                                        (map (fn [a]
-                                                              (pace-utils/vmap
-                                                                :text (:ao-code/id
+                                                              (let [text (:ao-code/id
                                                                         (:anatomy-function.assay/ao-code a))
-                                                                :evidence (obj/get-evidence a)))))
+                                                                    ev (obj/get-evidence a)]
+                                                                (if (some? ev)
+                                                                  {:text text
+                                                                   :evidence ev}
+                                                                  text)))))
 
                                               :phenotype
                                               (when-let [h (:anatomy-function/phenotype af)]

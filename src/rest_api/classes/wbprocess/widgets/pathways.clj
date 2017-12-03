@@ -7,33 +7,37 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn pathway [p]
-  {:data (let [wiki-url "http://webservice.wikipathways.org/getCurationTagsByName?tagName=Curation:WormBase_Approved"]
-           (when-let [pathways (some->> (:wbprocess/database p)
-                                        (filter (fn [d]
-                                                  (= (:database/id
-                                                       (:wbprocess.database/database d))
-                                                     "WikiPathways")))
-                                        (map :wbprocess.database/accession))]
-             (some->> (:content (parse-str (:body (client/get wiki-url))))
-                      (map (fn [content]
-                             (some->> content
-                                      :content
-                                      (filter #(= (:tag %) :pathway))
-                                      (map (fn [pathway]
-                                             {:pathway_id
-                                              (some->> (:content pathway)
-                                                       (filter #(= (:tag %) :id))
-                                                       first
-                                                       :content
-                                                       first)
-                                              :revision
-                                              (some->> (:content pathway)
-                                                       (filter #(= (:tag %) :revision))
-                                                       first
-                                                       :content
-                                                       first)}))
-                                      (into {}))))
-                      (filter #(contains? (set pathways) (:pathway_id %))))))
+  {:data (let [wiki-url "http://webservice.wikipathways.org/getCurationTagsByName?tagName=Curation:WormBase_Approved"
+               pathways (some->> (:wbprocess/database p)
+                                 (filter (fn [d]
+                                           (= (:database/id
+                                                (:wbprocess.database/database d))
+                                              "WikiPathways")))
+                                 (map :wbprocess.database/accession))
+               approved-pathways (some->> (:content (parse-str (:body (client/get wiki-url))))
+                                          (map (fn [content]
+                                                 (some->> content
+                                                          :content
+                                                          (filter #(= (:tag %) :pathway))
+                                                          (map (fn [pathway]
+                                                                 {(some->> (:content pathway)
+                                                                                   (filter #(= (:tag %) :id))
+                                                                                   first
+                                                                                   :content
+                                                                                   first)
+                                                                  (some->> (:content pathway)
+                                                                           (filter #(= (:tag %) :revision))
+                                                                           first
+                                                                           :content
+                                                                           first)}))
+                                                          (into {}))))
+                                          (into {})
+                                          )]
+               (some->> pathways
+                       (map (fn [id]
+                             (pace-utils/vmap
+                        :pathway_id id
+                        :revision (get approved-pathways id))))))
    :description "Related wikipathway link"})
 
 (def widget

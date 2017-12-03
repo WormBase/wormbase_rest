@@ -41,9 +41,9 @@
    :reason "reassigned to new class"})
 
 (defn reassigned-genes [g]
-  {:data (not-empty
-           (let [db (d/entity-db g)
+  {:data (let [db (d/entity-db g)
                  gene-name (:gene-class/id g)]
+           (not-empty
              (some->> (d/q q-reassigned-genes db gene-name)
                       (map
                         (fn [id]
@@ -51,12 +51,8 @@
                                 public-name (:gene/public-name gene)]
                             (some->> (:gene/other-name gene)
                                      (map :gene.other-name/text)
-                                     (filter
-                                       (fn [n]
-                                         (.contains n public-name)))
-                                     (map
-                                       (fn [other-name]
-                                         (stash-former-member other-name gene)))))))
+                                     (filter #(.contains % public-name))
+                                     (map #(stash-former-member % gene))))))
                       (flatten)
                       (group-by :species-name))))
    :description "genes that have been reassigned a new name in the same class"})
@@ -69,9 +65,8 @@
                         (some->> (or
                                    (d/q q-former-genes-other-name db gene-name)
                                    (d/q q-former-genes-public-name db gene-name))
-                                 (map
-                                   (fn [id]
-                                     (stash-former-member gene-name (d/entity db id)))))))
+                                 (map #(d/entity db %))
+                                 (map #(stash-former-member gene-name %)))))
                     (flatten)
                     (group-by :species-name)))
    :description "genes formerly in the class that have been reassigned to a new class"})

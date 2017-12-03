@@ -5,7 +5,7 @@
     [rest-api.classes.generic-fields :as generic]))
 
 (defn source [r]
-  {:data (when-let [s (:rearrangement/source-rearrangment r)]
+  {:data (when-let [s (:rearrangement/source-rearrangement r)]
            (pack-obj s))
    :description "Source rearrangement for this rearrangement"})
 
@@ -26,7 +26,8 @@
 
 (defn derived [r]
   {:data (some->> (:rearrangement/_source-rearrangement r)
-                  (map pack-obj))
+                  (map pack-obj)
+                  (sort-by :label))
    :description "Rearrangements derived from this rearrangement"})
 
 (def widget

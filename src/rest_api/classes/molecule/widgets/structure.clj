@@ -7,7 +7,8 @@
    :description "InChi structure"})
 
 (defn monoisotopic-mass [m]
-  {:data (first (:molecule/monoisotopic-mass m))
+  {:data (when-let [m (first (:molecule/monoisotopic-mass m))]
+           (format "%.4f" m))
    :description "Monoisotopic mass calculated from the chemical formula of the molecule"})
 
 (defn formula [m]
