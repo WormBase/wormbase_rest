@@ -10,9 +10,8 @@
                     (flatten
                       (vals
                         (pace-utils/vmap
-                          :cds
-                          (some->> (:feature/associated-with-construct f)
-                                   (map :feature.associated-with-construct/construct)
+                          :construct
+                          (some->> (:construct/_sequence-feature f)
                                    (map #(hash-map
                                            :association (pack-obj %)
                                            :label "Construct")))

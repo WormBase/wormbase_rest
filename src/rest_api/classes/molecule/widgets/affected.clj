@@ -23,29 +23,34 @@
                   (let [phenotype (:transgene.phenotype/phenotype pheno-holder)
                         phenotype-obj (pack-obj phenotype)
                         evidence (phenotype-core/get-evidence pheno-holder transgene phenotype)]
-                    (or
-                      (some->> (map :phenotype-info.caused-by-gene/gene
-                                    (:phenotype-info/caused-by-gene pheno-holder))
-                               (map (fn [gene]
-                                      (pace-utils/vmap
-                                        "affected"
-                                        (let [affected-obj (update
-                                                             (pack-obj transgene)
-                                                             :label #(str % " [Transgene]"))]
-                                          {:text [affected-obj
-                                                  (first (:Remark evidence))]
-                                           :evidence (phenotype-evidence-filter evidence)})
+                    (some->> (or
+                               (not-empty
+                                 (map :phenotype-info.caused-by-gene/gene
+                                      (:phenotype-info/caused-by-gene pheno-holder)))
+                               (:phenotype-info/caused-by-other pheno-holder))
+                             (map (fn [gene]
+                                    (pace-utils/vmap
+                                      "affected"
+                                      (let [affected-obj (update
+                                                           (pack-obj transgene)
+                                                           :label #(str % " [Transgene]"))]
+                                        {:text [affected-obj
+                                                (first (:Remark evidence))]
+                                         :evidence (phenotype-evidence-filter evidence)})
 
-                                        "phenotype"
-                                        (if-let [ev (obj/get-evidence pheno-holder)]
-                                          {:text phenotype-obj
-                                           :evidence ev}
-                                          phenotype-obj)
+                                      "phenotype"
+                                      (if-let [ev (obj/get-evidence pheno-holder)]
+                                        {:text phenotype-obj
+                                         :evidence ev}
+                                        phenotype-obj)
 
-                                        "affected_gene"
-                                        (pack-obj gene)))))
-                      (when-let [gene (:phenotype-info/caused-by-other pheno-holder)]
-                        {:affecteds_gene (pack-obj "text" gene)})))))))
+                                      "affected_gene"
+                                      (if-let [label (:phenotype-info.caused-by-other/text gene)]
+                                        {:id label
+                                         :label label
+                                         :class "text"
+                                         :taxonomy "all"}
+                                        (pack-obj gene)))))))))))
 
 (defn- transgene-phenotype-not-observed [transgene phenotype]
   (some->> (:transgene/phenotype-not-observed transgene)
@@ -55,9 +60,11 @@
                   (let [phenotype (:transgene.phenotype-not-observed/phenotype pheno-holder)
                         phenotype-obj (pack-obj phenotype)
                         evidence (phenotype-core/get-evidence pheno-holder transgene phenotype)]
-                    (or
-                      (some->> (map :phenotype-info.caused-by-gene/gene
-                                    (:phenotype-info/caused-by-gene pheno-holder))
+                    (some->> (or
+                               (not-empty
+                                 (map :phenotype-info.caused-by-gene/gene
+                                      (:phenotype-info/caused-by-gene pheno-holder))
+                                 (:phenotype-info/caused-by-other pheno-holder))
                                (map (fn [gene]
                                       (pace-utils/vmap
                                         "affected"
@@ -75,9 +82,12 @@
                                           phenotype-obj)
 
                                         "affected_gene"
-                                        (pack-obj gene)))))
-                      (when-let [gene (:phenotype-info/caused-by-other pheno-holder)]
-                        {:affectedd_gene (pack-obj "text" gene)})))))))
+                                        (if-let [label (:phenotype-info.caused-by-other/text gene)]
+                                          {:id label
+                                           :label label
+                                           :class "text"
+                                           :taxonomy "all"}
+                                          (pack-obj gene))))))))))))
 
 (defn- rnai-phenotype [rnai phenotype gene]
   (some->> (:rnai/phenotype rnai)
