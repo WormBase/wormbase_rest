@@ -35,9 +35,12 @@
 
                                               :phenotype
                                               (when-let [h (:anatomy-function/phenotype af)]
-                                                (pace-utils/vmap
-                                                  :text (pack-obj (:anatomy-function.phenotype/phenotype h))
-                                                  :evidence (obj/get-evidence h)))
+                                                (let [text-obj (pack-obj (:anatomy-function.phenotype/phenotype h))
+                                                      ev (obj/get-evidence h)]
+                                                  (if (some? ev)
+                                                    {:text text-obj
+                                                     :evidence ev}
+                                                    text-obj)))
 
                                               :bp_inv
                                               (some->> (:anatomy-function/involved af)

@@ -63,7 +63,7 @@
                     (some->> (or
                                (not-empty
                                  (map :phenotype-info.caused-by-gene/gene
-                                      (:phenotype-info/caused-by-gene pheno-holder))
+                                      (:phenotype-info/caused-by-gene pheno-holder)))
                                  (:phenotype-info/caused-by-other pheno-holder))
                                (map (fn [gene]
                                       (pace-utils/vmap
@@ -87,7 +87,7 @@
                                            :label label
                                            :class "text"
                                            :taxonomy "all"}
-                                          (pack-obj gene))))))))))))
+                                          (pack-obj gene)))))))))))
 
 (defn- rnai-phenotype [rnai phenotype gene]
   (some->> (:rnai/phenotype rnai)
