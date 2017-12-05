@@ -1,5 +1,6 @@
 (ns rest-api.classes.cds.widgets.reagents
   (:require
+    [rest-api.formatters.object :as obj :refer  [pack-obj]]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn microarray-assays [c]
