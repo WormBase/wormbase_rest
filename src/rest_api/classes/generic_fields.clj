@@ -287,7 +287,9 @@
                                     :name  (pack-obj paper)
                                     :title  [(:paper/title paper)]
                                     :author (generic-paper/get-authors paper)
-                                    :ptype (when paper (:paper.type  pt))
+                                    :ptype (->> (map :paper.type/type pt)
+                                                (map obj/humanize-ident)
+                                                (first))
                                     :abstract (when abstract [(:longtext/text (first abstract))])
                                     :year year
                                     :journal [(:paper/journal paper)]}))}))))]
@@ -295,4 +297,3 @@
      :description (if (some? id-kw)
                     (str "Reference papers for this " role)
                     "Could not identify the identity of the object")}))
-
