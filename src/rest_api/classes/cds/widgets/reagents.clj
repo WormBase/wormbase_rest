@@ -13,12 +13,12 @@
 (defn source-clone [c]
   {:data (first
            (some->> (:sequence/clone
-                      (:locatable/parent s))
+                      (:locatable/parent c))
                     (map pack-obj)))
    :description "The Source clone of the sequence"})
 
 (defn pcr-products [c]
-  {:data (some->> (:cds/corresponding-pcr-product s)
+  {:data (some->> (:cds/corresponding-pcr-product c)
                   (map pack-obj))
    :description "PCR products for the sequence"})
 
