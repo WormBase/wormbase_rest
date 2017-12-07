@@ -8,6 +8,10 @@
           "TRANSPOSONS"]
    :description "tracks displayed in GBrowse"})
 
+(defn jbrowse-tracks [transposon]
+  {:data "Transposon%20Genes%2CTransposons"
+   :description "tracks displayed in JBrowse"})
+
 (defn genomic-image [transposon]
   {:data (sequence-fns/genomic-obj transposon)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
@@ -16,5 +20,6 @@
     {:name generic/name-field
      :genetic_position generic/genetic-position
      :tracks tracks
+     :jbrowse_tracks jbrowse-tracks
      :genomic_position generic/genomic-position
      :genomic_image genomic-image})

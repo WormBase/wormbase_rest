@@ -8,6 +8,11 @@
              ["GENES"])
    :description "tracks displayed in GBrowse"})
 
+(defn jbrowse-tracks [pseudogene]
+  {:data (when (= "Caenorhabditis elegans" (:species/id (:pseudogene/species pseudogene)))
+             "Curated_Genes")
+   :description "tracks displayed in JBrowse"})
+
 (defn genomic-image [pseudogene]
   {:data (sequence-fns/genomic-obj pseudogene)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
@@ -16,5 +21,6 @@
     {:name generic/name-field
      :genetic_position generic/genetic-position
      :tracks tracks
+     :jbrowse_tracks jbrowse-tracks
      :genomic_position generic/genomic-position
      :genomic_image genomic-image})
