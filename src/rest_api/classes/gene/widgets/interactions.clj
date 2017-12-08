@@ -138,9 +138,9 @@
                             itypes)
                       (first itypes))]
     (case type-name
-      "physical:proteindna" "physical:Protein-DNA"
-      "physical:proteinprotein" "physical:Protein-Protein"
-      "physical:proteinrna" "physical:Protein-RNA"
+      "physical:proteindna" "physical:protein-DNA"
+      "physical:proteinprotein" "physical:protein-protein"
+      "physical:proteinrna" "physical:protein-RNA"
 
       (cond
        ;; Hack to produce the "type-name" when real type-name
