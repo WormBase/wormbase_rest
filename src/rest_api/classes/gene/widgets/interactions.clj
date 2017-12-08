@@ -148,21 +148,22 @@
        ;; TODO: Perhaps the proposed module system should be able to address
        ;;       this and produce a cleaner solution.
        (re-matches #"^regulatory.*" type-name)
-       (if-let [reg-res (some-> (regulatory-result interaction)
-                                (name))]
-         (str "regulatory:"
-              (case reg-res
-                "negative-regulate" "negatively regulates"
-                "positive-regulate" "positively regulates"
-                "does-not-regulate" "does not regulate"
-                reg-res))
-         "regulatory")
+       (let [reg-res (some-> (regulatory-result interaction)
+                             (name))
+             subtype (case reg-res
+                       "negative-regulate" "negatively regulates"
+                       "positive-regulate" "positively regulates"
+                       "does-not-regulate" "does not regulate"
+                       "other")]
+         (format "regulatory:%s" subtype))
 
-       (re-matches #"^genetic.*" type-name)
-       "genetic"
+       (or (re-matches #"^genetic.*" type-name)
+           (re-matches #"^gi-module-one" type-name))
+       "genetic:other"
 
-       (re-matches #"^gi-module-one" type-name)
-       "genetic"
+       (and (not= "predicted" type-name)
+            (not (re-matches #".+:.+" type-name)))
+       (format "%s:other" type-name)
 
        :default
        type-name))))
