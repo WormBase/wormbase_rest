@@ -158,7 +158,7 @@
          (format "regulatory:%s" subtype))
 
        (or (re-matches #"^genetic.*" type-name)
-           (re-matches #"^gi-module-one" type-name))
+           (re-matches #"^gi-module-one.*" type-name))
        "genetic:other"
 
        (and (not= "predicted" type-name)
