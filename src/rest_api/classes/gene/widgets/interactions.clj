@@ -129,10 +129,14 @@
         :interaction.type/genetic:unilateral-suppression]))
 
 (defn- interaction-type-name [interaction]
-  (let [itype (->> (:interaction/type interaction)
-                   (remove #(deprecated-interaction-types %))
-                   (first))
-        type-name (name itype)]
+  (let [itypes (->> (:interaction/type interaction)
+                    (remove #(deprecated-interaction-types %))
+                    (map name))
+        type-name (or (some #(or (re-matches #"^gi-module-three:neutral" %)
+                                 (re-matches #"^gi-module-two.*" %)
+                                 (re-matches #"^gi-module-three.*" %))
+                            itypes)
+                      (first itypes))]
     (case type-name
       "physical:proteindna" "physical:Protein-DNA"
       "physical:proteinprotein" "physical:Protein-Protein"
@@ -157,8 +161,8 @@
        (re-matches #"^genetic.*" type-name)
        "genetic"
 
-       ;; (re-matches #"^gi-module-.*" type-name)
-       ;; (str "genetic:" type-name)
+       (re-matches #"^gi-module-one" type-name)
+       "genetic"
 
        :default
        type-name))))
