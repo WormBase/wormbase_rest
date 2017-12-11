@@ -94,27 +94,79 @@
       (= hname "Proteinprotein") "ProteinProtein"
       :default hname)))
 
+(def deprecated-interaction-types
+  (set [:interaction.type/genetic:asynthetic
+        :interaction.type/genetic:complete-mutual-suppression
+        :interaction.type/genetic:complete-suppression
+        :interaction.type/genetic:complete-unilateral-suppression
+        :interaction.type/genetic:enhancement
+        :interaction.type/genetic:epistasis
+        :interaction.type/genetic:maximal-epistasis
+        :interaction.type/genetic:minimal-epistasis
+        :interaction.type/genetic:mutual-enhancement
+        :interaction.type/genetic:mutual-oversuppression
+        :interaction.type/genetic:mutual-suppression
+        :interaction.type/genetic:negative-genetic
+        :interaction.type/genetic:neutral-epistasis
+        :interaction.type/genetic:neutral-genetic
+        :interaction.type/genetic:no-interaction
+        :interaction.type/genetic:opposing-epistasis
+        :interaction.type/genetic:oversuppression
+        :interaction.type/genetic:oversuppression-enhancement
+        :interaction.type/genetic:partial-mutual-suppression
+        :interaction.type/genetic:partial-suppression
+        :interaction.type/genetic:partial-unilateral-suppression
+        :interaction.type/genetic:phenotype-bias
+        :interaction.type/genetic:positive-epistasis
+        :interaction.type/genetic:positive-genetic
+        :interaction.type/genetic:qualitative-epistasis
+        :interaction.type/genetic:quantitative-epistasis
+        :interaction.type/genetic:suppression
+        :interaction.type/genetic:suppression-enhancement
+        :interaction.type/genetic:synthetic
+        :interaction.type/genetic:unilateral-enhancement
+        :interaction.type/genetic:unilateral-oversuppression
+        :interaction.type/genetic:unilateral-suppression]))
+
 (defn- interaction-type-name [interaction]
-  (let [itype (first (:interaction/type interaction))
-        type-name (humanize-name itype)]
-    (cond
-      ;; Hack to produce the "type-name" when real type-name
-      ;; is regulatory.
-      ;; TODO: Perhaps the proposed module system should be able to address
-      ;;       this and produce a cleaner solution.
-      (str/includes? (str/lower-case type-name) "regulat")
-      (if-let [reg-res (regulatory-result interaction)]
-        (let [reg-res-match (re-seq #"^(.*tive)-regulate" (name reg-res))]
-          (cond
-            (= reg-res does-not-regulate-kw)
-            "Does Not Regulate"
-            reg-res-match
-            (let [term (last (flatten reg-res-match))]
-              (str (str/capitalize term) "ly Regulates"))
-            :default type-name))
-	type-name)
-      :default
-      type-name)))
+  (let [itypes (->> (:interaction/type interaction)
+                    (remove #(deprecated-interaction-types %))
+                    (map name))
+        type-name (or (some #(or (re-matches #"^gi-module-three:neutral" %)
+                                 (re-matches #"^gi-module-two.*" %)
+                                 (re-matches #"^gi-module-three.*" %))
+                            itypes)
+                      (first itypes))]
+    (case type-name
+      "physical:proteindna" "physical:protein-DNA"
+      "physical:proteinprotein" "physical:protein-protein"
+      "physical:proteinrna" "physical:protein-RNA"
+
+      (cond
+       ;; Hack to produce the "type-name" when real type-name
+       ;; is regulatory.
+       ;; TODO: Perhaps the proposed module system should be able to address
+       ;;       this and produce a cleaner solution.
+       (re-matches #"^regulatory.*" type-name)
+       (let [reg-res (some-> (regulatory-result interaction)
+                             (name))
+             subtype (case reg-res
+                       "negative-regulate" "negatively regulates"
+                       "positive-regulate" "positively regulates"
+                       "does-not-regulate" "does not regulate"
+                       "other")]
+         (format "regulatory:%s" subtype))
+
+       (or (re-matches #"^genetic.*" type-name)
+           (re-matches #"^gi-module-one.*" type-name))
+       "genetic:other"
+
+       (and (not= "predicted" type-name)
+            (not (re-matches #".+:.+" type-name)))
+       (format "%s:other" type-name)
+
+       :default
+       type-name))))
 
 (defn gene-direct-interactions [db gene]
   (d/q '[:find [?int ...]
