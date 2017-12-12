@@ -11,13 +11,8 @@
         other-person-name (get oid 1)
         json-data (get oid 2)
         roles (filter #(re-find #"role" (str %)) (keys json-data))
-        level
-        (for [role roles
-              :let
-              [level (-> role
-                         (str/replace #":role/" "")
-                         (str/replace #"-" " ")
-                         (str/capitalize))]] level)
+        level (some->> roles
+                       (map obj/humanize-ident))
         from
         (for [role roles
               :let [rfrom (keyword (-> role (str/replace #"/" ".") (str/replace #":" "")) "from")
@@ -60,8 +55,8 @@
                                [?other-person-ent :person/id ?other-person-id]
                                [?other-person-ent :person/standard-name ?other-person-name]]
                              db (:db/id rep))
-                        (map (fn [oid]
-                               (generate-map oid)))(seq)))))]
+                        (map generate-map)
+                        (seq)))))]
     lineage))
 
 (defn current-members [laboratory]
@@ -74,12 +69,13 @@
                        db (:db/id laboratory))
                   (map (fn [members]
                          (let [member (d/entity db members)
-                               lab (d/entity db laboratory)]
-                           {:name (pack-obj "person" member)
-                            :level (:level ((keyword (:person/id member)) lineage))
-                            :start_date (:start_date ((keyword (:person/id member)) lineage))
-                            :end_date (:end_date ((keyword (:person/id member)) lineage))
-                            :duration (:duration ((keyword (:person/id member)) lineage)) })))(seq))]
+                               keyword-member (keyword (:person/id member))]
+                           {:name (pack-obj member)
+                            :level (:level (keyword-member lineage))
+                            :start_date (:start_date (keyword-member lineage))
+                            :end_date (:end_date (keyword-member lineage))
+                            :duration (:duration (keyword-member lineage)) })))(seq))]
+
     {:data data
      :description "current members of the laboratory"}))
 
@@ -93,12 +89,12 @@
                        db (:db/id laboratory))
                   (map (fn [members]
                          (let [member (d/entity db members)
-                               lab (d/entity db laboratory)]
-                           {:name (pack-obj "person" member)
-                            :level (:level ((keyword (:person/id member)) lineage))
-                            :start_date (:start_date ((keyword (:person/id member)) lineage))
-                            :end_date (:end_date ((keyword (:person/id member)) lineage))
-                            :duration (:duration ((keyword (:person/id member)) lineage)) })))(seq))]
+                               keyword-member (keyword (:person/id member))]
+                           {:name (pack-obj member)
+                            :level (:level (keyword-member lineage))
+                            :start_date (:start_date (keyword-member lineage))
+                            :end_date (:end_date (keyword-member lineage))
+                            :duration (:duration (keyword-member lineage)) })))(seq))]
     {:data data
      :description "former members of the laboratory"}))
 
