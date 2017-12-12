@@ -9,6 +9,8 @@
    [cheshire "5.7.0"]
    [com.layerware/hugsql "0.4.7"]
    [environ "1.1.0"]
+   [org.clojure/data.xml "0.0.8"]
+   [clj-http "3.7.0"]
    [hiccup "1.0.5"]
    [metosin/compojure-api "1.1.10"]
    [mount "0.1.11"]

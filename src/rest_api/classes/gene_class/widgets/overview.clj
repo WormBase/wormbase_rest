@@ -8,8 +8,7 @@
   {:data (when-let [laboratory (:gene-class/designating-laboratory gc)]
            {:laboratory (pack-obj laboratory)
             :representative (when-let [reps (:laboratory/representative laboratory)]
-                              (for [rep reps]
-                                (pack-obj rep)))})
+                              (map (pack-obj reps)))})
    :description "The laboratory where the Gene_class was isolated, created, or named"})
 
 (defn former-laboratory [gc]
@@ -18,14 +17,12 @@
                  lab (:gene-class.former-designating-laboratory/laboratory lh)]
              {:lab (pack-obj lab)
               :time (when-let [t (:gene-class.former-designating-laboratory/until lh)]
-                      (date/format-date4 t)
-                      )}))
+                      (date/format-date4 t))}))
    :description "Former designating laboratory for the gene class and the date of retirement"})
 
 (defn other-names [gc]
   {:data (when-let [gcms (:gene-class/_main-name gc)]
-           (for [gcm gcms]
-             (:gene-class/id gcm)))
+             (map :gene-class/id gcms))
    :description (str "other names that have been used to refer to " (:gene-class/id gc))})
 
 (def widget

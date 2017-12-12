@@ -99,5 +99,6 @@
      :description "former members of the laboratory"}))
 
 (def widget
-  {:former_members former-members
+  {:name generic/name-field
+   :former_member former-members
    :current_members current-members})
