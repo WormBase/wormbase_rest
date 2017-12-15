@@ -7,12 +7,12 @@
     [rest-api.formatters.date :as date]))
 
 (def role-colour
-  {:Phd                            "#B40431"
-   :Postdoc                        "#00E300"
-   :Masters                        "#FF8000"
-   (keyword "Research staff")      "#08298A"
-   :Highschool                     "#05C1F0"
-   :Undergrad                      "#B58904"})
+  {"Phd" "#B40431"
+   "Postdoc" "#00E300"
+   "Masters" "#FF8000"
+   "Research staff" "#08298A"
+   "Highschool" "#05C1F0"
+   "Undergrad" "#B58904"})
 
 (defn- get-roles [holder]
   (filter #(re-find #"role" (str %)) (keys holder)))
@@ -95,7 +95,7 @@
                         (name)
                         (obj/humanize-ident))))
              (map (fn [level]
-                    (if ((keyword level) role-colour)
+                    (if (get role-colour level)
                       (vector
                         (conj
                           (pack-obj person)
@@ -146,7 +146,7 @@
     merge
     (for [role existing-roles-unique]
       (pace-utils/vmap
-        (keyword role) ((keyword role) role-colour)))))
+        (keyword role) (get role-colour role)))))
 
 (defn- get-supervisors [person]
   (some->> (:person/supervised-by person)
@@ -168,7 +168,8 @@
                    :role (:level supervisees)
                    :targetArrowShape "triangle"
                    :lineStyle "solid"
-                   :lineColor ((keyword (:level supervisees)) role-colour)}))))
+                   :lineColor (get role-colour (first (:level supervisees)))
+}))))
 
 (defn- edges-supervisors [direct-or-full person]
   (some->> (:person/supervised-by person)
@@ -183,7 +184,7 @@
                 :role (first (:level supervisor))
                 :targetArrowShape "triangle"
                 :lineStyle (if (= direct-or-full "Direct") "dashed" "solid")
-                :lineColor ((keyword (first (:level supervisor))) role-colour)}))))
+                :lineColor (get role-colour (first (:level supervisor)))}))))
 
 ;(defn- recurse-supervisors [queried-data]
 ;  (if-not (nil? queried-data)
@@ -258,13 +259,27 @@
 ;                                 (conj (filter-other-nodes "Full" largest-node-scaling-full queried-data-recurse-supervisees)
 ;                                       (conj (filter-other-nodes "Full" largest-node-scaling-full queried-data-recurse-supervisors) (filter-this-node "Full" queried-data-this-person))))))" } } ]")
 ;        elements-full (str "{ " nodes-full ", " edges-full " }")
-    (str/replace
-    (json/generate-string
+
+;(str/replace
+;    (json/generate-string
     {:existingRolesFull
      nil
 
      :existingRolesDirect
-     nil
+     (apply merge
+       (some->> (flatten
+                  (flatten
+                    (conj
+                      (some->> (:person.supervised-by/_person person)
+                               (map get-roles)
+                               first)
+                      (some->> (:person/supervised-by person)
+                               (map get-roles)))))
+                (map name)
+                (map obj/humanize-ident)
+                (distinct)
+                (map (fn [role]
+                       {role (get role-colour role)}))))
 
      :thisPerson
      (:person/id person)
@@ -302,8 +317,8 @@
 
      :description
      "ancestors_data"})
-    #"\"" "'")))
-
+;    #"\"" "'")))
+)
 (def widget
   {:ancestors_data ancestors-data
  ;  :supervised supervised-field
