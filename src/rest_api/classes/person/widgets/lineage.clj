@@ -98,20 +98,20 @@
                           (pack-obj person)
                           {:level level})))))))
 
-(defn- get-this-node-scaling [queried-data]
+(defn- get-this-node-scaling [queried-data scaling-map]
   (let [value (first queried-data)]
     (if (or (nil? value)
-            (nil? ((keyword (:person-id value)) scaling-hash)))
+            (nil? ((keyword (:person-id value)) scaling-map)))
       1
-      (parse-int ((keyword (:person-id value)) scaling-hash)))))
+      (parse-int ((keyword (:person-id value)) scaling-map)))))
 
-(defn- get-other-node-scaling [queried-data]
+(defn- get-other-node-scaling [queried-data scaling-map]
   (if queried-data
     (for [value queried-data]
           (if (or (nil? value)
-                  (nil? ((keyword (:other-person-id value)) scaling-hash)))
+                  (nil? ((keyword (:other-person-id value)) scaling-map)))
             1
-            (parse-int ((keyword (:other-person-id value)) scaling-hash))))))
+            (parse-int ((keyword (:other-person-id value)) scaling-map))))))
 
 (defn- person-node [direct-or-full person scaling-map]
   {:id (str direct-or-full (:person-id person))
