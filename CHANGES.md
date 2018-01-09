@@ -2,8 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.3.2] - (unreleased)
+## [0.3.3] - (unreleased)
 - Fix for corresponding-all tables
+
+## [0.3.2] - 2018-01-09
+- Fixing location of nginx configuration file
 
 ## [0.3.1] - 2018-01-09
 - Adding in extened-proxy-timout.config for EB
