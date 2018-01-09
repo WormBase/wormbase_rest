@@ -267,8 +267,9 @@
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         data (when (some? id-kw)
-               (let [reference-kw (keyword role "reference")]
-                 (when-let [papers (reference-kw object)]
+               (let []
+                 (when-let [papers (or (get object (keyword role "reference"))
+                                       (get object (keyword role "paper")))]
                    (let [number-of-papers (count papers)
                          kw-reference-paper (keyword (str role ".reference") "paper")]
                      {:count number-of-papers
