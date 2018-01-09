@@ -6,7 +6,7 @@
     [rest-api.classes.generic-fields :as generic]))
 
 (defn transgenes [a]
-  {:data nil
+  {:data nil ; can't find any
    :description "transgenes annotated with this anatomy_term"})
 
 (defn gene-ontology [a]
@@ -97,9 +97,8 @@
 (def widget
   {:name generic/name-field
    :transgenes transgenes
-      :gene_ontology gene-ontology
+   :gene_ontology gene-ontology
    :anatomy_function_nots anatomy-function-nots
    :expression_clusters expression-clusters
    :expression_patterns expression-patterns
-   :anatomy_functions anatomy-functions
-   })
+   :anatomy_functions anatomy-functions})

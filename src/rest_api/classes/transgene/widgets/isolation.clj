@@ -55,8 +55,9 @@
    :description "integrated from"})
 
 (defn laboratory [tg]
-  (generic/laboratory (first (:construct/_transgene-construct tg))))
-
+  (if-let [construct (first (:construct/_transgene-construct tg))]
+    (generic/laboratory construct)
+    (generic/laboratory tg)))
 
 (def widget
   {:name generic/name-field
