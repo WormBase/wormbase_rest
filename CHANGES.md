@@ -2,8 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.3.1] - (unreleased)
+## [0.3.2] - (unreleased)
 - Fix for corresponding-all tables
+
+## [0.3.1] - 2018-01-09
+- Adding in extened-proxy-timout.config for EB
 
 ## [0.3.0] - 2018-01-09
 - Added a significant number of enpoints for WS262 release
