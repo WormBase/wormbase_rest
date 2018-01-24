@@ -56,6 +56,11 @@
                         "Tandem Duplication"))}
    :description "the general type of the variation"})
 
+(defn merged-into [v]
+  {:data (when-let [new-var (:variation/merged-into v)]
+           (pack-obj new-var))
+   :description (str "the variation " (:variation/id v) " was merged into, if it was")})
+
 (def widget
   {:name generic/name-field
    :status generic/status
@@ -64,4 +69,5 @@
    :evidence evidence
    :variation_type variation-type
    :remarks generic/remarks
+   :merged_into merged-into
    :other_names generic/other-names})
