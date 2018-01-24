@@ -8,7 +8,7 @@
   {:data (when-let [laboratory (:gene-class/designating-laboratory gc)]
            {:laboratory (pack-obj laboratory)
             :representative (when-let [reps (:laboratory/representative laboratory)]
-                              (map (pack-obj reps)))})
+                              (map pack-obj reps))})
    :description "The laboratory where the Gene_class was isolated, created, or named"})
 
 (defn former-laboratory [gc]
