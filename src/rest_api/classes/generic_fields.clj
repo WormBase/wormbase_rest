@@ -19,8 +19,10 @@
                  (pack-obj gene))))
      :description (str "gene products for this " role)}))
 
-(defn genetic-position [object]
-  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+(defn genetic-position [object-orig]
+  (let [object (or (:variation/merged-into object-orig)
+                   object-orig)
+        id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         str-imp "interpolated-map-position"
         variation-with-imp (and (= "variation" role)
@@ -93,19 +95,21 @@
              (pack-obj gene))
      :description "gene that drives the construct"}))
 
-(defn genomic-position [object]
-  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-	role (namespace id-kw)]
+(defn genomic-position [object-orig]
+  (let [object (or (:variation/merged-into object-orig)
+                   object-orig)
+        id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
     {:data (if (= role "protein")
-	     (some->>  (:cds.corresponding-protein/_protein object)
-		      (map :cds/_corresponding-protein)
-		      (filter #(not= "history"  (:method/id  (:locatable/method %))))
-		      (map :gene.corresponding-cds/_cds)
-		      first
-		      (map :gene/_corresponding-cds)
-		      (map sequence-fns/genomic-obj))
-	     (when-let [position (sequence-fns/genomic-obj object)]
-	       [position]))
+             (some->>  (:cds.corresponding-protein/_protein object)
+                      (map :cds/_corresponding-protein)
+                      (filter #(not= "history"  (:method/id  (:locatable/method %))))
+                      (map :gene.corresponding-cds/_cds)
+                      first
+                      (map :gene/_corresponding-cds)
+                      (map sequence-fns/genomic-obj))
+             (when-let [position (sequence-fns/genomic-obj object)]
+               [position]))
      :description "The genomic location of the sequence"}))
 
 (defn method [object]

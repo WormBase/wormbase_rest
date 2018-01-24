@@ -44,9 +44,9 @@
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget
-    {:name generic/name-field
-     :genetic_position generic/genetic-position
-     :tracks tracks
-     :jbrowse_tracks jbrowse-tracks
-     :genomic_position generic/genomic-position
-     :genomic_image genomic-image})
+  {:name generic/name-field
+   :genetic_position generic/genetic-position
+   :tracks tracks
+   :jbrowse_tracks jbrowse-tracks
+   :genomic_position generic/genomic-position
+   :genomic_image genomic-image})

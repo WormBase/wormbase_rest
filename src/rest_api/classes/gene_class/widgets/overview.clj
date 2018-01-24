@@ -25,10 +25,17 @@
              (map :gene-class/id gcms))
    :description (str "other names that have been used to refer to " (:gene-class/id gc))})
 
+(defn evidence [gc]
+  {:data (when-let [ev (:gene-class/evidence gc)]
+           (obj/get-evidence ev))
+
+   :descriptions (str "evidence for the gene class " (:gene-class/id gc))})
+
 (def widget
   {:name generic/name-field
    :laboratory laboratory
    :former_laboratory former-laboratory
+   :evidence evidence
    :remarks generic/remarks
    :description generic/description
    :other_names other-names})
