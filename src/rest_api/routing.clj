@@ -40,16 +40,18 @@
   (fn [request]
     (let [db (d/db datomic-conn)
           id (get-in request [:params :id])
-          attr (keyword entity-ns "id")
+          attr (if (= entity-ns "pcr-oligo")
+                :pcr-product/id
+                (keyword entity-ns "id"))
           lookup-ref [attr id]]
-      (if-let [entity (d/entity db lookup-ref)]
+      (if-let [entity (or (d/entity db lookup-ref)
+                          (or (d/entity db [:oligo/id id])
+                              (d/entity db [:oligo-set/id id])))]
         (->> (conform-to-scheme scheme entity-handler entity request)
              (merge {:class entity-ns
                      :name id
                      :uri (conform-uri request)})
-             (res/ok))
-        (entity-not-found entity-ns id)))))
-
+             (res/ok))))))
 (defprotocol RouteSpecification
   (-create-routes
     [route-spec]

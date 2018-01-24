@@ -55,7 +55,11 @@
 
 (defmethod obj-label "laboratory" [_ obj]
   (or (first (:laboratory/mail obj))
-      (:laboratory/id obj)))
+      ((defmethod obj-label "protein" [_ prot]
+  (or (first (:protein/gene-name prot))
+      (:protein/id prot)))
+
+:laboratory/id obj)))
 
 (defmethod obj-label "phenotype" [_ obj]
   (or (->> (:phenotype/primary-name obj)
@@ -148,6 +152,12 @@
   (or (first (:protein/gene-name prot))
       (:protein/id prot)))
 
+(defmethod obj-label "pcr_oligo" [_ pcr]
+  (or (:pcr-product/id pcr)
+      (or (:oligo/id pcr)
+          (:oligo-set/id pcr))))
+
+
 (def q-interactor
   '[:find [?interactor ...]
     :in $ ?int
@@ -213,7 +223,7 @@
 (defmethod obj-name "gene" [class db id]
   (let [obj (obj-get class db id)]
     {:data
-     {:id    (:gene/id obj)
+     {:id (:gene/id obj)
        :label (or (:gene/public-name obj)
                 (:gene/id obj))
        :class "gene"
@@ -258,6 +268,15 @@
    (:go-term/id obj)
    "go-term"
 
+   (:pcr-product/id obj)
+   "pcr_oligo"
+
+   (:oligo-set/id obj)
+   "pcr_oligo"
+
+   (:oligo/id obj)
+   "pcr_oligo"
+
    :default
    (if-let [k (first (filter #(= (name %) "id") (keys obj)))]
      (namespace k))))
@@ -268,7 +287,10 @@
    (pack-obj (obj-class obj) obj))
   ([class obj & {:keys [label]}]
    (if obj
-     {:id ((keyword class "id") obj)
+     {:id (or ((keyword class "id") obj)
+              (or (:oligo-set/id obj)
+                  (or (:pcr-product/id obj)
+                      (:oligo/id obj))))
       :label (or label (obj-label class obj))
       :class (if class
                (if (= class "author")
