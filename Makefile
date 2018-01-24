@@ -32,7 +32,7 @@ docker/${DEPLOY_JAR}: $(call print-help,docker/${DEPLOY_JAR},\
 
 .PHONY: docker-ecr-login
 docker-ecr-login: $(call print-help,docker-ecr-login,"Login to ECR")
-	@eval $(shell aws ecr get-login)
+	@eval $(shell aws ecr get-login --no-include-email)
 
 .PHONY: docker-tag
 docker-tag: $(call print-help,docker-tag,\
