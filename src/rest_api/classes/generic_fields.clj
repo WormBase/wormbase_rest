@@ -21,7 +21,10 @@
 
 (defn genetic-position [object-orig]
   (let [object (or (:variation/merged-into object-orig)
-                   object-orig)
+                   (or (:variation.strain/strain
+                         (first
+                           (:variation/strain object-orig)))
+                       object-orig))
         id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         str-imp "interpolated-map-position"
@@ -97,7 +100,10 @@
 
 (defn genomic-position [object-orig]
   (let [object (or (:variation/merged-into object-orig)
-                   object-orig)
+                   (or (:variation.strain/strain
+                         (first
+                           (:variation/strain object-orig)))
+                       object-orig))
         id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (if (= role "protein")
