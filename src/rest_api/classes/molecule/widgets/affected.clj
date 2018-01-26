@@ -1,5 +1,6 @@
 (ns rest-api.classes.molecule.widgets.affected
   (:require
+    [datomic.api :as d]
     [pseudoace.utils :as pace-utils]
     [rest-api.classes.phenotype.core :as phenotype-core]
     [rest-api.formatters.object :as obj :refer [pack-obj]]
@@ -236,6 +237,24 @@
                         (remove nil?)))))
    :description "genes affected by the molecule"})
 
+(defn gene-expression-affected-by-molecule [molecule]
+  (let [db (d/entity-db molecule)
+        expr-cluster-gene-rel (d/q '[:find ?g ?ec
+                                     :in $ ?m
+                                     :where
+                                     [?ec :expression-cluster/regulated-by-molecule ?m]
+                                     [?ec :expression-cluster/gene ?gh]
+                                     [?gh :expression-cluster.gene/gene ?g]]
+                                   db (:db/id molecule))]
+    {:data (->> expr-cluster-gene-rel
+                (map (fn [[g ec]]
+                       (let [expression-cluster (d/entity db ec)]
+                         {:gene (pack-obj (d/entity db g))
+                          :expression_cluster (pack-obj expression-cluster)})))
+                (seq))
+     :description "Gene expression affected by molecule"}))
+
 (def widget
   {:name generic/name-field
-   :affected_genes affected-genes})
+   :affected_genes affected-genes
+   :gene_expression_affected_by_molecule gene-expression-affected-by-molecule})
