@@ -65,7 +65,7 @@
                          {:anatomy_term (pack-obj term)
                           :definition (:anatomy-term.definition/text
                                         (:anatomy-term/definition term))})))
-   :description "anatomy ontology terms associated with this expression pattern"})
+   :description "Anatomy ontology terms associated with this expression pattern"})
 
 (defn gene-ontology [e]
   {:data (some->> (:expr-pattern/go-term e)
@@ -92,7 +92,21 @@
                     (map :expr-pattern.life-stage/life-stage)
                     (map pack-obj)
                     (sort-by :id))))
-   :description "where the expression has been noted"})
+   :description "Where the expression has been noted"})
+
+(defn sequence-feature [e]
+  {:data (some->> (:expr-pattern/associated-feature e)
+                  (map :expr-pattern.associated-feature/feature)
+                  (map (fn [f]
+                         (let [packed-obj (pack-obj f)]
+                           (if-let [term (:so-term/name
+                                           (first
+                                             (:feature/so-term f)))]
+                             (conj
+                               packed-obj
+                               {:label (str (:label packed-obj) " - " term)})
+                             packed-obj)))))
+   :description (str "The sequence feature associated with the expression profile " (:expr-pattern/id e))})
 
 (def widget
   {:name generic/name-field
@@ -100,4 +114,5 @@
    :anatomy_ontology anatomy-ontology
    :gene_ontology gene-ontology
    :expressed_by expressed-by
+   :sequence_feature sequence-feature
    :expressed_in expressed-in})
