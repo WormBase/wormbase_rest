@@ -2,8 +2,7 @@
   (:require
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
-    [rest-api.classes.generic-functions :as generic-functions]
-    [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.paper.core :as generic-paper]
     [clojure.string :as str]))
 
@@ -20,8 +19,13 @@
                  (pack-obj gene))))
      :description (str "gene products for this " role)}))
 
-(defn genetic-position [object]
-  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+(defn genetic-position [object-orig]
+  (let [object (or (:variation/merged-into object-orig)
+                   (or (:variation.strain/strain
+                         (first
+                           (:variation/strain object-orig)))
+                       object-orig))
+        id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         str-imp "interpolated-map-position"
         variation-with-imp (and (= "variation" role)
@@ -37,50 +41,47 @@
                                   "gene"]
 
                                  (= role "protein")
-                                 (let [cdss (some->>
-                                              (:cds.corresponding-protein/_protein object)
-                                              (map :cds/_corresponding-protein))]
-                                   [(some->>
-                                      cdss
-                                      (filter #(not= "history" (:method/id (:locatable/method %))))
-                                      (map :gene.corresponding-cds/_cds)
-                                      first
-                                      (map :gene/_corresponding-cds))
-                                    "gene"])
+                                 [(some->> (:cds.corresponding-protein/_protein object)
+                                           (map :cds/_corresponding-protein)
+                                           (filter #(not= "history" (:method/id (:locatable/method %))))
+                                           (map :gene.corresponding-cds/_cds)
+                                           first
+                                           (map :gene/_corresponding-cds))
+                                  "gene"]
 
                                  :else
                                  [[object] role])]
     {:data
-       (not-empty
-        (for [entity entities
-              :let [[chr position error method]
-                     (let [kw-imp (keyword entity-role str-imp)
-                           str-imp-component (str entity-role "." str-imp)
-                           kw-map (keyword entity-role "map")
-                           kw-map-map (keyword (str entity-role ".map") "map")
-                           kw-imp-map (keyword str-imp-component "map")
-                           kw-imp-position (keyword
-                                             str-imp-component
-                                             (if (= role "sequence") "float" "position"))]
-                       (if
-                         (or (= "sequence" entity-role)
-                             (= "variation" entity-role)
-                             (not (contains? entity kw-map)))
-                         [(:map/id (kw-imp-map (kw-imp entity)))
-                          (kw-imp-position (kw-imp entity))
-                          nil
-                          "interpolated"]
-                         (let [map-position (:map-position/position (kw-map entity))]
-                           [(:map/id (kw-map-map (kw-map entity)))
-                            (:map-position.position/float map-position)
-                            (:map-error/error map-position)
-                            (if (= role entity-role) "" "interpolated")])))]]
-          {:chromosome chr
-           :position position
-           :error error
-           :formatted (when (not-any? nil? [chr position])
-                          (format "%s:%2.2f +/- %2.3f cM" chr position (or error (double 0))))
-           :method method}))
+     (not-empty
+       (for [entity entities
+             :let [[chr position error method]
+                   (let [kw-imp (keyword entity-role str-imp)
+                         str-imp-component (str entity-role "." str-imp)
+                         kw-map (keyword entity-role "map")
+                         kw-map-map (keyword (str entity-role ".map") "map")
+                         kw-imp-map (keyword str-imp-component "map")
+                         kw-imp-position (keyword
+                                           str-imp-component
+                                           (if (= role "sequence") "float" "position"))]
+                     (if
+                       (or (= "sequence" entity-role)
+                           (= "variation" entity-role)
+                           (not (contains? entity kw-map)))
+                       [(:map/id (kw-imp-map (kw-imp entity)))
+                        (kw-imp-position (kw-imp entity))
+                        nil
+                        "interpolated"]
+                       (let [map-position (:map-position/position (kw-map entity))]
+                         [(:map/id (kw-map-map (kw-map entity)))
+                          (:map-position.position/float map-position)
+                          (:map-error/error map-position)
+                          (if (= role entity-role) "" "interpolated")])))]]
+         {:chromosome chr
+          :position position
+          :error error
+          :formatted (when (not-any? nil? [chr position])
+                       (format "%s:%2.2f +/- %2.3f cM" chr position (or error (double 0))))
+          :method method}))
      :description (str "Genetic position of " role ": " (id-kw object))}))
 
 (defn fusion-reporter [object]
@@ -97,10 +98,25 @@
              (pack-obj gene))
      :description "gene that drives the construct"}))
 
-(defn genomic-position [object]
-  {:data (if-let [position (sequence-fns/genomic-obj object)]
-           [position])
-   :description "The genomic location of the sequence"})
+(defn genomic-position [object-orig]
+  (let [object (or (:variation/merged-into object-orig)
+                   (or (:variation.strain/strain
+                         (first
+                           (:variation/strain object-orig)))
+                       object-orig))
+        id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+    {:data (if (= role "protein")
+             (some->>  (:cds.corresponding-protein/_protein object)
+                      (map :cds/_corresponding-protein)
+                      (filter #(not= "history"  (:method/id  (:locatable/method %))))
+                      (map :gene.corresponding-cds/_cds)
+                      first
+                      (map :gene/_corresponding-cds)
+                      (map sequence-fns/genomic-obj))
+             (when-let [position (sequence-fns/genomic-obj object)]
+               [position]))
+     :description "The genomic location of the sequence"}))
 
 (defn method [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
@@ -179,7 +195,18 @@
              (not-empty
                (remove
                  nil?
-                 (for [lab labs]
+                 (for [l labs
+                       :let [kw-loc (keyword (str role ".location") "laboratory")
+                             kw-lab (keyword (str role ".laboratory") "laboratory")
+                             lab (cond
+                                   (contains? l kw-lab)
+                                   (kw-lab l)
+
+                                   (contains? l kw-loc)
+                                   (kw-loc l)
+
+                                   :else
+                                   l)]]
                    (when-let [laboratory (pack-obj lab)]
                      {:laboratory laboratory
                       :representative (when-let [reps (:laboratory/representative lab)]
@@ -259,8 +286,9 @@
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         data (when (some? id-kw)
-               (let [reference-kw (keyword role "reference")]
-                 (when-let [papers (reference-kw object)]
+               (let []
+                 (when-let [papers (or (get object (keyword role "reference"))
+                                       (get object (keyword role "paper")))]
                    (let [number-of-papers (count papers)
                          kw-reference-paper (keyword (str role ".reference") "paper")]
                      {:count number-of-papers
@@ -279,7 +307,9 @@
                                     :name  (pack-obj paper)
                                     :title  [(:paper/title paper)]
                                     :author (generic-paper/get-authors paper)
-                                    :ptype (when paper (:paper.type  pt))
+                                    :ptype (->> (map :paper.type/type pt)
+                                                (map obj/humanize-ident)
+                                                (first))
                                     :abstract (when abstract [(:longtext/text (first abstract))])
                                     :year year
                                     :journal [(:paper/journal paper)]}))}))))]
@@ -451,5 +481,3 @@
                            (corresponding-all-gene gene cds "cds" nil)))))))]
       {:data (not-empty data)
        :description (str "corresponding cds, transcripts, gene for this " role)})))
-
-

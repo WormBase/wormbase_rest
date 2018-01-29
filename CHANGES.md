@@ -2,8 +2,51 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.2.1] - (unreleased)
+## [0.3.9] - (unreleased)
 - Fix for corresponding-all tables
+
+## [0.3.8] - 2018-01-26
+- fixed 500 errors from pcr_oligo page
+
+## [0.3.7] - 2018-01-26
+- fixed 500 was till persisting final fix
+- adding merged into data for variation overview widget
+
+## [0.3.6] - 2018-01-26
+- fixed 500 error on variation/locations widgets where variations were merged
+
+## [0.3.5] - 2018-01-26
+- fixed 500 error on gene-class/overview widget
+
+## [0.3.4] - 2018-01-09
+- make idempotent
+
+## [0.3.3] - 2018-01-09
+- Tested and fixed nginx configuration file
+
+## [0.3.2] - 2018-01-09
+- Fixing location of nginx configuration file
+
+## [0.3.1] - 2018-01-09
+- Adding in extened-proxy-timout.config for EB
+
+## [0.3.0] - 2018-01-09
+- Added a significant number of enpoints for WS262 release
+
+## [0.2.4] - 2017-11-03
+- changing JVM and datomic memory settings
+
+## [0.2.3] - 2017-10-25
+- uncommenting phenotype variation widget
+
+## [0.2.2] - 2017-10-23
+- Adding phenotype widgets
+- Adding association widgets
+- Adding expresion cluster widgets
+- Adding some other ones as well
+
+## [0.2.1] - 2017-09-13
+- Fix for rearrangement overview widget 500 error
 
 ## [0.2.0] - 2017-08-16
 - 11 more overview widgets

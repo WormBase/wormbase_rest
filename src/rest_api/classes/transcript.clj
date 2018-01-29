@@ -3,6 +3,8 @@
    [rest-api.classes.gene.widgets.external-links :as external-links]
    ;[rest-api.classes.transcript.widgets.overview :as overview]
    [rest-api.classes.transcript.widgets.location :as location]
+   ;[rest-api.classes.transcript.widgets.reagents :as reagents]
+   [rest-api.classes.transcript.widgets.feature :as feature]
    [rest-api.classes.transcript.widgets.references :as references]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.formatters.object :as obj]
@@ -34,9 +36,11 @@
   {:entity-ns "transcript"
    :widget
    {;:overview overview/widget
+    ;:reagents reagents/widget
     :expression expression-widget
     :external_links external-links/widget
     :location location/widget
+    :feature feature/widget
     :references references/widget}
    :field
    {:fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})

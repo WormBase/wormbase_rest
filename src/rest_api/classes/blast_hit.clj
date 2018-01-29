@@ -51,4 +51,9 @@
               (let [db (d/db datomic-conn)]
                 (if-let [entity (some #(d/entity db [% id]) id-types)]
                   (response/ok (convert-entity entity))
-                  (response/not-found {:reason (format "No match found in %s" (clojure.string/join ", " id-types))}))))])
+                  (response/ok  ; 404 would degrade health check, and in this case, not being able to convert id is nothing to be alarmed
+                   (let [message (format "No match found for %s in %s"
+                                                     id
+                                                     (clojure.string/join ", " id-types))]
+                                 {:sequence {:label id
+                                             :message message}})))))])

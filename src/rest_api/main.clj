@@ -31,7 +31,7 @@
    [rest-api.classes.motif :as motif]
    [rest-api.classes.operon :as operon]
    [rest-api.classes.paper :as paper]
-   [rest-api.classes.pcr-product :as pcr-product]
+   [rest-api.classes.pcr-oligo :as pcr-oligo]
    [rest-api.classes.person :as person]
    [rest-api.classes.phenotype :as phenotype]
    [rest-api.classes.position-matrix :as position-matrix]
@@ -76,7 +76,7 @@
    motif/routes
    operon/routes
    paper/routes
-   pcr-product/routes
+   pcr-oligo/routes
    person/routes
    phenotype/routes
    position-matrix/routes

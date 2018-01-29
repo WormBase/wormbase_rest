@@ -75,11 +75,15 @@
    :description "Oligos of thisPCR product"})
 
 (defn pcr-products [p]
-  {:data nil ; don't understand this one and can't find examples
-   :description "PCR prodcuts associateed with this oligonucleotide"})
+  {:data (some->> (:pcr-product.oligo/_oligo p)
+                  (map :pcr-product/_oligo)
+                  (map pack-obj))
+   :description "PCR products associateed with this oligonucleotide"})
 
 (defn in-sequences [p]
- {:data nil ; missing fields in datomic
+ {:data (some->> (:sequence.oligo/_oligo p)
+                 (map :sequence/_oligo)
+                 (map pack-obj))
   :description "Sequences containing this oligonucleotide"})
 
 (defn microarray-results [p]
@@ -124,22 +128,22 @@
 
 (def widget
   {:name generic/name-field
-   :source source
-   :overlaps_CDS overlaps-cds
-   :canonical_parent canonical-parent
-   :on_orfeome_project on-orfeome-project
-   :overlapping_genes overlapping-genes
-   :segment segment
-   :overlaps_variation overlaps-variation
-   :amplified amplified
-   :remarks generic/remarks
-   :oligos oligos
+;  :source source
+;   :overlaps_CDS overlaps-cds
+;   :canonical_parent canonical-parent
+;   :on_orfeome_project on-orfeome-project
+;   :overlapping_genes overlapping-genes
+;   :segment segment
+;   :overlaps_variation overlaps-variation
+;   :amplified amplified
+;   :remarks generic/remarks
+;   :oligos oligos
    :pcr_products pcr-products
-   :laboratory generic/laboratory
+;   :laboratory generic/laboratory
    :in_sequences in-sequences
-   :microarray_results microarray-results
-   :overlaps_pseudogene overlaps-pseudogene
-   :overlaps_transcript overlaps-transcript
-   :assay_conditions assay-conditions
-   :SNP_loci snp-loci
+;   :microarray_results microarray-results
+;   :overlaps_pseudogene overlaps-pseudogene
+;   :overlaps_transcript overlaps-transcript
+;   :assay_conditions assay-conditions
+;   :SNP_loci snp-loci
    :rnai rnai})

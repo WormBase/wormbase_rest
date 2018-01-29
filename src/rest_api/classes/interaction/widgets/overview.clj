@@ -24,24 +24,42 @@
                              (pack-obj term)))}))
    :description "Regulation results for this interaction"})
 
-(defn interaction-type [i]
-  {:data (when-let [types (:interaction/type i)]
-           (str/join
-             ": "
-             (for [part (str/split (name  (first types)) #":")]
-               (cond
-                 (= part "proteindna")
-                 "Protein-DNA"
+(defn interaction-type [interaction]
+  {:data (when-let [types (:interaction/type interaction)]
+           (let [raw-type-name (-> (first types)  ; all types of an interaction will have the same super type
+                                   (name)
+                                   (str/split #":")
+                                   (first))
+                 type-name (if (re-matches #"gi-module-.+" raw-type-name)
+                             "genetic"
+                             raw-type-name)]
+             type-name))
+   :description "Supertype of the interaction"})
 
-                 (= part "proteinprotein")
-                 "Protein-protein"
-
-                 (= part "proteinrna")
-                 "Protein-RNA"
-
-                 :else
-                 (str/replace (str/capitalize part) #"-" " ")))))
-   :description "Type of the interaction"})
+(defn interaction-subtype [i]
+  {:data
+   (when-let [types (:interaction/type i)]
+     (let [type-map (->> types
+                         (map (fn [type]
+                                (let [[supertype subtype] (str/split (name type) #":")
+                                      subtype-new (case subtype
+                                                    "proteindna" "protein-DNA"
+                                                    "proteinprotein" "protein-protein"
+                                                    "proteinrna" "protein-RNA"
+                                                    subtype)]
+                                  [supertype subtype-new])))
+                         (filter (fn [[supertype subtype]]
+                                   ;; type with :genetic legacy
+                                   (not= supertype "genetic")))
+                         (into {}))]
+       (if-let [genetic-modifiers (->> [(get type-map "gi-module-one")
+                                        (get type-map "gi-module-two")
+                                        (get type-map "gi-module-three")]
+                                       (filter identity)
+                                       (seq))]
+         (str/join " " genetic-modifiers)
+         (first (vals type-map)))))
+   :description "Subtype of the interaction"})
 
 (defn interaction-phenotype [i]
   {:data (when-let [phenotypes (:interaction/interaction-phenotype i)]
@@ -172,6 +190,7 @@
    :libraries_screened libraries-screened
    :regulation_result regulation-result
    :interaction_type interaction-type
+   :interaction_subtype interaction-subtype
    :interaction_phenotype interaction-phenotype
    :interaction_summary interaction-summary
    :process process
