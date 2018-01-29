@@ -84,7 +84,7 @@
              {:description (when-let [patterns (:expr-pattern/pattern ep)]
                               (str/join "<br /> " patterns))
               :expression_pattern (pack-obj ep)
-              :certainty nil
+              :certainty (:certainty (first (:qualifier/certain h)))
               :reference (when-let [hs (:expr-pattern/reference ep)]
                            (let [paper (:expr-pattern.reference/paper (first hs))]
                              (:paper/id paper)))
