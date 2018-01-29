@@ -12,7 +12,8 @@
                                          (map :expr-pattern.gene/gene)
                                          (map pack-obj))
                           :description (:expr-pattern/pattern e)
-                          :certainty (first (:qualifier/certain h))}))))
+                          :certainty (first (:qualifier/certain h))})))
+                  (filter #(.contains (:label (:expression_pattern %)) "Marker")))
    :description (str "Expression markers for the anatomy term: " (:anatomy-term/id a))})
 
 (def widget
