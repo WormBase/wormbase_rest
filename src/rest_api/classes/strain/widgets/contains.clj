@@ -20,7 +20,7 @@
   {:data (when-let [vhs (:variation.strain/_strain s)]
            (for [vh vhs
                  :let [variation (:variation/_strain vh)]]
-             (variation-core/process-variation variation)))
+             (variation-core/process-variation variation (set []))))
    :description "alleles contained in the strain"})
 
 (defn genes [s]
@@ -29,7 +29,7 @@
    :description "genes contained in the strain"})
 
 (defn transgenes [s]
-  {:data (when-let [tgs (:transgene/_strain s)] 
+  {:data (when-let [tgs (:transgene/_strain s)]
              (map pack-obj tgs))
    :description "transgenes carried by the strain"})
 
