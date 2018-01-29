@@ -1,7 +1,7 @@
 (ns rest-api.classes.cds
   (:require
     [rest-api.classes.gene.widgets.external-links :as external-links]
-    ;[rest-api.classes.cds.widgets.overview :as overview]
+    [rest-api.classes.cds.widgets.overview :as overview]
     [rest-api.classes.cds.widgets.location :as location]
     [rest-api.classes.cds.widgets.feature :as feature]
     ;[rest-api.classes.cds.widgets.reagents :as reagents]
@@ -12,7 +12,7 @@
 (routing/defroutes
   {:entity-ns "cds"
    :widget
-   {;:overview overview/widget
+   {:overview overview/widget
     :location location/widget
     :feature feature/widget
     ;:reagents reagents/widget
