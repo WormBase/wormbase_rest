@@ -6,6 +6,7 @@
     [rest-api.classes.pseudogene.widgets.reagents :as reagents]
     [rest-api.classes.pseudogene.widgets.expression :as expression]
     [rest-api.classes.pseudogene.widgets.location :as location]
+    [rest-api.classes.gene.expression :as gene-expression]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
@@ -16,4 +17,7 @@
     :genetics genetics/widget
     :reagents reagents/widget
     :expression expression/widget
-    :location location/widget}})
+    :location location/widget
+    }
+   :field
+   {:fpkm_expression_summary_ls gene-expression/fpkm-expression-summary-ls}})
