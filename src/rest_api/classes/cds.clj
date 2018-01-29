@@ -12,7 +12,7 @@
 (routing/defroutes
   {:entity-ns "cds"
    :widget
-   {;:overview overview/widget not complete -  has some calculations that would need to be verified
+   {;:overview overview/widget
     :location location/widget
     :feature feature/widget
     ;:reagents reagents/widget
