@@ -1,4 +1,4 @@
-(ns rest-api.classes.anatomy_term.widgets.overview
+(ns rest-api.classes.anatomy-term.widgets.overview
   (:require
    [datomic.api :as d]
    [rest-api.classes.generic-fields :as generic]
