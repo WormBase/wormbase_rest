@@ -11,3 +11,13 @@
          species  (second species-name-parts)]
     (str/join "_"  [g species])))
 
+(defn certainty [h]
+  (case
+    (contains? h :qualifier/certain)
+    "Certain"
+
+    (contains? h :qualifier/uncertain)
+    "Uncertain"
+
+    (contains? h :qualifier/partial)
+    "Partial"))

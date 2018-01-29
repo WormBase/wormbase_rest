@@ -1,6 +1,7 @@
 (ns rest-api.classes.anatomy-term.widgets.expression-markers
   (:require
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn markers [a]
@@ -12,7 +13,7 @@
                                          (map :expr-pattern.gene/gene)
                                          (map pack-obj))
                           :description (:expr-pattern/pattern e)
-                          :certainty (first (:qualifier/certain h))})))
+                          :certainty (generic-functions/certainty h)})))
                   (filter #(.contains (:label (:expression_pattern %)) "Marker")))
    :description (str "Expression markers for the anatomy term: " (:anatomy-term/id a))})
 

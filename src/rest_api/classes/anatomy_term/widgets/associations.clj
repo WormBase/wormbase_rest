@@ -3,6 +3,7 @@
     [clojure.string :as str]
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer [pack-obj]]
+    [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn transgenes [a]
@@ -84,7 +85,7 @@
              {:description (when-let [patterns (:expr-pattern/pattern ep)]
                               (str/join "<br /> " patterns))
               :expression_pattern (pack-obj ep)
-              :certainty (:certainty (first (:qualifier/certain h)))
+              :certainty (generic-functions/certainty h)
               :reference (when-let [hs (:expr-pattern/reference ep)]
                            (let [paper (:expr-pattern.reference/paper (first hs))]
                              (:paper/id paper)))

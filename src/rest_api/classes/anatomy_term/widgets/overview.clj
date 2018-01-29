@@ -2,6 +2,7 @@
   (:require
    [datomic.api :as d]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (def q-anatomy-functions-involved
@@ -134,7 +135,7 @@
                   (:expr-pattern.reference/paper (first holder))))
 
               :certainty
-              (first (:qualifier/certain h))
+              (generic-functions/certainty (:expr-pattern/anatomy-term expression-pattern))
 
               :author
               (when-let [authors (:expr-pattern/author expression-pattern)]
