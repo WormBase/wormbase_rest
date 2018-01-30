@@ -12,7 +12,7 @@
     (str/join "_"  [g species])))
 
 (defn certainty [h]
-  (case
+  (cond
     (contains? h :qualifier/certain)
     "Certain"
 
