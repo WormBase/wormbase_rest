@@ -58,12 +58,19 @@
        (set)))
 
 ;; TODO: split up and refactor this function.
-(defn process-variation [var & {:keys [window]
-                                 :or {window 20}}]
-  (let [slice (comp seq (partial take 20))
-        cds-changes (slice (:variation/predicted-cds var))
-        trans-changes (slice (:variation/transcript var))
-        gene-changes (slice (:variation/gene var))]
+(defn process-variation [var relevant-location?
+                         & {:keys [window]
+                            :or {window 20}}]
+  (let [slice (comp seq (partial take window))
+        cds-changes (->> (:variation/predicted-cds var)
+                         (filter #(relevant-location? (:variation.predicted-cds/cds %)))
+                         (slice))
+        trans-changes (->> (:variation/transcript var)
+                           (filter #(relevant-location? (:variation.transcript/transcript %)))
+                           (slice))
+        gene-changes (->> (:variation/gene var)
+                          (filter #(relevant-location? (:variation.gene/gene %)))
+                          (slice))]
     (pace-utils/vmap
      :variation
      (pack-obj "variation" var)
