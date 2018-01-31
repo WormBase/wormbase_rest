@@ -191,6 +191,10 @@
 (defn- expr-pattern-detail [expr-pattern qualifier]
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
+   :Description (str/join "<br/>" (:expr-pattern/pattern expr-pattern))
+   :Transgene (->> (:expr-pattern/transgene expr-pattern)
+                   (map pack-obj)
+                   (seq))
    :Paper (if-let [paper-holders (:expr-pattern/reference expr-pattern)]
             (->> paper-holders
                  (map :expr-pattern.reference/paper)
