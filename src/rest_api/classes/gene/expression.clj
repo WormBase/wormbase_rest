@@ -188,17 +188,22 @@
                       :label (format "<strong>and %s more</strong>" (- size capacity)))])
       (map pack-obj terms))))
 
+(defn- pack-obj-with-class [obj]
+  )
+
 (defn- expr-pattern-detail [expr-pattern qualifier]
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
    :Description (str/join "<br/>" (:expr-pattern/pattern expr-pattern))
 
    :Reagents
-   (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody :expr-pattern/strain]
+   (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody-info]
         (map (fn [kw] (kw expr-pattern)))
-        (apply concat)
-        (map (fn [reagent]
-               (let [packed (pack-obj reagent)]
+        (apply concat (some->> (:expr-pattern/strain expr-pattern)
+                               (vec)))
+
+        (map (fn [obj]
+               (let [packed (pack-obj obj)]
                  (assoc packed
                         :label
                         (format "%s (%s)" (:label packed) (:class packed)))
