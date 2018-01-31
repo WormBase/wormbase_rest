@@ -192,9 +192,19 @@
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
    :Description (str/join "<br/>" (:expr-pattern/pattern expr-pattern))
-   :Transgene (->> (:expr-pattern/transgene expr-pattern)
-                   (map pack-obj)
-                   (seq))
+
+   :Reagents
+   (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody :expr-pattern/strain]
+        (map (fn [kw] (kw expr-pattern)))
+        (apply concat)
+        (map (fn [reagent]
+               (let [packed (pack-obj reagent)]
+                 (assoc packed
+                        :label
+                        (format "%s (%s)" (:label packed) (:class packed)))
+                 )))
+        (seq))
+
    :Paper (if-let [paper-holders (:expr-pattern/reference expr-pattern)]
             (->> paper-holders
                  (map :expr-pattern.reference/paper)
