@@ -48,7 +48,6 @@
                                 (:anatomy-term/term
                                   (:anatomy-function.not-involved/anatomy-term h)))
                         :evidence (obj/get-evidence h)}))
-
        :phenotype (when-let [ph (:anatomy-function/phenotype af)]
                     (let [phenotype (:anatomy-function.phenotype/phenotype ph)]
                       (if-let [evidence (obj/get-evidence ph)]
@@ -97,9 +96,9 @@
 
 (def widget
   {:name generic/name-field
-   :transgenes transgenes
-   :gene_ontology gene-ontology
-   :anatomy_function_nots anatomy-function-nots
-   :expression_clusters expression-clusters
-   :expression_patterns expression-patterns
+;   :transgenes transgenes
+;   :gene_ontology gene-ontology
+;   :anatomy_function_nots anatomy-function-nots
+;   :expression_clusters expression-clusters
+;   :expression_patterns expression-patterns
    :anatomy_functions anatomy-functions})

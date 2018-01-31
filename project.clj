@@ -60,7 +60,7 @@
           :source-paths ["dev"]
           :jvm-opts ["-Xmx1G"]
           :env
-          {:wb-db-uri "datomic:ddb://us-east-1/WS262/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS263/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"

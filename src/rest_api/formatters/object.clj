@@ -324,14 +324,14 @@
          :label ds
          :class "text"}]))
 
-   :Remark
-   (or (seq (:evidence/remark holder))
-       (when-let [ss (:anatomy-function-info/remark holder)]
-	 (for [s ss]
-	   {:taxonomy "all"
-	    :class "txt"
-	    :label s
-	    :id s})))
+;   :Remark
+;   (or (seq (:evidence/remark holder))
+;       (when-let [ss (:anatomy-function-info/remark holder)]
+;	 (for [s ss]
+;	   {:taxonomy "all"
+;	    :class "txt"
+;	    :label s
+;	    :id s})))
 
    :Published_as
    (seq (for [pa (:evidence/published-as holder)]
@@ -407,51 +407,45 @@
 
    :Autonomous
    (when-let [ss (:anatomy-function-info/autonomous holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Autonomous"
+        :id "Autonomous"})
 
    :Necessary
    (when-let [ss (:anatomy-function-info/necessary holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Necessary"
+        :id "Necessary"})
 
    :Unnecessary
    (when-let [ss (:anatomy-function-info/unnecessary holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Unnecessary"
+        :id "Unnecessary"})
 
    :Nonautonomous
    (when-let [ss (:anatomy-function-info/nonautonomous holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Nonautonomous"
+        :id "Nonautonomous"})
 
    :Sufficient
    (when-let [ss (:anatomy-function-info/sufficient holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Sufficient"
+        :id "Sufficient"})
 
    :Insufficient
    (when-let [iss (:anatomy-function-info/insufficient holder)]
-     (for [is iss]
        {:taxonomy "all"
         :class "txt"
-        :label is
-        :id is}))))
+        :label "Insuffiecient"
+        :id "Insufficient"})))
 
 (defn pack-text
   "Normalize text to behave like a pack object."
