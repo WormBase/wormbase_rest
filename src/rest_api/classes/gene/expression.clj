@@ -197,10 +197,13 @@
    :Description (str/join "<br/>" (:expr-pattern/pattern expr-pattern))
 
    :Reagents
-   (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody-info]
+   (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody-info :expr-pattern/variation]
         (map (fn [kw] (kw expr-pattern)))
-        (apply concat (some->> (:expr-pattern/strain expr-pattern)
-                               (vec)))
+        (apply concat
+               (some->> (:expr-pattern/strain expr-pattern)
+                        (conj []))
+               (->> (:variation.expr-pattern/_expr-pattern expr-pattern)
+                    (map :variation/_expr-pattern)))
 
         (map (fn [obj]
                (let [packed (pack-obj obj)]
