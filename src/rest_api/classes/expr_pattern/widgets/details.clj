@@ -47,6 +47,10 @@
                    "Tiling Array"
                    (when-let [analyses (:expr-pattern/tiling-array e)]
                      (sort-by :label (map pack-obj analyses))))
+          :variation (->> (:variation.expr-pattern/_expr-pattern e)
+                          (map :variation/_expr-pattern)
+                          (map pack-obj)
+                          (seq))
           :antibody_info (when-let [a (:expr-pattern/antibody-info e)]
                            (map pack-obj a))
           :transgene (when-let [t (:expr-pattern/transgene e)]
