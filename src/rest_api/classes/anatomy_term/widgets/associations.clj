@@ -96,9 +96,9 @@
 
 (def widget
   {:name generic/name-field
-;   :transgenes transgenes
-;   :gene_ontology gene-ontology
-;   :anatomy_function_nots anatomy-function-nots
-;   :expression_clusters expression-clusters
-;   :expression_patterns expression-patterns
+   :transgenes transgenes
+   :gene_ontology gene-ontology
+   :anatomy_function_nots anatomy-function-nots
+   :expression_clusters expression-clusters
+   :expression_patterns expression-patterns
    :anatomy_functions anatomy-functions})
