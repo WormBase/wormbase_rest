@@ -2,8 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.3.9] - (unreleased)
-- Fix for corresponding-all tables
+## [0.4.0] - (unreleased)
+- tbd
+
+## [0.3.9] - 2018-01-26 - Hotfix
+- Commenting out lineage widget - causing d2c to crash
+- Fixing issue with rnai overview widget from laboratory pack-obj bug
 
 ## [0.3.8] - 2018-01-26
 - fixed 500 errors from pcr_oligo page

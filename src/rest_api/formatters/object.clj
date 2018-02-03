@@ -55,11 +55,10 @@
 
 (defmethod obj-label "laboratory" [_ obj]
   (or (first (:laboratory/mail obj))
-      ((defmethod obj-label "protein" [_ prot]
+      (:laboratory/id obj)))
+(defmethod obj-label "protein" [_ prot]
   (or (first (:protein/gene-name prot))
       (:protein/id prot)))
-
-:laboratory/id obj)))
 
 (defmethod obj-label "phenotype" [_ obj]
   (or (->> (:phenotype/primary-name obj)

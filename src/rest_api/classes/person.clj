@@ -11,7 +11,7 @@
   {:entity-ns "person"
    :widget
    {:laboratory laboratory/widget
-    :lineage lineage/widget
+    ;:lineage lineage/widget
     ;:overview overview/widget
     :publications publications/widget
     :tracking tracking/widget}})
