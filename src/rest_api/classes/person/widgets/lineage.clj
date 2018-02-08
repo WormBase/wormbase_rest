@@ -48,7 +48,6 @@
 (defn- generate-map [holder person]
   {:level (get-levels holder)
    :duration (get-duration holder)
-   :keys (keys holder)
    :name (pack-obj person)})
 
 (defn- supervised-by [person]
@@ -175,19 +174,37 @@
 (defn recursive-get-supervised-by [person scaling-map]
   (some->> (:person/supervised-by person)
            (map :person.supervised-by/person)
-           (map (fn [supervisor]
+           (map
+             (fn [supervisor]
                   (conj
                     (recursive-get-supervised-by supervisor scaling-map)
                     (get-node "Full" supervisor 1 scaling-map))))))
 
 (defn recursive-get-supervised-roles [person]
-  (some->> (:person.supervised-by/_person person)
-           (map
-             (fn [holder]
-              (conj
-                (recursive-get-supervised-roles
-                  (:person/_supbervised-by holder))
-                (first (get-roles holder)))))))
+  (distinct
+    (flatten
+      (let [soFar
+            (some->> (:person.supervised-by/_person person)
+                     (map :person/_supervised-by)
+                     (map
+                       (fn [supervisee]
+                         (recur supervisee))))]
+        (do (println soFar)
+            soFar)))))
+;        (if (not (contains? soFar (:db/id person)))
+ ;         (conj (soFar
+  ;                (:db/id person)))
+   ;       soFar))))))
+;  (some->> (:person.supervised-by/_person person)
+;           (map
+;             (fn [holder]
+;              (conj
+;                (let [supervisee (:person/_supervised-by holder)]
+;                  #(recursive-get-supervised-roles supervisee))
+;                (get-roles holder))))
+;           (flatten)
+;           (distinct)
+;           ))
 
 (defn recursive-get-supervised-by-roles [person]
   (some->> (:person/supervised-by person)
@@ -200,100 +217,106 @@
 
 (defn ancestors-data [person]
   (let [scaling-map (json/parse-string (slurp "http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/wbpersonLineageScaling.json") true)]
-    {:existingRolesFull
-     (apply
-       merge
-       (some->> (flatten
-                  (flatten
-                    (conj
-                      (recursive-get-supervised-roles person)
-                      (recursive-get-supervised-by-roles person))))
-                (map name)
-                (map obj/humanize-ident)
-                (distinct)
-                (map (fn [role]
-                       {role (get role-colour role)}))))
+    {;:existingRolesFull
+  ;   (apply
+   ;    merge
+;       (some->> (flatten
+;                  (flatten
+;                    (conj
+;                      (recursive-get-supervised-roles person)
+;                      (recursive-get-supervised-by-roles person))))
+;                (map name)
+;                (map obj/humanize-ident)
+;                (distinct)
+;                (map (fn [role]
+;                       {role (get role-colour role)})));)
+;
 
-     :existingRolesDirect
-     (apply
-       merge
-       (some->> (flatten
-                  (flatten
-                    (conj
-                      (some->> (:person.supervised-by/_person person)
-                               (map get-roles)
-                               first)
-                      (some->> (:person/supervised-by person)
-                               (map get-roles)))))
-                (map name)
-                (map obj/humanize-ident)
-                (distinct)
-                (map (fn [role]
-                       {role (get role-colour role)}))))
-
+       :roles (when-let [roles (recursive-get-supervised-roles person)]
+                     (do (println roles)
+                         roles))
+;     :existingRolesDirect
+;    (apply
+;       merge
+;       (some->> (flatten
+;                  (flatten
+;                    (conj
+;                      (some->> (:person.supervised-by/_person person)
+;                               (map get-roles)
+;                               first)
+;                      (some->> (:person/supervised-by person)
+;                               (map get-roles)))))
+;                (map name)
+;                (map obj/humanize-ident)
+;                (distinct)
+;                (map (fn [role]
+;                       {role (get role-colour role)}))))
+;
      :thisPerson
      (:person/id person)
 
 
-     :elementsFull
-     (when-let [data
-                (pace-utils/vmap
-                  :edges
-                  (some->> (conj
-                             (edges-supervisees "Full" person)
-                             (edges-supervisors "Full" person))
-                           (map (fn [data]
-                                  {:data data})))
+;     :elementsFull
+;     (when-let [data
+;                (pace-utils/vmap
+;                  :edges
+;                  (some->> (conj
+;                             (edges-supervisees "Full" person)
+;                             (edges-supervisors "Full" person))
+;                           (map (fn [data]
+;                                  {:data data})))
+;
+;                  :nodes
+;                  (remove
+;                    nil?
+;                    (some->> (flatten
+;                               (conj
+;                                 (vector (person-node "Full" person scaling-map))
+;                                (trampoline recursive-get-supervised person scaling-map)
+;                                (trampoline recursive-get-supervised-by person scaling-map)))
+;                             (map
+;                               (fn [data]
+;                                 (when (some? data)
+;                                   {:data data})))))
+;)]
+;       (str/replace (json/generate-string data) #"\"" "'"))
 
-                  :nodes
-                  (remove
-                    nil?
-                    (some->> (flatten
-                               (conj
-                                 (vector (person-node "Full" person scaling-map))
-                                (recursive-get-supervised person scaling-map)
-                                (recursive-get-supervised-by person scaling-map)))
-                             (map
-                               (fn [data]
-                                 (when (some? data)
-                                   {:data data}))))))]
-       (str/replace (json/generate-string data) #"\"" "'"))
-
-     :elementsDirect
-     (when-let [data
-                (pace-utils/vmap
-                  :edges
-                  (some->> (conj
-                             (edges-supervisees "Direct" person)
-                             (edges-supervisors "Direct" person))
-                           (map (fn [data]
-                                  {:data data})))
-
-                  :nodes
-                  (remove
-                    nil?
-                    (some->> (flatten
-                               (conj
-                                 (vector (person-node "Direct" person scaling-map))
-                                 (some->> (:person/supervised-by person)
-                                          (map :person.supervised-by/person)
-                                          (map (fn [supervisor]
-                                                 (get-node "Direct" supervisor 1 scaling-map))))
-                                 (some->> (:person.supervised-by/_person person)
-                                          (map :person/_supervised-by)
-                                          (map (fn [supervisee]
-                                                 (get-node "Direct" supervisee 1 scaling-map))))))
-                             (map
-                               (fn [data]
-                                 (when (some? data)
-                                   {:data data}))))))]
-       (str/replace (json/generate-string data) #"\"" "'"))
-
+;     :elementsDirect
+;     (when-let [data
+;                (pace-utils/vmap
+;                  :edges
+;                  (some->> (conj
+;                             (edges-supervisees "Direct" person)
+;                             (edges-supervisors "Direct" person))
+;                           (map (fn [data]
+;                                  {:data data})))
+;
+;                  :nodes
+;                  (remove
+;                    nil?
+;                    (some->> (flatten
+;                               (conj
+;                                 (vector (person-node "Direct" person scaling-map))
+;                                 (some->> (:person/supervised-by person)
+;                                          (map :person.supervised-by/person)
+;                                          (map (fn [supervisor]
+;                                                 (get-node "Direct" supervisor 1 scaling-map))))
+;                                 (some->> (:person.supervised-by/_person person)
+;                                          (map :person/_supervised-by)
+;                                          (map (fn [supervisee]
+;                                                 (get-node "Direct" supervisee 1 scaling-map))))))
+;                             (map
+;                               (fn [data]
+;                                 (when (some? data)
+;                                   {:data data}))))))]
+;       (str/replace (json/generate-string data) #"\"" "'"))
+;
      :description
      "ancestors_data"}))
 
 (def widget
   {:ancestors_data ancestors-data
-   :supervised supervised-field
-   :supervised_by supervised-by-field
-   :worked_with worked-with})
+;   :supervised supervised-field
+;   :supervised_by supervised-by-field
+;   :worked_with worked-with
+})
