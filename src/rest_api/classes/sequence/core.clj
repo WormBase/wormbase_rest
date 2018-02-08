@@ -1,4 +1,4 @@
-(ns rest-api.classes.sequence.main
+(ns rest-api.classes.sequence.core
   (:require
     [clojure.string :as str]
     [rest-api.classes.generic-functions :as generic-functions]
@@ -26,14 +26,13 @@
     (sort-by #(- (:start %) (:end %)) segments)))
 
 (defn get-longest-segment [object]
-
   (let [segments (get-segments object)]
     (if (seq segments)
      (longest-segment segments))))
 
 (defn create-genomic-location-obj [start stop object segment tracks gbrowse]
-  (let [id-kw  (first  (filter #(=  (name %) "id")  (keys object)))
-        role  (namespace id-kw)
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)
         calc-browser-pos (fn [x-op x y mult-offset]
                             (if gbrowse
                               (->> (reduce - (sort-by - [x y]))

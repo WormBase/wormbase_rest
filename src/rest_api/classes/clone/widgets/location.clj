@@ -1,6 +1,6 @@
 (ns rest-api.classes.clone.widgets.location
   (:require
-    [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn tracks [clone]
@@ -10,6 +10,10 @@
           "GENOMIC_CANONICAL"]
    :description "tracks displayed in GBrowse"})
 
+(defn jbrowse-tracks [clone]
+  {:data "Curated_Genes%2CYACs_Fosmids_Cosmids%2CContig%20submissions%2CLinks%20and%20Superlinks"
+   :description "tracks displayed in JBrowse"})
+
 (defn genomic-image [clone]
   {:data (sequence-fns/genomic-obj clone)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
@@ -17,5 +21,6 @@
 (def widget
     {:name generic/name-field
      :tracks tracks
+     :jbrowse_tracks jbrowse-tracks
      :genomic_position generic/genomic-position
      :genomic_image genomic-image})

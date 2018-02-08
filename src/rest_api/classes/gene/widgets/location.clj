@@ -1,6 +1,6 @@
 (ns rest-api.classes.gene.widgets.location
   (:require
-    [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn tracks [gene]
@@ -12,6 +12,12 @@
             "CLONES"])
    :description "tracks displayed in GBrowse"})
 
+(defn jbrowse-tracks [gene]
+  {:data (if (:gene/corresponding-transposon gene)
+          "Transposons%2CTransposon%20Genes"
+          "Curated_Genes%2CClassical_alleles%2CYACs_Fosmids_Cosmids")
+   :description "tracks displayed in JBrowse"})
+
 (defn genomic-image [gene]
   {:data (sequence-fns/genomic-obj gene)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
@@ -20,5 +26,6 @@
     {:name generic/name-field
      :genetic_position generic/genetic-position
      :tracks tracks
+     :jbrowse_tracks jbrowse-tracks
      :genomic_position generic/genomic-position
      :genomic_image genomic-image})

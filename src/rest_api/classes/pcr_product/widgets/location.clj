@@ -1,6 +1,6 @@
 (ns rest-api.classes.pcr-product.widgets.location
   (:require
-    [rest-api.classes.sequence.main :as sequence-fns]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn tracks [pcr-product]
@@ -11,6 +11,10 @@
           "CLONES"]
    :description "tracks displayed in GBrowse"})
 
+(defn jbrowse-tracks [pcr-product]
+  {:data "Curated_Genes%2CMicroarray%20oligo%20probes%2CPCR%20Assays%2CORFeome%20PCR%20Products%2CYACs_Fosmids_Cosmids"
+   :description "tracks displayed in JBrowse"})
+
 (defn genomic-image [pcr-product]
   {:data (sequence-fns/genomic-obj pcr-product)
    :description "The genomic location of the sequence to be displayed by GBrowse"})
@@ -19,5 +23,6 @@
     {:name generic/name-field
      :genetic_position generic/genetic-position
      :tracks tracks
+     :jbrowse_tracks jbrowse-tracks
      :genomic_position generic/genomic-position
      :genomic_image genomic-image})

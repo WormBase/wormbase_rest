@@ -11,8 +11,7 @@
 
 (defn representatives [lab]
   {:data (when-let [rs (:laboratory/representative lab)]
-           (for [r rs]
-             (pack-obj r)))
+           (map pack-obj rs))
    :description "official representatives of the laboratory"})
 
 (defn email [lab]
