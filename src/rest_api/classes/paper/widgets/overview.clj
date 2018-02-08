@@ -86,7 +86,8 @@
    :description "Affiliations of the publication"})
 
 (defn title [p]
-  {:data (:paper/title p)
+  {:data (some-> (:paper/title p)
+                 (str/replace #"\.$" ""))
    :description "The title of the publication"})
 
 (defn editors [p]
