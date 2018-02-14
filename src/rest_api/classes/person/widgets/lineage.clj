@@ -34,16 +34,11 @@
   (some->> (get-roles holder)
            (map
              (fn [role-key]
-               (let [rfrom (keyword
-                             (-> role-key
-                                 (str/replace #"/" ".")
-                                 (str/replace #":" ""))
-                             "from")
-                     rto (keyword
-                           (-> role-key
-                               (str/replace #"/" ".")
-                               (str/replace #":" ""))
-                           "to")
+               (let [role-keyword (partial keyword (-> role-key
+                                           (str/replace #"/" ".")
+                                           (str/replace #":" "")))
+                     rfrom (role-keyword "from")
+                     rto (role-keyword "to")
                      role (first (role-key holder))]
                  (str
                    (when-let [from (rfrom role)]
