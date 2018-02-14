@@ -12,7 +12,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn jbrowse-tracks [pcr]
-  {:data "Curated_Genes%2CMicroarray%20oligo%20probes%2CPCR%20Assays%2CORFeome%20PCR%20Products%2CYACs_Fosmids_Cosmids"
+  {:data "Curated_Genes,Microarray oligo probes,PCR Assays,ORFeome PCR Products,YACs_Fosmids_Cosmids"
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [pcr]

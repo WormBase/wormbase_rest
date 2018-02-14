@@ -14,8 +14,8 @@
 
 (defn jbrowse-tracks [gene]
   {:data (if (:gene/corresponding-transposon gene)
-          "Transposons%2CTransposon%20Genes"
-          "Curated_Genes%2CClassical_alleles%2CYACs_Fosmids_Cosmids")
+          "Transposons,Transposon Genes"
+          "Curated_Genes,Classical_alleles,YACs_Fosmids_Cosmids")
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [gene]

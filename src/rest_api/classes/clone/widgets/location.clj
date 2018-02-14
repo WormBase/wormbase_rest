@@ -11,7 +11,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn jbrowse-tracks [clone]
-  {:data "Curated_Genes%2CYACs_Fosmids_Cosmids%2CContig%20submissions%2CLinks%20and%20Superlinks"
+  {:data "Curated_Genes,YACs_Fosmids_Cosmids,Contig submissions,Links and Superlinks"
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [clone]

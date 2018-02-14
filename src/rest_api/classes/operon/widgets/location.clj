@@ -9,7 +9,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn jbrowse-tracks [operon]
-  {:data "Curated_Genes%2COperons"
+  {:data "Curated_Genes,Operons"
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [operon]

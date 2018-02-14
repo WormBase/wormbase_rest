@@ -17,8 +17,8 @@
 (defn jbrowse-tracks [cds]
   {:data (when (= "Caenorhabditis elegans" (:species/id (:cds/species cds)))
            (if (= "history" (:method/id (:locatable/method cds)))
-             "Gene%20Models%20(historical)"
-             "Curated_Genes%2CTransposon%20Genes%2CTransposons%2CESTs%20(best)%2CProtein%20motifs"))
+             "Gene Models (historical)"
+             "Curated_Genes,Transposon Genes,Transposons,ESTs (best),Protein motifs"))
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [cds]
