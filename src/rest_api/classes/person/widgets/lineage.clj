@@ -307,5 +307,4 @@
   {:ancestors_data ancestors-data
    :supervised supervised
    :supervised_by supervised-by
-   :worked_with worked-with
-})
+   :worked_with worked-with})
