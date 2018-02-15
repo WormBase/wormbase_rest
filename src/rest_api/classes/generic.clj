@@ -1,20 +1,29 @@
-(ns rest-api.classes.generic
+(ns rest-api.classes.generic-functions
   (:require
     [pseudoace.utils :as pace-utils]
-    [rest-api.formatters.object :as obj :refer  [pack-obj]]
+    [rest-api.formatters.object :as obj :refer [pack-obj]]
     [clojure.string :as str]))
 
-(defn name-field [object]
-    (obj/name-field object))
-
 (defn xform-species-name
-    "Transforms a `species-name` from the WB database into
-      a name used to look up connection configuration to a sequence db."
-        [species]
-          (let  [species-name-parts (str/split species #" ")
-                          g  (str/lower-case  (ffirst species-name-parts))
-                                   species  (second species-name-parts)]
-                (str/join "_"  [g species])))
+  "Transforms a `species-name` from the WB database into
+  a name used to look up connection configuration to a sequence db."
+  [species]
+  (if species
+    (let [species-name-parts (str/split species #" ")
+	  g (str/lower-case (ffirst species-name-parts))
+	  species (second species-name-parts)]
+      (str/join "_" [g species]))))
+
+(defn certainty [h]
+  (cond
+    (contains? h :qualifier/certain)
+    "Certain"
+
+    (contains? h :qualifier/uncertain)
+    "Uncertain"
+
+    (contains? h :qualifier/partial)
+    "Partial"))
 
 (defn- is-cgc?  [strain]
   (some #(=  (->>  (:strain.location/laboratory %)

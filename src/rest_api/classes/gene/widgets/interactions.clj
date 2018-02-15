@@ -3,83 +3,46 @@
    [clojure.string :as str]
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
-   [rest-api.formatters.object :refer [obj-get obj-name pack-obj]]
-   [rest-api.classes.generic :as generic]))
+   [rest-api.classes.generic-fields :as generic]
+   [rest-api.formatters.object :refer [pack-obj]]))
+
+(def ^:private sort-by-id (partial sort-by :id))
+
+(def ^:private interaction-phenotype-kw
+  :interaction/interaction-phenotype)
+
+(def ^:private does-not-regulate-kw
+  :interaction.regulation-result.value/does-not-regulate)
 
 (def ^:private interactor-role-map
-  {:interactor-info.interactor-type/effector :effector
-   :interactor-info.interactor-type/affected :affected
-   :interactor-info.interactor-type/trans-regulator :effector
-   :interactor-info.interactor-type/cis-regulatory :effector
+  {:interactor-info.interactor-type/affected :affected
+   :interactor-info.interactor-type/bait :affected
+   :interactor-info.interactor-type/cis-regulated :affected
+   :interactor-info.interactor-type/cis-regulator :effector
+   :interactor-info.interactor-type/effector :effector
+   :interactor-info.interactor-type/target :effector
    :interactor-info.interactor-type/trans-regulated :affected
-   :interactor-info.interactor-type/cis-regulated :affected})
+   :interactor-info.interactor-type/trans-regulator :effector})
 
 (def ^:private interaction-target
-  (some-fn
-   :interaction.interactor-overlapping-gene/gene
-   :interaction.interactor-overlapping-cds/cds
-   :interaction.interactor-overlapping-protein/protein
-   :interaction.feature-interactor/feature))
+  (some-fn :interaction.feature-interactor/feature
+           :interaction.interactor-overlapping-gene/gene
+           :interaction.molecule-interactor/molecule
+           :interaction.rearrangement/rearrangement))
 
-(def ^:private some-cds
+(def ^:private interactors
+  [:interaction/feature-interactor
+   :interaction/interactor-overlapping-cds
+   :interaction/interactor-overlapping-gene
+   :interaction/interactor-overlapping-protein
+   :interaction/molecule-interactor])
+
+(def ^:private corresponding-cds
   (some-fn
    (comp :gene/_corresponding-cds :gene.corresponding-cds/_cds)))
 
-(def some-interaction
+(def interactor
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
-
-(defn- interactor-role [interactor]
-  (let [int-types (:interactor-info/interactor-type interactor)]
-    (or (interactor-role-map (first int-types))
-        (if (some-cds (interaction-target interactor))
-          :associated-product)
-        :other)))
-
-(defn- humanize-name [ident]
-  (-> (name ident)
-      (str/split #":")
-      (last)
-      (str/replace #"-" " ")
-      (str/capitalize)))
-
-(defn- interaction-type [int]
-  (humanize-name (first (:interaction/type int))))
-
-(defn- pack-int-roles [ref-obj int nearby? pred a b direction]
-  (for [x a
-        y b
-        :let [xt (interaction-target x)
-              yt (interaction-target y)]
-        :when (and (pred xt yt)
-                   (or nearby? (= xt ref-obj) (= yt ref-obj)))]
-    [(str (:label (pack-obj xt)) " " (:label (pack-obj yt)))
-     {:type (interaction-type int)
-      :effector xt
-      :affected yt
-      :direction direction}]))
-
-(defn- interaction-info [int ref-obj nearby?]
-  (if (or (not ((:interaction/type int) :interaction.type/predicted))
-          (> (or (:interaction/log-likelihood-score int) 1000) 1.5))
-    (let [{effectors :effector
-           affected :affected
-           others :other
-           associated :associated-product}
-          (group-by interactor-role
-                    (concat
-                     (:interaction/interactor-overlapping-cds int)
-                     (:interaction/interactor-overlapping-gene int)
-                     (:interaction/interactor-overlapping-protein int)
-                     (:interaction/feature-interactor int)))
-          typ (interaction-type int)
-          pack-iroles (partial pack-int-roles ref-obj int nearby?)]
-      (->> (if (or effectors affected)
-             (let [x (concat effectors others)
-                   pred (constantly true)]
-               (pack-iroles pred x affected "Effector->Affected"))
-             (pack-iroles #(not= %1 %2) others others "non-directional"))
-           (into {})
-           (vals)))))
 
 (def int-rules
   '[[(gene-interaction ?gene ?int)
@@ -91,16 +54,119 @@
      (not
       [?ix :interaction/type :interaction.type/predicted])
      [?ih :interaction.interactor-overlapping-gene/gene ?neighbour]
-     [(not= ?gene ?neighbour)]]
+     [(not= ?gene ?neighbour)]]])
 
-    ;; Not actually used since count trick is subtantially faster.
-    [(gene-neighbour-interaction ?gene ?int)
-     (gene-neighbour ?gene ?n1)
-     (gene-interaction ?n1 ?int)
-     [?int :interaction/interactor-overlapping-gene ?ih]
-     [?ih :interaction.interactor-overlapping-gene/gene ?n2]
-     [(not= ?n1 ?n2)]
-     (gene-neighbour ?gene ?n2)]])
+(defn interactor-idents [db]
+  (sort (d/q '[:find [?ident ...]
+               :where
+               [?e :db/ident ?ident]
+               [?e :pace/use-ns "interactor-info"]
+               [_ :db/valueType :db.type/ref]
+               [_ :db.install/attribute ?e]
+               [(namespace ?ident) ?ns]
+               [(= ?ns "interaction")]]
+             db)))
+
+;; Schema doesn't change once a process is running
+(def interactor-refs (memoize interactor-idents))
+
+(defn- interactor-role [interactor]
+  (let [int-types (:interactor-info/interactor-type interactor)]
+    (or (interactor-role-map (first int-types))
+        (if (corresponding-cds (interaction-target interactor))
+          :associated-product)
+        :other)))
+
+(defn- regulatory-result [interaction]
+  (some->> (:interaction/regulation-result interaction)
+           (map :interaction.regulation-result/value)
+           first))
+
+(defn- humanize-name [ident]
+  (let [ident-name (name ident)
+        hname (-> (name ident)
+                  (str/split #":")
+                  (last)
+                  (str/replace #"-" " ")
+                  (str/capitalize))]
+    ;; hacks for when hname trick isn't good enough
+    (cond
+      (= hname "Proteinprotein") "ProteinProtein"
+      :default hname)))
+
+(def deprecated-interaction-types
+  (set [:interaction.type/genetic:asynthetic
+        :interaction.type/genetic:complete-mutual-suppression
+        :interaction.type/genetic:complete-suppression
+        :interaction.type/genetic:complete-unilateral-suppression
+        :interaction.type/genetic:enhancement
+        :interaction.type/genetic:epistasis
+        :interaction.type/genetic:maximal-epistasis
+        :interaction.type/genetic:minimal-epistasis
+        :interaction.type/genetic:mutual-enhancement
+        :interaction.type/genetic:mutual-oversuppression
+        :interaction.type/genetic:mutual-suppression
+        :interaction.type/genetic:negative-genetic
+        :interaction.type/genetic:neutral-epistasis
+        :interaction.type/genetic:neutral-genetic
+        :interaction.type/genetic:no-interaction
+        :interaction.type/genetic:opposing-epistasis
+        :interaction.type/genetic:oversuppression
+        :interaction.type/genetic:oversuppression-enhancement
+        :interaction.type/genetic:partial-mutual-suppression
+        :interaction.type/genetic:partial-suppression
+        :interaction.type/genetic:partial-unilateral-suppression
+        :interaction.type/genetic:phenotype-bias
+        :interaction.type/genetic:positive-epistasis
+        :interaction.type/genetic:positive-genetic
+        :interaction.type/genetic:qualitative-epistasis
+        :interaction.type/genetic:quantitative-epistasis
+        :interaction.type/genetic:suppression
+        :interaction.type/genetic:suppression-enhancement
+        :interaction.type/genetic:synthetic
+        :interaction.type/genetic:unilateral-enhancement
+        :interaction.type/genetic:unilateral-oversuppression
+        :interaction.type/genetic:unilateral-suppression]))
+
+(defn- interaction-type-name [interaction]
+  (let [itypes (->> (:interaction/type interaction)
+                    (remove #(deprecated-interaction-types %))
+                    (map name))
+        type-name (or (some #(or (re-matches #"^gi-module-three:neutral" %)
+                                 (re-matches #"^gi-module-two.*" %)
+                                 (re-matches #"^gi-module-three.*" %))
+                            itypes)
+                      (first itypes))]
+    (case type-name
+      "physical:proteindna" "physical:protein-DNA"
+      "physical:proteinprotein" "physical:protein-protein"
+      "physical:proteinrna" "physical:protein-RNA"
+
+      (cond
+       ;; Hack to produce the "type-name" when real type-name
+       ;; is regulatory.
+       ;; TODO: Perhaps the proposed module system should be able to address
+       ;;       this and produce a cleaner solution.
+       (re-matches #"^regulatory.*" type-name)
+       (let [reg-res (some-> (regulatory-result interaction)
+                             (name))
+             subtype (case reg-res
+                       "negative-regulate" "negatively regulates"
+                       "positive-regulate" "positively regulates"
+                       "does-not-regulate" "does not regulate"
+                       "other")]
+         (format "regulatory:%s" subtype))
+
+       (or (re-matches #"^genetic.*" type-name)
+           (re-matches #"^gi-module-one.*" type-name))
+       "genetic:other"
+
+       (and (not= "predicted" type-name)
+            (not (re-matches #".+:.+" type-name)))
+       (format "%s:other" type-name)
+
+       :default
+       type-name))))
 
 (defn gene-direct-interactions [db gene]
   (d/q '[:find [?int ...]
@@ -120,106 +186,311 @@
                  (> cnt 1)))
        (map first)))
 
-(defn gene-interactions [obj nearby?]
+(defn gene-neighbours? [interaction gene-1 gene-2]
+  (let [db (d/entity-db gene-1)
+        [ix-id g1-id g2-id] (map :db/id [interaction gene-1 gene-2])]
+    (when (and g1-id g2-id)
+      (d/q '[:find (count ?ng) .
+             :in $ % ?int ?gene ?ng
+             :where
+             (gene-neighbour ?gene ?ng)
+             (gene-interaction ?ng ?int)]
+             db
+             int-rules
+             ix-id
+             g1-id
+             g2-id))))
+
+(defn- predicted [int-type role data]
+  (if (= int-type "Predicted")
+    (if-let [node-predicted (get-in data [:nodes (:id role) :predicted])]
+      node-predicted
+      1)
+    0))
+
+(defn gene-interactions [obj data nearby?]
   (let [db (d/entity-db obj)
-        id (:db/id obj)]
-    (map
-     (partial d/entity db)
-     (concat
-      (gene-direct-interactions db id)
-      (if nearby?
-        (gene-nearby-interactions db id))))))
+        id (:db/id obj)
+        ia-ids (concat
+                (gene-direct-interactions db id)
+                (if nearby?
+                  (gene-nearby-interactions db id)))
+        interactions (map (partial d/entity db) ia-ids)]
+    interactions))
 
-(defn- assoc-interaction [obj typ data unpacked]
-  (let [packed (pack-obj unpacked)]
-    (-> data
-        (assoc-in [:nodes (:id packed)]
-                  (pace-utils/vassoc
-                   packed
-                   :predicted (if (= typ "Predicted")
-                                1
-                                0)
-                   :main (if (= unpacked obj)
-                           1)))
-        (assoc-in [:ntypes (:class packed)] 1))))
+(defn- entity-ident
+  ([role]
+   (entity-ident role :class))
+  ([role role-selector]
+   (keyword (role-selector role) "id")))
 
-(defn- update-in-edges [data int-key packed-int papers]
+(defn- annotate-role [obj data int-type role]
+  (let [ident (entity-ident role)]
+    (pace-utils/vassoc role
+                       :predicted (predicted int-type role data)
+                       :main (if (= (ident obj) (:id role))
+                               1))))
+
+(defn- assoc-interaction [obj type-name nearby? data unpacked]
+  (let [key-path [:nodes (:id unpacked)]
+        ar (annotate-role obj data type-name unpacked)]
+    (if (and (nil? (get-in data key-path)) ar)
+      (-> data
+          (assoc-in key-path ar)
+          (assoc-in [:ntypes (:class unpacked)] 1))
+      data)))
+
+(defn- update-in-uniq [data path func value]
+  (update-in data
+             path
+             (fn [old new]
+               (->> (func old new)
+                    (set)
+                    (sort-by-id)
+                    (vec)))
+             value))
+
+(defn- update-in-edges
+  "Updates interaction `packed-int` and `papers` to a unique
+  collection within the edges data structure."
+  [data int-key packed-int papers]
   (-> data
-      (update-in [:edges int-key :interactions]
-                 conj packed-int)
-      (update-in [:edges int-key :citations]
-                 into papers)))
+      (update-in-uniq [:edges int-key :interactions]
+                      conj
+                      packed-int)
+      (update-in-uniq [:edges int-key :citations]
+                      into
+                      papers)))
+
+(defn- fixup-citations [edges]
+  (map (fn [edge]
+         (let [citations (:citations edge)
+               interactions (:interactions edge)
+               n-interactions (count interactions)
+               citations* (if (and (> n-interactions 1)
+                                   (= (count citations) 1))
+                            (->> (first citations)
+                                 (repeat n-interactions)
+                                 (vec))
+                            citations)]
+           (merge edge {:citations citations*})))
+       edges))
+
+(defn- entity-type [entity-map]
+  (some->> (keys entity-map)
+           (filter #(= (name %) "id"))
+           (first)
+           (namespace)))
+
+(defn- involves-focus-gene? [focus-gene interactors nearby?]
+  (let [ident-vals (map :gene/id interactors)
+        ids (->> ident-vals (remove nil?) vec)
+        focused? (some #{(:gene/id focus-gene)} ids)]
+    (when focused?
+      ids)))
+
+(defn- overlapping-genes [interaction]
+   (->> (:interaction/interactor-overlapping-gene interaction)
+        (map :interaction.interactor-overlapping-gene/gene)))
+
+(defn- pack-int-roles
+  "Pack interaction roles into the expected format."
+  [ref-obj interaction nearby? a b direction]
+  (let [type-name (interaction-type-name interaction)
+        non-directional? (= direction "non-directional")]
+    (for [x a
+          y b]
+        (let [xt (interaction-target x)
+              yt (interaction-target y)
+              participants (if non-directional?
+                             (vec (sort-by-id [xt yt]))
+                             [xt yt])
+              packed (map pack-obj participants)
+              roles (zipmap [:effector :affected] participants)
+              labels (filter identity (map :label packed))
+              ix-gene-neigbours? (partial gene-neighbours? interaction ref-obj)
+              participant-ids (involves-focus-gene? ref-obj participants nearby?)
+              includes-focus-gene? (seq participant-ids)]
+          (cond
+            (= xt yt) nil
+
+            ;; Indirect interactions (= nearby? true)
+            (and nearby?
+                 (some nil? (map ix-gene-neigbours? [xt yt])))
+             nil
+
+            ;; Direct interactions  (= nearby? false)
+            (and (not nearby?)
+                 (not= (entity-type ref-obj) "interaction")
+                 (not includes-focus-gene?))
+            nil
+            :default
+            (let [result-key (str/trim (str/join " " labels))]
+              (when result-key
+                (let [result (merge {:type-name type-name
+                                     :direction direction} roles)]
+                  [result-key result]))))))))
+
+(defn- interaction-info [ia ref-obj nearby?]
+  (let [possible-int-types (get ia :interaction/type #{})
+        no-interaction :interaction.type/genetic:no-interaction
+        focus-gene-id (:gene/id ref-obj)
+        lls (or (:interaction/log-likelihood-score ia) 1000)]
+    (cond
+      (and (<= lls 1.5)
+           (not= (entity-type ref-obj) "interaction")
+           (possible-int-types :interaction.type/predicted))
+      nil
+
+      :default
+      (let [ia-refs (interactor-refs (d/entity-db ia))
+            get-interactors (apply juxt ia-refs)
+            interactors (apply concat (get-interactors ia))
+            {effectors :effector
+             affected :affected
+             others :other
+             associated :associated-product} (group-by interactor-role
+                                                       interactors)
+            pack-iroles (partial pack-int-roles ref-obj ia nearby?)
+            roles (if (or effectors affected)
+                    (-> (concat effectors others)
+                        (pack-iroles affected "Effector->Affected"))
+                    (pack-iroles others others "non-directional"))]
+        (when (seq (remove nil? roles))
+          (->> roles
+               (vec)
+               (into {})
+               (vals)))))))
+
+(defn- annotate-interactor-roles [obj data type-name int-roles]
+  (->> int-roles
+       (map pack-obj)
+       (map (partial annotate-role obj data type-name))))
+
+(defn- pack-papers [papers]
+  (->> papers
+       (map (partial pack-obj "paper"))
+       (vec)))
+
+(defn- assoc-showall [data nearby?]
+  (assoc data :showall (or (< (count (:edges data)) 100) nearby?)))
+
+(defn- edge-key [x y type-name phenotype]
+  (str/trimr
+   (str x " " y " " type-name " " (:label phenotype))))
+
+(defn- process-obj-interaction
+  [obj nearby? data interaction type-name effector affected direction]
+  (let [roles [effector affected]
+        packed-roles (annotate-interactor-roles obj data type-name roles)
+        [packed-effector packed-affected] packed-roles
+        [e-name a-name] (map :label packed-roles)
+        papers (:interaction/paper interaction)
+        packed-papers (pack-papers papers)
+        phenotype (first (interaction-phenotype-kw interaction))
+        packed-int (pack-obj "interaction" interaction)
+        packed-phenotype (pack-obj "phenotype" phenotype)
+        e-key (edge-key e-name a-name type-name packed-phenotype)
+        a-key (edge-key a-name e-name type-name packed-phenotype)
+        assoc-int (partial assoc-interaction obj type-name nearby?)
+        result (-> data
+                   (assoc-in [:types type-name] 1)
+                   (assoc-int packed-effector)
+                   (assoc-int packed-affected))]
+     (let [result* (cond
+                      (get-in result [:edges e-key])
+                      (update-in-edges result e-key packed-int packed-papers)
+
+                      (get-in result [:edges a-key])
+                      (update-in-edges result a-key packed-int packed-papers)
+
+                      :default
+                      (assoc-in result
+                                [:edges e-key]
+                                {:affected packed-affected
+                                 :citations packed-papers
+                                 :direction direction
+                                 :effector packed-effector
+                                 :interactions [packed-int]
+                                 :phenotype packed-phenotype
+                                 :type type-name
+                                 :nearby (if nearby? "1" "0")}))]
+        (assoc-showall result* nearby?))))
 
 (defn- obj-interaction
-  [obj data [interaction {:keys [typ effector affected direction]}]]
-  (if (every? pace-utils/not-nil? (map some-interaction [effector affected]))
-    (let [packed (map pack-obj [effector affected])
-          [packed-effector packed-affected] packed
-          int-pheno-key :interaction/interaction-phenotype
-          [ename aname] (map :label packed)
-          ;; warning: could be more than one.
-          phenotype (pack-obj "phenotype" (first (int-pheno-key interaction)))
-          mk-key #(str %1 " " %2 " " type " " (:label phenotype))
-          ;; interactions with the same endpoints but
-          ;; a different phenotype get a separate row.
-          e-key (mk-key ename aname)
-          a-key (mk-key aname ename)
-          i-label (str/join " : " (sort [ename aname]))
-          packed-int (pack-obj "interaction" interaction :label i-label)
-          paper-refs (:interaction/paper interaction)
-          papers (map (partial pack-obj "paper") paper-refs)
-          assoc-int (partial assoc-interaction obj typ)
-          result (-> data
-                     (assoc-in [:types typ] 1)
-                     (assoc-int effector)
-                     (assoc-int affected)
-                     (update-in [:phenotypes]
-                                pace-utils/vassoc
-                                (:id phenotype)
-                                phenotype))]
-      (cond
-        (get-in result [:edges e-key])
-        (update-in-edges result e-key packed-int papers)
+  [obj nearby? data [interaction
+                     {:keys [type-name effector affected direction]}]]
+  (let [roles [effector affected]]
+    (cond
+      (not-any? interactor roles) data
+      (some nil? roles) data
+      :default (process-obj-interaction obj
+                                        nearby?
+                                        data
+                                        interaction
+                                        type-name
+                                        effector
+                                        affected
+                                        direction))))
 
-        (get-in result [:edges a-key])
-        (update-in-edges result a-key packed-int papers)
+(defn- obj-interactions
+  [obj data & {:keys [nearby?]}]
+  (let [ints (gene-interactions obj data nearby?)
+        mk-interaction (partial obj-interaction obj nearby?)
+        mk-pair-wise (fn [interaction]
+                       (map vector
+                            (repeat interaction)
+                            (interaction-info interaction obj nearby?)))]
+    (if (and nearby? (> (count ints) 3000))
+      (assoc data :showall "0")
+      (reduce mk-interaction data (mapcat mk-pair-wise ints)))))
 
-        :default
-        (assoc-in result
-                  [:edges e-key]
-                  {:interactions [packed-int]
-                   :citations (set papers)
-                   :type typ
-                   :effector packed-effector
-                   :affected packed-affected
-                   :direction direction
-                   :phenotype phenotype
-                   :nearby 0})))
-    data))
+(defn- collect-phenotypes
+  "Collect phenotypes from node edges."
+  [edges]
+  (->> edges
+       (map :phenotype)
+       (filter identity)
+       (set)
+       (map (fn [pt]
+              [(:id pt) pt]))
+       (into {})
+       (not-empty)))
 
-(defn obj-interactions [obj nearby?]
-  (let [ints (gene-interactions obj nearby?)]
-    (->> ints
-         (mapcat (fn [interaction]
-                   (map vector
-                        (repeat interaction)
-                        (interaction-info interaction obj nearby?))))
-         (reduce (partial obj-interaction obj) {}))))
+(defn- build-interactions [gene arrange-results]
+  (let [edge-vals (comp vec fixup-citations vals :edges)
+        data (obj-interactions gene {} :nearby? false)
+        edges (edge-vals data)
+        results (obj-interactions gene data :nearby? true)
+        edges-all (edge-vals results)]
+    (-> results
+        (assoc :phenotypes (collect-phenotypes edges-all))
+        (arrange-results edges edges-all))))
 
-(defn interactions [gene]
+(defn- arrange-interactions [results edges edges-all]
+  (if (:showall results)
+    (-> (assoc results :edges edges)
+        (assoc :edges_all edges-all)
+        (assoc :class "Gene")
+        (assoc :showall "1"))
+    {:edges edges}))
+
+(defn- arrange-interaction-details [results edges edges-all]
+  (-> results
+      (assoc :edges edges-all)
+      (update-in [:showall] #(str (if % 1 0)))))
+
+(defn interactions
+  "Produces a data structure suitable for rendering the table listing."
+  [gene]
   {:description "genetic and predicted interactions"
-   :data
-   {:edges (vals (:edges (obj-interactions gene false)))}})
+   :data (build-interactions gene arrange-interactions)})
 
-(defn interaction-details [gene id]
-  {:data (let [{:keys [types edges ntypes nodes phenotypes]}
-               (obj-interactions gene true)]
-           {:types types
-            :edges (vals edges)
-            :ntypes ntypes
-            :nodes nodes
-            :phenotypes phenotypes
-            :showall 1})})
+(defn interaction-details
+  "Produces a data-structure suitable for rendering a cytoscape graph."
+  [gene]
+  {:description "addtional nearby interactions"
+   :data (build-interactions gene arrange-interaction-details)})
 
 (def widget
   {:name generic/name-field

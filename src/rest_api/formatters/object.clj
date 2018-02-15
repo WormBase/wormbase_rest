@@ -24,11 +24,21 @@
   return the short name of the species, otherwise \"all\"."
   [class obj]
   (let [species-ident (keyword class "species")]
-    (if-let [species (species-ident obj)]
-      (if-let [[_ g species] (re-matches #"(.).*[ _](.+)"
-                                         (:species/id species))]
-        (.toLowerCase (str g "_" species))
-        "unknown")
+    (if-let [species-many (species-ident obj)]
+      (let [species (if (contains? species-many :species/id)
+                      species-many
+                      (first species-many))]
+        (if-let [species-obj (let [species-kw (keyword (str class ".species") "species")]
+                               (if (contains? species species-kw)
+                                 (species-kw species)
+                                 species))]
+          (if-let [species-id (:species/id species-obj)]
+            (if-let [[_ g species-str]
+                     (re-matches #"(.).*[ _](.+)" species-id)]
+              (.toLowerCase (str g "_" species-str))
+              "unknown")
+            "unknown")
+          "unknown"))
       "all")))
 
 (defmulti obj-label
@@ -38,6 +48,18 @@
 (defmethod obj-label "gene" [_ obj]
   (or (:gene/public-name obj)
       (:gene/id obj)))
+
+(defmethod obj-label "wbprocess" [_ obj]
+  (or (:wbprocess/public-name obj)
+      (:wbprocess/id obj)))
+
+(defmethod obj-label "laboratory" [_ obj]
+  (or (first (:laboratory/mail obj))
+      (:laboratory/id obj)))
+
+(defmethod obj-label "protein" [_ prot]
+  (or (first (:protein/gene-name prot))
+      (:protein/id prot)))
 
 (defmethod obj-label "phenotype" [_ obj]
   (or (->> (:phenotype/primary-name obj)
@@ -65,25 +87,30 @@
        (first))))
 
 (defn author-list [paper]
-  (let [authors (->> (:paper/author paper)
-                     (sort-by :ordered/index))]
+  (let [authors (sort-by :ordered/index (:paper/author paper))]
     (cond
      (= (count authors) 1)
      (author-lastname (first authors))
 
      (< (count authors) 6)
-     (let [names (map author-lastname authors)]
-       (str (str/join ", " (butlast names)) ", & " (last names)))
+     (let [last-names (map author-lastname authors)]
+       (str (str/join ", " (butlast last-names))
+            " & "
+            (last last-names)))
 
      :default
      (str (author-lastname (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
-  (if (seq (:paper/publication-date paper))
-    (str (author-list paper)
-         ", "
-         (first (str/split (:paper/publication-date paper)
-                           #"-")))))
+  (if (contains? paper :paper/author)
+    (if-let [year (when (seq (:paper/publication-date paper))
+                    (first
+                      (str/split
+                        (:paper/publication-date paper)
+                        #"-")))]
+      (str (author-list paper) ", " year)
+      (author-list paper))
+    (:paper/id paper)))
 
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
@@ -99,11 +126,14 @@
   (:do-term/name term))
 
 (defmethod obj-label "person" [_ person]
-  (:person/standard-name person))
+ (or (:person/standard-name person)
+     (or (:author/id (first (:person/possibly-publishes-as person)))
+         (:person/id person))))
 
 (defmethod obj-label "construct" [_ cons]
   (or (first (:construct/public-name cons))
-      (:construct/id cons)))
+      (or (first (:construct/other-name cons))
+          (:construct/id cons))))
 
 (defmethod obj-label "transgene" [_ tg]
   (or (:transgene/public-name tg)
@@ -121,6 +151,12 @@
 (defmethod obj-label "protein" [_ prot]
   (or (first (:protein/gene-name prot))
       (:protein/id prot)))
+
+(defmethod obj-label "pcr_oligo" [_ pcr]
+  (or (:pcr-product/id pcr)
+      (or (:oligo/id pcr)
+          (:oligo-set/id pcr))))
+
 
 (def q-interactor
   '[:find [?interactor ...]
@@ -160,18 +196,17 @@
   ;; computing the display name.
   (let [db (d/entity-db int)]
     (if-let [il (seq (d/q q-interactor db (:db/id int)))]
-      (->>
-       (map
-        (fn [interactor]
-          (cond
-            (string? interactor)
-            interactor
+      (->> il
+           (map
+            (fn [interactor]
+              (cond
+                (string? interactor)
+                interactor
 
-            :default
-            (:label (pack-obj (d/entity db interactor)))))
-        il)
-       (sort)
-       (str/join " : "))
+                :default
+                (:label (pack-obj (d/entity db interactor))))))
+           (sort)
+           (str/join " : "))
       (:interaction/id int))))
 
 (defmethod obj-label "motif" [_ motif]
@@ -188,7 +223,7 @@
 (defmethod obj-name "gene" [class db id]
   (let [obj (obj-get class db id)]
     {:data
-     {:id    (:gene/id obj)
+     {:id (:gene/id obj)
        :label (or (:gene/public-name obj)
                 (:gene/id obj))
        :class "gene"
@@ -233,6 +268,15 @@
    (:go-term/id obj)
    "go-term"
 
+   (:pcr-product/id obj)
+   "pcr_oligo"
+
+   (:oligo-set/id obj)
+   "pcr_oligo"
+
+   (:oligo/id obj)
+   "pcr_oligo"
+
    :default
    (if-let [k (first (filter #(= (name %) "id") (keys obj)))]
      (namespace k))))
@@ -243,7 +287,10 @@
    (pack-obj (obj-class obj) obj))
   ([class obj & {:keys [label]}]
    (if obj
-     {:id ((keyword class "id") obj)
+     {:id (or ((keyword class "id") obj)
+              (or (:oligo-set/id obj)
+                  (or (:pcr-product/id obj)
+                      (:oligo/id obj))))
       :label (or label (obj-label class obj))
       :class (if class
                (if (= class "author")
@@ -271,14 +318,20 @@
           (pack-obj "paper" paper)))
 
    :Date_last_updated
-   (if-let [last-updated (:evidence/date-last-updated holder)]
+   (when-let [last-updated (:evidence/date-last-updated holder)]
      (let [ds (-> last-updated dates/format-date str)]
        [{:id ds
          :label ds
          :class "text"}]))
 
-   :Remark
-   (seq (:evidence/remark holder))
+;   :Remark
+;   (or (seq (:evidence/remark holder))
+;       (when-let [ss (:anatomy-function-info/remark holder)]
+;	 (for [s ss]
+;	   {:taxonomy "all"
+;	    :class "txt"
+;	    :label s
+;	    :id s})))
 
    :Published_as
    (seq (for [pa (:evidence/published-as holder)]
@@ -286,19 +339,17 @@
            :label pa}))
 
    :Author_evidence
-   (seq (for [a (:evidence/author-evidence holder)
-              :let [author (:evidence.author-evidence/author holder)]]
-          {:evidence
-           ;; Notes seem to be ignored here.
-           (pack-obj "author" author)}))
+   (seq (for [ah (:evidence/author-evidence holder)
+              :let [author (:evidence.author-evidence/author ah)]]
+          {:evidence (pack-obj "author" author)}))
 
    :Accession_evidence
-   (if-let [accs (:evidence/accession-evidence holder)]
+   (when-let [accs (:evidence/accession-evidence holder)]
      (for [{acc :evidence.accession-evidence/accession
             db  :evidence.accession-evidence/database} accs]
        {:id acc
         :label (format "%s:%s" (:database/id db) acc)
-        :class (:database/id acc)}))
+        :class (:database/id db)}))
 
 
    :Protein_id_evidence
@@ -312,43 +363,89 @@
              (:evidence/go-term-evidence holder)))
 
    :Expr_pattern_evidence
-   (if-let [epe (:evidence/expr-pattern-evidence holder)]
+   (when-let [epe (:evidence/expr-pattern-evidence holder)]
      (map (partial pack-obj "expr-pattern") epe))
 
    :Microarray_results_evidence
-   (if-let [e (:evidence/microarray-results-evidence holder)]
+   (when-let [e (:evidence/microarray-results-evidence holder)]
      (map (partial pack-obj "microarray-results") e))
 
    :RNAi_evidence   ;; could be multiples?
-   (if-let [rnai (first (:evidence/rnai-evidence holder))]
+   (when-let [rnai (first (:evidence/rnai-evidence holder))]
      {:id (:rnai/id rnai)
       :label (if-let [hn (:rnai/history-name rnai)]
                (format "%s (%s)" (:rnai/id rnai) hn)
                (:rnai/id rnai))})
 
    :Feature_evidence
-   (if-let [features (:evidence/feature-evidence holder)]
+   (when-let [features (:evidence/feature-evidence holder)]
      (map (partial pack-obj "feature") features))
 
    :Laboratory_evidence
-   (if-let [labs (:evidence/laboratory-evidence holder)]
+   (when-let [labs (:evidence/laboratory-evidence holder)]
      (map (partial pack-obj "laboratory") labs))
 
    :From_analysis
-   (if-let [anas (:evidence/from-analysis holder)]
+   (when-let [anas (:evidence/from-analysis holder)]
      (map (partial pack-obj "analysis") anas))
 
    :Variation_evidence
-   (if-let [vars (:evidence/variation-evidence holder)]
+   (when-let [vars (:evidence/variation-evidence holder)]
      (map (partial pack-obj "variation") vars))
 
    :Mass_spec_evidence
-   (if-let [msps (:evidence/mass-spec-evidence holder)]
+   (when-let [msps (:evidence/mass-spec-evidence holder)]
      (map (partial pack-obj "mass-spec-peptide") msps))
 
    :Sequence_evidence
-   (if-let [seqs (:evidence/sequence-evidence holder)]
-     (map (partial pack-obj "sequence" seqs)))))
+   (when-let [seqs (:evidence/sequence-evidence holder)]
+     (map (partial pack-obj "sequence") seqs))
+
+   :genotype
+   (when-let [c (:anatomy-function.assay/condition holder)]
+     (str/join "<br /> " (:condition/genotype c)))
+
+   :Autonomous
+   (when-let [ss (:anatomy-function-info/autonomous holder)]
+       {:taxonomy "all"
+        :class "txt"
+        :label "Autonomous"
+        :id "Autonomous"})
+
+   :Necessary
+   (when-let [ss (:anatomy-function-info/necessary holder)]
+       {:taxonomy "all"
+        :class "txt"
+        :label "Necessary"
+        :id "Necessary"})
+
+   :Unnecessary
+   (when-let [ss (:anatomy-function-info/unnecessary holder)]
+       {:taxonomy "all"
+        :class "txt"
+        :label "Unnecessary"
+        :id "Unnecessary"})
+
+   :Nonautonomous
+   (when-let [ss (:anatomy-function-info/nonautonomous holder)]
+       {:taxonomy "all"
+        :class "txt"
+        :label "Nonautonomous"
+        :id "Nonautonomous"})
+
+   :Sufficient
+   (when-let [ss (:anatomy-function-info/sufficient holder)]
+       {:taxonomy "all"
+        :class "txt"
+        :label "Sufficient"
+        :id "Sufficient"})
+
+   :Insufficient
+   (when-let [iss (:anatomy-function-info/insufficient holder)]
+       {:taxonomy "all"
+        :class "txt"
+        :label "Insuffiecient"
+        :id "Insufficient"})))
 
 (defn pack-text
   "Normalize text to behave like a pack object."
@@ -366,11 +463,18 @@
     (-> (name ident)
         (str/split #":")
         (last)
+        (str/replace #"_" " ")
         (str/replace #"-" " ")
         (str/capitalize))))
 
-(defn name-field [gene]
-  (let [data (pack-obj gene)]
+(defn name-field [object]
+  (let [data (pack-obj object)]
     {:data (not-empty data)
      :description (format "The name and WormBase internal ID of %s"
                           (:id data))}))
+
+(defn tag-obj [label]
+  {:taxonomy "all"
+   :class "tag"
+   :label label
+   :id label})

@@ -51,8 +51,14 @@
                             "useSSL=false&"
                             "useLocalSessionState=true"))}})))))))
 
-(defn gene-features [db-spec gene-name]
-  (sequencesql/gene-features db-spec {:name gene-name}))
+(defn get-features [db-spec feature-name]
+  (sequencesql/get-features db-spec {:name feature-name}))
+
+(defn get-features-by-attribute [db-spec feature-name]
+  (let [attributes (sequencesql/get-attribute-id-by-name db-spec {:name feature-name})]
+    (flatten
+      (for [attribute attributes]
+        (sequencesql/get-features-by-id db-spec  attribute)))))
 
 (defn sequence-features-where-type [db-spec feature-name method]
   (sequencesql/sequence-features-where-type

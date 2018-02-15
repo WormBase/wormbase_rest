@@ -36,24 +36,30 @@
                           entity-handlers)]
     {:fields result}))
 
-(defn make-request-handler [scheme entity-handler entity-class]
+(defn make-request-handler [scheme entity-handler entity-ns]
   (fn [request]
     (let [db (d/db datomic-conn)
           id (get-in request [:params :id])
-          attr (keyword entity-class "id")
+          attr (if (= entity-ns "pcr-oligo")
+                :pcr-product/id
+                (keyword entity-ns "id"))
           lookup-ref [attr id]]
-      (if-let [entity (d/entity db lookup-ref)]
+      (if-let [entity (or (d/entity db lookup-ref)
+                          (or (d/entity db [:oligo/id id])
+                              (d/entity db [:oligo-set/id id])))]
         (->> (conform-to-scheme scheme entity-handler entity request)
-             (merge {:class entity-class
+             (merge {:class entity-ns
                      :name id
                      :uri (conform-uri request)})
-             (res/ok))
-        (entity-not-found entity-class id)))))
-
+             (res/ok))))))
 (defprotocol RouteSpecification
   (-create-routes
     [route-spec]
     [route-spec opts]))
+
+(defn swagger-id-field [entity-type-alias]
+  (let [description (format "WormBase %s ID" (str/capitalize entity-type-alias))]
+    (sweet/describe schema/Str description)))
 
 (defrecord RouteSpec [datatype widget field]
   RouteSpecification
@@ -63,8 +69,9 @@
                        (apply merge (cons fields (->> this :widget vals)))
                        fields)
           route-data (assoc this :field field-defs)
-          entity-class (:entity-class route-data)
-          entity-segment (str/replace entity-class #"-" "_")]
+          entity-ns (:entity-ns route-data)
+          entity-uri-name (get route-data :uri-name entity-ns)
+          entity-segment (str/replace entity-uri-name #"-" "_")]
       (flatten
         (for [kw [:widget :field]
               :let [scheme (name kw)
@@ -74,8 +81,8 @@
             (sweet/context (str "/" scheme "/" entity-segment) []
               :tags [(str entity-segment " " scheme "s")]
               (sweet/GET (str "/:id/" ep-name) []
-                :path-params [id :- schema/Str]
-                (make-request-handler kw entity-handler entity-class))))))))
+                :path-params [id :- (swagger-id-field entity-segment)]
+                (make-request-handler kw entity-handler entity-ns))))))))
 
   (-create-routes [this]
     (-create-routes this {:publish-widget-fields? true})))

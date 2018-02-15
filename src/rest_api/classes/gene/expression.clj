@@ -51,29 +51,13 @@
     [?gene :gene/corresponding-transcript ?th]
     [?th :gene.corresponding-transcript/transcript ?transcript]])
 
-(defmulti fpkm-expression-summary-ls
-  "Used for the expression widget."
-  (fn [entity]
-    (contains? entity :gene/id)))
-
-(defmethod fpkm-expression-summary-ls
-  true
-  [gene]
-  (let [db (d/entity-db gene)
-        result-tuples (->> (d/q '[:find ?analysis ?fpkm ?stage
-                                  :in $ ?gene
-                                  :where
-                                  [?gene :gene/rnaseq ?rnaseq]
-                                  [?rnaseq :gene.rnaseq/stage ?stage]
-                                  [?rnaseq :gene.rnaseq/fpkm ?fpkm]
-                                  [?rnaseq
-                                   :evidence/from-analysis
-                                   ?analysis]]
-                                db (:db/id gene))
-                           (map (fn [[analysis-id fpkm stage-id]]
-                                  (let [analysis (d/entity db analysis-id)
-                                        stage (d/entity db stage-id)]
-                                    [analysis fpkm stage]))))
+(defn- process-fpkm
+  [db rels]
+  (let [result-tuples (map (fn [[analysis-id fpkm stage-id]]
+                             (let [analysis (d/entity db analysis-id)
+                                   stage (d/entity db stage-id)]
+                               [analysis fpkm stage]))
+                           rels)
         results (->> result-tuples
                      (filter (fn [[analysis]]
                                (not (control-analysis? analysis))))
@@ -101,15 +85,76 @@
      :description (str "Fragments Per Kilobase of transcript per "
                        "Million mapped reads (FPKM) expression data")}))
 
+(defmulti fpkm-expression-summary-ls
+  "Used for the expression widget."
+  (fn [entity]
+    (first (filter (fn [kw]
+                     (kw entity))
+                   [:gene/id :transcript/id :cds/id :pseudogene/id]))))
+
 (defmethod fpkm-expression-summary-ls
-  false
+  :gene/id
+  [gene]
+  (let [db (d/entity-db gene)]
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?gene
+                :where
+                [?gene :gene/rnaseq ?rnaseq]
+                [?rnaseq :gene.rnaseq/stage ?stage]
+                [?rnaseq :gene.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id gene))
+         (process-fpkm db))))
+
+(defmethod fpkm-expression-summary-ls
+  :transcript/id
   [transcript]
   (let [db (d/entity-db transcript)]
-    (->> (:db/id transcript)
-         (d/q q-corresponding-transcript db)
-         (d/entity db)
-         (fpkm-expression-summary-ls))))
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?transcript
+                :where
+                [?transcript :transcript/rnaseq ?rnaseq]
+                [?rnaseq :transcript.rnaseq/stage ?stage]
+                [?rnaseq :transcript.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id transcript))
+         (process-fpkm db))))
 
+(defmethod fpkm-expression-summary-ls
+  :cds/id
+  [cds]
+  (let [db (d/entity-db cds)]
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?cds
+                :where
+                [?cds :cds/rnaseq ?rnaseq]
+                [?rnaseq :cds.rnaseq/stage ?stage]
+                [?rnaseq :cds.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id cds))
+         (process-fpkm db))))
+
+(defmethod fpkm-expression-summary-ls
+  :pseudogene/id
+  [pseudogene]
+  (let [db (d/entity-db pseudogene)]
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?pseudogene
+                :where
+                [?pseudogene :pseudogene/rnaseq ?rnaseq]
+                [?rnaseq :pseudogene.rnaseq/stage ?stage]
+                [?rnaseq :pseudogene.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id pseudogene))
+         (process-fpkm db))))
 
 
 ;;
@@ -143,9 +188,31 @@
                       :label (format "<strong>and %s more</strong>" (- size capacity)))])
       (map pack-obj terms))))
 
+(defn- pack-obj-with-class [obj]
+  )
+
 (defn- expr-pattern-detail [expr-pattern qualifier]
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
+   :Description (str/join "<br/>" (:expr-pattern/pattern expr-pattern))
+
+   :Reagents
+   (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody-info :expr-pattern/variation]
+        (map (fn [kw] (kw expr-pattern)))
+        (apply concat
+               (some->> (:expr-pattern/strain expr-pattern)
+                        (conj []))
+               (->> (:variation.expr-pattern/_expr-pattern expr-pattern)
+                    (map :variation/_expr-pattern)))
+
+        (map (fn [obj]
+               (let [packed (pack-obj obj)]
+                 (assoc packed
+                        :label
+                        (format "%s (%s)" (:label packed) (:class packed)))
+                 )))
+        (seq))
+
    :Paper (if-let [paper-holders (:expr-pattern/reference expr-pattern)]
             (->> paper-holders
                  (map :expr-pattern.reference/paper)
@@ -162,30 +229,53 @@
 (defn- pack-image [picture]
   (let [prefix (if (re-find #"<Journal_URL>" (or (:picture/acknowledgement-template picture) ""))
                  (:paper/id (first (:picture/reference picture)))
-                 (:person/id (first (:picture/contact picture))))
-        [_ picture-name format-name] (re-matches #"(.+)\.(.+)" (:picture/name picture))]
-    (-> picture
-        (pack-obj)
-        (assoc :thumbnail
-               {:format (or format-name "")
-                :name (str prefix "/" (or picture-name (:picture/name picture)))
-                :class "/img-static/pictures"}))))
+                 (:person/id (first (:picture/contact picture))))]
+    (if-let [[_ picture-name format-name] (re-matches #"(.+)\.(.+)" (or (:picture/name picture) ""))]
+      (-> picture
+          (pack-obj)
+          (assoc :thumbnail
+                 {:format (or format-name "")
+                  :name (str prefix "/" (or picture-name (:picture/name picture)))
+                  :class "/img-static/pictures"}
 
-(defn- expression-table-row [db [ontology-term-dbid expr-pattern-dbid qualifier-dbid]]
-  (let [ontology-term (d/entity db ontology-term-dbid)
-        expr-pattern (d/entity db expr-pattern-dbid)
-        qualifier (d/entity db qualifier-dbid)]
+                 :description
+                 (if-let [expr-patterns (seq (:picture/expr-pattern picture))]
+                   (->> (map :expr-pattern/id expr-patterns)
+                        (str/join ", ")
+                        (str "curated pictures for "))))))))
+
+(defn- expression-table-row [db ontology-term-dbid relations]
+  (let [ontology-term (d/entity db ontology-term-dbid)]
     {:ontology_term (pack-obj ontology-term)
 
-     :expression_pattern
-     (if-let [packed-images (->> (:picture/_expr-pattern expr-pattern)
+     :images
+     (if-let [packed-images (->> relations
+                                 (map (fn [[_ expr-pattern-dbid _]]
+                                        (:picture/_expr-pattern (d/entity db expr-pattern-dbid))))
+                                 (apply clojure.set/union)
+                                 (filter (fn [picture]
+                                           (or ((set (:picture/life-stage picture)) ontology-term)
+                                               ((set (:picture/cellular-component picture)) ontology-term)
+                                               ((set (:picture/anatomy picture)) ontology-term))))
                                  (map pack-image)
                                  (seq))]
-       (assoc (pack-obj expr-pattern) :curated_images packed-images)
-       (pack-obj expr-pattern))
+       {:curated_images packed-images})
 
      :details
-     {:evidence (expr-pattern-detail expr-pattern qualifier)}}))
+     (map (fn [[_ expr-pattern-dbid qualifier-dbid]]
+            (let [expr-pattern (d/entity db expr-pattern-dbid)
+                  qualifier (d/entity db qualifier-dbid)]
+              {:text (pack-obj expr-pattern)
+               :evidence (expr-pattern-detail expr-pattern qualifier)}))
+          relations)}))
+
+(defn- expression-table [db ontology-relations]
+  ;; ontology-relation is a collection of tuples [ontology-term-dbid expr-pattern-dbid qualifier-dbid]
+  (->> ontology-relations
+       (group-by first)
+       (map (fn [[term-dbid subset-relstions]]
+              (expression-table-row db term-dbid subset-relstions)))
+       (seq)))
 
 (defn expressed-in [gene]
   (let [db (d/entity-db gene)]
@@ -200,8 +290,8 @@
                   [?ep :expr-pattern/anatomy-term ?th]
                   [?th :expr-pattern.anatomy-term/anatomy-term ?t]]
                 db (:db/id gene))]
-       (seq (map #(expression-table-row db %) anatomy-relations)))
-     :description "the tissue that the gene is expressed in"}))
+       (expression-table db anatomy-relations))
+     :description "the tissue in which the gene is expressed"}))
 
 (defn expressed-during [gene]
   (let [db (d/entity-db gene)]
@@ -216,8 +306,8 @@
                   [?ep :expr-pattern/life-stage ?th]
                   [?th :expr-pattern.life-stage/life-stage ?t]]
                 db (:db/id gene))]
-       (seq (map #(expression-table-row db %) life-stage-relations)))
-     :description "the tissue that the gene is expressed in"}))
+       (expression-table db life-stage-relations))
+     :description "the developmental stage in which the gene is expressed"}))
 
 (defn subcellular-localization [gene]
   (let [db (d/entity-db gene)]
@@ -232,8 +322,8 @@
                   [?ep :expr-pattern/go-term ?th]
                   [?th :expr-pattern.go-term/go-term ?t]]
                 db (:db/id gene))]
-       (seq (map #(expression-table-row db %) go-term-relations)))
-     :description "the tissue that the gene is expressed in"}))
+       (expression-table db go-term-relations))
+     :description "the cellular component in which the gene is expressed"}))
 
 ;;
 ;; End of expression pattern related tables
@@ -261,9 +351,14 @@
              (map :expr-pattern.reference/paper)
              (map pack-obj))]
     (if references
-      {:text (str/join "; " descriptions)
-       :evidence {:Reference references}}
-      (str/join "; " descriptions))))
+      (let [text (str/join " " descriptions)
+            max-word-count 50
+            truncated-text (->> (str/split text #"\s+" (+ 1 max-word-count))
+                                (take max-word-count)
+                                (str/join " ")
+                                (format "%s..."))]
+        {:text truncated-text
+         :evidence {:Reference references}}))))
 
 (defn- profiling-graph-table-row [db expr-pattern-dbid]
   (let [expr-pattern (d/entity db expr-pattern-dbid)
@@ -336,6 +431,34 @@
      :description "Large-scale cellular resolution compendium of gene expression dynamics"}))
 
 
+;; expression pattern images
+(defn expr-pattern-images [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [picture-dbids
+           (d/q '[:find [?pic ...]
+                  :in $ ?gene
+                  :where
+                  [?gh :expr-pattern.gene/gene ?gene]
+                  [?ep :expr-pattern/gene ?gh]
+                  [?pic :picture/expr-pattern ?ep]]
+                db (:db/id gene))]
+       (->> picture-dbids
+            (map #(d/entity db %))
+            (sort-by (fn [picture]
+                       ;; is picture for expression profiling graph? If so, they come last
+                       (->> picture
+                            (:picture/expr-pattern)
+                            (some (fn [expr-pattern]
+                                    (or (:expr-pattern/microarray expr-pattern)
+                                        (:expr-pattern/rnaseq expr-pattern)
+                                        (:expr-pattern/tiling-array expr-pattern))))
+                            (boolean))))
+            (map pack-image)
+            (seq)))
+     :description "Expression pattern images"}))
+
+
 ;; example gene with expression movies WBGene00016948
 (defn expression-movies [gene]
   (let [db (d/entity-db gene)]
@@ -357,7 +480,7 @@
                              :movie (:expr-pattern/movieurl expr-pattern)
                              :details (str/join "; " (:expr-pattern/pattern expr-pattern))})))
                  {} expr-pattern-dbids)))
-     :description "the tissue that the gene is expressed in"}))
+     :description "interactive 4D expression movies"}))
 
 
 (defn expression-cluster [gene]
@@ -430,4 +553,49 @@
      :description "anatomy functions associatated with this gene"}))
 ;;
 ;; end of anatomy functions field
+;;
+
+;;
+;; microarray topography map
+;;
+
+(defn- pack-expr-profile [expr-profile]
+  (if-let [mountains (->> (:expr-profile/expr-map expr-profile)
+                          (map :sk-map/mountain)
+                          (seq))]
+    (assoc (pack-obj expr-profile)
+           :label
+           (format "%s Mountain: %s" (:expr-profile/id expr-profile) (str/join " " mountains)))
+    (pack-obj expr-profile)))
+
+(def gene-pcr-product-rules
+  '[[(gene-pcr-product ?gene ?pcr)
+     [?gene :gene/corresponding-transcript ?th]
+     [?th :gene.corresponding-transcript/transcript ?t]
+     [?t :transcript/corresponding-pcr-product ?pcr]]
+    [(gene-pcr-product ?gene ?pcr)
+     [?gene :gene/corresponding-cds ?th]
+     [?th :gene.corresponding-cds/cds ?t]
+     [?t :cds/corresponding-pcr-product ?pcr]]])
+
+(defn microarray-topology-map-position [gene]
+  (let [db (d/entity-db gene)]
+    {:data
+     (let [expr-profile-dbids
+           (d/q '[:find [?pr ...]
+                  :in $ % ?gene
+                  :where
+                  (gene-pcr-product ?gene ?pcr)
+                  [?pr :locatable/parent ?pcr]
+                  [?pr :expr-profile/id]]
+                db gene-pcr-product-rules (:db/id gene))]
+       (->> expr-profile-dbids
+            (map #(d/entity db %))
+            (map pack-expr-profile)
+            (sort-by :id)
+            (seq)))
+     :description "microarray topography map"}))
+
+;;
+;; End of microarray topography map
 ;;

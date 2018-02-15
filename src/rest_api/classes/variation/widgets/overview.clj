@@ -1,88 +1,74 @@
 (ns rest-api.classes.variation.widgets.overview
   (:require
-    [datomic.api :as d]
-    [clojure.string :as str]
-    [rest-api.classes.variation.generic :as generic]
-    [rest-api.formatters.object :as obj :refer [pack-obj]]))
+   [rest-api.classes.generic-fields :as generic]
+   [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn taxonomy [variation]
-  {:data (if-let [sid(:species/id (:variation/species variation))]
-             (let [[genus species] (str/split sid #" ")]
-               {:genus genus
-                :species species}))
-   :description "the genus and species of the current object"})
+(defn corresponding-gene [v]
+  {:data (when-let [ghs (:variation/gene v)]
+           (for [gh ghs
+                 :let [gene (:variation.gene/gene gh)]]
+             [(pack-obj gene)
+              (if (some identity
+                    (for [h (:gene/reference-allele gene)
+                          :let [ref-variation (:gene.reference-allele/variation h)]]
+                      (if (= (:variation/id ref-variation) (:variation/id v)) true false)))
+               " (reference allele)" "")]))
+   :description "gene in which this variation is found (if any)"})
 
-; This needs to be worked on
-(defn corresponding-gene [variation]
-  (let [db  (d/entity-db variation)
-        genes (seq (map :variation.gene/gene (:variation/gene variation)))]
-    {:data (if (nil? genes)
-             (for [gene genes]
-               (pack-obj gene)))
-     :description "gene in which this variation is found (if any)"}))
-
-;need to find and instance where get-evidence works for variation
-(defn evidence [variation]
-  {:data (if-let [evidence (obj/get-evidence variation)]
+(defn evidence [v]
+  {:data (when-let [evidence (:variation/evidence v)]
            {:text ""
-            :evidence evidence})
+            :evidence (obj/get-evidence evidence)})
    :description "Evidence for this Variation"})
 
-(defn pysical-class [variation]
-  (cond
-     (:variation/substitution variation) "Substitution"
-     (:variation/insertion variation) "Insertion"
-     (:variation/deletion variation) "Deletion"
-     (:variation/tandem-duplicatino variation) "Tandem Duplication"
-     (:variation/pcr-product variation) "PCR Product"))
+(defn variation-type [v]
+  {:data
+   {:general_class (not-empty
+                     (remove
+                       nil?
+                       [(when (:variation/engineered-allele v)
+                          "Engineered Allele")
+                        (when (:variation/allele v)
+                          "Allele")
+                        (when (:variation/snp v)
+                          "SNP")
+                        (when (:variation/transposon-insertion v)
+                          "Transposon insertion")
+                        (when (:variation/confirmed-snp v)
+                          "Confirmed SNP")
+                        (when (:variation/predicted-snp v)
+                          "Predicted SNP")]))
+    :physical_class (if (or (contains? v :variation/transposon-insertion)
+                              (= (:method/id (:location/method v))
+                                 "Transposon_insertion"))
+                      "Transposon insertion"
+                      (cond
+                        (contains? v :variation/substitution)
+                        "Substitution"
 
-(defn- variation-type-data [variation]
-  (let [types-str-map {:snp               "SNP"
-                       :predicted-snp     "Predicted SNP"
-                       :confirmed-snp     "Confirmed SNP"
-                       :natural-variant   "Natural Variant"
-                       :allele            "Allele"
-                       :engineered-allele "Engineered Allele"}
-        data-variants  {:snp (:variation/snp variation)
-                        :predicted-snp (:variation/predicted-snp variation)
-                        :confirmed-snp (:variation/confirmed-snp variation)
-                        :natural-variant (:variation/natural-variant variation)
-                        :allele  (:variation/allele variation)
-                        :engineered-allele (:variation/engineered-allele variation)}
-        general-class  (reduce-kv
-                         (fn  [acc k v]
-                           (if  (= v true)
-                             (conj acc (types-str-map k))
-                             acc))
-                         #{} data-variants)]
+                        (contains? v :variation/insertion)
+                        "Insertion"
 
-    {:physical_class (pysical-class variation)
-     :general_class general-class}))
+                        (contains? v :variation/deletion)
+                        "Deletion"
 
-(defn variation-type [variation]
-  {:data (variation-type-data variation)
+                        (contains? v :variatino/tandem-duplication)
+                        "Tandem Duplication"))}
    :description "the general type of the variation"})
 
-(defn remarks [variation]
-  (let [data (->>
-               (:variation/remark variation)
-               (map  (fn  [rem]
-                       {:text  (:variation.remark/text rem)
-                        :evidence  (obj/get-evidence rem)}))
-               (seq))]
-  {:data data
-   :description "curatorial remarks for the Variation"}))
-
-(defn other-names [variation]
-  {:data (if-let [other-names (:variation/other-name variation)]
-           (seq other-names))
-   :description (format "other names that have been used to refer to %s" (:variation/id variation))})
+(defn merged-into [v]
+  {:data (when-let [new-var (:variation/merged-into v)]
+           (pack-obj new-var))
+   :description (str "the variation " (:variation/id v) " was merged into, if it was")})
 
 (def widget
-  {:name               generic/name-field
-   :taxonomy           taxonomy
+  {:name generic/name-field
+   :status generic/status
+   :taxonomy generic/taxonomy
    :corresponding_gene corresponding-gene
-   :evidence           evidence
-   :variation_type     variation-type
-   :remarks            remarks
-   :other_names        other-names})
+   :evidence evidence
+   :variation_type variation-type
+   :remarks generic/remarks
+   :merged_into merged-into
+   :other_names generic/other-names})
+>>>>>>> develop

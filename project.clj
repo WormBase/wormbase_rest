@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "0.1.3"
+(defproject wormbase/rest-api "0.3.9"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -9,6 +9,8 @@
    [cheshire "5.7.0"]
    [com.layerware/hugsql "0.4.7"]
    [environ "1.1.0"]
+   [org.clojure/data.xml "0.0.8"]
+   [clj-http "3.7.0"]
    [hiccup "1.0.5"]
    [metosin/compojure-api "1.1.10"]
    [mount "0.1.11"]
@@ -31,23 +33,21 @@
          :init rest-api.main/init}
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :license "GPLv2"
-  :jvm-opts ["-Xmx6G"
+  :jvm-opts ["-Xmx28G"
              ;; same GC options as the transactor,
              ;; should minimize long pauses.
              "-XX:+UseG1GC" "-XX:MaxGCPauseMillis=50"
-             "-Ddatomic.objectCacheMax=2500000000"
              "-Ddatomic.txTimeoutMsec=1000000"]
   :profiles
   {:datomic-free
-   {:dependencies [[com.datomic/datomic-free "0.9.5554"
+   {:dependencies [[com.datomic/datomic-free "0.9.5561.56"
                     :exclusions [joda-time]]]}
    :datomic-pro
-   {:dependencies [[com.datomic/datomic-pro "0.9.5554"
+   {:dependencies [[com.datomic/datomic-pro "0.9.5561.56"
                     :exclusions [joda-time]]]}
    :ddb
    {:dependencies
-    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.6"
-      :exclusions [joda-time]]]}
+    [[com.amazonaws/aws-java-sdk-dynamodb "1.11.82"]]}
    :dev [:datomic-pro
          :ddb
          {:aliases
@@ -55,10 +55,12 @@
            ["do"
             ["eastwood"]
             "test"]}
-          :dependencies [[ring/ring-devel "1.5.1"]]
+          :dependencies [[org.clojure/tools.trace "0.7.9"]
+                         [ring/ring-devel "1.5.1"]]
           :source-paths ["dev"]
+          :jvm-opts ["-Xmx1G"]
           :env
-          {:wb-db-uri "datomic:ddb://us-east-1/WS258/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS263/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"

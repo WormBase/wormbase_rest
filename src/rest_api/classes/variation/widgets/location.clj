@@ -1,36 +1,52 @@
 (ns rest-api.classes.variation.widgets.location
   (:require
-    [rest-api.classes.generic :as generic]
-    [rest-api.classes.variation.generic :as variation-generic]
-    [pseudoace.utils :as pace-utils]
-    [rest-api.formatters.object :as obj :refer  [pack-obj]]))
-
-(defn genetic-position [variation]
-  {:data nil
-   :description (format "Genetic position of Variation:%s" (:variation/id variation))})
+    [rest-api.classes.sequence.core :as sequence-fns]
+    [rest-api.classes.generic-fields :as generic]))
 
 (defn tracks [variation]
-  {:data ["GENES"
-          "VARIATIONS_CLASSICAL_ALLELES"
-          "VARIATIONS_HIGH_THROUGHPUT_ALLELES"
-          "VARIATIONS_POLYMORPHISMS"
-          "VARIATIONS_CHANGE_OF_FUNCTION_ALLELES"
-          "VARIATIONS_CHANGE_OF_FUNCTION_POLYMORPHISMS"
-          "VARIATIONS_TRANSPOSON_INSERTION_SITES"
-          "VARIATIONS_MILLION_MUTATION_PROJECT"]
+  {:data (cond
+           (= "Caenorhabditis elegans"
+              (:species/id (:variation/species variation)))
+           ["GENES"
+            "VARIATIONS_CLASSICAL_ALLELES"
+            "VARIATIONS_HIGH_THROUGHPUT_ALLELES"
+            "VARIATIONS_POLYMORPHISMS"
+            "VARIATIONS_CHANGE_OF_FUNCTION_ALLELES"
+            "VARIATIONS_CHANGE_OF_FUNCTION_POLYMORPHISMS"
+            "VARIATIONS_TRANSPOSON_INSERTION_SITES"
+            "VARIATIONS_MILLION_MUTATION_PROJECT"]
+
+           (= "Caenorhabditis briggsae"
+              (:species/id (:variation/species variation)))
+           ["GENES"
+            "VARIATIONS_POLYMORPHISMS"]
+
+           :else
+           ["GENES"])
    :description "tracks displayed in GBrowse"})
 
-(defn genomic-position [variation]
-  {:data nil
-   :description "The genomic location of the sequence"})
+(defn jbrowse-tracks [variation]
+  {:data (cond
+           (= "Caenorhabditis elegans"
+              (:species/id (:variation/species variation)))
+           "Curated_Genes,Classical_alleles,High-throughput alleles,Polymorphisms,Change-of-function alleles,Change-of-function polymorphisms,Transposon insert sites,Million Mutation Project"
+
+           (= "Caenorhabditis briggsae"
+              (:species/id (:variation/species variation)))
+           "Curated_Genes,Polymorphisms"
+
+           :else
+           "Curated_Genes")
+   :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [variation]
-  {:data nil
+  {:data (first (:data (generic/genomic-position variation)))
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget
-  {:name  variation-generic/name-field
-   :genetic_position genetic-position
+  {:name generic/name-field
+   :genetic_position generic/genetic-position
    :tracks tracks
-   :genomic_position genomic-position
+   :jbrowse_tracks jbrowse-tracks
+   :genomic_position generic/genomic-position
    :genomic_image genomic-image})
