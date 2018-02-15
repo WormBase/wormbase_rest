@@ -65,38 +65,3 @@
                                      (not= (count (:gene/_strain %)) 1))
                                  (not (is-cgc? %)))
                            strains))))
-
-(defn xrefs [object]
-  (let [data
-        (if-let [k (first (filter #(= (name %) "id") (keys object)))]
-          (let [role (namespace k)
-                ckw (str role ".database")]
-            (reduce
-              (fn [refs database]
-                (let [match-accession (partial re-matches #"(?:OMIM:|GI:)(.*)")
-                      kw-field (keyword ckw "field")
-                      kw-database-field (keyword ckw "database-field")
-                      kw-accession (keyword ckw "accession")
-                      kw-text (keyword ckw "text")]
-                  (update-in refs
-                             [(:database/id ((keyword ckw "database") database))
-                              (:database-field/id ((if (contains? database kw-database-field)
-                                                     kw-database-field
-                                                     kw-field)
-                                                   database))
-                              :ids]
-                             pace-utils/conjv
-                             (let [acc ((if (contains? database kw-text)
-                                          kw-text
-                                          kw-accession)
-                                        database)]
-                               (if (nil? acc)
-                                 nil
-                                 (if-let [[_ rest] (match-accession acc)]
-                                   rest
-                                   acc))))))
-              {}
-              ((keyword role "database") object))))]
-    {:data (not-empty data)
-     :description  (str "external databases and IDs containing "
-                        "additional information on the object")}))
