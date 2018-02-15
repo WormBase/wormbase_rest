@@ -71,4 +71,3 @@
    :remarks generic/remarks
    :merged_into merged-into
    :other_names generic/other-names})
->>>>>>> develop

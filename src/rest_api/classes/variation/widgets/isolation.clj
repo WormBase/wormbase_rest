@@ -1,23 +1,9 @@
 (ns rest-api.classes.variation.widgets.isolation
   (:require
-    [rest-api.classes.generic :as generic]
+    [rest-api.classes.generic-fields :as generic]
     [rest-api.classes.variation.generic :as variation-generic]
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
-
-(defn laboratory [variation]
-  {:data (if-let [labs (:variation/laboratory variation)]
-           (for [lab labs]
-             (let [representatives (:laboratory/representative lab)]
-               {:laboratory {:id (:laboratory/id lab)
-                             :label (first (:laboratory/mail lab))
-                             :class "laboratory"
-                             :taxonomy "all"}
-                :representative (if (nil? representatives)
-                                  nil
-                                  (for [representative representatives]
-                                    (pack-obj representative)))})))
-   :description "the laboratory where the Variation was isolated, created, or named"})
 
 (defn transposon-excision [variation]
   {:data nil
@@ -70,7 +56,7 @@
 
 (def widget
   {:name  variation-generic/name-field
-   :laboratory laboratory
+   :laboratory generic/laboratory
    :transposon_excision transposon-excision
    :derivative derivative
    :derived_from derived-from
