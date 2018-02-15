@@ -3,7 +3,7 @@
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic-fields]
-   [rest-api.classes.generic-functions :as generic-functions]
+   [rest-api.classes.generic-functions :as generic]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
