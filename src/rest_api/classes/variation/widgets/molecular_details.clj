@@ -3,9 +3,8 @@
     [datomic.api :as d]
     [clojure.string :as str]
     [rest-api.db.sequence :as seqdb]
-    [rest-api.classes.generic :as generic]
-    [rest-api.classes.gene.sequence :as gene-sequence]
-    [rest-api.classes.variation.generic :as variation-generic]
+    [rest-api.classes.generic-fields :as generic]
+    [rest-api.classes.generic-functions :as generic-functions]
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
@@ -230,15 +229,14 @@
      "g" "c"
      "t" "a"}))
 
-(defn- variation-features  [variation]
-  (if-let  [species-name  (->> variation :variation/species :species/id)]
-    (let  [g-species  (generic/xform-species-name species-name)
-           sequence-database  (seqdb/get-default-sequence-database g-species)
-           db-spec  ((keyword sequence-database) seqdb/sequence-dbs)
-           variation-id  (:variation/id variation)]
+(defn- variation-features [variation]
+  (if-let  [species-name (->> variation :variation/species :species/id)]
+    (let  [g-species (generic-functions/xform-species-name species-name)
+           sequence-database (seqdb/get-default-sequence-database g-species)
+           db-spec ((keyword sequence-database) seqdb/sequence-dbs)
+           variation-id (:variation/id variation)]
       (if sequence-database
-        (do (println db-spec) (println variation-id)
-        (seqdb/variation-features db-spec variation-id))))))
+        (seqdb/variation-features db-spec variation-id)))))
 
 (defn- compile-nucleotide-changes [variation]
   (remove nil?
@@ -297,7 +295,7 @@
    :description "sequencing status of the variation"})
 
 (def widget
-  {:name variation-generic/name-field
+  {:name generic/name-field
    :polymorphism_type polymorphism-type
    :amino_acid_change amino-acid-change
    :detection_method detection-method

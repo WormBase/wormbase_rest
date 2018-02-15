@@ -3,28 +3,23 @@
     [datomic.api :as d]
     [rest-api.classes.generic-fields :as generic]
     [rest-api.classes.generic-functions :as generic-functions]
-    [rest-api.classes.variation.core :as variation-functions]
-    [rest-api.classes.gene.widgets.genetics :as gene-genetics]
-    [rest-api.classes.gene.variation :as gene-variation]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn- get-gene-from-variation [variation]
-  (seq (map :variation.gene/gene (:variation/gene variation))))
-
 (defn gene-class [variation]
-  {:data (if-let [gene-class (:gene-class variation)]
-             (map (pack-obj) gene-class))
+  {:data (some->> (:variation/gene-class variation)
+                  (map pack-obj))
    :description "the class of the gene the variation falls in, if any"})
 
 (defn corresponding-gene [variation]
-  {:data (if-let [gene (:corresponding-transgene variation)]
-             (map (pack-obj) gene))
+  {:data (some->> (:variation/corresponding-transgene variation)
+                  (map pack-obj))
    :description "gene in which this variation is found (if any)"})
 
 (defn reference-allele [variation]
-  (let [genes []; (get-gene-from-variation variation)
-        gene (first genes)]
-  (gene-genetics/reference-allele gene)))
+  {:data (some->> (:gene.reference-allele/_variation variation)
+                  (map :gene/_reference-allele)
+                  (map pack-obj))
+   :description "the gene that has this variation as a reference allele"})
 
 (defn other-allele [variation]
   {:data (some->> (:variation/gene variation)
@@ -54,19 +49,19 @@
                                                         (map pack-obj))}))))
    :description "other variations of the containing gene (if known)"})
 
-; need to varify
 (defn linked-to [variation]
-  {:data (if-let [links (:variation/linked-to variation)]
-           (for [linked-to links] (pack-obj linked-to)))
-  :description "linked_to"})
+  {:data (some->> (:variation/linked-to variation)
+                  (map pack-obj))
+   :description "linked_to"})
 
 (defn strain [variation]
-  {:data (if-let [strains (map :variation.strain/strain (:variation/strain variation))]
-           (generic-functions/categorize-strains strains))
+  {:data (some->> (:variation/strain variation)
+                  (map :variation.strain/strain)
+                  (generic-functions/categorize-strains))
    :description "strains carrying this variation"})
 
 (defn rescued-by-transgene [variation]
-  {:data nil
+  {:data nil ; looks like it is from phenotype-info
    :description "transgenes that rescue phenotype(s) caused by this variation"})
 
 (def widget

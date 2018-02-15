@@ -41,10 +41,9 @@
    :description "rearrangements involving this gene"})
 
 (defn reference-allele [gene]
-  {:data (let [data (->> (:gene/reference-allele gene)
-                         (map :gene.reference-allele/variation)
-                         (map (partial pack-obj "variation")))]
-           (if (empty? data) nil data))
+  {:data (some->> (:gene/reference-allele gene)
+                  (map :gene.reference-allele/variation)
+                  (map pack-obj))
    :description "the reference allele of the gene"})
 
 (defn strains [gene]
