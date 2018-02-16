@@ -27,7 +27,7 @@
 
 (defn curated-images [ep]
   {:data (when-let [pictures (:picture/_expr-pattern ep)]
-           (group-by :id
+           (group-by :group_id
            (for [picture pictures
                  :let [n (:picture/name picture)
                        paper (first (:picture/reference picture))
@@ -43,28 +43,31 @@
 			 {:format extension
 			  :name (str/join "/" [id basename])
 			  :class "/img-static/pictures"}))
-	       :external_source (pace-utils/vmap
-                                 :template
-                                 (:picture/acknowledgement-template picture)
+               :external_source (not-empty
+                                  (pace-utils/vmap
+                                    :template
+                                    (:picture/acknowledgement-template picture)
 
-                                 :template-items
-                                 (pace-utils/vmap
-                                   :Article_URL
-                                   (when-let [ah (:picture/article-url picture)]
-                                     (let [d (:picture.article-url/database ah)]
-                                       {:db (:database/id d)
-                                        :text (:database/name d)}))
+                                    :template-items
+                                    (not-empty
+                                      (pace-utils/vmap
+                                        :Article_URL
+                                        (when-let [ah (:picture/article-url picture)]
+                                          (let [d (:picture.article-url/database ah)]
+                                            {:db (:database/id d)
+                                             :text (:database/name d)}))
 
-                                   :Journal_URL
-                                   (when-let [d (:picture/journal-url picture)]
-                                     {:db (:database/id d)
-                                      :text (:database/name d)})
+                                        :Journal_URL
+                                        (when-let [d (:picture/journal-url picture)]
+                                          {:db (:database/id d)
+                                           :text (:database/name d)})
 
-                                   :Publisher_URL
-                                   (when-let [d (:picture/publisher-url picture)]
-                                     {:db (:database/id d)
-                                      :text (:database/name d)})))
-              :id id})))
+                                        :Publisher_URL
+                                        (when-let [d (:picture/publisher-url picture)]
+                                          {:db (:database/id d)
+                                           :text (:database/name d)})))))
+              :group_id id
+              :id (:picture/id picture)})))
    :description "Curated images of the expression pattern"})
 
 (defn description [ep]
