@@ -3,7 +3,7 @@
     [rest-api.classes.generic-fields :as generic]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn expression-clusters [p]
+(defn expression-cluster [p]
   {:data (some->> (:wbprocess/expression-cluster p)
                   (map (fn [h]
                          (let [cluster (:wbprocess.expression-cluster/expression-cluster h)]
@@ -14,4 +14,4 @@
 
 (def widget
   {:name generic/name-field
-   :expression_clusters expression-clusters})
+   :expression_cluster expression-cluster})
