@@ -65,7 +65,9 @@
    :description (str "description of the Expr_pattern " (:expr-pattern/id ep))})
 
 (defn ep-movies [ep]
-  {:data (:expr-pattern/movieurl ep) ; need to wait for Sybils changes to know what it should be like
+  {:data (->> (:movie/_expr-pattern ep)
+              (map pack-obj)
+              (seq))
    :description "Movies showcasing this expression pattern"})
 
 (defn database [ep]
