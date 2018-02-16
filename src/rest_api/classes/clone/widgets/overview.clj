@@ -3,6 +3,7 @@
    [clojure.string :as str]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.expr-pattern.core :as expr-pattern]
    [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
@@ -118,22 +119,7 @@
 
 (defn expression-patterns [clone]
   {:data (when-let [ep (first (:expr-pattern/_clone clone))]
-           (let [h (first (:expr-pattern/gene ep))]
-             (let [gene (:expr-pattern.gene/gene h)]
-               {:certainty (generic-functions/certainty h)
-                :expression_pattern {:taxonomy "all"
-                                     :class "expr_pattern"
-                                     :label (str "Expression pattern for "
-                                                 (if-let [n (or (:gene/public-name gene)
-                                                                (:gene/id gene))]
-                                                   n
-                                                   "" ))
-                                     :id (:expr-pattern/id ep)}
-                :reference (when-let [paper (first (:expr-pattern/reference ep))]
-                             (:paper/id (:expr-pattern.reference/paper paper)))
-                :gene (if (empty? gene) nil (pack-obj gene))
-                :author (:author/id (last (:expr-pattern/author ep)))
-                :description (first (:expr-pattern/pattern ep))})))
+            (expr-pattern/pack ep))
    :description (str "expression patterns associated with the Clone: " (:clone/id clone))})
 
 (def widget
