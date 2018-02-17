@@ -1,18 +1,22 @@
 (ns rest-api.classes.variation.widgets.genetics
   (:require
     [datomic.api :as d]
+    [pseudoace.utils :as pace-utils]
     [rest-api.classes.generic-fields :as generic]
     [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn gene-class [variation]
   {:data (some->> (:variation/gene-class variation)
-                  (map pack-obj))
+                  (first)
+                  (pack-obj))
    :description "the class of the gene the variation falls in, if any"})
 
 (defn corresponding-gene [variation]
-  {:data (some->> (:variation/corresponding-transgene variation)
-                  (map pack-obj))
+  {:data (when-let [genes (some->> (:variation/gene variation)
+                                   (map :variation.gene/gene)
+                                   (map pack-obj))]
+           [genes])
    :description "gene in which this variation is found (if any)"})
 
 (defn reference-allele [variation]
@@ -22,31 +26,39 @@
    :description "the gene that has this variation as a reference allele"})
 
 (defn other-allele [variation]
-  {:data (some->> (:variation/gene variation)
-                  (map :variation.gene/gene)
-                  (map (fn [gene]
-                         (let [db  (d/entity-db gene)
-                               alleles (d/q '[:find [?var ...]
-                                              :in $ ?variation ?gene
-                                              :where [?vh :variation.gene/gene ?gene]
-                                              [?var :variation/gene ?vh]
-                                              [?var :variation/allele true]
-                                              (not [?var :variation/phenotype _])
-                                              [(not= ?var ?variation)]]
-                                            db (:db/id variation) (:db/id gene))
-                               polymorphisms (filter
-                                               (fn [aid]
-                                                 (let [allele (d/entity db aid)]
-                                                   (contains? allele :variation/confirmed-snp))) alleles)
-                               sequenced-alleles (filter
-                                                   (fn [aid]
-                                                     (let [allele (d/entity db aid)]
-                                                       (not
-                                                         (contains? allele :variation/confirmed-snp)))) alleles)]
-                           {:polymorphisms (map pack-obj (d/entity db polymorphisms))
-                            :sequenced_alleles (some->> sequenced-alleles
-                                                        (d/entity db)
-                                                        (map pack-obj))}))))
+  {:data (not-empty
+           (some->> (:variation/gene variation)
+                    (map :variation.gene/gene)
+                    (map (fn [gene]
+                           (let [db  (d/entity-db gene)
+                                 alleles (some->> (d/q '[:find [?var ...]
+                                                         :in $ ?variation ?gene
+                                                         :where [?vh :variation.gene/gene ?gene]
+                                                         [?var :variation/gene ?vh]
+                                                         [?var :variation/allele true]
+                                                         (not [?var :variation/phenotype _])
+                                                         [(not= ?var ?variation)]]
+                                                       db (:db/id variation) (:db/id gene))
+                                                  (map (fn [allele-id]
+                                                         (d/entity db allele-id))))]
+                             (not-empty
+                               (pace-utils/vmap
+                                 :polymorphisms
+                                 (not-empty
+                                   (some->> alleles
+                                            (filter
+                                              (fn [allele]
+                                                (contains? allele :variation/confirmed-snp)))
+                                            (map pack-obj)))
+
+                                 :sequenced_alleles
+                                 (not-empty
+                                   (some->> alleles
+                                            (filter
+                                              (fn [allele]
+                                                (not (contains? allele :variation/confirmed-snp))))
+                                            (map pack-obj))))))))
+                    (remove nil?)))
    :description "other variations of the containing gene (if known)"})
 
 (defn linked-to [variation]
@@ -61,7 +73,8 @@
    :description "strains carrying this variation"})
 
 (defn rescued-by-transgene [variation]
-  {:data nil ; looks like it is from phenotype-info
+  {:data (when-let [tg (:variation/corresponding-transgene variation)]
+           (pack-obj tg))
    :description "transgenes that rescue phenotype(s) caused by this variation"})
 
 (def widget
