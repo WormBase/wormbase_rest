@@ -26,39 +26,39 @@
    :description "the gene that has this variation as a reference allele"})
 
 (defn other-allele [variation]
-  {:data (not-empty
-           (some->> (:variation/gene variation)
-                    (map :variation.gene/gene)
-                    (map (fn [gene]
-                           (let [db  (d/entity-db gene)
-                                 alleles (some->> (d/q '[:find [?var ...]
-                                                         :in $ ?variation ?gene
-                                                         :where [?vh :variation.gene/gene ?gene]
-                                                         [?var :variation/gene ?vh]
-                                                         [?var :variation/allele true]
-                                                         (not [?var :variation/phenotype _])
-                                                         [(not= ?var ?variation)]]
-                                                       db (:db/id variation) (:db/id gene))
-                                                  (map (fn [allele-id]
-                                                         (d/entity db allele-id))))]
-                             (not-empty
-                               (pace-utils/vmap
-                                 :polymorphisms
-                                 (not-empty
-                                   (some->> alleles
-                                            (filter
-                                              (fn [allele]
-                                                (contains? allele :variation/confirmed-snp)))
-                                            (map pack-obj)))
+  {:data (some->> (:variation/gene variation)
+                  (map :variation.gene/gene)
+                  (map (fn [gene]
+                         (let [db  (d/entity-db gene)
+                               alleles (some->> (d/q '[:find [?var ...]
+                                                       :in $ ?variation ?gene
+                                                       :where [?vh :variation.gene/gene ?gene]
+                                                       [?var :variation/gene ?vh]
+                                                       [?var :variation/allele true]
+                                                       (not [?var :variation/phenotype _])
+                                                       [(not= ?var ?variation)]]
+                                                     db (:db/id variation) (:db/id gene))
+                                                (map (fn [allele-id]
+                                                       (d/entity db allele-id))))]
+                           (not-empty
+                             (pace-utils/vmap
+                               :polymorphisms
+                               (some->> alleles
+                                        (filter
+                                          (fn [allele]
+                                            (contains? allele :variation/confirmed-snp)))
+                                        (map pack-obj)
+                                        (not-empty))
 
-                                 :sequenced_alleles
-                                 (not-empty
-                                   (some->> alleles
-                                            (filter
-                                              (fn [allele]
-                                                (not (contains? allele :variation/confirmed-snp))))
-                                            (map pack-obj))))))))
-                    (remove nil?)))
+                               :sequenced_alleles
+                               (some->> alleles
+                                        (filter
+                                          (fn [allele]
+                                            (not (contains? allele :variation/confirmed-snp))))
+                                        (map pack-obj)
+                                        (not-empty)))))))
+                  (remove nil?)
+                  (not-empty))
    :description "other variations of the containing gene (if known)"})
 
 (defn linked-to [variation]

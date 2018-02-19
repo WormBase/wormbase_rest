@@ -17,8 +17,8 @@
    :description "amino acid changes for this variation, if appropriate"})
 
 (defn detection-method [variation]
- {:data nil
-  :description "detection method for polymorphism, typically via sequencing or restriction digest."})
+  {:data nil
+   :description "detection method for polymorphism, typically via sequencing or restriction digest."})
 
 (defn deletion-verification [variation]
   {:data nil
@@ -31,19 +31,19 @@
                flank 250
                seq-len (if
                          (contains? variation :variation-source-location)
-                          nil
-                          1)
-                             ]
+                         nil
+                         1)
+               ]
 
-            {:ldtype_fragment nil
-             :wildtype_full (seq (:variation/expr-pattern variation))
-             :mutant_fragment nil
-             :keys (keys variation)
-             :mutant_full nil
-             :wildtype_header (str "Wild type N2, with " flank " bp flanks")
-             :sl (seq (:variation/source-location variation))
-             :mutant_header (str name " with " flank " bp flanks")
-             :placeholder nil})
+           {:ldtype_fragment nil
+            :wildtype_full (seq (:variation/expr-pattern variation))
+            :mutant_fragment nil
+            :keys (keys variation)
+            :mutant_full nil
+            :wildtype_header (str "Wild type N2, with " flank " bp flanks")
+            :sl (seq (:variation/source-location variation))
+            :mutant_header (str name " with " flank " bp flanks")
+            :placeholder nil})
    :description "wild type and variant sequences in genomic context"})
 
 (defn flanking-pcr-products [variation]
@@ -107,7 +107,7 @@
        "..."
        (+ position 19)))
 
-(defn- do_markup [peptide var-start variation mutation-type]
+(defn- do-markup [peptide var-start variation mutation-type]
   (let [style-map {:utr "FGCOLOR gray"
                    :cds0 "BGCOLOR yellow"
                    :cds1 "BGCOLOR orange"
@@ -121,14 +121,14 @@
                             "background-color:yellow;font-weight:bold;text-transform:uppercase;"
                             "background-color:yellow")
                    :deletion_with_insertion "background-color: #FF8080; text-transform:uppercase;"}
-       var-stop (if (= (count variation) 0)
-                  (+ var-start 1)
-                  (+ var-start (count variation)))
-       sequence (if (= (count variation) 0)
-                  (str (subs peptide 0 var-start) "-" (subs peptide (+ var-start (count variation))))
-                  peptide)
-                 ]                                                     )
-    nil                                                                                                                                                                           )
+        var-stop (if (= (count variation) 0)
+                   (+ var-start 1)
+                   (+ var-start (count variation)))
+        sequence (if (= (count variation) 0)
+                   (str (subs peptide 0 var-start) "-" (subs peptide (+ var-start (count variation))))
+                   peptide)
+        ]                                                     )
+  nil                                                                                                                                                                           )
 
 ;test WBVar01112111/
 (defn features-affected [variation]
@@ -158,30 +158,30 @@
              (:variation/predicted-cds variation)
              (map
                (fn [predicted-cds-holder]
-               (pace-utils/vmap
-                 :protein_effects
                  (pace-utils/vmap
-                   "Silent"
-                   (if-let [cdshs (:molecular-change/missense predicted-cds-holder)]
-                     (for [cdsh cdshs :let [position (first cdsh)
-                                            description (second cdsh)
-                                            cds (:variation.predicted-cds/cds cdsh)]]
-                       (if-let [wt-protein (:cds/corresponding-protein cdsh)]
-                         (if-let  [wt-peptide (:protein/peptide wt-protein)]
-                           (let [formatted-wt-peptide (str/replace wt-peptide #"[^>|\n]" "")
-                                 [wt-aa mut_aa] (re-seq #"(?s) to (?s)" description)
-                                 mut-peptide (str/join
-                                               (assoc
-                                                 (vec formatted-wt-peptide) (- position 1) mut_aa))
-                                 wt-protein-fragment (create-fragment wt-peptide position)
-                                 mut-protein-fragment (create-fragment mut-peptide position)
-                                 ]
-                             {:wildtype_conceptual_translation nil
-                              :mutant_conceptual_translation nil
-                              }))))))
+                   :protein_effects
+                   (pace-utils/vmap
+                     "Silent"
+                     (if-let [cdshs (:molecular-change/missense predicted-cds-holder)]
+                       (for [cdsh cdshs :let [position (first cdsh)
+                                              description (second cdsh)
+                                              cds (:variation.predicted-cds/cds cdsh)]]
+                         (if-let [wt-protein (:cds/corresponding-protein cdsh)]
+                           (if-let  [wt-peptide (:protein/peptide wt-protein)]
+                             (let [formatted-wt-peptide (str/replace wt-peptide #"[^>|\n]" "")
+                                   [wt-aa mut_aa] (re-seq #"(?s) to (?s)" description)
+                                   mut-peptide (str/join
+                                                 (assoc
+                                                   (vec formatted-wt-peptide) (- position 1) mut_aa))
+                                   wt-protein-fragment (create-fragment wt-peptide position)
+                                   mut-protein-fragment (create-fragment mut-peptide position)
+                                   ]
+                               {:wildtype_conceptual_translation nil
+                                :mutant_conceptual_translation nil
+                                }))))))
 
-                 :location_effects nil
-                 )))
+                   :location_effects nil
+                   )))
              )
 
            )
@@ -265,10 +265,10 @@
                          (println uc-plus-strand-dna)
                          (if (= (str/upper-case rc-wt) uc-plus-strand-dna)
                            (pack-nulcleotide-change-obj )
-                         {:wt rc-wt
-                          :dbid (:db/id variation)
-                          :mut (reverse-complement mut)}))))))
-               
+                           {:wt rc-wt
+                            :dbid (:db/id variation)
+                            :mut (reverse-complement mut)}))))))
+
                ))]))
 
 
@@ -282,7 +282,7 @@
   {:data (if-let [vshs (:variation/strain variation)]
            (for [vsh vshs
                  :let [strain (:variation.strain/strain vsh)]]
-                (pack-obj strain)))
+             (pack-obj strain)))
    :description "strains that this variant has been observed in"})
 
 (defn causes-frameshift [variaition]
