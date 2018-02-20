@@ -65,3 +65,8 @@
     db-spec
     {:name feature-name
      :tag method}))
+
+(defn variation-features [db-spec variation-name]
+  (sequencesql/variation-features
+    db-spec
+    {:name variation-name}))
