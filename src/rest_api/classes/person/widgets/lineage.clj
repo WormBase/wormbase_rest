@@ -270,7 +270,7 @@
                    {:data data}))))))))
 
 (defn ancestors-data [person]
-  (let[{nodes :nodes
+  (let [{nodes :nodes
          roles :roles
          edges :edges} (get-graph person)]
     {:existingRolesFull roles
