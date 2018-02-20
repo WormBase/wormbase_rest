@@ -291,10 +291,7 @@
   ([class obj & args]
    (apply pack-obj-helper class obj args)))
 
-(defmulti pack-obj-helper
-  (fn [class obj & args] class))
-
-(defmethod pack-obj-helper :default [class obj & {:keys [label]}]
+(defn- pack-obj-helper-base [class obj & {:keys [label]}]
    (if obj
      {:id (or ((keyword class "id") obj)
               (or (:oligo-set/id obj)
@@ -307,23 +304,29 @@
                  (str/replace class "-" "_")))
       :taxonomy (obj-tax class obj)}))
 
+(defmulti pack-obj-helper
+  (fn [class obj & args] class))
+
+(defmethod pack-obj-helper :default [class obj & args]
+  (apply pack-obj-helper-base class obj args))
+
 (defmethod pack-obj-helper "movie" [class obj & args]
-  (if obj
-    (let [id (:movie/id obj)
-          paper-id (some->> (:movie/reference obj)
+  (if-let [packed (apply pack-obj-helper-base class obj args)]
+    (let [paper-id (some->> (:movie/reference obj)
                             (first)
                             (:paper/id))]
-      {:id id
-       :label id
-       :class class
-       :file (or  (if-let [file-name (some->> (:movie/public-name obj)
-                                                  (re-matches #"(.+)\.(mov|mp4)")
-                                                  (second))]
-                    (format "/img-static/movies/%s/%s.mp4" paper-id file-name))
-                  (if-let [rnai-db-id (some->> (:movie/db-info obj)
-                                               (first)
-                                               (:movie.db-info/accession))]
-                    (format "http://www.rnai.org/movies/%s" rnai-db-id)))})))
+      (assoc
+        packed
+        :file
+        (or (if-let [file-name (some->> (:movie/public-name obj)
+                                        (re-matches #"(.+)\.(mov|mp4)")
+                                        (second))]
+              (format "/img-static/movies/%s/%s.mp4" paper-id file-name))
+            (if-let [rnai-db-id (some->> (:movie/db-info obj)
+                                         (first)
+                                         (:movie.db-info/accession))]
+              (format "http://www.rnai.org/movies/%s" rnai-db-id)))
+        ))))
 
 
 (defn get-evidence [holder]
