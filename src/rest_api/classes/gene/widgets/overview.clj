@@ -247,9 +247,8 @@
   (let [db (d/entity-db gene)
         data (->> (d/q '[:find [?clone ...]
                          :in $ ?gene
-                         :where
-                         [?cg :clone.positive-gene/gene ?gene]
-                         [?clone :clone/positive-gene ?cg]]
+                         :where [?cg :clone.positive-gene/gene ?gene]
+                                [?clone :clone/positive-gene ?cg]]
                        db (:db/id gene))
                   (map (fn [cid]
                          (let [clone (d/entity db cid)]
