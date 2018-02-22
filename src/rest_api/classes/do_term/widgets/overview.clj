@@ -14,31 +14,33 @@
 
 (defn- gene-disease-orthologs [gene]
   (when-let [ohs (:gene/ortholog gene)]
-    (remove
-      nil?
-      (for [oh ohs
-            :let [sh (:gene.ortholog/species oh)
+    (sort-by
+      :label
+      (remove
+        nil?
+        (for [oh ohs
+              :let [sh (:gene.ortholog/species oh)
 
-                         species-id (:species/ncbi-taxonomy sh)]]
-        (if (= species-id 9606)
-          (let [ortholog (:gene.ortholog/gene oh)
-                dhs (:gene/database ortholog)
-                id (first
-                     (remove
-                       nil?
-                       (for [dh dhs
-                             :let [source-db (:database/id (:gene.database/database dh))
-                                   source-type  (:database-field/id (:gene.database/field dh))]]
-                         (if (and
-                               (= source-db "OMIM")
-                               (= source-type "gene"))
-                           (:gene.database/accession dh)))))]
-           (if id
-             {:lebel (str "OMIM:" id)
-              :class "OMIM"
-              :id id})))))))
+                    species-id (:species/ncbi-taxonomy sh)]]
+          (if (= species-id 9606)
+            (let [ortholog (:gene.ortholog/gene oh)
+                  dhs (:gene/database ortholog)
+                  id (first
+                       (remove
+                         nil?
+                         (for [dh dhs
+                               :let [source-db (:database/id (:gene.database/database dh))
+                                     source-type  (:database-field/id (:gene.database/field dh))]]
+                           (if (and
+                                 (= source-db "OMIM")
+                                 (= source-type "gene"))
+                             (:gene.database/accession dh)))))]
+              (if id
+                {:lebel (str "OMIM:" id)
+                 :class "OMIM"
+                 :id id}))))))))
 
-(defn gene-orthology [d] ; tested on DOID:0050432 - getting more results hear than ace version
+(defn gene-orthology [d]
   {:error nil
    :data (when-let [gs (:gene.disease-potential-model/_do-term d)]
            (vals
@@ -63,17 +65,18 @@
                           (not-empty
                             (remove
                               nil?
-                              (for [dbh dbhs
-                                    :let [database (:do-term.database/database dbh)
-                                          id (:do-term.database/accession dbh)]]
-                                (if (= (:database/id database) "OMIM") id)))))]
+                              (sort
+                                (for [dbh dbhs
+                                      :let [database (:do-term.database/database dbh)
+                                            id (:do-term.database/accession dbh)]]
+                                  (if (= (:database/id database) "OMIM") id))))))]
            {:disease {:ids ids}})
    :description "link to OMIM record"})
 
 (defn child [d]
-  {:data (when-let [disease-children (:do-term/_is-a d)]
-           (for [child disease-children]
-             (pack-obj child)))
+  {:data (some->> (:do-term/_is-a d)
+                  (map pack-obj)
+                  (sort-by :label))
    :description "Children of this disease ontology"})
 
 (defn definition [d]

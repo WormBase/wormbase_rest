@@ -319,19 +319,10 @@
 
    :Date_last_updated
    (when-let [last-updated (:evidence/date-last-updated holder)]
-     (let [ds (-> last-updated dates/format-date str)]
+     (let [ds (-> last-updated dates/format-date4 str)]
        [{:id ds
          :label ds
          :class "text"}]))
-
-;   :Remark
-;   (or (seq (:evidence/remark holder))
-;       (when-let [ss (:anatomy-function-info/remark holder)]
-;	 (for [s ss]
-;	   {:taxonomy "all"
-;	    :class "txt"
-;	    :label s
-;	    :id s})))
 
    :Published_as
    (seq (for [pa (:evidence/published-as holder)]
