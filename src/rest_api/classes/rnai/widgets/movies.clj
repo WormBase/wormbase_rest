@@ -5,12 +5,7 @@
 
 (defn movies [r]
   {:data (some->> (:movie/_rnai r)
-                  (map (fn [m]
-                         {:name (:movie.remark/text (first (:movie/remark m)))
-                          :file (:movie/public-name m)
-                          :id (:movie/public-name m)
-                          :class "Movie"
-                          :label (:movie/id m)}))
+                  (map pack-obj)
                   (sort-by :label))
    :description "movies documenting effect of rnai"})
 
