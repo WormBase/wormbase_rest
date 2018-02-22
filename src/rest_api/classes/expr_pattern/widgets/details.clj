@@ -5,9 +5,11 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn experimental-details [e]
-  {:data {:types (pace-utils/vmap
+  {:data {:types (into
+                   []
+                       (pace-utils/vmap
                    "Antibody"
-                   (:expr-pattern/antibody e)
+                   (when (contains? e :expr-pattern/antibody) "")
 
                    "CIS Regulatory Element"
                    (when (contains? e :expr-pattern/cis-regulatory-element) "")
@@ -19,7 +21,7 @@
                    (when (contains? e :expr-pattern/genome-editing) "")
 
                    "In-Situ"
-                   (:expr-pattern/in-situ e)
+                   (when (contains? e :expr-pattern/in-situ) "")
 
                    "Localizome"
                    (when (contains? e :expr-pattern/localizome) "")
@@ -29,10 +31,10 @@
                      (sort-by :label (map pack-obj analyses)))
 
                    "Northern"
-                   (:expr-pattern/northern e)
+                   (when (contains? e :expr-pattern/northern) "")
 
                    "Reporter Gene"
-                   (:expr-pattern/reporter-gene e)
+                   (when (contains? e :expr-pattern/reporter-gene) "")
 
                    "RNAseq"
                    (when-let [analyses (:expr-pattern/rnaseq e)]
@@ -42,21 +44,26 @@
                    (when (contains? e :expr-pattern/rt-pcr) "")
 
                    "Western"
-                   (:expr-pattern/western e)
+                   (when (contains? e :expr-pattern/western) "")
 
                    "Tiling Array"
                    (when-let [analyses (:expr-pattern/tiling-array e)]
-                     (sort-by :label (map pack-obj analyses))))
+                     (sort-by :label (map pack-obj analyses)))))
           :variation (->> (:variation.expr-pattern/_expr-pattern e)
                           (map :variation/_expr-pattern)
                           (map pack-obj)
                           (seq))
           :antibody_info (when-let [a (:expr-pattern/antibody-info e)]
                            (map pack-obj a))
-          :transgene (when-let [t (:expr-pattern/transgene e)]
-                       (map pack-obj t))
-          :construct (when-let [c (:expr-pattern/construct e)]
-                       (map pack-obj c))
+          :transgene (some->> (:expr-pattern/transgene e)
+                       (map (fn [t] [(pack-obj t)
+                                     (:transgene.summary/text (:transgene/summary t))]))
+                       (into []))
+          :construct (some->> (:expr-pattern/construct e)
+                       (map (fn [c] [(pack-obj c)
+                                     (:construct.summary/text (:construct/summary c))]))
+                       (into []))
+
           :strain (when-let [s (:expr-pattern/strain e)]
                     (pack-obj s))}
    :description "Experimental details of the expression pattern"})
@@ -81,11 +88,14 @@
    :description "gene ontology terms associated with this expression pattern"})
 
 (defn expressed-by [e]
-  {:data (some->> (:expr-pattern/gene e)
+  {:data (when-let [gene (some->> (:expr-pattern/gene e)
                   (map :expr-pattern.gene/gene)
                   (map pack-obj)
                   (sort-by :label)
-                  (group-by :id))
+                  (map (fn [o]
+                         {(:id o) o}))
+                  (into {}))]
+           {:gene gene})
    :description "Items that exhibit this expression pattern"})
 
 (defn expressed-in [e]

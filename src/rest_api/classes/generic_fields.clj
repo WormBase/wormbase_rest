@@ -122,14 +122,15 @@
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (let [text (:method/id (:locatable/method object))]
-             (if (= role "transcript")
+             (if (or (= role "transcript") 
+                     (= role "cds"))
                {:method text
                 :details (:method.remark/text
                                (first
                                  (:method/remark
                                    (:locatable/method object))))}
                text))
-     :description (str "the method used to describe the" role)}))
+     :description (str "the method used to describe the " role)}))
 
 (defn identity-field [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
@@ -355,12 +356,13 @@
                length-spliced))
 
            :model
-           (for [s sequences]
-             (conj
-               {:style (if (= object s)
-                         "font-weight:bold"
-                         0)}
-               (pack-obj s)))
+           (some->> sequences
+                    (map (fn [s]
+                           (conj
+                             {:style (if (= object s)
+                                       "font-weight:bold"
+                                       0)}
+                             (pack-obj s)))))
 
            :cds
            (if (some? cds)
@@ -376,7 +378,13 @@
                     (for [rh (:cds/remark cds)]
                       (+ 1 (.indexOf all-cds-remark-holders rh)))))
                 (pack-obj cds))
-              :evidence {:status (name (:cds/prediction-status cds))}}
+              :evidence {:status (when-let [status (name (:cds/prediction-status cds))]
+                                   (str
+                                   (case status
+                                     "confirmed" "Confirmed"
+                                     "partially-confirmed" "Partially confimed"
+                                     "predicted" "Predicted")
+                                   " by cDNA(s)"))}}
              "(no CDS)")
 
            :gene
@@ -443,11 +451,10 @@
                     :remarks (create-remarks all-cds-remark-holders)})
 
                  "transcript"
-                 (when-let [ghs (:gene.corresponding-transcript/_transcript object)]
-                   (flatten
-                     (for [gh ghs
-                           :let [gene (:gene/_corresponding-transcript gh)]]
-                       (corresponding-all-gene gene object role nil))))
+                 (some->> (:gene.corresponding-transcript/_transcript object)
+                          (map (fn [h]
+                                 (let [gene (:gene/_corresponding-transcript h)]
+                                   (corresponding-all-gene gene object role nil)))))
 
                  "cds"
                  (when-let [ths (:transcript.corresponding-cds/_cds object)]
@@ -481,3 +488,55 @@
                            (corresponding-all-gene gene cds "cds" nil)))))))]
       {:data (not-empty data)
        :description (str "corresponding cds, transcripts, gene for this " role)})))
+
+(defn sequence-type [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+	role (namespace id-kw)
+	kw-cdna (keyword role "cdna")]
+    {:data (cond
+	     (re-matches #"^cb\d+\.fpc\d+$/" (id-kw object))
+	     "C. briggsae draft contig"
+
+	     (re-matches #"(\b|_)GAP(\b|_)" (id-kw object))
+	     "gap in genomic sequence -- for accounting purposes"
+
+	     (contains? object :sequence/genomic)
+	     "Genomic"
+
+	     (= (:method/id (:locatable/method object)) "Vancouver_fosmid")
+	     "genomic -- fosmid"
+
+             (= role "pseudogene")
+             "Pseudogene"
+
+	     (contains? object :locatable/min)
+	     (str "WormBase " (case role
+                                    "cds" "CDS"
+                                    "transcript" "Transcript"
+                                    role))
+
+	     nil
+	     "predicted coding sequence"
+
+             (contains? object :sequence/cdna)
+             (let [cdna (name (first (:sequence/cdna object)))]
+               (case cdna
+                 "cdna-est" "cDNA_EST"
+                 "est-5" "EST_5"
+                 "est-3" "EST_3"
+                 "capped-5" "Capped_5"
+                 "tsl-tag" "TSL_tag"
+                 cdna))
+
+	     (= (:method/id (:locatable/method object)) "EST_nematode")
+	     "non-Elegans nematode EST sequence"
+
+	     (contains? object (keyword role "merged-into"))
+             "merged sequence entry"
+
+	     (= (:method/id (:locatable/method object)) "NDB")
+	     "GenBank/EMBL Entry"
+
+	     :else
+	     "unknown")
+     :description "the general type of the sequence"}))

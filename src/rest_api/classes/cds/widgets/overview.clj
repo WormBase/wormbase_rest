@@ -5,13 +5,9 @@
    [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn sequence-type [cds]
-  {:data {:data nil ; for C10F3.5a this is "Wormbase CDS" - I can't figure out how to get this string
-          :description "the general type of the sequence"}
-   :description "the general type of the sequence"})
-
 (defn description [cds]
   {:data (:cds.detailed-description/text (first (:cds/detailed-description cds)))
+   :d (:db/id cds)
    :description (str "description of the CDS " (:cds/id cds))})
 
 (defn partial-field [cds]
@@ -34,7 +30,7 @@
 (def widget
   {:name generic/name-field
    :taxonomy generic/taxonomy
-   :sequence_type sequence-type
+   :sequence_type generic/sequence-type
    :description description
    :partial partial-field
    :identity generic/identity-field

@@ -18,32 +18,10 @@
                {id (pack-obj cds)})))
    :description "Matching CDSs"})
 
-(defn sequence-type [s] ; this comes from the properties section in the tree view. But doesn't seem to fully line up
-  {:data (cond
-           (contains? s :sequence/cdna)
-           (let [cdna (name (first (:sequence/cdna s)))]
-             (case cdna
-               "cdna-est" "cDNA_EST"
-               "est-5" "EST_5"
-               "est-3" "EST_3"
-               "capped-5" "Capped_5"
-               "tsl-tag" "TSL_tag"
-               cdna))
-
-           (contains? s :sequence/genomic)
-           "Genomic")
-   :description "the general type of the sequence"})
-
 (defn pseudogenes [s] ;OSTR077F5_1
   {:data (when-let [ph (first (:pseudogene.matching-cdna/_sequence s))]
              (pack-obj (:pseudogene/_matching-cdna ph)))
    :description "Matching Pseudogenes"})
-
-(defn method [s]
-  {:data (when-let [method (:locatable/method s)]
-           {:method (:method/id method)
-            :details (:method.remark/text (first (:method/remark method)))})
-   :description "the method used to describe the Sequence"})
 
 (defn transcripts [s]
   {:data (when-let [ths (:transcript.matching-cdna/_sequence s)]
@@ -77,10 +55,10 @@
    :available_from generic/available-from
    :source_clone source-clone
    :cdss cdss
-   :sequence_type sequence-type
+   :sequence_type generic/sequence-type
    :pseudogenes pseudogenes
    :remarks generic/remarks
-   :method method
+   :method generic/method
    :transcripts transcripts
    :laboratory generic/laboratory
    :paired_read paired-read
