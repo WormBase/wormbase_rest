@@ -1,60 +1,65 @@
 (ns rest-api.classes.expr-pattern.widgets.details
   (:require
    [pseudoace.utils :as pace-utils]
+   [rest-api.formatters.date :as dates]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn experimental-details [e]
   {:data {:types (into
                    []
-                       (pace-utils/vmap
-                   "Antibody"
-                   (when (contains? e :expr-pattern/antibody) "")
+                   (pace-utils/vmap
+                     "Antibody"
+                     (when (contains? e :expr-pattern/antibody) "")
 
-                   "CIS Regulatory Element"
-                   (when (contains? e :expr-pattern/cis-regulatory-element) "")
+                     "Cis regulatory element"
+                     (when (contains? e :expr-pattern/cis-regulatory-element) "")
 
-                   "EPIC"
-                   (when (contains? e :expr-pattern/epic) "")
+                     "EPIC"
+                     (when (contains? e :expr-pattern/epic) "")
 
-                   "Genome Editing"
-                   (when (contains? e :expr-pattern/genome-editing) "")
+                     "Genome editing"
+                     (when (contains? e :expr-pattern/genome-editing) "")
 
-                   "In-Situ"
-                   (when (contains? e :expr-pattern/in-situ) "")
+                     "In-situ"
+                     (when (contains? e :expr-pattern/in-situ) "")
 
-                   "Localizome"
-                   (when (contains? e :expr-pattern/localizome) "")
+                     "Localizome"
+                     (when (contains? e :expr-pattern/localizome) "")
 
-                   "Microarray"
-                   (when-let [analyses (:expr-pattern/microarray e)]
-                     (sort-by :label (map pack-obj analyses)))
+                     "Microarray"
+                     (when-let [analyses (:expr-pattern/microarray e)]
+                       (sort-by :label (map pack-obj analyses)))
 
-                   "Northern"
-                   (when (contains? e :expr-pattern/northern) "")
+                     "Northern"
+                     (when (contains? e :expr-pattern/northern) "")
 
-                   "Reporter Gene"
-                   (when (contains? e :expr-pattern/reporter-gene) "")
+                     "Reporter gene"
+                     (when (contains? e :expr-pattern/reporter-gene) "")
 
-                   "RNAseq"
-                   (when-let [analyses (:expr-pattern/rnaseq e)]
-                     (sort-by :label (map pack-obj analyses)))
+                     "RNAseq"
+                     (when-let [analyses (:expr-pattern/rnaseq e)]
+                       (sort-by :label (map pack-obj analyses)))
 
-                   "RT-PCR"
-                   (when (contains? e :expr-pattern/rt-pcr) "")
+                     "RT-PCR"
+                     (when (contains? e :expr-pattern/rt-pcr) "")
 
-                   "Western"
-                   (when (contains? e :expr-pattern/western) "")
+                     "Western"
+                     (when (contains? e :expr-pattern/western) "")
 
-                   "Tiling Array"
-                   (when-let [analyses (:expr-pattern/tiling-array e)]
-                     (sort-by :label (map pack-obj analyses)))))
+                     "Tiling array"
+                     (when-let [analyses (:expr-pattern/tiling-array e)]
+                       (sort-by :label (map pack-obj analyses)))))
           :variation (->> (:variation.expr-pattern/_expr-pattern e)
                           (map :variation/_expr-pattern)
                           (map pack-obj)
                           (seq))
           :antibody_info (when-let [a (:expr-pattern/antibody-info e)]
                            (map pack-obj a))
+          :author (when-let [a (:expr-pattern/author e)]
+                    (map pack-obj a))
+          :date (when-let [d (:expr-pattern/date e)]
+                  (dates/format-date4 d))
           :transgene (some->> (:expr-pattern/transgene e)
                        (map (fn [t] [(pack-obj t)
                                      (:transgene.summary/text (:transgene/summary t))]))
@@ -65,7 +70,7 @@
                        (into []))
 
           :strain (when-let [s (:expr-pattern/strain e)]
-                    (pack-obj s))}
+                    [(pack-obj s)])}
    :description "Experimental details of the expression pattern"})
 
 (defn anatomy-ontology [e]
@@ -88,24 +93,50 @@
    :description "gene ontology terms associated with this expression pattern"})
 
 (defn expressed-by [e]
-  {:data (when-let [gene (some->> (:expr-pattern/gene e)
+  {:data (pace-utils/vmap
+           :gene
+           (some->> (:expr-pattern/gene e)
                   (map :expr-pattern.gene/gene)
                   (map pack-obj)
                   (sort-by :label)
                   (map (fn [o]
                          {(:id o) o}))
-                  (into {}))]
-           {:gene gene})
+                  (into {}))
+
+           :sequence
+           (some->> (:expr-pattern/sequence e)
+                    (map pack-obj)
+                    (sort-by :label)
+                    (map pack-obj)
+                    (map (fn [o]
+                           {(:id o) o}))
+                    (into {}))
+
+           :protein
+           (some->> (:expr-pattern/protein e)
+                    (map pack-obj)
+                    (sort-by :label)
+                    (map (fn [o]
+                           {(:id o) o}))
+                    (into {}))
+
+           :clone
+           (some->> (:expr-pattern/clone e)
+                    (map pack-obj)
+                    (sort-by :label)
+                    (map (fn [o]
+                           {(:id o) o}))
+                    (into {})))
    :description "Items that exhibit this expression pattern"})
 
 (defn expressed-in [e]
   {:data (not-empty
            (pace-utils/vmap
-           "life stage"
-           (some->> (:expr-pattern/life-stage e)
-                    (map :expr-pattern.life-stage/life-stage)
-                    (map pack-obj)
-                    (sort-by :id))))
+             "life stage"
+             (some->> (:expr-pattern/life-stage e)
+                      (map :expr-pattern.life-stage/life-stage)
+                      (map pack-obj)
+                      (sort-by :label))))
    :description "Where the expression has been noted"})
 
 (defn sequence-feature [e]

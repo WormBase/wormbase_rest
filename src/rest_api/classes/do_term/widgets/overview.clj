@@ -1,75 +1,67 @@
 (ns rest-api.classes.do-term.widgets.overview
   (:require
-   [clojure.string :as str]
-   [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.object :as obj :refer [pack-obj]]))
+    [clojure.string :as str]
+    [rest-api.classes.generic-fields :as generic]
+    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn- gene-disease-relevance [gene]
-  (when-let [drhs (:gene/disease-relevance gene)]
-    (for [drh drhs
-          :let [note (:gene.disease-relevance/note drh)
-                species (:gene.disease-relevance/species drh)]]
-      {:text note
-       :evidence (obj/get-evidence drh)})))
+  (some->> (:gene/disease-relevance gene)
+           (map (fn [drh]
+                  (let [note (:gene.disease-relevance/note drh)]
+                    {:text note
+                     :evidence (obj/get-evidence drh)})))))
 
 (defn- gene-disease-orthologs [gene]
-  (when-let [ohs (:gene/ortholog gene)]
-    (sort-by
-      :label
-      (remove
-        nil?
-        (for [oh ohs
-              :let [sh (:gene.ortholog/species oh)
+  (some->> (:gene/ortholog gene)
+           (map (fn [oh]
+                  (let [sh (:gene.ortholog/species oh)
+                        species-id (:species/ncbi-taxonomy sh)]
+                    (when (= species-id 9606)
+                      (some->> (:gene/database
+                                 (:gene.ortholog/gene oh))
+                               (map (fn [dh]
+                                      (let [source-db (:database/id (:gene.database/database dh))
+                                            source-type (:database-field/id (:gene.database/field dh))]
+                                        (when (and
+                                                (= source-db "OMIM")
+                                                (= source-type "gene"))
+                                          (let [id (:gene.database/accession dh)]
+                                            {:label id
+                                             :class "OMIM"
+                                             :id id})))))
+                               (remove nil?)
+                               (first))))))
+           (flatten)
+           (remove nil?)
+           (sort-by :label)))
 
-                    species-id (:species/ncbi-taxonomy sh)]]
-          (if (= species-id 9606)
-            (let [ortholog (:gene.ortholog/gene oh)
-                  dhs (:gene/database ortholog)
-                  id (first
-                       (remove
-                         nil?
-                         (for [dh dhs
-                               :let [source-db (:database/id (:gene.database/database dh))
-                                     source-type  (:database-field/id (:gene.database/field dh))]]
-                           (if (and
-                                 (= source-db "OMIM")
-                                 (= source-type "gene"))
-                             (:gene.database/accession dh)))))]
-              (if id
-                {:lebel (str "OMIM:" id)
-                 :class "OMIM"
-                 :id id}))))))))
-
-(defn gene-orthology [d]
+(defn genes-orthology [d]
   {:error nil
-   :data (when-let [gs (:gene.disease-potential-model/_do-term d)]
-           (vals
-             (apply
-               merge
-               (for [g gs
-                     :let [gene (:gene/_disease-potential-model g)]]
-                 {(:gene/id gene)
-                  {:gene (pack-obj gene)
-                   :relevance (gene-disease-relevance gene)
-                   :human_orthologs (gene-disease-orthologs gene)}}))))
+   :data (some->> (:gene.disease-potential-model/_do-term d)
+                  (map (fn [g]
+                         (let [gene (:gene/_disease-potential-model g)]
+                           {(:gene/id gene)
+                            {:gene (pack-obj gene)
+                             :relevance (gene-disease-relevance gene)
+                             :human_orthologs (gene-disease-orthologs gene)}})))
+                  (apply merge)
+                  (vals))
    :description "Genes by orthology to human disease gene"})
 
 (defn parent [d]
-  {:data (when-let [disease-parents (:do-term/is-a d)]
-           (for [parent disease-parents]
-             (pack-obj parent)))
+  {:data (some->> (:do-term/is-a d)
+                  (map pack-obj))
    :description "Parent of this disease ontology"})
 
 (defn omim [d]
-  {:data (when-let [ids (when-let [dbhs (:do-term/database d)]
-                          (not-empty
-                            (remove
-                              nil?
-                              (sort
-                                (for [dbh dbhs
-                                      :let [database (:do-term.database/database dbh)
-                                            id (:do-term.database/accession dbh)]]
-                                  (if (= (:database/id database) "OMIM") id))))))]
+  {:data (when-let [ids (some->> (:do-term/database d)
+                                 (map  (fn [dbh]
+                                         (let [database (:do-term.database/database dbh)
+                                               id (:do-term.database/accession dbh)]
+                                           (when (= (:database/id database) "OMIM") id))))
+                                 (remove nil?)
+                                 (sort)
+                                 (not-empty))]
            {:disease {:ids ids}})
    :description "link to OMIM record"})
 
@@ -83,33 +75,36 @@
   {:data (:do-term/definition d)
    :description "Definition of this disease"})
 
-(defn genes-biology [d] ; tested on DOID:0050432 - getting more results hear than ace version
+(defn genes-biology [d]
   {:error nil
-   :data (when-let [gs (:gene.disease-experimental-model/_do-term d)]
-           (vals
-             (apply
-               merge
-               (for [g gs
-                     :let [gene (:gene/_disease-experimental-model g)]]
-                 {(:gene/id gene)
-                  {:gene (pack-obj gene)
-                   :dbidg (keys g)
-                   :relevance (gene-disease-relevance gene)
-                   :human_orthologs (gene-disease-orthologs gene)}}))))
+   :data (some->> (:gene.disease-experimental-model/_do-term d)
+                  (map :gene/_disease-experimental-model)
+                  (map (fn [gene]
+                         {(:gene/id gene)
+                          {:gene (pack-obj gene)
+                           :relevance (gene-disease-relevance gene)
+                           :human_orthologs (gene-disease-orthologs gene)}}))
+                  (apply merge)
+                  (vals))
    :description "Genes by orthology to human disease gene"})
 
 (defn synonym [d]
-  {:data (when-let [shs (:do-term/synonym d)]
-           (for [sh shs] (:do-term.synonym/text sh)))
+  {:data (some->> (:do-term/synonym d)
+                  (map :do-term.synonym/text)
+                  (sort))
    :description "Synonym of this disease"})
 
 (defn type-field [d]
-  {:data (when-let [ts (:do-term/type d)]
-           (for [t ts] (str/capitalize (name t))))
+  {:data (some->> (:do-term/type d)
+                  (map name)
+                  (map obj/humanize-ident)
+                  (map (fn [t]
+                         (if (= t "Gold") "GOLD" t)))
+                  (sort))
    :description "Type of this disease"})
 
 (def widget
-  {:gene_orthology gene-orthology
+  {:genes_orthology genes-orthology
    :parent parent
    :omim omim
    :status generic/status

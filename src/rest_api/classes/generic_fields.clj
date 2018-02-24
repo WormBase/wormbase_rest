@@ -330,8 +330,9 @@
           :let [cds (or (:gene.corresponding-cds/cds cdsh)
                         cdsh)]]
       (let [sequences (if (some? cds)
-                        (for [th (:transcript.corresponding-cds/_cds cds)]
-                          (:transcript/_corresponding-cds th))
+                        (some->> (:transcript.corresponding-cds/_cds cds)
+                                 (map :transcript/_corresponding-cds)
+                                 (sort-by :transcript/id))
                         (remove
                           nil?
                           (flatten
