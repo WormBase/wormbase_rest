@@ -11,7 +11,8 @@
             "laboratory" : [
                "University of Pittsburgh, Pittsburgh, PA"
             ],
-            "strain" : "FR3"
+            "strain" : "FR3",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Brugia malayi"
@@ -28,7 +29,8 @@
             "laboratory" : [
                "Caltech, Pasadena CA"
             ],
-            "strain" : "PS1010"
+            "strain" : "PS1010",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis angaria"
@@ -45,7 +47,8 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "PB2801"
+            "strain" : "PB2801",
+            "ucsc_name" : "caePb2"
          }
       ],
       "full_name" : "Caenorhabditis brenneri"
@@ -54,7 +57,7 @@
       "assemblies" : [
          {
             "appeared_in" : "WS254",
-            "assembly_accession" : null,
+            "assembly_accession" : "GCA_000004555.3",
             "assembly_name" : "CB4",
             "bioproject" : "PRJNA10731",
             "bioproject_description" : "C. briggsae Sequencing Consortium genome project",
@@ -63,7 +66,8 @@
                "University of Maryland, College Park MD",
                "Washington University, St. Louis MO"
             ],
-            "strain" : "AF16"
+            "strain" : "AF16",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis briggsae"
@@ -81,11 +85,12 @@
                "Washington University, St. Louis MO",
                "Wellcome Trust Sanger Institute, Cambridge UK"
             ],
-            "strain" : "N2"
+            "strain" : "N2",
+            "ucsc_name" : "ce11"
          },
          {
             "appeared_in" : "WS250",
-            "assembly_accession" : null,
+            "assembly_accession" : "GCA_000975215.1",
             "assembly_name" : "C_elegans_hawaii-v1",
             "bioproject" : "PRJNA275000",
             "bioproject_description" : "University of Washington C. elegans CB4856 genome project",
@@ -93,7 +98,8 @@
             "laboratory" : [
                "University of Washington, Seattle, WA"
             ],
-            "strain" : "CB4856"
+            "strain" : "CB4856",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis elegans"
@@ -110,7 +116,8 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "DF5080"
+            "strain" : "DF5080",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis japonica"
@@ -127,19 +134,21 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "PB4641"
+            "strain" : "PB4641",
+            "ucsc_name" : "caeRem3"
          },
          {
             "appeared_in" : "WS250",
-            "assembly_accession" : null,
-            "assembly_name" : "C_remanei_Oregon_v1",
+            "assembly_accession" : "GCA_001643735.1",
+            "assembly_name" : "ASM164373v1",
             "bioproject" : "PRJNA248909",
             "bioproject_description" : "University of Oregon University C. remanei PX356 genome project",
             "is_canonical" : false,
             "laboratory" : [
                "University of Texas, Arlington TX"
             ],
-            "strain" : "PX356"
+            "strain" : "PX356",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis remanei"
@@ -156,7 +165,8 @@
             "laboratory" : [
                "Institute of Evolutionary Biology, University of Edinburgh, Edinburgh, UK"
             ],
-            "strain" : "JU800"
+            "strain" : "JU800",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis sinica"
@@ -173,7 +183,8 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "JU1373"
+            "strain" : "JU1373",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis tropicalis"
@@ -182,7 +193,7 @@
       "assemblies" : [
          {
             "appeared_in" : "WS241",
-            "assembly_accession" : null,
+            "assembly_accession" : "GCA_000499405.2",
             "assembly_name" : "O_volvulus_Cameroon_v3",
             "bioproject" : "PRJEB513",
             "bioproject_description" : "Wellcome Trust Sanger Institute O. volvulus genome project",
@@ -190,7 +201,8 @@
             "laboratory" : [
                "Wellcome Trust Sanger Institute, Cambridge, UK"
             ],
-            "strain" : "O_volvulus_Cameroon_isolate"
+            "strain" : "O_volvulus_Cameroon_isolate",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Onchocerca volvulus"
@@ -208,7 +220,8 @@
                "Washington University, St. Louis MO",
                "MPI, Tuebingen, Germany"
             ],
-            "strain" : "PS312"
+            "strain" : "PS312",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Pristionchus pacificus"
@@ -225,7 +238,8 @@
             "laboratory" : [
                "Caltech, Pasadena CA"
             ],
-            "strain" : "MT8872"
+            "strain" : "MT8872",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Panagrellus redivivus"
@@ -234,7 +248,7 @@
       "assemblies" : [
          {
             "appeared_in" : "WS247",
-            "assembly_accession" : null,
+            "assembly_accession" : "GCA_001040885.1",
             "assembly_name" : "S_ratti_ED321_v5_0_4",
             "bioproject" : "PRJEB125",
             "bioproject_description" : "Wellcome Trust Sanger Institute S. ratti genome project",
@@ -242,7 +256,8 @@
             "laboratory" : [
                "Wellcome Trust Sanger Institute, Cambridge UK"
             ],
-            "strain" : "ED321"
+            "strain" : "ED321",
+            "ucsc_name" : null
          }
       ],
       "full_name" : "Strongyloides ratti"
