@@ -3,6 +3,8 @@
    [clojure.string :as str]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.expr-pattern.core :as expr-pattern]
+   [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.date :as date]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -89,10 +91,7 @@
               :oligo (when-let [ohs (:pcr-product/oligo pcr)]
                        (for [oh ohs
                              :let [oligo (:pcr-product.oligo/oligo oh)]]
-                         {:obj {:id (:oligo/id oligo)  ; not using pack object because of custom class name
-                                :label (:oligo/id oligo)
-                                :class "pcr_oligo"
-                                :taxonomy "all"}
+                         {:obj (pack-obj oligo)
                           :sequence (:oligo/sequence oligo)}))}))
    :description "PCR product associated with this clone"})
 
@@ -120,21 +119,7 @@
 
 (defn expression-patterns [clone]
   {:data (when-let [ep (first (:expr-pattern/_clone clone))]
-           (let [gene (:expr-pattern.gene/gene (first (:expr-pattern/gene ep)))]
-          {:certainty nil ; I am not certain about this but I think this is for anatomy_term - which does not occur here
-           :expression_pattern {:taxonomy "all"
-                                :class "expr_pattern"
-                                :label (str "Expression pattern for "
-                                            (if-let [n (or (:gene/public-name gene)
-                                                           (:gene/id gene))]
-                                              n
-                                              "" ))
-                                :id (:expr-pattern/id ep)}
-           :reference (when-let [paper (first (:expr-pattern/reference ep))]
-                        (:paper/id (:expr-pattern.reference/paper paper)))
-           :gene (if (empty? gene) nil (pack-obj gene))
-           :author (:author/id (last (:expr-pattern/author ep)))
-           :description (first (:expr-pattern/pattern ep))}))
+            (expr-pattern/pack ep))
    :description (str "expression patterns associated with the Clone: " (:clone/id clone))})
 
 (def widget

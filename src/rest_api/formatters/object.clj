@@ -56,6 +56,7 @@
 (defmethod obj-label "laboratory" [_ obj]
   (or (first (:laboratory/mail obj))
       (:laboratory/id obj)))
+
 (defmethod obj-label "protein" [_ prot]
   (or (first (:protein/gene-name prot))
       (:protein/id prot)))
@@ -280,11 +281,17 @@
    (if-let [k (first (filter #(= (name %) "id") (keys obj)))]
      (namespace k))))
 
+
+(declare pack-obj-helper)
+
 (defn pack-obj
   "Retrieve a 'packed' (web-API) representation of entity-map `obj`."
   ([obj]
    (pack-obj (obj-class obj) obj))
-  ([class obj & {:keys [label]}]
+  ([class obj & args]
+   (apply pack-obj-helper class obj args)))
+
+(defn- pack-obj-helper-base [class obj & {:keys [label]}]
    (if obj
      {:id (or ((keyword class "id") obj)
               (or (:oligo-set/id obj)
@@ -295,7 +302,32 @@
                (if (= class "author")
                  "person"
                  (str/replace class "-" "_")))
-      :taxonomy (obj-tax class obj)})))
+      :taxonomy (obj-tax class obj)}))
+
+(defmulti pack-obj-helper
+  (fn [class obj & args] class))
+
+(defmethod pack-obj-helper :default [class obj & args]
+  (apply pack-obj-helper-base class obj args))
+
+(defmethod pack-obj-helper "movie" [class obj & args]
+  (if-let [packed (apply pack-obj-helper-base class obj args)]
+    (let [paper-id (some->> (:movie/reference obj)
+                            (first)
+                            (:paper/id))]
+      (assoc
+        packed
+        :file
+        (or (if-let [file-name (some->> (:movie/public-name obj)
+                                        (re-matches #"(.+)\.(mov|mp4)")
+                                        (second))]
+              (format "/img-static/movies/%s/%s.mp4" paper-id file-name))
+            (if-let [rnai-db-id (some->> (:movie/db-info obj)
+                                         (first)
+                                         (:movie.db-info/accession))]
+              (format "http://www.rnai.org/movies/%s" rnai-db-id)))
+        ))))
+
 
 (defn get-evidence [holder]
   ;; Some of these need further checking to ensure that handling of
@@ -318,19 +350,10 @@
 
    :Date_last_updated
    (when-let [last-updated (:evidence/date-last-updated holder)]
-     (let [ds (-> last-updated dates/format-date str)]
+     (let [ds (-> last-updated dates/format-date4 str)]
        [{:id ds
          :label ds
          :class "text"}]))
-
-   :Remark
-   (or (seq (:evidence/remark holder))
-       (when-let [ss (:anatomy-function-info/remark holder)]
-	 (for [s ss]
-	   {:taxonomy "all"
-	    :class "txt"
-	    :label s
-	    :id s})))
 
    :Published_as
    (seq (for [pa (:evidence/published-as holder)]
@@ -406,51 +429,45 @@
 
    :Autonomous
    (when-let [ss (:anatomy-function-info/autonomous holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Autonomous"
+        :id "Autonomous"})
 
    :Necessary
    (when-let [ss (:anatomy-function-info/necessary holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Necessary"
+        :id "Necessary"})
 
    :Unnecessary
    (when-let [ss (:anatomy-function-info/unnecessary holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Unnecessary"
+        :id "Unnecessary"})
 
    :Nonautonomous
    (when-let [ss (:anatomy-function-info/nonautonomous holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Nonautonomous"
+        :id "Nonautonomous"})
 
    :Sufficient
    (when-let [ss (:anatomy-function-info/sufficient holder)]
-     (for [s ss]
        {:taxonomy "all"
         :class "txt"
-        :label s
-        :id s}))
+        :label "Sufficient"
+        :id "Sufficient"})
 
    :Insufficient
    (when-let [iss (:anatomy-function-info/insufficient holder)]
-     (for [is iss]
        {:taxonomy "all"
         :class "txt"
-        :label is
-        :id is}))))
+        :label "Insuffiecient"
+        :id "Insufficient"})))
 
 (defn pack-text
   "Normalize text to behave like a pack object."

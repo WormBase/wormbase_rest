@@ -51,29 +51,13 @@
     [?gene :gene/corresponding-transcript ?th]
     [?th :gene.corresponding-transcript/transcript ?transcript]])
 
-(defmulti fpkm-expression-summary-ls
-  "Used for the expression widget."
-  (fn [entity]
-    (contains? entity :gene/id)))
-
-(defmethod fpkm-expression-summary-ls
-  true
-  [gene]
-  (let [db (d/entity-db gene)
-        result-tuples (->> (d/q '[:find ?analysis ?fpkm ?stage
-                                  :in $ ?gene
-                                  :where
-                                  [?gene :gene/rnaseq ?rnaseq]
-                                  [?rnaseq :gene.rnaseq/stage ?stage]
-                                  [?rnaseq :gene.rnaseq/fpkm ?fpkm]
-                                  [?rnaseq
-                                   :evidence/from-analysis
-                                   ?analysis]]
-                                db (:db/id gene))
-                           (map (fn [[analysis-id fpkm stage-id]]
-                                  (let [analysis (d/entity db analysis-id)
-                                        stage (d/entity db stage-id)]
-                                    [analysis fpkm stage]))))
+(defn- process-fpkm
+  [db rels]
+  (let [result-tuples (map (fn [[analysis-id fpkm stage-id]]
+                             (let [analysis (d/entity db analysis-id)
+                                   stage (d/entity db stage-id)]
+                               [analysis fpkm stage]))
+                           rels)
         results (->> result-tuples
                      (filter (fn [[analysis]]
                                (not (control-analysis? analysis))))
@@ -101,15 +85,76 @@
      :description (str "Fragments Per Kilobase of transcript per "
                        "Million mapped reads (FPKM) expression data")}))
 
+(defmulti fpkm-expression-summary-ls
+  "Used for the expression widget."
+  (fn [entity]
+    (first (filter (fn [kw]
+                     (kw entity))
+                   [:gene/id :transcript/id :cds/id :pseudogene/id]))))
+
 (defmethod fpkm-expression-summary-ls
-  false
+  :gene/id
+  [gene]
+  (let [db (d/entity-db gene)]
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?gene
+                :where
+                [?gene :gene/rnaseq ?rnaseq]
+                [?rnaseq :gene.rnaseq/stage ?stage]
+                [?rnaseq :gene.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id gene))
+         (process-fpkm db))))
+
+(defmethod fpkm-expression-summary-ls
+  :transcript/id
   [transcript]
   (let [db (d/entity-db transcript)]
-    (->> (:db/id transcript)
-         (d/q q-corresponding-transcript db)
-         (d/entity db)
-         (fpkm-expression-summary-ls))))
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?transcript
+                :where
+                [?transcript :transcript/rnaseq ?rnaseq]
+                [?rnaseq :transcript.rnaseq/stage ?stage]
+                [?rnaseq :transcript.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id transcript))
+         (process-fpkm db))))
 
+(defmethod fpkm-expression-summary-ls
+  :cds/id
+  [cds]
+  (let [db (d/entity-db cds)]
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?cds
+                :where
+                [?cds :cds/rnaseq ?rnaseq]
+                [?rnaseq :cds.rnaseq/stage ?stage]
+                [?rnaseq :cds.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id cds))
+         (process-fpkm db))))
+
+(defmethod fpkm-expression-summary-ls
+  :pseudogene/id
+  [pseudogene]
+  (let [db (d/entity-db pseudogene)]
+    (->> (d/q '[:find ?analysis ?fpkm ?stage
+                :in $ ?pseudogene
+                :where
+                [?pseudogene :pseudogene/rnaseq ?rnaseq]
+                [?rnaseq :pseudogene.rnaseq/stage ?stage]
+                [?rnaseq :pseudogene.rnaseq/fpkm ?fpkm]
+                [?rnaseq
+                 :evidence/from-analysis
+                 ?analysis]]
+              db (:db/id pseudogene))
+         (process-fpkm db))))
 
 
 ;;
@@ -143,9 +188,31 @@
                       :label (format "<strong>and %s more</strong>" (- size capacity)))])
       (map pack-obj terms))))
 
+(defn- pack-obj-with-class [obj]
+  )
+
 (defn- expr-pattern-detail [expr-pattern qualifier]
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
+   :Description (str/join "<br/>" (:expr-pattern/pattern expr-pattern))
+
+   :Reagents
+   (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody-info :expr-pattern/variation]
+        (map (fn [kw] (kw expr-pattern)))
+        (apply concat
+               (some->> (:expr-pattern/strain expr-pattern)
+                        (conj []))
+               (->> (:variation.expr-pattern/_expr-pattern expr-pattern)
+                    (map :variation/_expr-pattern)))
+
+        (map (fn [obj]
+               (let [packed (pack-obj obj)]
+                 (assoc packed
+                        :label
+                        (format "%s (%s)" (:label packed) (:class packed)))
+                 )))
+        (seq))
+
    :Paper (if-let [paper-holders (:expr-pattern/reference expr-pattern)]
             (->> paper-holders
                  (map :expr-pattern.reference/paper)

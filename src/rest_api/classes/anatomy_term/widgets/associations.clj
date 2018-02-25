@@ -3,6 +3,7 @@
     [clojure.string :as str]
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer [pack-obj]]
+    [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.classes.generic-fields :as generic]))
 
 (defn transgenes [a]
@@ -47,7 +48,6 @@
                                 (:anatomy-term/term
                                   (:anatomy-function.not-involved/anatomy-term h)))
                         :evidence (obj/get-evidence h)}))
-
        :phenotype (when-let [ph (:anatomy-function/phenotype af)]
                     (let [phenotype (:anatomy-function.phenotype/phenotype ph)]
                       (if-let [evidence (obj/get-evidence ph)]
@@ -84,7 +84,7 @@
              {:description (when-let [patterns (:expr-pattern/pattern ep)]
                               (str/join "<br /> " patterns))
               :expression_pattern (pack-obj ep)
-              :certainty nil
+              :certainty (generic-functions/certainty h)
               :reference (when-let [hs (:expr-pattern/reference ep)]
                            (let [paper (:expr-pattern.reference/paper (first hs))]
                              (:paper/id paper)))

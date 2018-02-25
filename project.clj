@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "0.3.9"
+(defproject wormbase/rest-api "0.4.0"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/datomic-to-catalyst"
@@ -18,7 +18,7 @@
    [org.clojure/clojure "1.8.0"]
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
-   [ring "1.5.1"]
+   [ring "1.6.3"]
    [wormbase/pseudoace "0.4.15"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
@@ -60,7 +60,7 @@
           :source-paths ["dev"]
           :jvm-opts ["-Xmx1G"]
           :env
-          {:wb-db-uri "datomic:ddb://us-east-1/WS262/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS263/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"

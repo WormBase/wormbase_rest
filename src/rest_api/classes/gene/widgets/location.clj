@@ -14,8 +14,8 @@
 
 (defn jbrowse-tracks [gene]
   {:data (if (:gene/corresponding-transposon gene)
-          "Transposons%2CTransposon%20Genes"
-          "Curated_Genes%2CClassical_alleles%2CYACs_Fosmids_Cosmids")
+          "Transposons,Transposon Genes"
+          "Curated_Genes,Classical_alleles,YACs_Fosmids_Cosmids")
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [gene]
@@ -23,9 +23,9 @@
    :description "The genomic location of the sequence to be displayed by GBrowse"})
 
 (def widget
-    {:name generic/name-field
-     :genetic_position generic/genetic-position
-     :tracks tracks
-     :jbrowse_tracks jbrowse-tracks
-     :genomic_position generic/genomic-position
-     :genomic_image genomic-image})
+  {:name generic/name-field
+   :genetic_position generic/genetic-position
+   :tracks tracks
+   :jbrowse_tracks jbrowse-tracks
+   :genomic_position generic/genomic-position
+   :genomic_image genomic-image})

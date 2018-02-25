@@ -26,9 +26,10 @@
    :description (str "other names that have been used to refer to " (:gene-class/id gc))})
 
 (defn evidence [gc]
-  {:data (when-let [ev (:gene-class/evidence gc)]
-           (obj/get-evidence ev))
-
+  {:data (some->> (:gene-class/evidence gc)
+                  (:evidence/paper-evidence)
+                  (first)
+                  (pack-obj))
    :descriptions (str "evidence for the gene class " (:gene-class/id gc))})
 
 (def widget

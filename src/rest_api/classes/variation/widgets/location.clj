@@ -29,11 +29,11 @@
   {:data (cond
            (= "Caenorhabditis elegans"
               (:species/id (:variation/species variation)))
-           "Curated_Genes%2CClassical_alleles%2CHigh-throughput%20alleles%2CPolymorphisms%2CChange-of-function%20alleles%2CChange-of-function%20polymorphisms%2CTransposon%20insert%20sites%2CMillion%20Mutation%20Project"
+           "Curated_Genes,Classical_alleles,High-throughput alleles,Polymorphisms,Change-of-function alleles,Change-of-function polymorphisms,Transposon insert sites,Million Mutation Project"
 
            (= "Caenorhabditis briggsae"
               (:species/id (:variation/species variation)))
-           "Curated_Genes%2CPolymorphisms"
+           "Curated_Genes,Polymorphisms"
 
            :else
            "Curated_Genes")

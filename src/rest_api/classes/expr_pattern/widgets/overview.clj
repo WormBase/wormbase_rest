@@ -27,35 +27,46 @@
 
 (defn curated-images [ep]
   {:data (when-let [pictures (:picture/_expr-pattern ep)]
-           (group-by :paper_id
+           (group-by :group_id
            (for [picture pictures
                  :let [n (:picture/name picture)
-                       paper  (first (:picture/reference picture))]]
-	      {:source (when-let [paper (:picture/reference picture)]
-			 (pack-obj (first paper)))
+                       paper (first (:picture/reference picture))
+                       id (or (:person/id (first (:picture/contact picture)))
+                                     (:paper/id paper))]]
+	      {:source (or (some->> (:picture/contact picture)
+                                (first)
+                                (pack-obj))
+                           (when (some? paper)
+                             (pack-obj paper)))
 	       :draw (when n
 		       (let [[basename extension] (split-last "." n)]
 			 {:format extension
-			  :name (str/join "/" [(:paper/id paper) basename])
+			  :name (str/join "/" [id basename])
 			  :class "/img-static/pictures"}))
-	       :external_source {:template (:picture/acknowledgement-template picture)
-                                 :template-items (pace-utils/vmap
-                                                   :Article_URL
-                                                   (when-let [ah (:picture/article-url picture)]
-                                                     (let [d (:picture.article-url/database ah)]
-                                                       {:db (:database/id d)
-                                                        :text (:database/name d)}))
+               :external_source (not-empty
+                                  (pace-utils/vmap
+                                    :template
+                                    (:picture/acknowledgement-template picture)
 
-                                                  :Journal_URL
-                                                  (when-let [d (:picture/journal-url picture)]
-                                                      {:db (:database/id d)
-                                                       :text (:database/name d)})
+                                    :template-items
+                                    (not-empty
+                                      (pace-utils/vmap
+                                        :Article_URL
+                                        (when-let [ah (:picture/article-url picture)]
+                                          (let [d (:picture.article-url/database ah)]
+                                            {:db (:database/id d)
+                                             :text (:database/name d)}))
 
-                                                  :Publisher_URL
-                                                  (when-let [d (:picture/publisher-url picture)]
-                                                      {:db (:database/id d)
-                                                       :text (:database/name d)}))}
-              :paper_id (:paper/id paper)
+                                        :Journal_URL
+                                        (when-let [d (:picture/journal-url picture)]
+                                          {:db (:database/id d)
+                                           :text (:database/name d)})
+
+                                        :Publisher_URL
+                                        (when-let [d (:picture/publisher-url picture)]
+                                          {:db (:database/id d)
+                                           :text (:database/name d)})))))
+              :group_id id
               :id (:picture/id picture)})))
    :description "Curated images of the expression pattern"})
 
@@ -65,7 +76,9 @@
    :description (str "description of the Expr_pattern " (:expr-pattern/id ep))})
 
 (defn ep-movies [ep]
-  {:data (:expr-pattern/movieurl ep) ; need to wait for Sybils changes to know what it should be like
+  {:data (->> (:movie/_expr-pattern ep)
+              (map pack-obj)
+              (seq))
    :description "Movies showcasing this expression pattern"})
 
 (defn database [ep]
@@ -78,18 +91,20 @@
               :class database}))
    :description "Database for this expression pattern"})
 
-(defn subcellular-location [ep]
+(defn subcellular-locations [ep]
   {:data (:expr-pattern/subcellular-localization ep)
    :description "Subcellular locations of this expression pattern"})
 
 (defn expression-image [ep]
-  {:data (str "/img-static/virtualworm/Gene_Expr_Renders/" (:expr-pattern/id ep) ".jpg")
+  {:data (str "/img-static/virtualworm/Expr_Object_Renders/" (:expr-pattern/id ep) ".jpg")
    :description "Image of the expression pattern"})
 
-(defn is-bs-strain [ep]
-  {:data (when-let [labs (:expr-pattern/laboratory ep)] ; I am not sure how to replicate logic from perl - Expr106 has it
+(defn is-bs-strain [ep] ; this was taken from the perl code; there are no examples in database of this bine true
+  {:data (when-let [labs (:expr-pattern/laboratory ep)]
            (let [lab (first labs)]
-             (keys lab)))
+             (when (or (:laboratory/id lab) "BC")
+                     (:laboratory/id lab) "VC"))
+                 "true")
    :description "Whether this is expression pattern for a BC strain"})
 
 (def widget
@@ -100,6 +115,6 @@
    :database database
    :remarks generic/remarks
    :historical_gene generic/historical-gene
-   :subcellular_location subcellular-location
+   :subcellular_locations subcellular-locations
    :expression_image expression-image
    :is_bs_strain is-bs-strain})

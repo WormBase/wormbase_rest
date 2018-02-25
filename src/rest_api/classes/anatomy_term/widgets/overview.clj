@@ -1,7 +1,8 @@
-(ns rest-api.classes.anatomy_term.widgets.overview
+(ns rest-api.classes.anatomy-term.widgets.overview
   (:require
    [datomic.api :as d]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.generic-functions :as generic-functions]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (def q-anatomy-functions-involved
@@ -133,8 +134,8 @@
                 (:paper/id
                   (:expr-pattern.reference/paper (first holder))))
 
-              :certainty ; Couldn't find an example and the Perl code looks difficult to mimic. Would need context.
-              nil
+              :certainty
+              (generic-functions/certainty (:expr-pattern/anatomy-term expression-pattern))
 
               :author
               (when-let [authors (:expr-pattern/author expression-pattern)]
@@ -145,16 +146,15 @@
                 (first pattern))}))
    :description (str "expression patterns associated with the Anatomy_term: " (:anatomy-term/id anatomy-term))})
 
-; Commented out widgets do not get used by the template. This functionality should be discussed and possibly be used in another widget(s)
 (def widget
   {:name generic/name-field
-   ;:transgenes transgenes
-;   :expression_clusters expression-clusters
+   :transgenes transgenes
+   :expression_clusters expression-clusters
    :term term
    :definition definition
-;   :gene_ontology gene-ontology
+   :gene_ontology gene-ontology
    :synonyms synonyms
-;   :anatomy_function_nots anatomy-function-nots
-;   :anatomy_functions anatomy-functions
-;   :expression_patterns expression-patterns
+   :anatomy_function_nots anatomy-function-nots
+   :anatomy_functions anatomy-functions
+   :expression_patterns expression-patterns
    :wormatlas wormatlas})

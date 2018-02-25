@@ -9,7 +9,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn jbrowse-tracks [transposon]
-  {:data "Transposon%20Genes%2CTransposons"
+  {:data "Transposon Genes,Transposons"
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [transposon]

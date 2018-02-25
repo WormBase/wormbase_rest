@@ -2,8 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.4.0] - (unreleased)
-- tbd
+## [0.4.0] - 2018-02-24
+- first release with autoscaling
+- several new urls added
 
 ## [0.3.9] - 2018-01-26 - Hotfix
 - Commenting out lineage widget - causing d2c to crash

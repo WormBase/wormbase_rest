@@ -24,7 +24,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn jbrowse-tracks [feature]
-  {:data "Curated_Genes%2CRNASeq%20Asymmetries%2CRNASeq%2CRNASeq%20introns%2CPolysomes%2CDNAseI%20hypersensitive%20site%2CRegulatory%20regions%2CPromoter%20regions%2CHistone%20binding%20sites%2CTranscription%20factor%20binding%20regions%2CTranscription%20factor%20binding%20sites%2CGenome%20sequence%20corrections%2CBinding%20sites%20(predicted)%2CBinding%20sites%20(curated)%2CBinding%20regions%2CGenome%20sequence%20errors"
+  {:data "Curated_Genes,RNASeq Asymmetries,RNASeq,RNASeq introns,Polysomes,DNAseI hypersensitive site,Regulatory regions,Promoter regions,Histone binding sites,Transcription factor binding regions,Transcription factor binding sites,Genome sequence corrections,Binding sites (predicted),Binding sites (curated),Binding regions,Genome sequence errors"
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [feature]

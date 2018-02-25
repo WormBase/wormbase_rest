@@ -11,7 +11,7 @@
 
 (defn jbrowse-tracks [s]
   {:data (when (= "Caenorhabditis elegans" (:species/id (:sequence/species s)))
-          "Curated_Genes%2CESTs%20(best)")
+          "Curated_Genes,ESTs (best)")
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [s]

@@ -59,8 +59,7 @@ eb-create: $(call print-help,eb-create,\
 		--cname="datomic-to-catalyst-${LOWER_WS_VERSION}" \
 		--vpc.id="vpc-8e0087e9" \
 		--vpc.ec2subnets="subnet-a33a2bd5" \
-		--vpc.securitygroups="sg-c92644b3" \
-		--single
+		--vpc.securitygroups="sg-c92644b3"
 
 .PHONY: eb-env
 eb-setenv: $(call print-help,eb-env,\

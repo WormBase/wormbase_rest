@@ -9,7 +9,7 @@
    :description "tracks displayed in GBrowse"})
 
 (defn jbrowse-tracks [protein]
-  {:data "Curated_Genes%2CProtein%20motifs"
+  {:data "Curated_Genes,Protein motifs"
    :description "tracks displayed in JBrowse"})
 
 (defn genomic-image [protein]
