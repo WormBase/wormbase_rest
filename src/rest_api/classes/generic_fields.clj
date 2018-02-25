@@ -103,7 +103,9 @@
                    (or (:variation.strain/strain
                          (first
                            (:variation/strain object-orig)))
-                       object-orig))
+                      (or (first
+                            (:transcript/_corresponding-pcr-product object-orig))
+                          object-orig)))
         id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (if (= role "protein")

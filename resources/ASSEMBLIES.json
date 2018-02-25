@@ -210,9 +210,9 @@
    "p_pacificus" : {
       "assemblies" : [
          {
-            "appeared_in" : "WS221",
+            "appeared_in" : "WS263",
             "assembly_accession" : null,
-            "assembly_name" : "P_pacificus-v2",
+            "assembly_name" : "P_pacificus-El_Paco",
             "bioproject" : "PRJNA12644",
             "bioproject_description" : "Max Planck Institute for Developmental Biology P. pacificus genome project",
             "is_canonical" : true,
