@@ -228,7 +228,9 @@
     {:data (if-let [species (:species/id ((keyword role "species") object))]
              (let [[genus species] (str/split species #" ")]
                {:genus genus
-                :species species}))
+                :species species})
+             {:genus "Caenorhabditis"
+              :species "elegans"})
      :description "the genus and species of the current object"}))
 
 (defn remarks [object]
