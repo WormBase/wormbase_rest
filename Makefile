@@ -62,7 +62,7 @@ eb-setenv: $(call print-help,eb-env,\
 	     "Set enviroment variables for the \
 	      ElasticBeanStalk environment")
 	eb setenv WB_DB_URI="${WB_DB_URI}" \
-		  _JAVA_OPTIONS="-Xmx28g" \
+		  _JAVA_OPTIONS="-Xmx14g" \
 		  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
 		  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
 		  -e "datomic-to-catalyst"
