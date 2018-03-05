@@ -53,10 +53,8 @@
                                   :used_in {:taxonomy "all"
                                             :class "expr_pattern"
                                             :label (let [gene (:expr-pattern.gene/gene (first (:expr-pattern/gene ep)))]
-                                                     (str "Expression pattern for " (or
-                                                                                      (or (:gene/public-name gene)
-                                                                                          (:gene/id gene))
-                                                                                      "")))
+                                                     (str "Expression pattern for " (or (:gene/public-name gene)
+                                                                                          (get :gene/id gene ""))))
                                             :id (:expr-pattern/id ep)}
                                   :evidence (obj/get-evidence ep)
                                   :used_in_type "Expr pattern"})))
@@ -73,7 +71,7 @@
                                                                         (map :interaction.interactor-overlapping-gene/gene)
                                                                         (map (fn [gene]
                                                                                (or (:gene/public-name gene)
-                                                                                   (:gene/id gene))))))
+                                                                                   (get :gene/id gene ""))))))
                                               :id (:interaction/id i)})
                                   :evidence (obj/get-evidence ih)
                                   :used_in_type "Interactor"})))))))
@@ -122,7 +120,7 @@
                   (sort-by :label))
    :description "Strains associated with this transgene"})
 
-(defn recombination-site [s] ; not found in database
+(defn recombination-site [t]
   {:data (some->> (:construct/_transgene-construct t)
                   (map (fn [c]
                         (:construct/recombinant-site c)))
