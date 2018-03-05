@@ -17,9 +17,10 @@
                   (map :microarray-results.results/microarray-experiment)
                   (map (fn [e]
                          {:experiment (:microarray-experiment/id e)
-                          :temp (first
-                                  (:condition/temperature
-                                    (:microarray-experiment/microarray-sample e)))
+                          :temp (some-> e
+                                        :mocroarray-experiment/microarray-sample
+                                        :condition/temperature
+                                        first)
                           :references (some->> (:microarray-experiment/reference e)
                                                (map pack-obj))
                           :life_stage (when-let [ls (:condition/life-stage
