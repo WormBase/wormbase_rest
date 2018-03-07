@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.1] - 2018-03-07 - Hotfix
+- Fixing 500 errors for gene page expression widget
+
 ## [0.4.0] - 2018-02-24
 - first release with autoscaling
 - several new urls added
