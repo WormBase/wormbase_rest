@@ -514,16 +514,16 @@
                               :anatomy-function-info/insufficient
                               :anatomy-function-info/necessary
                               :anatomy-function-info/nonautonomous
-                              :anatomy-function-info/remark
                               :anatomy-function-info/sufficient
                               :anatomy-function-info/unnecessary]
                              (reduce (fn [coll attr]
                                        (if-let [attr-values (attr involved)]
                                          (assoc coll
                                                 (obj/humanize-ident attr)
-                                                (str/join "<br/>" attr-values))
+                                                (format "%s" attr-values))
                                          coll))
-                                     {}))}
+                                     (pace-utils/vmap
+                                      :remark (:anatomy-function-info/remark involved))))}
      :assay (if-let [assay-holders (seq (:anatomy-function/assay anatomy-function))]
               {:text (->> (map :anatomy-function.assay/ao-code assay-holders)
                           (map :ao-code/id)
