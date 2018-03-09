@@ -21,10 +21,8 @@
                     (or
                       (some->> (:expr-pattern/subcellular-localization ep)
                                (sort)
-                               (str/join "<br />")
-                               (not-empty))
+                               (str/join "<br />"))
                       (some->> (:expr-pattern/remark ep)
                                (map :expr-pattern.remark/text)
                                (sort)
-                               (str/join "<br />")
-                               (not-empty))))}))
+                               (str/join "<br />"))))}))
