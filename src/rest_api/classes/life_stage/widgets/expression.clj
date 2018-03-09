@@ -6,7 +6,6 @@
     [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.classes.generic-fields :as generic]))
 
-
 (defn expression-patterns [l]
   {:data (some->> (:expr-pattern.life-stage/_life-stage l)
                   (map (fn [h]
