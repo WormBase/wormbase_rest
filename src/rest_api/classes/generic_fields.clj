@@ -383,9 +383,9 @@
                     (for [rh (:cds/remark cds)]
                       (+ 1 (.indexOf all-cds-remark-holders rh)))))
                 (pack-obj cds))
-              :evidence {:status (when-let [status (name (:cds/prediction-status cds))]
+              :evidence {:status (when-let [status (:cds/prediction-status cds)]
                                    (str
-                                   (case status
+                                   (case (name status)
                                      "confirmed" "Confirmed"
                                      "partially-confirmed" "Partially confimed"
                                      "predicted" "Predicted")
