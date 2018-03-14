@@ -19,41 +19,27 @@
                     (first
                       (:sequence/_clone c)))
                   (map (fn [child]
-                         (some->> (or
-                                    (:gene.corresponding-cds/_cds child)
-                                    (:gene.corresponding-transcript/_transcript child))
+                         (some->> (:gene.corresponding-transcript/_transcript child)
                                   (map (fn [h]
-                                         (or
-                                           (:gene/_corresponding-cds h)
-                                           (:gene/_corresponding-transcript h))))
+                                         (:gene/_corresponding-transcript h)))
                                   (map (fn [g]
                                          (let [low (:locatable/min child)
                                                high (:locatable/max child)]
                                            {:comment (or
-                                                       (:cds.brief-identification/text
-                                                         (:cds/brief-identification child))
-                                                       (or
-                                                         (:transcript/brief-identification child)
-                                                         (or
-                                                           (some->> (:cds/db-remark child)
-                                                                    (map :cds.db-remark/text)
-                                                                    (str/join "<br />"))
-                                                           (or
-                                                             (some->> (:transcript/db-remark child)
-                                                                      (map :transcript.db-remark/text)
-                                                                      (str/join "<br />"))
-                                                             (or
-                                                               (some->> (:cds/remark child)
-                                                                        (map :cds.remark/text)
-                                                                        (str/join "<br />"))
-                                                               (or
-                                                                 (some->> (:transcript/remark child)
-                                                                          (map :transcript.remark/text)
-                                                                          (str/join "<br />"))
-                                                                 "&nbsp;"))))))
-                                            :predicted_type (if (contains? child :transcript/id)
-                                                              "Transcript"
-                                                              "CDS")
+                                                       (:transcript/brief-identification child)
+                                                       (some->> (:transcript/remark child)
+                                                                (map :transcript.remark/text)
+                                                                (str/join "<br />")))
+                                            :bio_type (-> child
+                                                          :locatable/method
+                                                          :method/gff-source
+                                                          (str/replace #"non_coding" "non-coding")
+                                                          (str/replace #"_" " "))
+                                            :predicted_type (-> child
+                                                                :locatable/method
+                                                                :method/gff-source
+                                                                (str/replace #"non_coding" "non-coding")
+                                                                (str/replace #"_" " "))
                                             :gene (pack-obj g)
                                             :name (pack-obj child)
                                             :start (if (> low high) low high)
@@ -102,5 +88,5 @@
    :end_reads end-reads
    :sequences sequences
    :transcripts transcripts
-   ; :print_sequence print-sequence
+   :print_sequence print-sequence
    :strand strand})
