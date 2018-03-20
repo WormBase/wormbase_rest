@@ -43,8 +43,8 @@
                               y))
         browser-start (calc-browser-pos - start stop 0.2)
         browser-stop (calc-browser-pos + stop start 0.5)
-        label (str (:seqname segment) ":" start ".." stop)
-        id (str (:seqname segment) ":" browser-start ".." browser-stop)]
+        id (str (:seqname segment) ":" start ".." stop)
+        label id] ;(str (:seqname segment) ":" browser-start ".." browser-stop)]
     (pace-utils/vmap
       :class
       "genomic_location"
@@ -75,3 +75,4 @@
                              ((juxt :start :end))
                              (sort-by +))]
       (create-genomic-location-obj start stop object segment nil true))))
+

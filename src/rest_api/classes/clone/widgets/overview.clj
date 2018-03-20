@@ -97,15 +97,17 @@
 
 (defn pcr-product [clone]
   {:data (some->> (:pcr-product/_clone clone)
-                  (first)
-                  (fn [pcr]
-                    {:pcr_prodcut (pack-obj pcr)
-                     :oligo (when-let [ohs (:pcr-product/oligo pcr)]
-                              (for [oh ohs
-                                    :let [oligo (:pcr-product.oligo/oligo oh)]]
-                                {:obj (pack-obj oligo)
-                                 :sequence (:oligo/sequence oligo)}))})
-                  (not-empty))
+                  (map
+                    (fn [pcr]
+                      {:pcr_product (pack-obj pcr)
+                       :oligos (when-let [oligos (some->> (:pcr-product/oligo pcr)
+                                       (map :pcr-product.oligo/oligo)
+                                       (map (fn [oligo]
+                                              {:obj (pack-obj oligo)
+                                               :sequence (:oligo/sequence oligo)})))]
+                                 {:data oligos})}))
+                  (remove nil?)
+                  (first))
    :description "PCR product associated with this clone"})
 
 (defn type-field [clone]
@@ -134,37 +136,41 @@
    :description "grid this clone was gridded on during fingerprinting"})
 
 (defn screened-positive [clone]
-  {:data (into
-           (sorted-map)
-           (merge
-             (some->> (conj
-                        (some->> (:clone.hybridizes-to/_clone clone)
-                                 (map :clone/_hybridizes-to))
-                        (some->> (:clone/hybridizes-to clone)
-                                 (map :clone.hybridizes-to/clone)))
-                      (flatten)
-                      (map
-                        (fn [c]
-                          {(:clone/id c)
-                           (merge
-                             {:weak nil}
-                             (pack-obj c))}))
-                      (into {})
-                      (not-empty))
-             (some->> (conj
-                        (some->> (:clone.hybridizes-weak/_clone clone)
-                                 (map :clone/_hybridizes-weak))
-                        (some->> (:clone/hybridizes-weak clone)
-                                 (map :clone.hybridizes-weak/clone)))
-                      (flatten)
-                      (map
-                        (fn [c]
-                          {(:clone/id c)
-                           (merge
-                             {:weak 1}
-                             (pack-obj c))}))
-                      (into {})
-                      (not-empty))))
+  {:data (not-empty
+           (into
+             (sorted-map)
+             (merge
+               (some->> (conj
+                          (some->> (:clone.hybridizes-to/_clone clone)
+                                   (map :clone/_hybridizes-to))
+                          (some->> (:clone/hybridizes-to clone)
+                                   (map :clone.hybridizes-to/clone)))
+                        (flatten)
+                        (remove nil?)
+                        (map
+                          (fn [c]
+                            {(:clone/id c)
+                             (merge
+                               {:weak nil}
+                               (pack-obj c))}))
+                        (into {})
+                        (not-empty))
+               (some->> (conj
+                          (some->> (:clone.hybridizes-weak/_clone clone)
+                                   (map :clone/_hybridizes-weak))
+                          (some->> (:clone/hybridizes-weak clone)
+                                   (map :clone.hybridizes-weak/clone)))
+                        (flatten)
+                        (remove nil?)
+                        (map
+                          (fn [c]
+                            {(:clone/id c)
+                             (merge
+                               {:weak 1
+                                }
+                               (pack-obj c))}))
+                        (into {})
+                        (not-empty)))))
    :description "entities shown to be contained within this clone"})
 
 (defn expression-patterns [clone]
