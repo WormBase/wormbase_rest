@@ -35,10 +35,9 @@
                                      :id (:person/id rep)})))))))
              (seq))]
     {:data (if (empty? data) nil data)
-     :description
-     "allele designation of the affiliated laboratory"}))
-;; note that the perl catalyst interface does not return proper data for "rep", it gives a single value while the data could have multiple persons, e.g. WBPerson8705
+     :description "allele designation of the affiliated laboratory"}))
 
+;; note that the perl catalyst interface does not return proper data for "rep", it gives a single value while the data could have multiple persons, e.g. WBPerson8705
 
 (defn gene-classes [person]
   (let [db (d/entity-db person)
@@ -62,7 +61,7 @@
                                          :class "laboratory"
                                          :label (:laboratory/id laboratory)
                                          :id (:laboratory/id laboratory)}
-                                        :desc (first (:gene-class/description geneclass))
+                                        :desc (:gene-class/description geneclass)
                                         :gene_class
                                         {:taxonomy "all"
                                          :class "gene_class"
@@ -70,8 +69,7 @@
                                          :id (:gene-class/id geneclass)}))))))))
                (seq)))]
     {:data (if (empty? data) nil data)
-     :description
-     "allele designation of the affiliated laboratory"}))
+     :description "allele designation of the affiliated laboratory"}))
 
 (defn previous-laboratories [person]
   (let [db (d/entity-db person)
@@ -99,8 +97,7 @@
                                        "no representative")))))))
              (seq))]
     {:data (if (empty? data) nil data)
-     :description
-     "previous laboratory affiliations."}))
+     :description "previous laboratory affiliations."}))
 
 (def widget
   {:lab_info                 lab-info

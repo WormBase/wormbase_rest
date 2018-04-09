@@ -1,23 +1,36 @@
-(ns rest-api.classes.clone.widgets.sequences
+(ns rest-api.classes.cds.widgets.sequences
   (:require
     [clojure.string :as str]
     [rest-api.classes.generic-fields :as generic]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn strand [c] ; this does work for WRM0612cD02 but not JC8 or FN891036
-  {:data (when-let [strand (some->> (:sequence/_clone c)
-                                    (map :locatable/strand)
-                                    (remove nil?)
-                                    (first))]
-           (case (name strand)
-             "negative" "-"
-             "positive" "+"))
-   :description "strand orientation of the sequence"})
+(defn predicted-exon-structure [c]
+  {:data (some->> (:cds/source-exons c)
+                 (map (fn [h]
+                        (let [start (:cds.source-exons/start h)
+                              end (:cds.source-exons/end h)
+                              length (+ (- end start) 1)]
+                          {:start start
+                           :end end
+                           :len length})))
+                 (sort-by :start)
+                 (map-indexed
+                   (fn [idx o]
+                     (conj {:no (+ 1 idx)} o))))
+   :description "predicted exon structure within the sequence"})
+
+(defn print-homologies [c]
+  {:data nil
+   :description "homologous sequences"})
+
+(defn print-blast [c]
+  {:data nil
+   :description "links to BLAST analyses"})
 
 (defn predicted-units [c]
   {:data (some->> (:locatable/_parent
                     (first
-                      (:sequence/_clone c)))
+                      (:sequence/_cds c)))
                   (map (fn [child]
                          (some->> (:gene.corresponding-transcript/_transcript child)
                                   (map (fn [h]
@@ -49,30 +62,9 @@
                   (not-empty))
    :description "features contained within the sequence"})
 
-(defn end-reads [c]
-  {:data (some->> (:sequence/_clone-end-seq-read c)
-                  (map pack-obj))
-   :description "end reads associated with this clone"})
-
-(defn sequences [c]
-  {:data (some->> (:sequence/_clone c)
-                  (map pack-obj))
-   :description "sequences associated with this clone"})
-
-;(defn transcripts [c] ; e.g. FN891036
-;  {:data (some->> (:sequence/_clone c)
-;                  (map (fn [s]
-;                         (some->> (:transcript.matching-cdna/_sequence s)
-;                                  (map :transcript/_matching-cdna)
-;                                  (map pack-obj))))
-;                  (flatten)
-;                  (remove nil?)
-;                  (sort-by :label)
-;                  (not-empty))
-;   :description "Matching Transcripts"})
-
-(defn print-sequence [c] ; works for JC8 does not work for WRM0612cD02
-  {:data (some->> (:sequence/_clone c)
+(defn print-sequence [c]
+  {:data (when-let [p (:locatable-parent c)]
+           (let [])
                   (map (fn [s]
                          (let [h (:sequence/dna s)]
                            {:header "Sequence"
@@ -80,13 +72,13 @@
                                           :sequence.dna/dna
                                           :dna/sequence)
                             :length (:sequence.dna/length h)}))))
+   :d (:db/id c)
    :description "the sequence of the sequence"})
 
 (def widget
   {:name generic/name-field
-   :predicted_units predicted-units
-   :end_reads end-reads
-   :sequences sequences
-;   :transcripts transcripts
-   :print_sequence print-sequence
-   :strand strand})
+   :predicted_exon_structure predicted-exon-structure
+   :print_homologies print-homologies
+   :print_blast print-blast
+   :predicted_unit predicted-units
+   :print_sequence print-sequence})

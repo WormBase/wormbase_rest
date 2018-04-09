@@ -17,7 +17,8 @@
                     (map pack-obj))
      :author (:author/id (first (:expr-pattern/author ep)))
      :description (or
-                    (first (:expr-pattern/pattern ep))
+                    (some->> (:expr-pattern/pattern ep)
+                             (str/join "<br />"))
                     (or
                       (some->> (:expr-pattern/subcellular-localization ep)
                                (sort)

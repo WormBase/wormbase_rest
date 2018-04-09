@@ -40,7 +40,7 @@
                 "BINDING_SITES_PREDICTED"
                 "BINDING_SITES_CURATED"
                 "BINDING_REGIONS"]]
-    (sequence-fns/create-genomic-location-obj padded-start padded-stop gene segment tracks gbrowse)))
+    (sequence-fns/create-genomic-location-obj padded-start padded-stop gene segment tracks gbrowse true)))
 
 (defn feature-image [gene]
   (let [segment (sequence-fns/get-longest-segment gene)

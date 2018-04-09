@@ -115,7 +115,7 @@
 (defn gene-class [gene]
   {:data (if-let [class (:gene/gene-class gene)]
            {:tag (pack-obj "gene-class" class)
-            :description (str (first (:gene-class/description class)))})
+            :description (str (:gene-class/description class))})
    :description "The gene class for this gene"})
 
 (defn gene-classification [gene]

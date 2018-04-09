@@ -3,7 +3,7 @@
 
 (defn phenotype-graph [gene]
   {:data (:gene/id gene)
-   :descriptions "The Phenotype Graph of the gene"})
+   :description "The Phenotype Graph of the gene"})
 
 (def widget
   {:phenotype_graph phenotype-graph

@@ -30,7 +30,7 @@
     (if (seq segments)
      (longest-segment segments))))
 
-(defn create-genomic-location-obj [start stop object segment tracks gbrowse]
+(defn create-genomic-location-obj [start stop object segment tracks gbrowse img]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         calc-browser-pos (fn [x-op x y mult-offset]
@@ -44,20 +44,17 @@
         browser-start (calc-browser-pos - start stop 0.2)
         browser-stop (calc-browser-pos + stop start 0.5)
         id (str (:seqname segment) ":" start ".." stop)
-        label id] ;(str (:seqname segment) ":" browser-start ".." browser-stop)]
+        label (if (= img true)
+                   id
+                   (str (:seqname segment) ":" browser-start ".." browser-stop))]
     (pace-utils/vmap
-      :class
-      "genomic_location"
-
-      :id
-      id
-
-      :label
-      label
-
-      :pos_string
-      id
-
+      :class "genomic_location"
+      :id id
+      :label label
+      :pos_string id
+      :seqment (:seqname segment)
+      :start start
+      :stop stop
       :taxonomy
       (when-let [class ((keyword role "species") object)]
         (when-let [[_ genus species]
@@ -66,13 +63,18 @@
           (str/lower-case
             (str/join [(first genus) "_" species]))))
 
-      :tracks
-      tracks)))
+      :tracks tracks)))
 
 (defn genomic-obj [object]
   (when-let [segment (get-longest-segment object)]
     (let [[start stop] (->> segment
                              ((juxt :start :end))
                              (sort-by +))]
-      (create-genomic-location-obj start stop object segment nil true))))
+      (create-genomic-location-obj start stop object segment nil true true))))
 
+(defn genomic-obj-position [object]
+  (when-let [segment (get-longest-segment object)]
+    (let [[start stop] (->> segment
+                             ((juxt :start :end))
+                             (sort-by +))]
+      (create-genomic-location-obj start stop object segment nil true false))))
