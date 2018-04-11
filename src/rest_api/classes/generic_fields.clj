@@ -491,7 +491,9 @@
                                      (:gene/_corresponding-transcript gh)))))]
                          (for [gene genes]
                            (corresponding-all-gene gene cds "cds" nil)))))))]
-      {:data (not-empty data)
+      {:data (if (= role "transcript")
+               (first data)
+               (not-empty data))
        :description (str "corresponding cds, transcripts, gene for this " role)})))
 
 (defn sequence-type [object]

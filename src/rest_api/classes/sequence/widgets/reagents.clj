@@ -4,10 +4,10 @@
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
 (defn source-clone [s]
-  {:data (first
-           (some->> (:sequence/clone
-                      (:locatable/parent s))
-                    (map pack-obj)))
+  {:data (some->> (:sequence/clone
+                    (:locatable/parent s))
+                  (map pack-obj)
+                  (first))
    :description "The Source clone of the sequence"})
 
 (defn matching-cdnas [s]
@@ -32,6 +32,7 @@
 
 (def widget
   {:name generic/name-field
+   :laboratory generic/laboratory
    :microarray_assays microarray-assays
    :orfeome_assays orfeome-assays
    :source_clone source-clone
