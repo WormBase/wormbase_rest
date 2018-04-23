@@ -6,7 +6,7 @@
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn refers-to [p]
-  {:data (pace-utils/vmap
+  {:data {
            "Species"
            (some->> (:paper/species p)
                     (map :paper.species/species)
@@ -230,7 +230,8 @@
 
            "Movie"
            (some->> (:movie/_reference p)
-                    (map pack-obj)))
+                    (map pack-obj))
+   }
    :d (:db/id p)
    :definition "Items that the publication refers to"})
 
