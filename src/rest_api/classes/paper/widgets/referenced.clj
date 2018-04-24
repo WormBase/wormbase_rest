@@ -11,7 +11,7 @@
           (:gene/id g))))
 
 (defn refers-to [p]
-  {:data (pace-utils/vmap
+  {:data {
            "Species"
            (some->> (:paper/species p)
                     (map :paper.species/species)
@@ -271,7 +271,8 @@
            "Movie"
            (some->> (:movie/_reference p)
                     (map pack-obj)
-                    (sort-by :label)))
+                    (sort-by :label))
+   }
    :definition "Items that the publication refers to"})
 
 (def widget
