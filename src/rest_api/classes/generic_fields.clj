@@ -120,11 +120,38 @@
                [position]))
      :description "The genomic location of the sequence"}))
 
+(defn microarray-assays [object]
+  {:data (some->> (:locatable/_parent object)
+                  (map (fn [f]
+                         (some->> (:microarray-results.transcript/_transcript f)
+                                  (map :microarray-results/_transcript)
+                                  (map (fn [m]
+                                        {(:microarray-results/id m) (pack-obj m)})))))
+                  (flatten)
+                  (into {})
+                  (vals)
+                  (sort-by :label))
+   :description "The Microarray assays in this region of the sequence"})
+
+(defn orfeome-assays [object]
+  {:data (some->> (:locatable/_parent object)
+		  (map (fn [f]
+			 (some->> (:transcript/corresponding-pcr-product f)
+				  (map (fn [p]
+					 (let [obj (pack-obj p)]
+					   (when (str/starts-with? (:label obj) "mv_")
+					     {(:pcr-product/id p) obj})))))))
+		  (flatten)
+		  (into {}))
+   :description "The ORFeome Assays of the sequence"})
+
+
 (defn method [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (let [text (:method/id (:locatable/method object))]
-             (if (or (= role "transcript") 
+             (if (or (= role "transcript")
+                     (= role "sequence")
                      (= role "cds"))
                {:method text
                 :details (:method.remark/text
@@ -495,6 +522,44 @@
                (first data)
                (not-empty data))
        :description (str "corresponding cds, transcripts, gene for this " role)})))
+
+(defn predicted-units [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+    {:data (some->> (or (:locatable/_parent
+                          (first
+                            (:sequence/_cds object)))
+                        (:locatable/_parent object))
+                    (map (fn [transcript]
+                           (some->> (:gene.corresponding-transcript/_transcript transcript)
+                                    (map (fn [h]
+                                           (:gene/_corresponding-transcript h)))
+                                    (map (fn [g]
+                                           (let [low (:locatable/min transcript)
+                                                 high (:locatable/max transcript)]
+                                             {:comment (or
+                                                         (:transcript/brief-identification transcript)
+                                                         (some->> (:transcript/remark transcript)
+                                                                  (map :transcript.remark/text)
+                                                                  (str/join "<br />")))
+                                              :bio_type (-> transcript
+                                                            :locatable/method
+                                                            :method/gff-source
+                                                            (str/replace #"non_coding" "non-coding")
+                                                            (str/replace #"_" " "))
+                                              :predicted_type (-> transcript
+                                                                  :locatable/method
+                                                                  :method/gff-source
+                                                                  (str/replace #"non_coding" "non-coding")
+                                                                  (str/replace #"_" " "))
+                                              :gene (pack-obj g)
+                                              :name (pack-obj transcript)
+                                              :start (+ (if (> low high) high low) 1)
+                                              :end (if (< low high) high low)}))))))
+                    (flatten)
+                    (remove nil?)
+                    (not-empty))
+     :description (str "features contained within the " role)}))
 
 (defn sequence-type [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))

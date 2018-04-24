@@ -141,10 +141,23 @@
                   (not-empty))
    :description "gene products for this transgene"})
 
+(defn integrated-from [t]
+  {:data (some->> (:transgene/integrated-from t)
+                  (map pack-obj))
+   :description "integrated from"})
+
+(defn transgene-derivation [t]
+  {:data (some->> (:transgene/_integrated-from t)
+                  (map pack-obj))
+   :d (:db/id t)
+   :description "derived from"})
+
 (def widget
   {:name generic/name-field
    :other_reporter other-reporter
    :utr utr
+   :integrated_from integrated-from
+   :transgene_derivation transgene-derivation
    :used_for used-for
    :marked_rearrangement marked-rearrangement
    :taxonomy generic/taxonomy

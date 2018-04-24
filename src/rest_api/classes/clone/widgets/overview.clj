@@ -11,11 +11,8 @@
 (defn canonical-for [clone] ; example C05B2
   {:data (some->> (:clone/canonical-for clone)
                   (map :clone.canonical-for/clone)
-                  (map (fn [c]
-                         (let [obj (pack-obj c)]
-                         {(:label obj) obj})))
-                  (into {})
-                  (into (sorted-map))
+                  (map pack-obj)
+                  (sort-by :label)
                   (not-empty))
    :description "clones that the requested clone is a canonical representative of"})
 
@@ -26,10 +23,8 @@
                   (map (fn [h]
                          (or (:clone.map/map h)
                              (:contig.map/map h))))
-                  (map (fn [m]
-                         {(:map/id m) (:label (pack-obj m))}))
-                  (into {})
-                  (into (sorted-map))
+                  (map pack-obj)
+                  (sort-by :label)
                   (not-empty))
    :description "maps assigned to this clone"})
 
@@ -126,7 +121,7 @@
            (let [n (name (:clone.type/value t))]
              (case n
                "cdna" "cDNA"
-               "yac" "YAK"
+               "yac" "YAC"
                (str/capitalize n))))
    :description "The type of this clone"})
 
@@ -143,11 +138,9 @@
                   (flatten)
                   (distinct)
                   (remove nil?)
-		  (map
-		    (fn [g]
-		      {(:grid/id g)
-		       (pack-obj g)}))
-		  (into {}))
+                  (map pack-obj)
+                  (sort-by :label)
+		  (not-empty))
    :description "grid this clone was gridded on during fingerprinting"})
 
 (defn screened-positive [clone]

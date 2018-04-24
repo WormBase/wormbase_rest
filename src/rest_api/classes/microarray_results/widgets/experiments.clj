@@ -51,4 +51,4 @@
   {:name generic/name-field
    :range range-field
    :results results
-   :miroarray microarray})
+   :microarray microarray})

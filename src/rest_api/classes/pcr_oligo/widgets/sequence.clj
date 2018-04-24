@@ -11,10 +11,9 @@
 (defn oligos [p]
   {:data (some->> (:pcr-product/oligo p)
                   (map :pcr-product.oligo/oligo)
-                  (map (fn [o];
+                  (map (fn [o]
                          {:obj (pack-obj o)
-                          :sequence (:oligo/sequence o)
-                          })))
+                          :sequence (:oligo/sequence o)})))
    :description "Oligos of this PCR product"})
 
 (def widget

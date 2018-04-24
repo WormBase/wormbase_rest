@@ -5,7 +5,7 @@
     [rest-api.classes.cds.widgets.location :as location]
     [rest-api.classes.cds.widgets.feature :as feature]
     ;[rest-api.classes.cds.widgets.sequences :as sequences]
-    ;[rest-api.classes.cds.widgets.reagents :as reagents]
+    [rest-api.classes.cds.widgets.reagents :as reagents]
     [rest-api.classes.cds.widgets.references :as references]
     [rest-api.classes.gene.expression :as gene-expression]
     [rest-api.routing :as routing]))
@@ -17,7 +17,7 @@
     :location location/widget
     :feature feature/widget
     ;:sequences sequences/widget
-    ;:reagents reagents/widget
+    :reagents reagents/widget
     :external_links external-links/widget
     :references references/widget}
    :field
