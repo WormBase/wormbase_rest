@@ -149,9 +149,7 @@
 (defn method [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-    {:data (let [text (obj/humanize-ident
-                        (:method/id
-                          (:locatable/method object)))]
+    {:data (let [text (str/replace (or (:method/id (:locatable/method object)) "") #"_" " ")]
              (if (or (= role "transcript")
                      (= role "sequence")
                      (= role "cds"))

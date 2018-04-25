@@ -5,18 +5,8 @@
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
 (defn strand [s]
-  {:data (case (some->> (:locatable/_parent s)
-                        (map :locatable/strand)
-                        (remove nil?)
-                        (first)
-                        (name))
-           "negative"
-           "-"
-
-           "positive"
-           "+"
-
-           "unknown")
+  {:data (when-let [seg (first (:data (generic/genomic-position s)))]
+           (if (< (:start seg) (:stop seg)) "+" "-"))
    :description "strand orientation of the sequence"})
 
 (defn print-sequence [s]

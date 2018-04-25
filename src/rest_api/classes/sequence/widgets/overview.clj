@@ -48,12 +48,14 @@
    :dscription "The Analysis info of the sequence"})
 
 (defn subsequence [s]
-  {:data (some->> (:sequence/clone s)
-                  (map (fn [c]
-                         (some->> (:sequence/_clone-end-seq-read c)
-                                  (map pack-obj))))
-                  (flatten)
-                  (sort-by :label))
+  {:data (not-empty
+           (some->> (:sequence/clone s)
+                    (map (fn [c]
+                           (some->> (:sequence/_clone-end-seq-read c)
+                                    (map pack-obj))))
+                    (flatten)
+                    (remove nil?)
+                    (sort-by :label)))
    :description "end sequence reads used for initially placing the Fosmid on the genome "})
 
 (def widget

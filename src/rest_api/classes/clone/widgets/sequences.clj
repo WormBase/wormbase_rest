@@ -4,14 +4,9 @@
     [rest-api.classes.generic-fields :as generic]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn strand [c] ; this does work for WRM0612cD02 but not JC8 or FN891036
-  {:data (when-let [strand (some->> (:sequence/_clone c)
-                                    (map :locatable/strand)
-                                    (remove nil?)
-                                    (first))]
-           (case (name strand)
-             "negative" "-"
-             "positive" "+"))
+(defn strand [c]
+  {:data (when-let [seg (first (:data (generic/genomic-position c)))]
+           (if (< (:start seg) (:stop seg)) "+" "-"))
    :description "strand orientation of the sequence"})
 
 (defn predicted-units [c]
