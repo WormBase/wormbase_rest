@@ -59,18 +59,6 @@
                   (map pack-obj))
    :description "sequences associated with this clone"})
 
-;(defn transcripts [c] ; e.g. FN891036
-;  {:data (some->> (:sequence/_clone c)
-;                  (map (fn [s]
-;                         (some->> (:transcript.matching-cdna/_sequence s)
-;                                  (map :transcript/_matching-cdna)
-;                                  (map pack-obj))))
-;                  (flatten)
-;                  (remove nil?)
-;                  (sort-by :label)
-;                  (not-empty))
-;   :description "Matching Transcripts"})
-
 (defn print-sequence [c] ; works for JC8 does not work for WRM0612cD02
   {:data (some->> (:sequence/_clone c)
                   (map (fn [s]
@@ -87,6 +75,5 @@
    :predicted_units predicted-units
    :end_reads end-reads
    :sequences sequences
-;   :transcripts transcripts
    :print_sequence print-sequence
    :strand strand})

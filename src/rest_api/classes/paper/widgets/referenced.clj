@@ -2,7 +2,9 @@
   (:require
     [pseudoace.utils :as pace-utils]
     [clojure.string :as str]
+    [rest-api.classes.gene.expression :as gene-expr]
     [rest-api.classes.generic-fields :as generic]
+    [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn get-gene-name [g]
@@ -25,12 +27,8 @@
 
            "Gene"
            (some->> (:gene/_reference p)
-                    (map (fn [g]
-                           (if-let [ev (:gene/evidence g)]
-                             {:text (pack-obj g)
-                              :evidence (obj/get-evidence ev)}
-                             (pack-obj g))))
-                    (sort-by :label))
+                    (map pack-obj)
+                    (sort generic-functions/compare-gene-name))
 
            "Interaction"
            (some->> (:interaction/_paper p)
@@ -83,11 +81,12 @@
            "Feature"
            (some->> (:feature.defined-by-paper/_paper p)
                     (map (fn [h]
-                           (let [obj (:feature/_defined-by-paper h)]
+                           (let [obj (pack-obj (:feature/_defined-by-paper h))
+                                 obj-mod (conj obj {:label (:id obj)})]
                              (if-let [ev (obj/get-evidence h)]
-                               {:text (pack-obj obj)
+                               {:text obj-mod
                                 :evidence ev}
-                               (pack-obj obj)))))
+                               obj-mod))))
                     (sort-by :label))
 
            "Rearrangement"
@@ -133,34 +132,19 @@
            "Expr_pattern"
            (some->> (:expr-pattern.reference/_paper p)
                     (map (fn [h]
-                           (let [obj (:expr-pattern/_reference h)]
-                             (let [packed-obj (assoc-in
-                                                (pack-obj obj)
-                                                [:label]
-                                                (some->> (:expr-pattern/gene obj)
-                                                         (first)
-                                                         (:expr-pattern.gene/gene)
-                                                         (get-gene-name)
-                                                         (str "Expression pattern for ")))]
-                               (if-let [ev (obj/get-evidence h)]
-                                 {:text packed-obj
-                                  :evidence ev}
-                                 packed-obj)))))
+                           (let [obj (:expr-pattern/_reference h)
+                                 packed-obj (pack-obj obj)]
+                             (if-let [ev (obj/get-evidence h)]
+                               {:text packed-obj
+                                :evidence ev}
+                               packed-obj))))
                     (sort-by :label))
 
            "Picture"
-           (when-let [papers (:picture/_reference p)]
+           (when-let [pictures (:picture/_reference p)]
              {:curated_images
-              (some->> papers
-                       (map (fn [pic]
-                              (when-let [filename (:picture/name pic)]
-                                (let [[n f] (str/split filename #"\.")]
-                                  (conj
-                                    {:thumbnail
-                                     {:format f
-                                      :name (str (:paper/id p) "/" n)
-                                      :class "/img-static/pictures"}}
-                                    (pack-obj pic))))))
+              (some->> pictures
+                       (map gene-expr/pack-image)
                        (sort-by :label))})
 
            "Antibody"
@@ -204,16 +188,18 @@
                     (sort-by :label))
 
            "RNAi"
-           (some->> (:rnai.reference/_paper p)
-                    (map (fn [h]
-                           (let [obj (:rnai/_reference h)]
-                             (if-let [ev (obj/get-evidence h)]
-                               {:text (pack-obj obj)
-                                :evidence ev}
-                               (pack-obj obj)))))
-                    (sort-by :label))
+           (if (< 1000 (count (:rnai.reference/_paper p)))
+             (count (:rnai.reference/_paper p))
+             (some->> (:rnai.reference/_paper p)
+                      (map (fn [h]
+                             (let [obj (:rnai/_reference h)]
+                               (if-let [ev (obj/get-evidence h)]
+                                 {:text (pack-obj obj)
+                                  :evidence ev}
+                                 (pack-obj obj)))))
+                      (sort-by :label)))
 
-           "Transript"
+           "Transcript"
            (some->> (:transcript.reference/_paper p)
                     (map (fn [h]
                            (let [obj (:transcript/_reference h)]
@@ -224,14 +210,16 @@
                     (sort-by :label))
 
            "Expr_profile"
-           (some->> (:expr-profile.reference/_paper p)
-                    (map (fn [h]
-                           (let [obj (:expr-profile/_reference h)]
-                             (if-let [ev (obj/get-evidence h)]
-                               {:text (pack-obj obj)
-                                :evidence ev}
-                               (pack-obj obj)))))
-                    (sort-by :label))
+           (if (< 1000 (count (:expr-profile.reference/_paper p)))
+             (count (:expr-profile.reference/_paper p))
+             (some->> (:expr-profile.reference/_paper p)
+                      (map (fn [h]
+                             (let [obj (:expr-profile/_reference h)]
+                               (if-let [ev (obj/get-evidence h)]
+                                 {:text (pack-obj obj)
+                                  :evidence ev}
+                                 (pack-obj obj)))))
+                      (sort-by :label)))
 
            "Operon"
            (some->> (:operon.reference/_paper p)

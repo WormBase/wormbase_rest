@@ -1,5 +1,6 @@
 (ns rest-api.classes.cds.widgets.reagents
   (:require
+    [clojure.string :as str]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
     [rest-api.classes.generic-fields :as generic]))
 
@@ -10,10 +11,10 @@
                   (first))
    :description "The Source clone of the sequence"})
 
-(defn pcr-products [c] 
+(defn pcr-products [c]
   {:data (some->> (:cds/corresponding-pcr-product c)
                   (map pack-obj)
-                  (sort-by :label))
+                  (sort-by (fn [s] (str/lower-case (:label s)))))
    :description "PCR products for the sequence"})
 
 (defn matching-cdnas [c]

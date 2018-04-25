@@ -25,6 +25,16 @@
     (contains? h :qualifier/partial)
     "Partial"))
 
+; this is for sorting gene names
+(defn compare-gene-name [a b]
+  (let [[a1 a2] (str/split (str/lower-case (:label a)) #"-")
+        [b1 b2] (str/split (str/lower-case (:label b)) #"-")
+        a2-padded (if (= (count a2) 1) (str "0" a2) a2)
+        b2-padded (if (= (count b2) 1) (str "0" b2) b2)
+        a-padded (str a1 a2-padded)
+        b-padded (str b1 b2-padded)]
+    (compare a-padded b-padded)))
+
 (defn- is-cgc? [strain]
   (some #(= (->> (:strain.location/laboratory %)
                  (:laboratory/id))

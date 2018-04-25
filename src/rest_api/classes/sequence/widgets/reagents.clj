@@ -5,15 +5,15 @@
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
 (defn source-clone [s]
-  {:data (some->> (:sequence/clone
-                    (:locatable/parent s))
+  {:data (some->> (:sequence/clone s)
                   (map pack-obj)
                   (first))
+   :d (:db/id s)
    :description "The Source clone of the sequence"})
 
 (defn matching-cdnas [s]
-  {:data (some->> (map :sequence/matching-cdna s)
-                  (map pack-obj))
+  {:data nil; (some->> (map :sequence/matching-cdna s)
+             ;     (map pack-obj))
    :description "cDNAs that match the sequence"})
 
 (defn pcr-products [s]

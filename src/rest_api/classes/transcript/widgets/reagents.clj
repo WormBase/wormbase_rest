@@ -1,5 +1,6 @@
 (ns rest-api.classes.transcript.widgets.reagents
   (:require
+    [clojure.string :as str]
     [rest-api.classes.generic-fields :as generic]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
@@ -15,7 +16,7 @@
                     :transcript.matching-cdna/sequence
                     (:transcript/matching-cdna t))
                   (map pack-obj)
-                  (sort-by :label))
+                  (sort-by (fn [s] (str/lower-case (:label s)))))
    :description "cDNAs that match the transcript"})
 
 (defn pcr-product [t]

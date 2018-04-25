@@ -34,8 +34,8 @@
   {:data (some->> (:microarray-results/microarray m)
                   (map (fn [chip]
                          {:info (let [info (first (:microarray/chip-info chip))]
-                                  (if-let [remark (map :microarray.remark/text
-                                                       (:microarray/remark chip))]
+                                  (if-let [remark (seq (map :microarray.remark/text
+                                                       (:microarray/remark chip)))]
                                     (flatten
                                       [info
                                        "<b>Remarks:</b>"

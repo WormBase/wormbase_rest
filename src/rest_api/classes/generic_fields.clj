@@ -149,7 +149,9 @@
 (defn method [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-    {:data (let [text (:method/id (:locatable/method object))]
+    {:data (let [text (obj/humanize-ident
+                        (:method/id
+                          (:locatable/method object)))]
              (if (or (= role "transcript")
                      (= role "sequence")
                      (= role "cds"))
@@ -359,21 +361,25 @@
                    (:gene/corresponding-cds gene)
                    [nil]))
           :let [cds (or (:gene.corresponding-cds/cds cdsh)
-                        cdsh)]]
-      (let [sequences (if (some? cds)
-                        (some->> (:transcript.corresponding-cds/_cds cds)
-                                 (map :transcript/_corresponding-cds)
-                                 (sort-by :transcript/id))
-                        (remove
-                          nil?
-                          (flatten
-                            (conj
-                              (for [pgh (:gene/corresponding-pseudogene gene)]
-                                (:gene.corresponding-pseudogene/pseudogene pgh))
-                              (for [th (:gene/corresponding-transcript gene)]
-                                (:gene.corresponding-transcript/transcript th))))))]
+                        cdsh)
+                sequences (if (and (some? cds)
+                                   (or (not= "transcript" role)
+                                       (not= "non_coding_transcript"
+                                          (:method/id
+                                            (:locatable/method object)))))
+                            (some->> (:transcript.corresponding-cds/_cds cds)
+                                     (map :transcript/_corresponding-cds)
+                                     (sort-by :transcript/id))
+                            (remove
+                              nil?
+                              (flatten
+                                (conj
+                                  (some->> (:gene/corresponding-pseudogene gene)
+                                    (map :gene.corresponding-pseudogene/pseudogene))
+                                  (some->> (:gene/corresponding-transcript gene)
+                                    (map :gene.corresponding-transcript/transcript))))))]]
         (if (or (not= role "transcript")
-              (not (= (.indexOf sequences object) -1)))
+                (not= (.indexOf sequences object) -1))
           {:length_spliced
            (let [length-spliced (if-let [exons (seq (:cds/source-exons cds))]
                                   (->>
@@ -451,12 +457,16 @@
                "-"))
 
            :type
-           (for [s sequences]
-             (let [type-str (if-let [type-field (:method/id
+           (for [[idx s] (map-indexed (fn [idx itm] [idx itm]) sequences)
+             :let [type-str (if-let [type-field (:method/id
                                                   (:locatable/method s))]
                               (str/replace type-field #"_" " ")
-                              "-")]
-               type-str))})))))
+                              "-")]]
+              (if (and (= role "transcript")
+                       (= idx (.indexOf sequences object))
+                       (= type-str "non coding transcript"))
+                 (str "<strong>" type-str "</strong>")
+                 type-str))}))))
 
 (defn- create-remarks [cds-remark-holders]
   (into
@@ -484,9 +494,9 @@
 
                  "transcript"
                  (some->> (:gene.corresponding-transcript/_transcript object)
-                          (map (fn [h]
-                                 (let [gene (:gene/_corresponding-transcript h)]
-                                   (corresponding-all-gene gene object role nil)))))
+                          (map :gene/_corresponding-transcript)
+                          (map (fn [gene]
+                                 (corresponding-all-gene gene object role nil))))
 
                  "cds"
                  (when-let [ths (:transcript.corresponding-cds/_cds object)]

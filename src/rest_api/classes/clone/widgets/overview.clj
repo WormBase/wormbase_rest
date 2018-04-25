@@ -189,7 +189,6 @@
 			       (pack-obj g))}))
 			(into {})
 			(not-empty)))))
-   :d (:db/id clone)
    :description "entities shown to be contained within this clone"})
 
 (defn expression-patterns [clone]
