@@ -70,11 +70,11 @@
   (let [scaling (if-let [scaling ((keyword (:person/id person)) scaling-map)]
                   scaling
                   1)]
-      {:id (str direct-or-full (:person/id person))
-       :name (:person/standard-name person)
-       :url (:person/id person)
-       :scaling scaling
-       :nodeshape "ellipse"}))
+    {:id (str direct-or-full (:person/id person))
+     :name (:person/standard-name person)
+     :url (:person/id person)
+     :scaling scaling
+     :nodeshape "ellipse"}))
 
 (defn- edge-supervisee [direct-or-full person supervisee]
   {:source (str direct-or-full (:person/id person))
@@ -126,8 +126,8 @@
                                     (and (= direct-or-full "Direct")
                                          (empty? visited)))
                             (if (= direction "backward")
-                            (:person/supervised-by person)
-                            (:person.supervised-by/_person person)))]
+                              (:person/supervised-by person)
+                              (:person.supervised-by/_person person)))]
            (let [{nodes :nodes
                   roles :roles
                   edges :edges}
@@ -191,7 +191,7 @@
                      (into {}))
      :edges (conj supervisor-edges supervisee-edges)}))
 
-(defn- scale-nodes-map [nodes]
+(defn- scale-nodes-map [nodes direct-or-full]
   (when (some? nodes)
     (let [largest-node-scaling (some->> nodes
                                         (map :scaling)
@@ -202,7 +202,10 @@
                  (fn [node]
                    (let [scaling (:scaling node)
                          radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
-                         data (conj node {:radius radius})]
+                         data (if (or (= direct-or-full "Full") (= (:nodeshape node) "rectangle") )
+                                node
+                                (conj node {:radius radius}))
+                         ]
                      {:data data})))))))
 
 (defn- elements [nodes-map edges-map direct-or-full]
@@ -214,9 +217,7 @@
                              (map (fn [edge]
                                     {:data edge})))))
              (flatten))
-    :nodes (if (= direct-or-full "Full")
-                (vals nodes-map)
-                (scale-nodes-map (vals nodes-map)))))
+    :nodes (scale-nodes-map (vals nodes-map) direct-or-full)))
 
 (defn- generate-json-like-string [elements]
   (str/replace
@@ -240,7 +241,7 @@
      :elementsFull (when-let [elements (elements nodes-full edges-full "Full")]
                      (generate-json-like-string elements))
      :elementsDirect (when-let [elements (elements nodes-direct edges-direct "Direct")]
-                      (generate-json-like-string elements))
+                       (generate-json-like-string elements))
      :description "ancestors_data"}))
 
 (defn supervised-by [person]
