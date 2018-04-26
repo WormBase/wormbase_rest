@@ -202,8 +202,7 @@
                  (fn [node]
                    (let [scaling (:scaling node)
                          radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
-;;                          useless (update-in node [:radius] #(int radius))
-                         data (conj {:radius radius} node)]
+                         data (conj node {:radius radius})]
                      {:data data})))))))
 
 (defn- elements [nodes-map edges-map direct-or-full]
