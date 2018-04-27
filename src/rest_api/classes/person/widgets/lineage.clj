@@ -202,10 +202,9 @@
                  (fn [node]
                    (let [scaling (:scaling node)
                          radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
-                         data (if (or (= direct-or-full "Full") (= (:nodeshape node) "rectangle") )
+                         data (if (= (:nodeshape node) "rectangle")
                                 node
-                                (conj node {:radius radius}))
-                         ]
+                                (conj node {:radius radius}))]
                      {:data data})))))))
 
 (defn- elements [nodes-map edges-map direct-or-full]
