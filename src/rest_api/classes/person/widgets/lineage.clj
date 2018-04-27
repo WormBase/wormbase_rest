@@ -56,7 +56,8 @@
 
 (defn- node [direct-or-full person is-primary]
   {:id (str direct-or-full (:person/id person))
-   :name (:person/standard-name person)
+   :name (-> (:label (pack-obj person))
+             (str/replace #"'" "`"))
    :url (:person/id person)
    :scaling (if-let [scaling ((keyword (:person/id person)) scaling-map)]
               scaling
@@ -70,11 +71,11 @@
   (let [scaling (if-let [scaling ((keyword (:person/id person)) scaling-map)]
                   scaling
                   1)]
-      {:id (str direct-or-full (:person/id person))
-       :name (:person/standard-name person)
-       :url (:person/id person)
-       :scaling scaling
-       :nodeshape "ellipse"}))
+    {:id (str direct-or-full (:person/id person))
+     :name (:person/standard-name person)
+     :url (:person/id person)
+     :scaling scaling
+     :nodeshape "ellipse"}))
 
 (defn- edge-supervisee [direct-or-full person supervisee]
   {:source (str direct-or-full (:person/id person))
@@ -122,12 +123,12 @@
    (let [id (:person/id person)]
      (when (not (contains? visited id))
        (let [visited-new (conj visited id)]
-         (if-let [holders (when (or (= direct-or-full "full")
-                                    (and (= direct-or-full "direct")
+         (if-let [holders (when (or (= direct-or-full "Full")
+                                    (and (= direct-or-full "Direct")
                                          (empty? visited)))
                             (if (= direction "backward")
-                            (:person/supervised-by person)
-                            (:person.supervised-by/_person person)))]
+                              (:person/supervised-by person)
+                              (:person.supervised-by/_person person)))]
            (let [{nodes :nodes
                   roles :roles
                   edges :edges}
@@ -148,8 +149,8 @@
                                                (some->> (generate-map holder supervise)
                                                         (map (fn [supervise-map]
                                                                (if (= direction "backward")
-                                                                 (edge-supervisor "Full" person supervise-map)
-                                                                 (edge-supervisee "Full" person supervise-map)))))}
+                                                                 (edge-supervisor direct-or-full person supervise-map)
+                                                                 (edge-supervisee direct-or-full person supervise-map)))))}
                                     {nodes :nodes
                                      roles :roles
                                      edges :edges} (if (empty? roles-map)
@@ -167,10 +168,10 @@
                                  :edges (merge edges edges-map)})))
                           (flatten)
                           (apply merge-with into {}))]
-             {:nodes (merge {id (node "Full" person is-primary)} nodes)
+             {:nodes (merge {id (node direct-or-full person is-primary)} nodes)
               :roles roles
               :edges edges})
-           {:nodes {id (node "Full" person is-primary)} ;; leaf nodes
+           {:nodes {id (node direct-or-full person is-primary)} ;; leaf nodes
             :roles {}
             :edges {}}))))))
 
@@ -178,7 +179,6 @@
   (let [{supervisor-nodes :nodes
          supervisor-roles :roles
          supervisor-edges :edges} (get-supervise-graph person direct-or-full "backward")
-
         {supervisee-nodes :nodes
          supervisee-roles :roles
          supervisee-edges :edges} (get-supervise-graph person direct-or-full "forward")]
@@ -186,6 +186,7 @@
      :roles (some->> (conj (keys supervisor-roles) (keys supervisee-roles))
                      (flatten)
                      (distinct)
+                     (remove nil?)
                      (map (fn [role]
                             {role (get role-colour role)}))
                      (into {}))
@@ -202,7 +203,9 @@
                  (fn [node]
                    (let [scaling (:scaling node)
                          radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
-                         data (conj {:radius radius} node)]
+                         data (if (= (:nodeshape node) "rectangle")
+                                node
+                                (conj node {:radius radius}))]
                      {:data data})))))))
 
 (defn- elements [nodes-map edges-map]
@@ -218,26 +221,25 @@
     (scale-nodes-map (vals nodes-map))))
 
 (defn- generate-json-like-string [elements]
-  (str/replace
-    (str/replace
-      (json/generate-string elements)
-      #"\"(\w+)\":" "$1: ")
-    #"\"" "'"))
+  (-> (json/generate-string elements)
+      (str/replace #"\"(\w+)\":" "$1: ")
+      (str/replace #"," ", ")
+      (str/replace #"\"" "'")))
 
 (defn ancestors-data [person]
   (let [{nodes-full :nodes
          roles-full :roles
-         edges-full :edges} (get-graph person "full")
+         edges-full :edges} (get-graph person "Full")
         {nodes-direct :nodes
          roles-direct :roles
-         edges-direct :edges} (get-graph person "direct")]
+         edges-direct :edges} (get-graph person "Direct")]
     {:existingRolesFull roles-full
      :existingRolesDirect roles-direct
      :thisPerson (:person/id person)
      :elementsFull (when-let [elements (elements nodes-full edges-full)]
                      (generate-json-like-string elements))
      :elementsDirect (when-let [elements (elements nodes-direct edges-direct)]
-                      (generate-json-like-string elements))
+                       (generate-json-like-string elements))
      :description "ancestors_data"}))
 
 (defn supervised-by [person]
