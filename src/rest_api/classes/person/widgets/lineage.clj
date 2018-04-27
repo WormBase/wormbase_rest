@@ -56,7 +56,10 @@
 
 (defn- node [direct-or-full person is-primary]
   {:id (str direct-or-full (:person/id person))
-   :name (:person/standard-name person)
+   :name (if (empty? (:person/standard-name person)) 
+           "Invalid Person" 
+           (-> (:person/standard-name person)
+               (str/replace #"'" "")))  ;; should be literal \\' but can't get that to work
    :url (:person/id person)
    :scaling (if-let [scaling ((keyword (:person/id person)) scaling-map)]
               scaling
@@ -178,7 +181,6 @@
   (let [{supervisor-nodes :nodes
          supervisor-roles :roles
          supervisor-edges :edges} (get-supervise-graph person direct-or-full "backward")
-
         {supervisee-nodes :nodes
          supervisee-roles :roles
          supervisee-edges :edges} (get-supervise-graph person direct-or-full "forward")]
@@ -186,6 +188,7 @@
      :roles (some->> (conj (keys supervisor-roles) (keys supervisee-roles))
                      (flatten)
                      (distinct)
+                     (remove nil?)
                      (map (fn [role]
                             {role (get role-colour role)}))
                      (into {}))
@@ -219,13 +222,10 @@
     :nodes (scale-nodes-map (vals nodes-map) direct-or-full)))
 
 (defn- generate-json-like-string [elements]
-  (str/replace
-    (str/replace
-      (str/replace
-        (json/generate-string elements)
-        #"\"(\w+)\":" "$1: ")
-      #"," ", ")
-    #"\"" "'"))
+  (-> (json/generate-string elements)
+      (str/replace #"\"(\w+)\":" "$1: ")
+      (str/replace #"," ", ")
+      (str/replace #"\"" "'")))
 
 (defn ancestors-data [person]
   (let [{nodes-full :nodes
@@ -234,11 +234,13 @@
         {nodes-direct :nodes
          roles-direct :roles
          edges-direct :edges} (get-graph person "Direct")]
-    {:existingRolesFull roles-full
+    {
+     :existingRolesFull roles-full
      :existingRolesDirect roles-direct
      :thisPerson (:person/id person)
      :elementsFull (when-let [elements (elements nodes-full edges-full "Full")]
                      (generate-json-like-string elements))
+;;      :elementsDirect "{edges: [{data: {source: 'DirectWBPerson545', target: 'DirectWBPerson3759', role: 'Postdoc', targetArrowShape: 'triangle', lineStyle: 'dashed', lineColor: '#00E300'}}], nodes: [{data: {id: 'DirectWBPerson3759', name: 'Eyleen J O\\'Rourke', url: 'WBPerson3759', scaling: 1, radius: 100, nodeshape: 'rectangle'}}, {data: {id: 'DirectWBPerson545', name: 'Gary Ruvkun', url: 'WBPerson545', scaling: 189, radius: 75.0, nodeshape: 'ellipse'}}]}"  ;; this would work if replacing line below for WBPerson3759
      :elementsDirect (when-let [elements (elements nodes-direct edges-direct "Direct")]
                        (generate-json-like-string elements))
      :description "ancestors_data"}))
