@@ -233,8 +233,7 @@
         {nodes-direct :nodes
          roles-direct :roles
          edges-direct :edges} (get-graph person "Direct")]
-    {
-     :existingRolesFull roles-full
+    {:existingRolesFull roles-full
      :existingRolesDirect roles-direct
      :thisPerson (:person/id person)
      :elementsFull (when-let [elements (elements nodes-full edges-full)]
