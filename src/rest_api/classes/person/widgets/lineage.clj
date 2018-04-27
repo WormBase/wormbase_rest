@@ -194,7 +194,7 @@
                      (into {}))
      :edges (conj supervisor-edges supervisee-edges)}))
 
-(defn- scale-nodes-map [nodes direct-or-full]
+(defn- scale-nodes-map [nodes]
   (when (some? nodes)
     (let [largest-node-scaling (some->> nodes
                                         (map :scaling)
@@ -210,7 +210,7 @@
                                 (conj node {:radius radius}))]
                      {:data data})))))))
 
-(defn- elements [nodes-map edges-map direct-or-full]
+(defn- elements [nodes-map edges-map]
   (pace-utils/vmap
     :edges
     (some->> (vals edges-map)
@@ -219,7 +219,7 @@
                              (map (fn [edge]
                                     {:data edge})))))
              (flatten))
-    :nodes (scale-nodes-map (vals nodes-map) direct-or-full)))
+    :nodes (scale-nodes-map (vals nodes-map))))
 
 (defn- generate-json-like-string [elements]
   (-> (json/generate-string elements)
@@ -238,10 +238,10 @@
      :existingRolesFull roles-full
      :existingRolesDirect roles-direct
      :thisPerson (:person/id person)
-     :elementsFull (when-let [elements (elements nodes-full edges-full "Full")]
+     :elementsFull (when-let [elements (elements nodes-full edges-full)]
                      (generate-json-like-string elements))
 ;;      :elementsDirect "{edges: [{data: {source: 'DirectWBPerson545', target: 'DirectWBPerson3759', role: 'Postdoc', targetArrowShape: 'triangle', lineStyle: 'dashed', lineColor: '#00E300'}}], nodes: [{data: {id: 'DirectWBPerson3759', name: 'Eyleen J O\\'Rourke', url: 'WBPerson3759', scaling: 1, radius: 100, nodeshape: 'rectangle'}}, {data: {id: 'DirectWBPerson545', name: 'Gary Ruvkun', url: 'WBPerson545', scaling: 189, radius: 75.0, nodeshape: 'ellipse'}}]}"  ;; this would work if replacing line below for WBPerson3759
-     :elementsDirect (when-let [elements (elements nodes-direct edges-direct "Direct")]
+     :elementsDirect (when-let [elements (elements nodes-direct edges-direct)]
                        (generate-json-like-string elements))
      :description "ancestors_data"}))
 
