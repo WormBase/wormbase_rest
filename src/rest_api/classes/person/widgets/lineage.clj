@@ -219,7 +219,8 @@
                              (map (fn [edge]
                                     {:data edge})))))
              (flatten))
-    :nodes (scale-nodes-map (vals nodes-map))))
+    :nodes
+    (scale-nodes-map (vals nodes-map))))
 
 (defn- generate-json-like-string [elements]
   (-> (json/generate-string elements)
