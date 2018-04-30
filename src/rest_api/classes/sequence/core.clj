@@ -8,8 +8,9 @@
 
 (defn sequence-features [db-name id role]
   (let [db ((keyword db-name) wb-seq/sequence-dbs)]
-    (if (= role "variation")
-      (wb-seq/get-features-by-attribute db id)
+    (case role
+      "variation" (wb-seq/get-features-by-attribute db id)
+      "cds" (wb-seq/sequence-features-where-type db id "CDS%")
       (wb-seq/get-features db id))))
 
 (defn get-segments [object]
@@ -28,7 +29,7 @@
 (defn get-longest-segment [object]
   (let [segments (get-segments object)]
     (if (seq segments)
-     (longest-segment segments))))
+      (longest-segment segments))))
 
 (defn create-genomic-location-obj [start stop object segment tracks gbrowse img]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
@@ -43,10 +44,10 @@
                               y))
         browser-start (calc-browser-pos - start stop 0.2)
         browser-stop (calc-browser-pos + stop start 0.5)
-        id (str (:seqname segment) ":" start ".." stop)
+        id (str (:seqname segment) ":" browser-start ".." browser-stop)
         label (if (= img true)
                    id
-                   (str (:seqname segment) ":" browser-start ".." browser-stop))]
+                 (str (:seqname segment) ":" start ".." stop))]
     (pace-utils/vmap
       :class "genomic_location"
       :id id
