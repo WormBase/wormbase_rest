@@ -18,8 +18,10 @@
                                   (map (fn [h]
                                          (:gene/_corresponding-transcript h)))
                                   (map (fn [g]
-                                         (let [low (:locatable/min child)
-                                               high (:locatable/max child)]
+                                         (let [lmin (:locatable/min child)
+                                               lmax (:locatable/max child)
+                                               strand (when-let [strand-kw (:locatable/strand child)]
+                                                        (name strand-kw))]
                                            {:comment (or
                                                        (:transcript/brief-identification child)
                                                        (some->> (:transcript/remark child)
@@ -37,8 +39,9 @@
                                                                 (str/replace #"_" " "))
                                             :gene (pack-obj g)
                                             :name (pack-obj child)
-                                            :start (+ (if (> low high) high low) 1)
-                                            :end (if (< low high) high low)}))))))
+                                            :s strand
+                                            :start (if (= strand "negative") lmax lmin)
+                                            :end (if (= strand "negative") lmin lmax)}))))))
                   (flatten)
                   (remove nil?)
                   (not-empty))

@@ -11,14 +11,27 @@
     (case role
       "variation" (wb-seq/get-features-by-attribute db id)
       "cds" (wb-seq/sequence-features-where-type db id "CDS%")
+      "pcr-product" (wb-seq/sequence-features-where-type db id "PCR_product%")
       (wb-seq/get-features db id))))
+
+(defn get-g-species [object role]
+  (when-let [species-name (:species/id
+                             (or
+                               ((keyword role "species") object)
+                               (or
+                                 (:clone/species
+                                   (first
+                                     (:pcr-product/clone object)))
+                                 (:transcript/species
+                                   (first
+                                     (:transcript/_corresponding-pcr-product object))))))]
+    (generic-functions/xform-species-name species-name)))
 
 (defn get-segments [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
 	role (namespace id-kw)]
-    (let  [species-name (:species/id ((keyword role "species") object))
-	   g-species (generic-functions/xform-species-name species-name)
-	   sequence-database (seqdb/get-default-sequence-database g-species)]
+    (let [g-species (get-g-species object role)
+          sequence-database (seqdb/get-default-sequence-database g-species)]
      (when sequence-database
 	(sequence-features sequence-database (id-kw object) role)))))
 
@@ -56,14 +69,7 @@
       :seqment (:seqname segment)
       :start start
       :stop stop
-      :taxonomy
-      (when-let [class ((keyword role "species") object)]
-        (when-let [[_ genus species]
-                  (re-matches #"^(.*)\s(.*)$"
-                              (:species/id class))]
-          (str/lower-case
-            (str/join [(first genus) "_" species]))))
-
+      :taxonomy (get-g-species object role)
       :tracks tracks)))
 
 (defn genomic-obj [object]
