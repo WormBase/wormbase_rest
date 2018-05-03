@@ -25,7 +25,6 @@
     {:data (if (empty? data) nil data)
      :description "street address of this person"}))
 
-
 (defn name-field [person]
   (let [data (pack-obj "person" person)]
     {:data (if (empty? data) nil data)
