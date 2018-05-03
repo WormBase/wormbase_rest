@@ -7,14 +7,26 @@
 
 (defn street-address [person]
   (let [db (d/entity-db person)
-        data (->> (d/q '[:find [?street-address ...]
-                         :in $ ?person
-                         :where [?person :person/address ?address]
-                         [?address :address/street-address ?street-address]]
-                       db (:db/id person))
-                  (seq))]
+        data 
+        (vals
+          (into
+            (sorted-map)
+            (into {}
+                  (->> (d/q '[:find [?street-address ...]
+                              :in $ ?person
+                              :where [?person :person/address ?address]
+                              [?address :address/street-address ?street-address]
+                              ]
+                            db (:db/id person))
+                       (map (fn [oid]
+                              (let [street-address (d/entity db oid)]
+                                {(:ordered/index street-address)
+                                 (:address.street-address/text street-address)}
+                                )))
+                       (seq)))))]
     {:data (if (empty? data) nil data)
      :description "street address of this person"}))
+
 
 (defn name-field [person]
   (let [data (pack-obj "person" person)]
@@ -94,7 +106,6 @@
                         :date-modified (date/format-date (:person.old-address/datetype old-address))
                         :email (:address/email old-address)
                         :institution (first (:address/institution old-address))
-                        :street-address (:address/street-address old-address)
                         :country (:address/country old-address)
                         :main-phone (:address/main-phone old-address)
                         :lab-phone (:address/lab-phone old-address)
