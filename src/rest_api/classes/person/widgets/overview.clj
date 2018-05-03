@@ -15,14 +15,12 @@
                   (->> (d/q '[:find [?street-address ...]
                               :in $ ?person
                               :where [?person :person/address ?address]
-                              [?address :address/street-address ?street-address]
-                              ]
+                              [?address :address/street-address ?street-address]]
                             db (:db/id person))
                        (map (fn [oid]
                               (let [street-address (d/entity db oid)]
                                 {(:ordered/index street-address)
-                                 (:address.street-address/text street-address)}
-                                )))
+                                 (:address.street-address/text street-address)})))
                        (seq)))))]
     {:data (if (empty? data) nil data)
      :description "street address of this person"}))
