@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.5.0]
+- Adding endpoints for WS264 release
+
 ## [0.4.1] - 2018-03-07 - Hotfix
 - Fixing 500 errors for gene page expression widget
 

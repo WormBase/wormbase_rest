@@ -127,8 +127,8 @@
         sequence (if (= (count variation) 0)
                    (str (subs peptide 0 var-start) "-" (subs peptide (+ var-start (count variation))))
                    peptide)
-        ]                                                     )
-  nil                                                                                                                                                                           )
+        ]
+    nil))
 
 ;test WBVar01112111/
 (defn features-affected [variation]
