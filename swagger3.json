@@ -17,6 +17,12 @@
       "variables": {}
     }
   ],
+  "tags": [
+    {
+      "description": "NIH Data Commons",
+      "name": "NIHdatacommons"
+    }  
+  ],
   "paths": {
     "/rest/widget/analysis/{id}/external_links": {
       "get": {
