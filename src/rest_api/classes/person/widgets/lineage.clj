@@ -6,6 +6,8 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.date :as date]))
 
+(def scaling-map (json/parse-string (slurp "http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/wbpersonLineageScalingIntegers.json") true))
+
 (def role-colour
   {"Phd" "#B40431"
    "Postdoc" "#00E300"
@@ -14,63 +16,66 @@
    "Highschool" "#05C1F0"
    "Undergrad" "#B58904"})
 
-(def scaling-map (json/parse-string (slurp "http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/wbpersonLineageScaling.json") true))
-
-(defn- parse-int [s]
-  (Integer. (re-find #"\d+" s)))
+(defn- role-has-colour [role]
+  (if (get role-colour role)
+    true
+    false))
 
 (defn- get-roles [holder]
   (into
     #{}
     (filter #(re-find #"role" (str %)) (keys holder))))
 
-(defn- get-levels [holder]
-  (some->> (get-roles holder)
-           (map (fn [role]
-            (obj/humanize-ident
-              (name role))))))
+(defn- has-a-role-with-colour [holder]
+  (if-let [roles (some->> (get-roles holder)
+                          (map name)
+                          (map obj/humanize-ident)
+                          (filter role-has-colour))]
+    true
+    false))
 
-(defn- get-duration [holder]
+(defn- generate-map [holder person]
   (some->> (get-roles holder)
            (map
              (fn [role-key]
-               (let [role-keyword (partial keyword (-> role-key
-                                           (str/replace #"/" ".")
-                                           (str/replace #":" "")))
-                     rfrom (role-keyword "from")
-                     rto (role-keyword "to")
-                     role (first (role-key holder))]
-                 (str
-                   (when-let [from (rfrom role)]
-                     (date/format-date5 from))
-                   " - "
-                   (when-let [to (rto role)]
-                     (date/format-date5 to))))))))
+               {:level (obj/humanize-ident (name role-key))
+                :duration (let [role-keyword (partial keyword (-> role-key
+                                                                  (str/replace #"/" ".")
+                                                                  (str/replace #":" "")))
+                                rfrom (role-keyword "from")
+                                rto (role-keyword "to")
+                                role (first (role-key holder))]
+                            (str
+                              (when-let [from (rfrom role)]
+                                (date/format-date5 from))
+                              " - "
+                              (when-let [to (rto role)]
+                                (date/format-date5 to))))
+                :name (pack-obj person)}))
+           (filter (fn [r] (role-has-colour (:level r))))))
 
-(defn- generate-map [holder person]
-  {:level (get-levels holder)
-   :duration (get-duration holder)
-   :name (pack-obj person)})
-
-(defn- node [direct-or-full person]
-  {:id (str direct-or-full (:person-id person))
-   :name (:person/standard-name person)
+(defn- node [direct-or-full person is-primary]
+  {:id (str direct-or-full (:person/id person))
+   :name (-> (:label (pack-obj person))
+             (str/replace #"'" "`"))
    :url (:person/id person)
    :scaling (if-let [scaling ((keyword (:person/id person)) scaling-map)]
-              (parse-int scaling)
+              scaling
               1)
    :radius 100
-   :nodeshape "rectangle"})
+   :nodeshape (if (= is-primary true)
+                "rectangle"
+                "ellipse")})
 
 (defn- get-node [direct-or-full person largest-node-scaling]
   (let [scaling (if-let [scaling ((keyword (:person/id person)) scaling-map)]
                   scaling
                   1)]
-      {:id (str direct-or-full (:person/id person))
-       :name (:person/standard-name person)
-       :url (:person/id person)
-       :scaling scaling
-       :nodeshape "ellipse"}))
+    {:id (str direct-or-full (:person/id person))
+     :name (:person/standard-name person)
+     :url (:person/id person)
+     :scaling scaling
+     :nodeshape "ellipse"}))
 
 (defn- edge-supervisee [direct-or-full person supervisee]
   {:source (str direct-or-full (:person/id person))
@@ -78,7 +83,7 @@
    :role (:level supervisee)
    :targetArrowShape "triangle"
    :lineStyle "solid"
-   :lineColor (get role-colour (first (:level supervisee)))})
+   :lineColor (get role-colour (:level supervisee))})
 
 (defn- edges-supervisees [direct-or-full person]
   (some->> (:person.supervised-by/_person person)
@@ -87,17 +92,18 @@
                (generate-map
                  holder
                  (:person/_supervised-by holder))))
+           (flatten)
            (map
              (fn [supervisee]
-            (edge-supervisee direct-or-full person supervisee)))))
+               (edge-supervisee direct-or-full person supervisee)))))
 
 (defn- edge-supervisor [direct-or-full person supervisor]
   {:source (str direct-or-full (:id (:name supervisor)))
    :target (str direct-or-full (:person/id person))
-   :role (first (:level supervisor))
+   :role (:level supervisor)
    :targetArrowShape "triangle"
    :lineStyle (if (= direct-or-full "Direct") "dashed" "solid")
-   :lineColor (get role-colour (first (:level supervisor)))})
+   :lineColor (get role-colour (:level supervisor))})
 
 (defn- edges-supervisors [direct-or-full person]
   (some->> (:person/supervised-by person)
@@ -105,194 +111,150 @@
                   (generate-map
                     holder
                     (:person.supervised-by/person holder))))
+           (flatten)
            (map
              (fn [supervisor]
                (edge-supervisor direct-or-full person supervisor)))))
 
-(defn get-supervisee-graph
-  ([person]
-   (get-supervisee-graph person #{}))
-  ([person visited]
+(defn get-supervise-graph
+  ([person direct-or-full direction]
+   (get-supervise-graph person direct-or-full direction #{} true))
+  ([person direct-or-full direction visited is-primary]
    (let [id (:person/id person)]
      (when (not (contains? visited id))
        (let [visited-new (conj visited id)]
-         (if-let [holders (:person.supervised-by/_person person)]
+         (if-let [holders (when (or (= direct-or-full "Full")
+                                    (and (= direct-or-full "Direct")
+                                         (empty? visited)))
+                            (if (= direction "backward")
+                              (:person/supervised-by person)
+                              (:person.supervised-by/_person person)))]
            (let [{nodes :nodes
-                  roles :roles
-                  edges :edges}
-                  (some->> holders
-                          (map
-                            (fn [holder]
-                              (let [supervisee (:person/_supervised-by holder)
-                                    role (obj/humanize-ident
-                                           (name
-                                             (first
-                                               (get-roles holder))))
-                                    edge {(str id "-" (:person/id supervisee))
-                                          (edge-supervisee
-                                            "Full"
-                                            person
-                                            (generate-map holder supervisee))}
-                                    {nodes :nodes
-                                     roles :roles
-                                     edges :edges} (get-supervisee-graph
-                                                     supervisee
-                                                     visited-new)]
-                                {:nodes nodes
-                                 :roles (conj roles role)
-                                 :edges (merge edges edge)})))
-                          (flatten)
-                          (apply merge-with into {}))]
-              {:nodes (merge {id (node true person)} nodes)
-               :roles roles
-               :edges edges})
-           {:nodes {id (node true person)} ;; leaf nodes
-            :roles #{}
-            :edges {}}))))))
-
-(defn get-supervisor-graph
-  ([person]
-   (get-supervisor-graph person #{}))
-  ([person visited]
-   (let [id (:person/id person)]
-     (when (not (contains? visited id))
-       (let [visited-new (conj visited id)]
-         (if-let [holders (:person/supervised-by person)]
-          (let [{nodes :nodes
                   roles :roles
                   edges :edges}
                  (some->> holders
                           (map
                             (fn [holder]
-                              (let [supervisor (:person.supervised-by/person holder)
-                                    role (obj/humanize-ident
-                                           (name
-                                             (first
-                                               (get-roles holder))))
-                                    edge {(str id "-" (:person/id supervisor))
-                                          (edge-supervisor
-                                            "Full"
-                                            person
-                                            (generate-map holder supervisor))}
+                              (let [supervise (if (= direction "backward")
+                                                (:person.supervised-by/person holder)
+                                                (:person/_supervised-by holder))
+                                    roles-map (some->> (get-roles holder)
+                                                       (map name)
+                                                       (map obj/humanize-ident)
+                                                       (filter role-has-colour)
+                                                       (map (fn [n]
+                                                              {n n}))
+                                                       (into {}))
+                                    edges-map {(str id "-" (:person/id supervise))
+                                               (some->> (generate-map holder supervise)
+                                                        (map (fn [supervise-map]
+                                                               (if (= direction "backward")
+                                                                 (edge-supervisor direct-or-full person supervise-map)
+                                                                 (edge-supervisee direct-or-full person supervise-map)))))}
                                     {nodes :nodes
                                      roles :roles
-                                     edges :edges} (get-supervisor-graph
-                                                     supervisor
-                                                     visited-new)]
+                                     edges :edges} (if (empty? roles-map)
+                                                     {:nodes {}
+                                                      :roles {}
+                                                      :edges {}}
+                                                     (get-supervise-graph
+                                                       supervise
+                                                       direct-or-full
+                                                       direction
+                                                       visited-new
+                                                       false))]
                                 {:nodes nodes
-                                 :roles (conj roles role)
-                                 :edges (merge edges edge)})))
+                                 :roles (merge roles roles-map)
+                                 :edges (merge edges edges-map)})))
                           (flatten)
                           (apply merge-with into {}))]
-             {:nodes (merge {id (node true person)} nodes)
+             {:nodes (merge {id (node direct-or-full person is-primary)} nodes)
               :roles roles
-              :edges edges}))
-           {:nodes {id (node true person)} ;; leaf nodes
-            :roles #{}
-            :edges {}})))))
+              :edges edges})
+           {:nodes {id (node direct-or-full person is-primary)} ;; leaf nodes
+            :roles {}
+            :edges {}}))))))
 
-(defn- get-graph [person]
+(defn- get-graph [person direct-or-full]
   (let [{supervisor-nodes :nodes
          supervisor-roles :roles
-         supervisor-edges :edges} (get-supervisor-graph person)
-
+         supervisor-edges :edges} (get-supervise-graph person direct-or-full "backward")
         {supervisee-nodes :nodes
          supervisee-roles :roles
-         supervisee-edges :edges} (get-supervisee-graph person)]
+         supervisee-edges :edges} (get-supervise-graph person direct-or-full "forward")]
     {:nodes (conj supervisor-nodes supervisee-nodes)
-     :roles (some? (conj supervisor-roles supervisee-roles))
+     :roles (some->> (conj (keys supervisor-roles) (keys supervisee-roles))
+                     (flatten)
+                     (distinct)
+                     (remove nil?)
+                     (map (fn [role]
+                            {role (get role-colour role)}))
+                     (into {}))
      :edges (conj supervisor-edges supervisee-edges)}))
 
-(defn- roles-direct [person]
-  (some->> (flatten
-             (flatten
-               (conj
-                 (some->> (:person.supervised-by/_person person)
-                          (map get-roles)
-                          first)
-                 (some->> (:person/supervised-by person)
-                          (map get-roles)))))
-           (apply concat)
-           (map name)
-           (map obj/humanize-ident)
-           (distinct)
-           (map (fn [role]
-                  {role (get role-colour role)}))
-           (apply merge)))
-
-(defn- elements-direct [person]
-  (pace-utils/vmap
-    :edges
-    (some->> (conj
-               (edges-supervisees "Direct" person)
-               (edges-supervisors "Direct" person))
-             (remove nil?)
-             (map (fn [data]
-                    {:data data})))
-
-    :nodes
-    (some->> (flatten
-               (conj
-                 (vector (node "Direct" person))
-                 (some->> (:person/supervised-by person)
-                          (map :person.supervised-by/person)
-                          (map (fn [supervisor]
-                                 (get-node "Direct" supervisor 1))))
-                 (some->> (:person.supervised-by/_person person)
-                          (map :person/_supervised-by)
-                          (map (fn [supervisee]
-                                 (get-node "Direct" supervisee 1))))))
-             (remove nil?)
-             (map
-               (fn [data]
-                 {:data data})))))
-
-(defn- elements-full [nodes-map edges]
-  (pace-utils/vmap
-    :edges
-    (some->> (vals edges)
-             (map (fn [edge]
-                    {:data edge})))
-
-    :nodes
-    (when-let [nodes (vals nodes-map)]
-      (let [largest-node-scaling (some->> nodes
-                                          (map :scaling)
-                                          (into [])
-                                          (apply max))]
+(defn- scale-nodes-map [nodes]
+  (when (some? nodes)
+    (let [largest-node-scaling (some->> nodes
+                                        (map :scaling)
+                                        (into [])
+                                        (apply max))]
       (some->> nodes
                (map
                  (fn [node]
                    (let [scaling (:scaling node)
                          radius (+ 25 (* 50 (/ (Math/log scaling) (Math/log largest-node-scaling))))
-                         data (conj {:radius radius}
-                                     node)]
-                   {:data data}))))))))
+                         data (if (= (:nodeshape node) "rectangle")
+                                node
+                                (conj node {:radius radius}))]
+                     {:data data})))))))
+
+(defn- elements [nodes-map edges-map]
+  (pace-utils/vmap
+    :edges
+    (some->> (vals edges-map)
+             (map (fn [edges]
+                    (some->> edges
+                             (map (fn [edge]
+                                    {:data edge})))))
+             (flatten))
+    :nodes
+    (scale-nodes-map (vals nodes-map))))
+
+(defn- generate-json-like-string [elements]
+  (-> (json/generate-string elements)
+      (str/replace #"\"(\w+)\":" "$1: ")
+      (str/replace #"," ", ")
+      (str/replace #"\"" "'")))
 
 (defn ancestors-data [person]
-  (let [{nodes :nodes
-         roles :roles
-         edges :edges} (get-graph person)]
-    {:existingRolesFull roles
-     :existingRolesDirect (roles-direct person)
+  (let [{nodes-full :nodes
+         roles-full :roles
+         edges-full :edges} (get-graph person "Full")
+        {nodes-direct :nodes
+         roles-direct :roles
+         edges-direct :edges} (get-graph person "Direct")]
+    {:existingRolesFull roles-full
+     :existingRolesDirect roles-direct
      :thisPerson (:person/id person)
-     :elementsFull(when-let [elements (elements-full nodes edges)]
-                    (str/replace (json/generate-string elements) #"\"" "'"))
-     :elementsDirect (when-let [elements (elements-direct person)]
-                       (str/replace (json/generate-string elements) #"\"" "'"))
+     :elementsFull (when-let [elements (elements nodes-full edges-full)]
+                     (generate-json-like-string elements))
+     :elementsDirect (when-let [elements (elements nodes-direct edges-direct)]
+                       (generate-json-like-string elements))
      :description "ancestors_data"}))
 
 (defn supervised-by [person]
   {:data (some->> (:person/supervised-by person)
                   (map
                     (fn [holder]
-                      (generate-map holder (:person.supervised-by/person holder)))))
+                      (generate-map holder (:person.supervised-by/person holder))))
+                  (flatten))
    :description "people who supervised this person"})
 
 (defn supervised [person]
   {:data (some->> (:person.supervised-by/_person person)
-           (map (fn [holder]
-                  (generate-map holder (:person/_supervised-by holder)))))
+                  (map (fn [holder]
+                         (generate-map holder (:person/_supervised-by holder))))
+                  (flatten))
    :description "people supervised by this person"})
 
 (defn worked-with [person]
@@ -300,7 +262,8 @@
                   (map (fn [holder]
                          (generate-map
                            holder
-                           (:person.worked-with/person holder)))))
+                           (:person.worked-with/person holder))))
+                  (flatten))
    :description "people with whom this person worked"})
 
 (def widget

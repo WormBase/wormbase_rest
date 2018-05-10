@@ -115,7 +115,9 @@
 (defmethod obj-label "feature" [_ feature]
   (or (:feature/public-name feature)
       (if (nil? (:feature/other-name feature))
-        (:feature/id feature)
+        (if (nil? (:feature/description feature))
+          (:feature/id feature)
+          (first (:feature/description feature)))
         (first (:feature/other-name feature)))))
 
 (defmethod obj-label "anatomy-term" [_ term]
@@ -156,7 +158,6 @@
   (or (:pcr-product/id pcr)
       (or (:oligo/id pcr)
           (:oligo-set/id pcr))))
-
 
 (def q-interactor
   '[:find [?interactor ...]
@@ -235,39 +236,6 @@
   "Attempt to determine the class of a WormBase-ish entity-map."
   [obj]
   (cond
-   (:gene/id obj)
-   "gene"
-
-   (:clone/id obj)
-   "clone"
-
-   (:cds/id obj)
-   "cds"
-
-   (:protein/id obj)
-   "protein"
-
-   (:feature/id obj)
-   "feature"
-
-   (:rearrangement/id obj)
-   "rearrangement"
-
-   (:variation/id obj)
-   "variation"
-
-   (:anatomy-term/id obj)
-   "anatomy-term"
-
-   (:molecule/id obj)
-   "molecule"
-
-   (:life-stage/id obj)
-   "life-stage"
-
-   (:go-term/id obj)
-   "go-term"
-
    (:pcr-product/id obj)
    "pcr_oligo"
 
@@ -337,16 +305,16 @@
    (seq (:evidence/inferred-automatically holder))
 
    :Curator
-   (seq (for [person (:evidence/curator-confirmed holder)]
-          (pack-obj "person" person)))
+   (seq (some->> (:evidence/curator-confirmed holder)
+                 (map pack-obj)))
 
    :Person_evidence
-   (seq (for [person (:evidence/person-evidence holder)]
-          (pack-obj "person" person)))
+   (seq (some->> (:evidence/person-evidence holder)
+                 (map pack-obj)))
 
    :Paper_evidence
-   (seq (for [paper (:evidence/paper-evidence holder)]
-          (pack-obj "paper" paper)))
+   (seq (some->> (:evidence/paper-evidence holder)
+                 (map pack-obj)))
 
    :Date_last_updated
    (when-let [last-updated (:evidence/date-last-updated holder)]

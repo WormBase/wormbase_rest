@@ -9,7 +9,7 @@
                          :in $ ?laboratory
                          :where
                          [?strent :strain/id ?strainid]
-                         [(.startsWith ?strainid ?laboratory)]]
+                         [(clojure.string/starts-with? ?strainid ?laboratory)]]
                        db (:laboratory/id laboratory))
                   (map (fn [strent]
                          (let [strain (d/entity db strent)]

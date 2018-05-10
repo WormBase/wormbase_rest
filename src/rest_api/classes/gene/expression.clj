@@ -226,7 +226,7 @@
 
    ))
 
-(defn- pack-image [picture]
+(defn pack-image [picture]
   (let [prefix (if (re-find #"<Journal_URL>" (or (:picture/acknowledgement-template picture) ""))
                  (:paper/id (first (:picture/reference picture)))
                  (:person/id (first (:picture/contact picture))))]

@@ -103,28 +103,53 @@
                    (or (:variation.strain/strain
                          (first
                            (:variation/strain object-orig)))
-                      (or (first
-                            (:transcript/_corresponding-pcr-product object-orig))
-                          object-orig)))
+                       object-orig))
         id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (if (= role "protein")
-             (some->>  (:cds.corresponding-protein/_protein object)
+             (some->> (:cds.corresponding-protein/_protein object)
                       (map :cds/_corresponding-protein)
                       (filter #(not= "history"  (:method/id  (:locatable/method %))))
                       (map :gene.corresponding-cds/_cds)
                       first
                       (map :gene/_corresponding-cds)
                       (map sequence-fns/genomic-obj))
-             (when-let [position (sequence-fns/genomic-obj object)]
+             (when-let [position (sequence-fns/genomic-obj-position object)]
                [position]))
      :description "The genomic location of the sequence"}))
+
+(defn microarray-assays [object]
+  {:data (some->> (:locatable/_parent object)
+                  (map (fn [f]
+                         (some->> (:microarray-results.transcript/_transcript f)
+                                  (map :microarray-results/_transcript)
+                                  (map (fn [m]
+                                        {(:microarray-results/id m) (pack-obj m)})))))
+                  (flatten)
+                  (into {})
+                  (vals)
+                  (sort-by :label))
+   :description "The Microarray assays in this region of the sequence"})
+
+(defn orfeome-assays [object]
+  {:data (some->> (:locatable/_parent object)
+		  (map (fn [f]
+			 (some->> (:transcript/corresponding-pcr-product f)
+				  (map (fn [p]
+					 (let [obj (pack-obj p)]
+					   (when (str/starts-with? (:label obj) "mv_")
+					     {(:pcr-product/id p) obj})))))))
+		  (flatten)
+		  (into {}))
+   :description "The ORFeome Assays of the sequence"})
+
 
 (defn method [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-    {:data (let [text (:method/id (:locatable/method object))]
-             (if (or (= role "transcript") 
+    {:data (let [text (str/replace (or (:method/id (:locatable/method object)) "") #"_" " ")]
+             (if (or (= role "transcript")
+                     (= role "sequence")
                      (= role "cds"))
                {:method text
                 :details (:method.remark/text
@@ -228,7 +253,9 @@
     {:data (if-let [species (:species/id ((keyword role "species") object))]
              (let [[genus species] (str/split species #" ")]
                {:genus genus
-                :species species}))
+                :species species})
+             {:genus "Caenorhabditis"
+              :species "elegans"})
      :description "the genus and species of the current object"}))
 
 (defn remarks [object]
@@ -330,21 +357,25 @@
                    (:gene/corresponding-cds gene)
                    [nil]))
           :let [cds (or (:gene.corresponding-cds/cds cdsh)
-                        cdsh)]]
-      (let [sequences (if (some? cds)
-                        (some->> (:transcript.corresponding-cds/_cds cds)
-                                 (map :transcript/_corresponding-cds)
-                                 (sort-by :transcript/id))
-                        (remove
-                          nil?
-                          (flatten
-                            (conj
-                              (for [pgh (:gene/corresponding-pseudogene gene)]
-                                (:gene.corresponding-pseudogene/pseudogene pgh))
-                              (for [th (:gene/corresponding-transcript gene)]
-                                (:gene.corresponding-transcript/transcript th))))))]
+                        cdsh)
+                sequences (if (and (some? cds)
+                                   (or (not= "transcript" role)
+                                       (not= "non_coding_transcript"
+                                          (:method/id
+                                            (:locatable/method object)))))
+                            (some->> (:transcript.corresponding-cds/_cds cds)
+                                     (map :transcript/_corresponding-cds)
+                                     (sort-by :transcript/id))
+                            (remove
+                              nil?
+                              (flatten
+                                (conj
+                                  (some->> (:gene/corresponding-pseudogene gene)
+                                    (map :gene.corresponding-pseudogene/pseudogene))
+                                  (some->> (:gene/corresponding-transcript gene)
+                                    (map :gene.corresponding-transcript/transcript))))))]]
         (if (or (not= role "transcript")
-              (not (= (.indexOf sequences object) -1)))
+                (not= (.indexOf sequences object) -1))
           {:length_spliced
            (let [length-spliced (if-let [exons (seq (:cds/source-exons cds))]
                                   (->>
@@ -381,9 +412,9 @@
                     (for [rh (:cds/remark cds)]
                       (+ 1 (.indexOf all-cds-remark-holders rh)))))
                 (pack-obj cds))
-              :evidence {:status (when-let [status (name (:cds/prediction-status cds))]
+              :evidence {:status (when-let [status (:cds/prediction-status cds)]
                                    (str
-                                   (case status
+                                   (case (name status)
                                      "confirmed" "Confirmed"
                                      "partially-confirmed" "Partially confimed"
                                      "predicted" "Predicted")
@@ -422,12 +453,16 @@
                "-"))
 
            :type
-           (for [s sequences]
-             (let [type-str (if-let [type-field (:method/id
+           (for [[idx s] (map-indexed (fn [idx itm] [idx itm]) sequences)
+             :let [type-str (if-let [type-field (:method/id
                                                   (:locatable/method s))]
                               (str/replace type-field #"_" " ")
-                              "-")]
-               type-str))})))))
+                              "-")]]
+              (if (and (= role "transcript")
+                       (= idx (.indexOf sequences object))
+                       (= type-str "non coding transcript"))
+                 (str "<strong>" type-str "</strong>")
+                 type-str))}))))
 
 (defn- create-remarks [cds-remark-holders]
   (into
@@ -455,9 +490,9 @@
 
                  "transcript"
                  (some->> (:gene.corresponding-transcript/_transcript object)
-                          (map (fn [h]
-                                 (let [gene (:gene/_corresponding-transcript h)]
-                                   (corresponding-all-gene gene object role nil)))))
+                          (map :gene/_corresponding-transcript)
+                          (map (fn [gene]
+                                 (corresponding-all-gene gene object role nil))))
 
                  "cds"
                  (when-let [ths (:transcript.corresponding-cds/_cds object)]
@@ -489,8 +524,48 @@
                                      (:gene/_corresponding-transcript gh)))))]
                          (for [gene genes]
                            (corresponding-all-gene gene cds "cds" nil)))))))]
-      {:data (not-empty data)
+      {:data (if (= role "transcript")
+               (first data)
+               (not-empty data))
        :description (str "corresponding cds, transcripts, gene for this " role)})))
+
+(defn predicted-units [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+    {:data (some->> (or (:locatable/_parent
+                          (first
+                            (:sequence/_cds object)))
+                        (:locatable/_parent object))
+                    (map (fn [transcript]
+                           (some->> (:gene.corresponding-transcript/_transcript transcript)
+                                    (map (fn [h]
+                                           (:gene/_corresponding-transcript h)))
+                                    (map (fn [g]
+                                           (let [low (:locatable/min transcript)
+                                                 high (:locatable/max transcript)]
+                                             {:comment (or
+                                                         (:transcript/brief-identification transcript)
+                                                         (some->> (:transcript/remark transcript)
+                                                                  (map :transcript.remark/text)
+                                                                  (str/join "<br />")))
+                                              :bio_type (-> transcript
+                                                            :locatable/method
+                                                            :method/gff-source
+                                                            (str/replace #"non_coding" "non-coding")
+                                                            (str/replace #"_" " "))
+                                              :predicted_type (-> transcript
+                                                                  :locatable/method
+                                                                  :method/gff-source
+                                                                  (str/replace #"non_coding" "non-coding")
+                                                                  (str/replace #"_" " "))
+                                              :gene (pack-obj g)
+                                              :name (pack-obj transcript)
+                                              :start (+ (if (> low high) high low) 1)
+                                              :end (if (< low high) high low)}))))))
+                    (flatten)
+                    (remove nil?)
+                    (not-empty))
+     :description (str "features contained within the " role)}))
 
 (defn sequence-type [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))

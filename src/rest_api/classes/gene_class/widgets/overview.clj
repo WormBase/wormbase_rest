@@ -7,8 +7,8 @@
 (defn laboratory [gc]
   {:data (when-let [laboratory (:gene-class/designating-laboratory gc)]
            {:laboratory (pack-obj laboratory)
-            :representative (when-let [reps (:laboratory/representative laboratory)]
-                              (map pack-obj reps))})
+            :representative (some->> (:laboratory/representative laboratory)
+                                     (map pack-obj))})
    :description "The laboratory where the Gene_class was isolated, created, or named"})
 
 (defn former-laboratory [gc]
@@ -21,8 +21,8 @@
    :description "Former designating laboratory for the gene class and the date of retirement"})
 
 (defn other-names [gc]
-  {:data (when-let [gcms (:gene-class/_main-name gc)]
-             (map :gene-class/id gcms))
+  {:data (some->> (:gene-class/_main-name gc)
+                  (map :gene-class/id))
    :description (str "other names that have been used to refer to " (:gene-class/id gc))})
 
 (defn evidence [gc]
@@ -30,7 +30,7 @@
                   (:evidence/paper-evidence)
                   (first)
                   (pack-obj))
-   :descriptions (str "evidence for the gene class " (:gene-class/id gc))})
+   :description (str "evidence for the gene class " (:gene-class/id gc))})
 
 (def widget
   {:name generic/name-field

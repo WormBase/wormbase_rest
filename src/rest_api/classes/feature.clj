@@ -3,6 +3,7 @@
     [rest-api.classes.feature.widgets.overview :as overview]
     [rest-api.classes.feature.widgets.history :as history]
     [rest-api.classes.feature.widgets.evidence :as evidence]
+    [rest-api.classes.feature.widgets.molecular-details :as molecular-details]
     [rest-api.classes.feature.widgets.associations :as associations]
     [rest-api.classes.feature.widgets.location :as location]
     [rest-api.routing :as routing]))
@@ -13,5 +14,6 @@
    {:overview overview/widget
     :history history/widget
     :associations associations/widget
+    ;:molecular_details molecular-details/widget
     :evidence evidence/widget
     :location location/widget}})

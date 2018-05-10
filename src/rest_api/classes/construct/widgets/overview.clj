@@ -26,72 +26,76 @@
              nil?
              (flatten
                (conj
-                 (when-let [tgs (:construct/transgene-construct construct)]
-                   (for [tg tgs]
-                     {:use_lab (for [lab (:transgene/laboratory tg)]
-                                 (pack-obj (:transgene.laboratory/laboratory lab)))
-                      :use_summary (:transgene.summary/text (:transgene/summary tg))
-                      :used_in (pack-obj tg)
-                      :evidence (obj/get-evidence tg)
-                      :used_in_type "Transgene construct"}))
-                 (when-let [tgs (:construct/transgene-coinjection construct)]
-                   (for [tg tgs]
-                     {:use_lab (for [lab (:transgene/laboratory tg)]
-                                 (pack-obj (:transgene.laboratory/laboratory lab)))
-                      :use_summary (:transgene.summary/text (:transgene/summary tg))
-                      :used_in (pack-obj tg)
-                      :evidence (obj/get-evidence tg)
-                      :used_in_type "Transgene coinjection"}))
-                 (when-let [eps (:expr-pattern/_construct construct)]
-                   (for [ep eps]
-                     {:use_lab []
-                      :use_summary nil
-                      :used_in {:taxonomy "all"
-                                :class "expr_pattern"
-                                :label (let [gene (:expr-pattern.gene/gene (first (:expr-pattern/gene ep)))]
-                                         (str "Expression pattern for " (or
-                                                                          (or (:gene/public-name gene )
-                                                                            (:gene/id gene))
-                                                                          "")))
-                                :id (:expr-pattern/id ep)}
-                      :evidence (obj/get-evidence ep)
-                      :used_in_type "Expression pattern"}))
-                 (when-let [vs (:variation/_derived-from-construct construct)]
-                   (for [v vs]
-                     {:use_lab (for [lab (:variation/laboratory v)] (pack-obj(lab)))
-                      :use_summary nil
-                      :used_in (pack-obj v)
-                      :evidence (obj/get-evidence v)
-                      :used_in_type "Engineered variation"}))
-                 (when-let [ihs (:interactor-info/_construct construct)]
-                   (for [ih ihs]
-                     {:use_lab []
-                      :use_summary nil
-                      :used_in (let [i (:interaction/_interactor-overlapping-gene ih)
-                                     ghs (:interaction/interactor-overlapping-gene i)]
-                                   {:taxonomy "all"
-                                    :class "interaction"
-                                    :label (str/join " : "
-                                                     (for [gh ghs
-                                                           :let [gene (:interaction.interactor-overlapping-gene/gene gh)]]
-                                                       (or (:gene/public-name gene)
-                                                           (:gene/id gene))))
-                                    :id (:interaction/id i)})
-                      :evidence (obj/get-evidence ih)
-                      :used_in_type "interaction"}))
-                 (when-let [wbps (:wbprocess/_marker-construct construct)] ;; no examples in database
-                   (for [wbp wbps]
-                     {:use_lab []
-                      :use_summary (:wbprocess.summary/text (:wbprocess/summary wbp))
-                      :used_in (pack-obj wbp)
-                      :evidence (obj/get-evidence wbp)
-                      :used_in_type "Topic output_indica"}))))))
+                 (some->> (:construct/transgene-construct construct)
+                          (map (fn [tg]
+                                 {:use_lab (some->> (:transgene/laboratory tg)
+                                                    (map :transgene.laboratory/laboratory)
+                                                    (map pack-obj))
+                                  :use_summary (:transgene.summary/text (:transgene/summary tg))
+                                  :used_in (pack-obj tg)
+                                  :evidence (obj/get-evidence tg)
+                                  :used_in_type "Transgene construct"})))
+                 (some->> (:construct/transgene-coinjection construct)
+                          (map (fn [tg]
+                                 {:use_lab (some->> (:transgene/laboratory tg)
+                                                    (map :transgene.laboratory/laboratory)
+                                                    (map pack-obj))
+                                  :use_summary (:transgene.summary/text (:transgene/summary tg))
+                                  :used_in (pack-obj tg)
+                                  :evidence (obj/get-evidence tg)
+                                  :used_in_type "Transgene coinjection"})))
+                 (some->> (:expr-pattern/_construct construct)
+                          (map (fn [ep]
+                                 {:use_lab []
+                                  :use_summary nil
+                                  :used_in {:taxonomy "all"
+                                            :class "expr_pattern"
+                                            :label (let [gene (:expr-pattern.gene/gene (first (:expr-pattern/gene ep)))]
+                                                     (str "Expression pattern for " (or
+                                                                                      (or (:gene/public-name gene )
+                                                                                          (:gene/id gene))
+                                                                                      "")))
+                                            :id (:expr-pattern/id ep)}
+                                  :evidence (obj/get-evidence ep)
+                                  :used_in_type "Expression pattern"})))
+                 (some->> (:variation/_derived-from-construct construct)
+                          (map (fn [v]
+                                 {:use_lab (some->> (:variation/laboratory v)
+                                                    (map pack-obj))
+                                  :use_summary nil
+                                  :used_in (pack-obj v)
+                                  :evidence (obj/get-evidence v)
+                                  :used_in_type "Engineered variation"})))
+                 (some->> (:interactor-info/_construct construct)
+                          (map (fn [ih]
+                                 {:use_lab []
+                                  :use_summary nil
+                                  :used_in (let [i (:interaction/_interactor-overlapping-gene ih)
+                                                 ghs (:interaction/interactor-overlapping-gene i)]
+                                             {:taxonomy "all"
+                                              :class "interaction"
+                                              :label (str/join " : "
+                                                               (some->> (:interaction/interactor-overlapping-gene i)
+                                                                        (map :interaction.interactor-overlapping-gene/gene)
+                                                                        (map (fn [gene]
+                                                                               (or (:gene/public-name gene)
+                                                                                   (:gene/id gene))))))
+                                              :id (:interaction/id i)})
+                                  :evidence (obj/get-evidence ih)
+                                  :used_in_type "Interaction"})))
+                 (some->> (:wbprocess/_marker-construct construct)
+                          (map (fn [wbp]
+                                 {:use_lab []
+                                  :use_summary (:wbprocess.summary/text (:wbprocess/summary wbp))
+                                  :used_in (pack-obj wbp)
+                                  :evidence (obj/get-evidence wbp)
+                                  :used_in_type "Topic output_indica"})))))))
    :description "The Construct is used for"})
 
 (defn utr [construct]
-  {:data (when-let [ths (:construct/three-prime-utr construct)]
-           (for [th ths :let [gene (:construct.three-prime-utr/gene th)]]
-             (pack-obj gene)))
+  {:data (some->> (:construct/three-prime-utr construct)
+                  (map :construct.three-prime-utr/gene)
+                  (map pack-obj))
    :description "3' UTR for this transgene"})
 
 (def widget

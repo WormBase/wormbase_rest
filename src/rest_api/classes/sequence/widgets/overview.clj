@@ -4,8 +4,9 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn source-clone [s]
-  {:data (when-let [clones (:sequence/clone s)]
-           (pack-obj (first clones)))
+  {:data (some->> (:sequence/clone s)
+                  (first)
+                  (pack-obj))
    :description "The Source clone of the sequence"})
 
 (defn cdss [s]
@@ -24,15 +25,17 @@
    :description "Matching Pseudogenes"})
 
 (defn transcripts [s]
-  {:data (when-let [ths (:transcript.matching-cdna/_sequence s)]
-           (for [th ths
-                 :let [t (:transcript/_matching-cdna th)]]
-             {(:transcript/id t) (pack-obj t)}))
+  {:data (some->> (:transcript.matching-cdna/_sequence s)
+                  (map :transcript/_matching-cdna)
+                  (map (fn [t]
+                         {(:transcript/id t) (pack-obj t)}))
+                  (into {}))
    :description "Matching Transcripts"})
 
 (defn paired-read [s] ;OSTR077F5_1
-  {:data (when-let [p (:sequence/paired-read s)]
-           (pack-obj (first p)))
+  {:data (some->> (:sequence/paired-read s)
+                  (first)
+                  (pack-obj))
    :description "paired read of the sequence"})
 
 (defn description [s]
@@ -45,9 +48,14 @@
    :dscription "The Analysis info of the sequence"})
 
 (defn subsequence [s]
-  {:data nil ; no subsequence field
-   :key (keys s)
-   :d (:db/id s)
+  {:data (not-empty
+           (some->> (:sequence/clone s)
+                    (map (fn [c]
+                           (some->> (:sequence/_clone-end-seq-read c)
+                                    (map pack-obj))))
+                    (flatten)
+                    (remove nil?)
+                    (sort-by :label)))
    :description "end sequence reads used for initially placing the Fosmid on the genome "})
 
 (def widget
