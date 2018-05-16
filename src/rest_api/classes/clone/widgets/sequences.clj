@@ -57,15 +57,18 @@
                   (map pack-obj))
    :description "sequences associated with this clone"})
 
-(defn print-sequence [c] ; works for JC8 does not work for WRM0612cD02
+(defn print-sequence [c]
   {:data (some->> (:sequence/_clone c)
-                  (map (fn [s]
-                         (let [h (:sequence/dna s)]
-                           {:header "Sequence"
-                            :sequence (-> h
-                                          :sequence.dna/dna
-                                          :dna/sequence)
-                            :length (:sequence.dna/length h)}))))
+		  (map (fn [s]
+			 (when-let [h (:sequence/dna s)]
+			   {:header "Sequence"
+			    :sequence (-> h
+					  :sequence.dna/dna
+					  :dna/sequence)
+			    :length (:sequence.dna/length h)}
+			   )))
+		  (remove nil?)
+		  (not-empty))
    :description "the sequence of the sequence"})
 
 (def widget
