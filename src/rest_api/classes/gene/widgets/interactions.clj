@@ -457,11 +457,11 @@
        (into {})
        (not-empty)))
 
-(defn- build-interactions [gene arrange-results]
+(defn- build-interactions [interactions interactions-nearby arrange-results]
   (let [edge-vals (comp vec fixup-citations vals :edges)
-        data (obj-interactions gene {} :nearby? false)
+        data interactions
         edges (edge-vals data)
-        results (obj-interactions gene data :nearby? true)
+        results interactions-nearby
         edges-all (edge-vals results)]
     (-> results
         (assoc :phenotypes (collect-phenotypes edges-all))
@@ -484,13 +484,17 @@
   "Produces a data structure suitable for rendering the table listing."
   [gene]
   {:description "genetic and predicted interactions"
-   :data (build-interactions gene arrange-interactions)})
+   :data (let [data (obj-interactions gene {} :nearby? false)
+               results (obj-interactions gene data :nearby? true)]
+           (build-interactions data results arrange-interactions))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [gene]
   {:description "addtional nearby interactions"
-   :data (build-interactions gene arrange-interaction-details)})
+   :data (let [data (obj-interactions gene {} :nearby? false)
+               results (obj-interactions gene data :nearby? true)]
+           (build-interactions data results arrange-interaction-details))})
 
 (def widget
   {:name generic/name-field
