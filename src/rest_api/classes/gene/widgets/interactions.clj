@@ -224,16 +224,14 @@
   ([role role-selector]
    (keyword (role-selector role) "id")))
 
-(defn- annotate-role [obj data int-type role]
+(defn- annotate-role [data int-type role]
   (let [ident (entity-ident role)]
     (pace-utils/vassoc role
-                       :predicted (predicted int-type role data)
-                       :main (if (= (ident obj) (:id role))
-                               1))))
+                       :predicted (predicted int-type role data))))
 
-(defn- assoc-interaction [obj type-name nearby? data unpacked]
+(defn- assoc-interaction [type-name nearby? data unpacked]
   (let [key-path [:nodes (:id unpacked)]
-        ar (annotate-role obj data type-name unpacked)]
+        ar (annotate-role data type-name unpacked)]
     (if (and (nil? (get-in data key-path)) ar)
       (-> data
           (assoc-in key-path ar)
@@ -295,7 +293,7 @@
 
 (defn- pack-int-roles
   "Pack interaction roles into the expected format."
-  [ref-obj interaction nearby? a b direction]
+  [interaction nearby? a b direction]
   (let [type-name (interaction-type-name interaction)
         non-directional? (= direction "non-directional")]
     (for [x a
@@ -308,22 +306,23 @@
               packed (map pack-obj participants)
               roles (zipmap [:effector :affected] participants)
               labels (filter identity (map :label packed))
-              ix-gene-neigbours? (partial gene-neighbours? interaction ref-obj)
-              participant-ids (involves-focus-gene? ref-obj participants nearby?)
-              includes-focus-gene? (seq participant-ids)]
+              ;; ix-gene-neigbours? (partial gene-neighbours? interaction ref-obj)
+              ;; participant-ids (involves-focus-gene? ref-obj participants nearby?)
+              ;; includes-focus-gene? (seq participant-ids)
+              ]
           (cond
-            (= xt yt) nil
+            ;; (= xt yt) nil
 
-            ;; Indirect interactions (= nearby? true)
-            (and nearby?
-                 (some nil? (map ix-gene-neigbours? [xt yt])))
-             nil
+            ;; ;; Indirect interactions (= nearby? true)
+            ;; (and nearby?
+            ;;      (some nil? (map ix-gene-neigbours? [xt yt])))
+            ;;  nil
 
             ;; Direct interactions  (= nearby? false)
-            (and (not nearby?)
-                 (not= (entity-type ref-obj) "interaction")
-                 (not includes-focus-gene?))
-            nil
+            ;; (and (not nearby?)
+            ;;      (not= (entity-type ref-obj) "interaction")
+            ;;      (not includes-focus-gene?))
+            ;; nil
             :default
             (let [result-key (str/trim (str/join " " labels))]
               (when result-key
@@ -331,14 +330,12 @@
                                      :direction direction} roles)]
                   [result-key result]))))))))
 
-(defn- interaction-info [ia ref-obj nearby?]
+(defn- interaction-info [ia nearby?]
   (let [possible-int-types (get ia :interaction/type #{})
         no-interaction :interaction.type/genetic:no-interaction
-        focus-gene-id (:gene/id ref-obj)
         lls (or (:interaction/log-likelihood-score ia) 1000)]
     (cond
       (and (<= lls 1.5)
-           (not= (entity-type ref-obj) "interaction")
            (possible-int-types :interaction.type/predicted))
       nil
 
@@ -351,21 +348,22 @@
              others :other
              associated :associated-product} (group-by interactor-role
                                                        interactors)
-            pack-iroles (partial pack-int-roles ref-obj ia nearby?)
+            [other1 other2] others
+            pack-iroles (partial pack-int-roles ia nearby?)
             roles (if (or effectors affected)
                     (-> (concat effectors others)
                         (pack-iroles affected "Effector->Affected"))
-                    (pack-iroles others others "non-directional"))]
+                    (pack-iroles [other1] [other2] "non-directional"))]
         (when (seq (remove nil? roles))
           (->> roles
                (vec)
                (into {})
                (vals)))))))
 
-(defn- annotate-interactor-roles [obj data type-name int-roles]
+(defn- annotate-interactor-roles [data type-name int-roles]
   (->> int-roles
        (map pack-obj)
-       (map (partial annotate-role obj data type-name))))
+       (map (partial annotate-role data type-name))))
 
 (defn- pack-papers [papers]
   (->> papers
@@ -380,9 +378,9 @@
    (str x " " y " " type-name " " (:label phenotype))))
 
 (defn- process-obj-interaction
-  [obj nearby? data interaction type-name effector affected direction]
+  [nearby? data interaction type-name effector affected direction]
   (let [roles [effector affected]
-        packed-roles (annotate-interactor-roles obj data type-name roles)
+        packed-roles (annotate-interactor-roles data type-name roles)
         [packed-effector packed-affected] packed-roles
         [e-name a-name] (map :label packed-roles)
         papers (:interaction/paper interaction)
@@ -392,7 +390,7 @@
         packed-phenotype (pack-obj "phenotype" phenotype)
         e-key (edge-key e-name a-name type-name packed-phenotype)
         a-key (edge-key a-name e-name type-name packed-phenotype)
-        assoc-int (partial assoc-interaction obj type-name nearby?)
+        assoc-int (partial assoc-interaction type-name nearby?)
         result (-> data
                    (assoc-in [:types type-name] 1)
                    (assoc-int packed-effector)
@@ -418,14 +416,13 @@
         (assoc-showall result* nearby?))))
 
 (defn- obj-interaction
-  [obj nearby? data [interaction
+  [nearby? data [interaction
                      {:keys [type-name effector affected direction]}]]
   (let [roles [effector affected]]
     (cond
       (not-any? interactor roles) data
       (some nil? roles) data
-      :default (process-obj-interaction obj
-                                        nearby?
+      :default (process-obj-interaction nearby?
                                         data
                                         interaction
                                         type-name
@@ -436,11 +433,11 @@
 (defn- obj-interactions
   [obj data & {:keys [nearby?]}]
   (let [ints (gene-interactions obj data nearby?)
-        mk-interaction (partial obj-interaction obj nearby?)
+        mk-interaction (partial obj-interaction nearby?)
         mk-pair-wise (fn [interaction]
                        (map vector
                             (repeat interaction)
-                            (interaction-info interaction obj nearby?)))]
+                            (interaction-info interaction nearby?)))]
     (if (and nearby? (> (count ints) 3000))
       (assoc data :showall "0")
       (reduce mk-interaction data (mapcat mk-pair-wise ints)))))
