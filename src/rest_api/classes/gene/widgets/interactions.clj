@@ -56,10 +56,11 @@
     [(gene->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
      (gene->interaction-3 ?gene ?gh ?ix)
      (interaction->gene-3 ?ix ?nh ?neighbour)
-     [(not= ?gene ?neighbour)]
+     [(not= ?gene ?neighbour)]]
+    [(gene->neighbour-5-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
+     (gene->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
      (not
-      [?ix :interaction/type :interaction.type/predicted])
-     ]
+      [?ix :interaction/type :interaction.type/predicted])]
     [(gene-neighbour ?gene ?neighbour)
      (gene->neighbour-5 ?gene _ ?neighbour _ _)]]
   )
@@ -187,9 +188,9 @@
   (->> (d/q '[:find ?int ?nh ?n2h
               :in $ % ?gene
               :where
-              (gene->neighbour-5 ?gene _ ?neighbour1 _ _)
-              (gene->neighbour-5 ?gene _ ?neighbour2 _ _)
-              (gene->neighbour-5 ?neighbour1 ?nh ?neighbour2 ?n2h ?int)]
+              (gene->neighbour-5-non-predicted ?gene _ ?neighbour1 _ ?i1)
+              (gene->neighbour-5-non-predicted ?gene _ ?neighbour2 _ ?i2)
+              (gene->neighbour-5-non-predicted ?neighbour1 ?nh ?neighbour2 ?n2h ?int)]
             db int-rules gene)))
 
 ;; (defn gene-nearby-interactions [db gene]
