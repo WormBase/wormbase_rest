@@ -58,7 +58,7 @@
   (let [attributes (sequencesql/get-attribute-id-by-name db-spec {:name feature-name})]
     (flatten
       (for [attribute attributes]
-        (sequencesql/get-features-by-id db-spec  attribute)))))
+        (sequencesql/get-features-by-id db-spec attribute)))))
 
 (defn sequence-features-where-type [db-spec feature-name method]
   (sequencesql/sequence-features-where-type
@@ -70,3 +70,26 @@
   (sequencesql/variation-features
     db-spec
     {:name variation-name}))
+
+(defn get-sequence [db-spec location start stop]
+  (let [low (if (> stop start) start stop)
+        high (if (> stop start) stop start)
+        low-offset (* (int (/ low 2000)) 2000)
+        high-offset  (* (int (/ high 2000)) 2000)
+        offsets  (range low-offset (+ 2000 high-offset) 2000)
+        start-remove (mod low 2000)
+        offsets-sequence (some->> offsets
+                                  (map
+                                    (fn [offset]
+                                      (some->> (sequencesql/get-sequence
+                                                 db-spec
+                                                 {:location location
+                                                  :offset offset})
+                                               (first)
+                                               (:sequence)
+                                               )))
+                                  (str/join)
+                                  (str/lower-case))]
+    (subs offsets-sequence
+          (- (mod low 2000) 1)
+          (- high low-offset))))
