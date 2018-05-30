@@ -45,16 +45,24 @@
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
 
 (def int-rules
-  '[[(gene-interaction ?gene ?int)
+  '[[(gene->interaction-3 ?gene ?ih ?int)
      [?ih :interaction.interactor-overlapping-gene/gene ?gene]
      [?int :interaction/interactor-overlapping-gene ?ih]]
-    [(gene-neighbour ?gene ?neighbour)
-     (gene-interaction ?gene ?ix)
-     [?ix :interaction/interactor-overlapping-gene ?ih]
+    [(gene-interaction ?gene ?int)
+     (gene->interaction-3 ?gene _ ?int)]
+    [(interaction->gene-3 ?int ?ih ?gene)
+     [?int :interaction/interactor-overlapping-gene ?ih]
+     [?ih :interaction.interactor-overlapping-gene/gene ?gene]]
+    [(gene->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
+     (gene->interaction-3 ?gene ?gh ?ix)
+     (interaction->gene-3 ?ix ?nh ?neighbour)
+     [(not= ?gene ?neighbour)]
      (not
       [?ix :interaction/type :interaction.type/predicted])
-     [?ih :interaction.interactor-overlapping-gene/gene ?neighbour]
-     [(not= ?gene ?neighbour)]]])
+     ]
+    [(gene-neighbour ?gene ?neighbour)
+     (gene->neighbour-5 ?gene _ ?neighbour _ _)]]
+  )
 
 (defn interactor-idents [db]
   (sort (d/q '[:find [?ident ...]
