@@ -385,9 +385,9 @@
 (defn- assoc-showall [data nearby?]
   (assoc data :showall (or (< (count (:edges data)) 100) nearby?)))
 
-(defn- edge-key [x y type-name phenotype]
+(defn- edge-key [x y type-name direction phenotype]
   (str/trimr
-   (str x " " y " " type-name " " (:label phenotype))))
+   (str x " " y " " type-name " " direction " " (:label phenotype))))
 
 
 
@@ -396,14 +396,14 @@
   (let [roles [effector affected]
         packed-roles (annotate-interactor-roles data type-name roles)
         [packed-effector packed-affected] packed-roles
-        [e-name a-name] (map :label packed-roles)
+        [e-name a-name] (map :id packed-roles)
         papers (:interaction/paper interaction)
         packed-papers (pack-papers papers)
         phenotype (first (interaction-phenotype-kw interaction))
         packed-int (pack-obj "interaction" interaction)
         packed-phenotype (pack-obj "phenotype" phenotype)
-        e-key (edge-key e-name a-name type-name packed-phenotype)
-        a-key (edge-key a-name e-name type-name packed-phenotype)
+        e-key (edge-key e-name a-name type-name direction packed-phenotype)
+        a-key (edge-key a-name e-name type-name direction packed-phenotype)
         assoc-int (partial assoc-interaction type-name nearby?)
         result (-> data
                    (assoc-in [:types type-name] 1)
@@ -413,7 +413,8 @@
                       (get-in result [:edges e-key])
                       (update-in-edges result e-key packed-int packed-papers)
 
-                      (get-in result [:edges a-key])
+                      (and (= direction "non-directional")
+                           (get-in result [:edges a-key]))
                       (update-in-edges result a-key packed-int packed-papers)
 
                       :default
