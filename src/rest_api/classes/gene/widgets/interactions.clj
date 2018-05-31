@@ -226,14 +226,6 @@
       1)
     0))
 
-(defn gene-interaction-tuples [obj nearby?]
-  (let [db (d/entity-db obj)
-        id (:db/id obj)]
-    (concat
-     (gene-direct-interactions db id)
-     (if nearby?
-       (gene-nearby-interactions db id)))))
-
 (defn- entity-ident
   ([role]
    (entity-ident role :class))
@@ -296,12 +288,12 @@
            (first)
            (namespace)))
 
-(defn- involves-focus-gene? [focus-gene interactors nearby?]
-  (let [ident-vals (map :gene/id interactors)
-        ids (->> ident-vals (remove nil?) vec)
-        focused? (some #{(:gene/id focus-gene)} ids)]
-    (when focused?
-      ids)))
+;; (defn- involves-focus-gene? [focus-gene interactors nearby?]
+;;   (let [ident-vals (map :gene/id interactors)
+;;         ids (->> ident-vals (remove nil?) vec)
+;;         focused? (some #{(:gene/id focus-gene)} ids)]
+;;     (when focused?
+;;       ids)))
 
 (defn- overlapping-genes [interaction]
    (->> (:interaction/interactor-overlapping-gene interaction)
@@ -468,7 +460,7 @@
 ;;                                  :nearby (if nearby? "1" "0")}))]
 ;;         (assoc-showall result* nearby?))))
 
-(defn- obj-interaction
+(defn- fill-interaction
   [nearby? data [interaction
                      {:keys [type-name effector affected direction]}]]
   (let [roles [effector affected]]
@@ -483,18 +475,17 @@
                                         affected
                                         direction))))
 
-(defn- obj-interactions
-  [obj data & {:keys [nearby?]}]
-  (let [ints (gene-interaction-tuples obj nearby?)
-        db (d/entity-db obj)
-        mk-interaction (partial obj-interaction nearby?)
-        mk-pair-wise (fn [[interaction holder1 holder2]]
-                       (map vector
-                            (repeat (d/entity db interaction))
-                            (interaction-info (d/entity db interaction)
-                                              (d/entity db holder1)
-                                              (d/entity db holder2)
-                                              nearby?)))]
+(defn- fill-interactions
+  [db ints data & {:keys [nearby?]}]
+  (let [mk-interaction (partial fill-interaction nearby?)
+        mk-pair-wise (fn [[interaction-id holder1-id holder2-id]]
+                       (let [interaction (d/entity db interaction-id)]
+                         (map vector
+                              (repeat interaction)
+                              (interaction-info interaction
+                                                (d/entity db holder1-id)
+                                                (d/entity db holder2-id)
+                                                nearby?))))]
     (if (and nearby? (> (count ints) 3000))
       (assoc data :showall "0")
       (reduce mk-interaction data (mapcat mk-pair-wise ints)))))
@@ -512,11 +503,11 @@
        (into {})
        (not-empty)))
 
-(defn- build-interactions [interactions interactions-nearby arrange-results]
+(defn- build-interactions [db interactions interactions-nearby arrange-results]
   (let [edge-vals (comp vec fixup-citations vals :edges)
-        data interactions
+        data (fill-interactions db interactions {} :nearby? false)
         edges (edge-vals data)
-        results interactions-nearby
+        results (fill-interactions db (concat interactions interactions-nearby) {} :nearby? true)
         edges-all (edge-vals results)]
     (-> results
         (assoc :phenotypes (collect-phenotypes edges-all))
@@ -539,17 +530,19 @@
   "Produces a data structure suitable for rendering the table listing."
   [gene]
   {:description "genetic and predicted interactions"
-   :data (let [data (obj-interactions gene {} :nearby? false)
-               results (obj-interactions gene {} :nearby? true)]
-           (build-interactions data results arrange-interactions))})
+   :data (let [db (d/entity-db gene)
+               ints (gene-direct-interactions db (:db/id gene))
+               ints-nearby (gene-nearby-interactions db (:db/id gene))]
+           (build-interactions db ints ints-nearby arrange-interactions))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [gene]
   {:description "addtional nearby interactions"
-   :data (let [data (obj-interactions gene {} :nearby? false)
-               results (obj-interactions gene {} :nearby? true)]
-           (build-interactions data results arrange-interaction-details))})
+   :data (let [db (d/entity-db gene)
+               ints (gene-direct-interactions db (:db/id gene))
+               ints-nearby (gene-nearby-interactions db (:db/id gene))]
+           (build-interactions db ints ints-nearby arrange-interaction-details))})
 
 (def widget
   {:name generic/name-field
