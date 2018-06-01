@@ -1,4 +1,4 @@
-(ns rest-api.classes.gene.widgets.interactions
+(ns rest-api.classes.interaction.core
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
