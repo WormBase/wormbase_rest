@@ -48,15 +48,21 @@
   '[[(gene->interaction-3 ?gene ?h ?int)
      [?h :interaction.interactor-overlapping-gene/gene ?gene]
      [?int :interaction/interactor-overlapping-gene ?h]]
-    [(feature->interaction-3 ?int ?h ?feature)
+    [(feature->interaction-3 ?feature ?h ?int)
      [?h :interaction.feature-interactor/feature ?feature]
      [?int :interaction/feature-interactor ?h]]
-    [(molecule->interaction-3 ?int ?h ?molecule)
+    [(molecule->interaction-3 ?molecule ?h ?int)
      [?h :interaction.molecule-interactor/molecule ?molecule]
      [?int :interaction/molecule-interactor ?h]]
-    [(rearrangement->interaction-3 ?int ?h ?rearrangement)
+    [(rearrangement->interaction-3 ?rearrangement ?h ?int)
      [?h :interaction.rearrangement/rearrangement ?rearrangement]
      [?int :interaction/rearrangement ?h]]
+    [(x->interaction-3 ?x ?h ?ix)
+     (or (gene->interaction-3 ?x ?h ?ix)
+         (feature->interaction-3 ?x ?h ?ix)
+         (molecule->interaction-3 ?x ?h ?ix)
+         (rearrangement->interaction-3 ?x ?h ?ix))]
+
     [(interaction->gene-3 ?int ?h ?gene)
      [?int :interaction/interactor-overlapping-gene ?h]
      [?h :interaction.interactor-overlapping-gene/gene ?gene]]
@@ -69,17 +75,16 @@
     [(interaction->rearrangement-3 ?int ?h ?rearrangement)
      [?int :interaction/rearrangement ?h]
      [?h :interaction.rearrangement/rearrangement ?rearrangement]]
-    [(x->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
-     (or (gene->interaction-3 ?gene ?gh ?ix)
-         (feature->interaction-3 ?gene ?gh ?ix)
-         (molecule->interaction-3 ?gene ?gh ?ix)
-         (rearrangement->interaction-3 ?gene ?gh ?ix))
-     (or (interaction->gene-3 ?ix ?nh ?neighbour)
-         (interaction->feature-3 ?ix ?nh ?neighbour)
-         (interaction->molecule-3 ?ix ?nh ?neighbour)
-         (interaction->rearrangement-3 ?ix ?nh ?neighbour)
-         )
-     [(not= ?gene ?neighbour)]]
+    [(interaction->x-3 ?ix ?h ?neighbour)
+     (or (interaction->gene-3 ?ix ?h ?neighbour)
+         (interaction->feature-3 ?ix ?h ?neighbour)
+         (interaction->molecule-3 ?ix ?h ?neighbour)
+         (interaction->rearrangement-3 ?ix ?h ?neighbour))]
+
+    [(x->neighbour-5 ?x ?xh ?neighbour ?nh ?ix)
+     (x->interaction-3 ?x ?xh ?ix)
+     (interaction->x-3 ?ix ?nh ?neighbour)
+     [(not= ?x ?neighbour)]]
     [(x->neighbour-5-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
      (x->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
      (not
