@@ -45,24 +45,48 @@
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
 
 (def int-rules
-  '[[(gene->interaction-3 ?gene ?ih ?int)
-     [?ih :interaction.interactor-overlapping-gene/gene ?gene]
-     [?int :interaction/interactor-overlapping-gene ?ih]]
-    [(gene-interaction ?gene ?int)
-     (gene->interaction-3 ?gene _ ?int)]
-    [(interaction->gene-3 ?int ?ih ?gene)
-     [?int :interaction/interactor-overlapping-gene ?ih]
-     [?ih :interaction.interactor-overlapping-gene/gene ?gene]]
-    [(gene->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
-     (gene->interaction-3 ?gene ?gh ?ix)
-     (interaction->gene-3 ?ix ?nh ?neighbour)
+  '[[(gene->interaction-3 ?gene ?h ?int)
+     [?h :interaction.interactor-overlapping-gene/gene ?gene]
+     [?int :interaction/interactor-overlapping-gene ?h]]
+    [(feature->interaction-3 ?int ?h ?feature)
+     [?h :interaction.feature-interactor/feature ?feature]
+     [?int :interaction/feature-interactor ?h]]
+    [(molecule->interaction-3 ?int ?h ?molecule)
+     [?h :interaction.molecule-interactor/molecule ?molecule]
+     [?int :interaction/molecule-interactor ?h]]
+    [(rearrangement->interaction-3 ?int ?h ?rearrangement)
+     [?h :interaction.rearrangement/rearrangement ?rearrangement]
+     [?int :interaction/rearrangement ?h]]
+    [(interaction->gene-3 ?int ?h ?gene)
+     [?int :interaction/interactor-overlapping-gene ?h]
+     [?h :interaction.interactor-overlapping-gene/gene ?gene]]
+    [(interaction->feature-3 ?int ?h ?feature)
+     [?int :interaction/feature-interactor ?h]
+     [?h :interaction.feature-interactor/feature ?feature]]
+    [(interaction->molecule-3 ?int ?h ?molecule)
+     [?int :interaction/molecule-interactor ?h]
+     [?h :interaction.molecule-interactor/molecule ?molecule]]
+    [(interaction->rearrangement-3 ?int ?h ?rearrangement)
+     [?int :interaction/rearrangement ?h]
+     [?h :interaction.rearrangement/rearrangement ?rearrangement]]
+    [(x->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
+     ;; (gene->interaction-3 ?gene ?gh ?ix)
+     ;; (interaction->gene-3 ?ix ?nh ?neighbour)
+     (or (gene->interaction-3 ?gene ?gh ?ix)
+         (feature->interaction-3 ?gene ?gh ?ix)
+         (molecule->interaction-3 ?gene ?gh ?ix)
+         (rearrangement->interaction-3 ?gene ?gh ?ix))
+
+     (or (interaction->gene-3 ?ix ?nh ?neighbour)
+         (interaction->feature-3 ?ix ?nh ?neighbour)
+         (interaction->molecule-3 ?ix ?nh ?neighbour)
+         (interaction->rearrangement-3 ?ix ?nh ?neighbour)
+         )
      [(not= ?gene ?neighbour)]]
-    [(gene->neighbour-5-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
-     (gene->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
+    [(x->neighbour-5-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
+     (x->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
      (not
-      [?ix :interaction/type :interaction.type/predicted])]
-    [(gene-neighbour ?gene ?neighbour)
-     (gene->neighbour-5 ?gene _ ?neighbour _ _)]]
+      [?ix :interaction/type :interaction.type/predicted])]]
   )
 
 (defn interactor-idents [db]
@@ -181,17 +205,23 @@
   (d/q '[:find ?int ?gh ?nh
          :in $ % ?gene
          :where
-         (gene->neighbour-5 ?gene ?gh _ ?nh ?int)]
+         (x->neighbour-5 ?gene ?gh _ ?nh ?int)]
        db int-rules gene))
 
 (defn gene-nearby-interactions [db gene]
-  (->> (d/q '[:find ?int ?nh ?n2h
-              :in $ % ?gene
-              :where
-              (gene->neighbour-5-non-predicted ?gene _ ?neighbour1 _ ?i1)
-              (gene->neighbour-5-non-predicted ?gene _ ?neighbour2 _ ?i2)
-              (gene->neighbour-5 ?neighbour1 ?nh ?neighbour2 ?n2h ?int)]
-            db int-rules gene)))
+  (let [neighbours (d/q '[:find (distinct ?neighbour) .
+                          :in $ % ?gene
+                          :where
+                          (x->neighbour-5-non-predicted ?gene _ ?neighbour _ ?int)]
+                        db int-rules gene)]
+
+    (d/q '[:find ?int ?nh ?n2h
+           :in $ % [?neighbour1 ...] [?neighbour2 ...]
+           :where
+           [(not= ?neighbour1 ?neighbour2)]
+           (x->neighbour-5 ?neighbour1 ?nh ?neighbour2 ?n2h ?int)]
+         db int-rules neighbours neighbours)
+    ))
 
 ;; (defn gene-nearby-interactions [db gene]
 ;;   (->> (d/q '[:find ?int (count ?ng)
