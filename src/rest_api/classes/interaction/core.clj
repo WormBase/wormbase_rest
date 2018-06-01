@@ -28,7 +28,8 @@
   (some-fn :interaction.feature-interactor/feature
            :interaction.interactor-overlapping-gene/gene
            :interaction.molecule-interactor/molecule
-           :interaction.rearrangement/rearrangement))
+           :interaction.rearrangement/rearrangement
+           :interaction.other-interactor/text))
 
 (def ^:private interactors
   [:interaction/feature-interactor
@@ -75,11 +76,16 @@
     [(interaction->rearrangement-3 ?int ?h ?rearrangement)
      [?int :interaction/rearrangement ?h]
      [?h :interaction.rearrangement/rearrangement ?rearrangement]]
+    [(interaction->other-3 ?int ?h ?other)
+     [?int :interaction/other-interactor ?h]
+     [?h :interaction.other-interactor/text ?other]]
+
     [(interaction->x-3 ?ix ?h ?neighbour)
      (or (interaction->gene-3 ?ix ?h ?neighbour)
          (interaction->feature-3 ?ix ?h ?neighbour)
          (interaction->molecule-3 ?ix ?h ?neighbour)
-         (interaction->rearrangement-3 ?ix ?h ?neighbour))]
+         (interaction->rearrangement-3 ?ix ?h ?neighbour)
+         (interaction->other-3 ?ix ?h ?neighbour))]
 
     [(x->neighbour-5 ?x ?xh ?neighbour ?nh ?ix)
      (x->interaction-3 ?x ?xh ?ix)

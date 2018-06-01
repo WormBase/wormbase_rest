@@ -236,6 +236,9 @@
   "Attempt to determine the class of a WormBase-ish entity-map."
   [obj]
   (cond
+   (string? obj)
+   "text"
+
    (:pcr-product/id obj)
    "pcr_oligo"
 
@@ -295,6 +298,11 @@
                                          (:movie.db-info/accession))]
               (format "http://www.rnai.org/movies/%s" rnai-db-id)))
         ))))
+
+(defmethod pack-obj-helper "text" [class obj & args]
+  {:id obj
+   :label obj
+   :class class})
 
 
 (defn get-evidence [holder]
