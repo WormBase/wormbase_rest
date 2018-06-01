@@ -446,7 +446,7 @@
        (into {})
        (not-empty)))
 
-(defn- build-interactions [db interactions interactions-nearby arrange-results]
+(defn build-interactions [db interactions interactions-nearby arrange-results]
   (let [edge-vals (comp vec fixup-citations vals :edges)
         data (fill-interactions db interactions {} :nearby? false)
         edges (edge-vals data)
@@ -456,7 +456,7 @@
         (assoc :phenotypes (collect-phenotypes edges-all))
         (arrange-results edges edges-all))))
 
-(defn- arrange-interactions [results edges edges-all]
+(defn arrange-interactions [results edges edges-all]
   (if (:showall results)
     (-> (assoc results :edges edges)
         (assoc :edges_all edges-all)
@@ -464,7 +464,7 @@
         (assoc :showall "1"))
     {:edges edges}))
 
-(defn- arrange-interaction-details [results edges edges-all]
+(defn arrange-interaction-details [results edges edges-all]
   (-> results
       (assoc :edges edges-all)
       (update-in [:showall] #(str (if % 1 0)))))
