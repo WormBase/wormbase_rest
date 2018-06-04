@@ -14,6 +14,6 @@
    {:overview overview/widget
     :phenotypes phenotypes/widget
     :references references/widget
-    ;:details details/widget
+    :details details/widget
     :movies movies/widget
     :external_links external-links/widget}})

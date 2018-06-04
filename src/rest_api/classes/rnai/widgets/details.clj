@@ -1,12 +1,12 @@
 (ns rest-api.classes.rnai.widgets.details
   (:require
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.sequence.core :as sequence-fns]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn delivered-by [r]
   {:data (when-let [by (:rnai/delivered-by r)]
            (obj/humanize-ident (name by)))
-   :d (:db/id r)
    :description "how the RNAi was delivered to the animal"})
 
 (defn assay [r]
@@ -16,19 +16,34 @@
    :description "assay performed on the rnai"})
 
 (defn sqnc [r]
-  {:data nil
+  {:data (if-let [hs (:rnai/dna-text r)]
+           (some->> hs
+                    (map (fn [h]
+                           (let [s (:rnai.dna-text/sequence h)]
+                             {:length (count s)
+                              :sequence s
+                              :header (:rnai.dna-text/name s)}))))
+          (some->> (:rnai/pcr-product r)
+                  (map (fn [obj]
+                         (when-let [refseqobj (sequence-fns/genomic-obj obj)]
+                           (when-let [refseq (sequence-fns/get-sequence refseqobj)]
+                             {:length (count refseq)
+                              :sequence refseq
+                              :header (:pcr-product/id obj)}))))
+                  (remove nil?)))
    :definition "rnai sequence"})
 
 (defn genotype [r]
-  {:data nil
+  {:data (:rnai/genotype r)
    :description "genotype of rnai strain"})
 
 (defn treatment [r]
-  {:data nil
+  {:data (:rnai/treatment r)
    :description "experimental conditions for rnai analysis"})
 
 (defn strain [r]
-  {:data nil
+  {:data (when-let [strain (:rnai/strain r)]
+           (pack-obj strain))
    :description "strain of origin of rnai"})
 
 (defn reagent [r]
@@ -36,17 +51,27 @@
                   (map (fn [pcr]
                          {:reagent (pack-obj pcr)
                           :mrc_id (some->> (:pcr-product/clone pcr)
-                                           (map :db/id))}))) ; need to find database
+                                           (map :clone/database)
+                                           (map (fn [dhs]
+                                                  (some->> dhs
+                                                           (map (fn [dh]
+                                                                  (let [database (:clone.database/database dh)
+                                                                        accession (:clone.database/accession dh)]
+                                                                    (when (= (:database/id database) "Source_BioScience")
+                                                                      (:clone.database/accession dh))))))))
+                                           (flatten)
+                                           (remove nil?)
+                                           (first))})))
    :description "PCR products used to generate this RNAi"})
 
 (defn life-stage [r]
-  {:data nil
+  {:data nil ; non found in database
    :description "PCR product used to generate this RNAi"})
 
 (def widget
   {:name generic/name-field
    :delivered_by delivered-by
-   :assays assay
+   :assay assay
    :sequence sqnc
    :genotype genotype
    :treatment treatment
