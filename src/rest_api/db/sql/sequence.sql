@@ -53,3 +53,11 @@ JOIN attributelist as al ON al.id=a.attribute_id
 WHERE a.attribute_value = "WBVar00101112"
 AND al.tag = "variation"
 AND f.object NOT LIKE "%PCoF%";
+
+-- :name get-sequence :? :*
+-- :doc Retrieve raw sequence from location
+SELECT CONVERT(s.sequence using UTF8) as sequence
+FROM sequence as s
+JOIN locationlist as l ON l.id=s.id
+WHERE l.seqname = :location
+AND s.offset = :offset

@@ -2,6 +2,7 @@
   (:require
     [clojure.string :as str]
     [rest-api.classes.generic-fields :as generic]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn strand [c]
@@ -60,16 +61,21 @@
 (defn print-sequence [c]
   {:data (some->> (:sequence/_clone c)
 		  (map (fn [s]
-			 (when-let [h (:sequence/dna s)]
+			 (if-let [h (:sequence/dna s)]
 			   {:header "Sequence"
 			    :sequence (-> h
 					  :sequence.dna/dna
 					  :dna/sequence)
 			    :length (:sequence.dna/length h)}
+                           (when-let [refseqobj (sequence-fns/genomic-obj c)]
+                             (when-let [refseq (sequence-fns/get-sequence refseqobj)]
+                           {:header "Reference Sequence"
+                            :sequence refseq
+                            :length (count refseq)}))
 			   )))
 		  (remove nil?)
 		  (not-empty))
-   :description "the sequence of the sequence"})
+   :description "the sequence of the clone"})
 
 (def widget
   {:name generic/name-field
