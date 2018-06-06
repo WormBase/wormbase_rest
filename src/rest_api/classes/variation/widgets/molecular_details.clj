@@ -3,6 +3,7 @@
     [datomic.api :as d]
     [clojure.string :as str]
     [rest-api.db.sequence :as seqdb]
+    [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.classes.generic-fields :as generic]
     [rest-api.classes.generic-functions :as generic-functions]
     [pseudoace.utils :as pace-utils]
@@ -16,8 +17,8 @@
   {:data nil
    :description "amino acid changes for this variation, if appropriate"})
 
-(defn detection-method [variation]
-  {:data nil
+(defn detection-method [variation] ; WBVar00601206
+  {:data (first (:variation/detection-method variation))
    :description "detection method for polymorphism, typically via sequencing or restriction digest."})
 
 (defn deletion-verification [variation]
@@ -56,14 +57,15 @@
                             :variation/allele"Allele"
                             :variation/snp "SNP"
                             :variation/confirmed-snp "Confirmed SNP"
+                            :variation/reference-strain-digest "RFLP"
                             :variation/predicted-snp "Predicted SNP"
                             :variation/transposon-insertion "Transposon Insertion"
                             :variation/natural-variant "Natural Variant"}
         type-of-mutation-map {:variation/substitution "Substitution"
                               :variation/insertion "Insertion"
-                              :variation/detetion "Deletion"
+                              :variation/deletion "Deletion"
                               :variation/tandem-duplication "Tandem Duplication"}]
-    {:data {:pysical_class (cond
+    {:data {:physical_class (cond
                              (contains? variation :variation/transposon-insertion)
                              "Transposon insertion"
 
@@ -81,7 +83,7 @@
             :general_class (->> variation-type-map
                                 (map
                                   #(str (if
-                                          (true? ((first %) variation))
+                                          (contains? variation (first %))
                                           (second %))))
                                 (filter #(not= % "")))}
      :description "the general type of the variation"}))
@@ -130,60 +132,121 @@
         ]
     nil))
 
-;test WBVar01112111/
+;test WBVar01112111 WBVar00601206
 (defn features-affected [variation]
   {:data (pace-utils/vmap
            "Clone"
-           nil
+           (some->> (:sequence/clone
+                      (:variation/mapping-target variation))
+                    (map (fn [c]
+                           (conj
+                             (pack-obj c)
+                             {:fstart nil
+                              :fstop nil
+                              :abs_start nil
+                              :abs_stop nil
+                              :start nil
+                              :stop nil
+                              :item (pack-obj c)}
+                           ))
+                    ))
 
            "Chromosome"
-           nil
+           (some->> (:variation/map variation)
+                    (map :variation.map/map)
+                    (map (fn [m]
+                           (conj
+                             (pack-obj m)
+                             {:item (pack-obj m)
+                              :fstart nil
+                              :fstop nil
+                              :abs_start nil
+                              :abs_stop nil
+                              :start nil
+                              :stop nil
+                              }
+                             )
 
-           "Gene"
-           (->>
-             (:variation/gene variation)
-             (map-indexed
-               (fn [idx gh]
-                 (let [gene (:variation.gene/gene gh)
-                       obj (pack-obj gene)]
-                   {:entry (+ idx 1)
-                    :item obj
-                    :id (:gene/id gene)
-                    :label (:label obj)
-                    :class "gene"
-                    :taxonomy (:taxonomy obj)}))))
+                           ) )
+                    
+                    )
+           ; commenting out just to save space in output
+;           "Gene"
+;           (some->> (:variation/gene variation)
+;                (map-indexed
+;                  (fn [idx gh]
+;                    (let [gene (:variation.gene/gene gh)
+;                          obj (pack-obj gene)]
+;                      {:entry (+ idx 1)
+;                       :item obj
+;                       :id (:gene/id gene)
+;                       :label (:label obj)
+;                       :class "gene"
+;                       :taxonomy (:taxonomy obj)}))))
 
            "Predicted_CDS"
-           (->>
-             (:variation/predicted-cds variation)
-             (map
-               (fn [predicted-cds-holder]
-                 (pace-utils/vmap
-                   :protein_effects
-                   (pace-utils/vmap
-                     "Silent"
-                     (if-let [cdshs (:molecular-change/missense predicted-cds-holder)]
-                       (for [cdsh cdshs :let [position (first cdsh)
-                                              description (second cdsh)
-                                              cds (:variation.predicted-cds/cds cdsh)]]
-                         (if-let [wt-protein (:cds/corresponding-protein cdsh)]
-                           (if-let  [wt-peptide (:protein/peptide wt-protein)]
-                             (let [formatted-wt-peptide (str/replace wt-peptide #"[^>|\n]" "")
-                                   [wt-aa mut_aa] (re-seq #"(?s) to (?s)" description)
-                                   mut-peptide (str/join
-                                                 (assoc
-                                                   (vec formatted-wt-peptide) (- position 1) mut_aa))
-                                   wt-protein-fragment (create-fragment wt-peptide position)
-                                   mut-protein-fragment (create-fragment mut-peptide position)
-                                   ]
-                               {:wildtype_conceptual_translation nil
-                                :mutant_conceptual_translation nil
-                                }))))))
+           (some->> (:variation/predicted-cds variation)
+                (map
+                  (fn [predicted-cds-holder]
+                    (pace-utils/vmap
+                      :protein_effects
+                      (pace-utils/vmap
+                        "Silent"
+                        (if-let [cdshs (:molecular-change/missense predicted-cds-holder)]
+                          (for [cdsh cdshs :let [position (first cdsh)
+                                                 description (second cdsh)
+                                                 cds (:variation.predicted-cds/cds cdsh)]]
+                            (if-let [wt-protein (:cds/corresponding-protein cdsh)]
+                              (if-let  [wt-peptide (:protein/peptide wt-protein)]
+                                (let [formatted-wt-peptide (str/replace wt-peptide #"[^>|\n]" "")
+                                      [wt-aa mut_aa] (re-seq #"(?s) to (?s)" description)
+                                      mut-peptide (str/join
+                                                    (assoc
+                                                      (vec formatted-wt-peptide) (- position 1) mut_aa))
+                                      wt-protein-fragment (create-fragment wt-peptide position)
+                                      mut-protein-fragment (create-fragment mut-peptide position)
+                                      ]
+                                  {:wildtype_conceptual_translation nil
+                                   :mutant_conceptual_translation nil
+                                   }))))))
 
-                   :location_effects nil
-                   )))
-             )
-
+                      :location_effects nil
+                      ))))
+;
+;            "Transcript"
+;            (some->> (:variation/transcript variation)
+;                     (map (fn [h]
+;                            (let [t (:variation.transcript/transcript h)]
+;                              (when-let  [refseqobj  (sequence-fns/genomic-obj t)]
+;                            (conj
+;                              (pack-obj t)
+;                              {:item (pack-obj t)
+;                               :fstart (:start refseqobj)
+;                               :fstop (:stop refseqobj)
+;                               :start nil
+;                               :abs_stop nil
+;                               :location_effects {:UTR_5 (let [fpu (:molecular-change/five-prime-utr h)
+;                                                               ev (obj/get-evidence fpu)]
+;                                                           {:evidence_type (some->> ev vals flatten first)
+;                                                            :evidence (some->> ev keys first)})
+;                                                  :UTR_3 (let [fpu (:molecular-change/three-prime-utr h)
+;                                                               ev (obj/get-evidence fpu)]
+;                                                           {:evidence_type (some->> ev vals flatten first)
+;                                                            :evidence (some->> ev keys first)})}}))))))
+;
+;            "Pseudogene"
+;            (some->> (:variation/pseudogene variation)
+;                     (map :variation.pseudogene/pseudogene)
+;                     (map (fn [pseudogene]
+;                            (when-let [refseqobj (sequence-fns/genomic-obj pseudogene)]
+;                              (conj
+;                                (pack-obj pseudogene)
+;                                {:fstart (:start refseqobj)
+;                                 :fstop (:stop refseqobj)}
+;                                {:item (pack-obj pseudogene)
+;                                 }
+;                                )
+;                              ))))
            )
    :description "genomic features affected by this variation"})
 
@@ -204,8 +267,13 @@
           :acceptor nil}
    :description "Affects splice site"})
 
-(defn polymorphism-status [variation]
-  {:data nil
+(defn polymorphism-status [variation]; WBVar00116162 is predicted
+  {:data (if (contains? variation :variation/confirmed-snp)
+           "confirmed"
+           (if (or (contains? variation :variation/snp)
+                   (or (contains? variation :variation/reference-strain-digest)
+                       (contains? variation :variation/transposon-insertion)))
+             "predicted"))
    :description "experimental status of this polymorphism"})
 
 (defn- pack-nulcleotide-change-obj [type-str wildtype mutant]
@@ -213,8 +281,7 @@
    :wildtype wildtype
    :mutant mutant
    :wildtype-label "wildtype"
-   :mutant-label "variant"}
-  )
+   :mutant-label "variant"})
 
 (defn- reverse-complement [dna]
   (str/replace
@@ -238,7 +305,7 @@
       (if sequence-database
         (seqdb/variation-features db-spec variation-id)))))
 
-(defn- compile-nucleotide-changes [variation]
+(defn- compile-nucleotide-changes [variation] ;WBVar00116162 substitution
   (remove nil?
           [
            (if-let [insertion (:variation/insertion variation)]
@@ -251,30 +318,35 @@
              nil
              )
            (if-let [substitution (:variation/substitution variation)]
-             (if-let [mut (:variation.substitution/ref substitution)]
-               (let [features (variation-features variation)]
-                 (println (str (seq (:object (first features)))))
-                 (if-let [feature (first features)]
-                   (let [wt (:variation.substitution/alt substitution)
-                         plus-strand-dna (:object feature)
-                         uc-plus-strand-dna (do (println plus-strand-dna)
-                                                (str/upper-case plus-strand-dna))]
-                     (if (not= (str/upper-case wt) uc-plus-strand-dna)
-                       (let [rc-wt (reverse-complement wt)]
-                         (println rc-wt)
-                         (println uc-plus-strand-dna)
-                         (if (= (str/upper-case rc-wt) uc-plus-strand-dna)
-                           (pack-nulcleotide-change-obj )
-                           {:wt rc-wt
-                            :dbid (:db/id variation)
-                            :mut (reverse-complement mut)}))))))
-
-               ))]))
+             (if-let [ref-allele (:variation.substitution/ref substitution)]
+               (let [fs (:variation/flanking-sequences variation)
+                     five-prime (:variation.flanking-sequences/five-prime fs)
+                     three-prime (:variation.flanking-sequences/three-prime fs)
+                     ]
+                 five-prime)
+ ;              (let [features (variation-features variation)]
+;                 (println (str (seq (:object (first features)))))
+;                 (if-let [feature (first features)]
+;                   (let [wt (:variation.substitution/alt substitution)
+;                         plus-strand-dna (:object feature)
+;                         uc-plus-strand-dna (do (println plus-strand-dna)
+;                                                (str/upper-case plus-strand-dna))]
+;                     (if (not= (str/upper-case wt) uc-plus-strand-dna)
+;                       (let [rc-wt (reverse-complement wt)]
+;                         (println rc-wt)
+;                         (println uc-plus-strand-dna)
+;                         (if (= (str/upper-case rc-wt) uc-plus-strand-dna)
+;                           (pack-nulcleotide-change-obj )
+;                           {:wt rc-wt
+;                            :dbid (:db/id variation)
+;                            :mut (reverse-complement mut)}))))))
+;)
+              )) ]))
 
 
 (defn nucleotide-change [variation]
-  {:data  nil ;(compile-nucleotide-changes variation)
-   :keys (keys variation)
+  {:data (compile-nucleotide-changes variation)
+   :d (:db/id variation)
    :description "raw nucleotide changes for this variation"})
 
 ;tested with WBVar00101112
@@ -296,20 +368,20 @@
 
 (def widget
   {:name generic/name-field
-   :polymorphism_type polymorphism-type
-   :amino_acid_change amino-acid-change
-   :detection_method detection-method
-   :deletion_verification deletion-verification
-   :context context
-   :flanking_pcr_products flanking-pcr-products
-   :variation_type variation-type
-   :features_affected features-affected
-   :cgh_deleted_probes cgh-deleted-probes
-   :cgh_flanking_probes cgh-flanking-probes
-   :polymorphism_assays polymorphism-assays
-   :affects_splice_site affects-splice-site
-   :polymorphism_status polymorphism-status
+;   :polymorphism_type polymorphism-type
+;   :amino_acid_change amino-acid-change
+;   :detection_method detection-method
+;   :deletion_verification deletion-verification
+;   :context context
+;   :flanking_pcr_products flanking-pcr-products
+;   :variation_type variation-type
+;   :features_affected features-affected
+;   :cgh_deleted_probes cgh-deleted-probes
+;   :cgh_flanking_probes cgh-flanking-probes
+;   :polymorphism_assays polymorphism-assays
+;   :affects_splice_site affects-splice-site
+;   :polymorphism_status polymorphism-status
    :nucleotide_change nucleotide-change
-   :reference_strain reference-strain
-   :causes_frameshift causes-frameshift
+;   :reference_strain reference-strain
+;   :causes_frameshift causes-frameshift
    :sequencing_status sequencing-status})
