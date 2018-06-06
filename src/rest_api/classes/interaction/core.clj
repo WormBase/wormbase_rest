@@ -46,53 +46,53 @@
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
 
 (def int-rules
-  '[[(gene->interaction-3 ?gene ?h ?int)
+  '[[(gene->interaction ?gene ?h ?int)
      [?h :interaction.interactor-overlapping-gene/gene ?gene]
      [?int :interaction/interactor-overlapping-gene ?h]]
-    [(feature->interaction-3 ?feature ?h ?int)
+    [(feature->interaction ?feature ?h ?int)
      [?h :interaction.feature-interactor/feature ?feature]
      [?int :interaction/feature-interactor ?h]]
-    [(molecule->interaction-3 ?molecule ?h ?int)
+    [(molecule->interaction ?molecule ?h ?int)
      [?h :interaction.molecule-interactor/molecule ?molecule]
      [?int :interaction/molecule-interactor ?h]]
-    [(rearrangement->interaction-3 ?rearrangement ?h ?int)
+    [(rearrangement->interaction ?rearrangement ?h ?int)
      [?h :interaction.rearrangement/rearrangement ?rearrangement]
      [?int :interaction/rearrangement ?h]]
-    [(x->interaction-3 ?x ?h ?ix)
-     (or (gene->interaction-3 ?x ?h ?ix)
-         (feature->interaction-3 ?x ?h ?ix)
-         (molecule->interaction-3 ?x ?h ?ix)
-         (rearrangement->interaction-3 ?x ?h ?ix))]
+    [(x->interaction ?x ?h ?ix)
+     (or (gene->interaction ?x ?h ?ix)
+         (feature->interaction ?x ?h ?ix)
+         (molecule->interaction ?x ?h ?ix)
+         (rearrangement->interaction ?x ?h ?ix))]
 
-    [(interaction->gene-3 ?int ?h ?gene)
+    [(interaction->gene ?int ?h ?gene)
      [?int :interaction/interactor-overlapping-gene ?h]
      [?h :interaction.interactor-overlapping-gene/gene ?gene]]
-    [(interaction->feature-3 ?int ?h ?feature)
+    [(interaction->feature ?int ?h ?feature)
      [?int :interaction/feature-interactor ?h]
      [?h :interaction.feature-interactor/feature ?feature]]
-    [(interaction->molecule-3 ?int ?h ?molecule)
+    [(interaction->molecule ?int ?h ?molecule)
      [?int :interaction/molecule-interactor ?h]
      [?h :interaction.molecule-interactor/molecule ?molecule]]
-    [(interaction->rearrangement-3 ?int ?h ?rearrangement)
+    [(interaction->rearrangement ?int ?h ?rearrangement)
      [?int :interaction/rearrangement ?h]
      [?h :interaction.rearrangement/rearrangement ?rearrangement]]
-    [(interaction->other-3 ?int ?h ?other)
+    [(interaction->other ?int ?h ?other)
      [?int :interaction/other-interactor ?h]
      [?h :interaction.other-interactor/text ?other]]
 
-    [(interaction->x-3 ?ix ?h ?neighbour)
-     (or (interaction->gene-3 ?ix ?h ?neighbour)
-         (interaction->feature-3 ?ix ?h ?neighbour)
-         (interaction->molecule-3 ?ix ?h ?neighbour)
-         (interaction->rearrangement-3 ?ix ?h ?neighbour)
-         (interaction->other-3 ?ix ?h ?neighbour))]
+    [(interaction->x ?ix ?h ?neighbour)
+     (or (interaction->gene ?ix ?h ?neighbour)
+         (interaction->feature ?ix ?h ?neighbour)
+         (interaction->molecule ?ix ?h ?neighbour)
+         (interaction->rearrangement ?ix ?h ?neighbour)
+         (interaction->other ?ix ?h ?neighbour))]
 
-    [(x->neighbour-5 ?x ?xh ?neighbour ?nh ?ix)
-     (x->interaction-3 ?x ?xh ?ix)
-     (interaction->x-3 ?ix ?nh ?neighbour)
+    [(x->neighbour ?x ?xh ?neighbour ?nh ?ix)
+     (x->interaction ?x ?xh ?ix)
+     (interaction->x ?ix ?nh ?neighbour)
      [(not= ?x ?neighbour)]]
-    [(x->neighbour-5-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
-     (x->neighbour-5 ?gene ?gh ?neighbour ?nh ?ix)
+    [(x->neighbour-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
+     (x->neighbour ?gene ?gh ?neighbour ?nh ?ix)
      (not
       [?ix :interaction/type :interaction.type/predicted])]]
   )
@@ -213,24 +213,23 @@
   (d/q '[:find ?int ?gh ?nh
          :in $ % ?gene
          :where
-         (x->neighbour-5 ?gene ?gh _ ?nh ?int)]
+         (x->neighbour ?gene ?gh _ ?nh ?int)]
        db int-rules gene))
 
 (defn gene-nearby-interactions [db gene]
   (if-let [neighbours (->>  (d/q '[:find (distinct ?neighbour) .
                                    :in $ % ?gene
                                    :where
-                                   (x->neighbour-5-non-predicted ?gene _ ?neighbour _ ?int)]
+                                   (x->neighbour-non-predicted ?gene _ ?neighbour _ ?int)]
                                  db int-rules gene)
                             ;; remove string-based other-interactors that would cause problem in downstream query
                             (filter (complement string?))
                             (seq))]
-
     (d/q '[:find ?int ?nh ?n2h
            :in $ % [?neighbour1 ...] [?neighbour2 ...]
            :where
            [(not= ?neighbour1 ?neighbour2)]
-           (x->neighbour-5 ?neighbour1 ?nh ?neighbour2 ?n2h ?int)]
+           (x->neighbour ?neighbour1 ?nh ?neighbour2 ?n2h ?int)]
          db int-rules neighbours neighbours)
     ))
 
