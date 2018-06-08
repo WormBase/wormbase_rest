@@ -9,7 +9,7 @@
     },
     "title": "WormBase REST API",
     "description": "Widget and field endpoints used by the official [WormBase](http://www.wormbase.org) site.",
-    "version": "0.5.1"
+    "version": "0.5.2"
   },
   "servers": [
     {
