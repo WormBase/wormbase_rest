@@ -94,7 +94,8 @@
                                                    {:text (:go-code/id evidence-code)
                                                     :evidence {:description (:go-code/description evidence-code)}}))
                                             (seq))
-                        :experimental_condition (->> [:disease-model-annotation/inducing-chemical]
+                        :experimental_condition (->> [:disease-model-annotation/inducing-chemical
+                                                      :disease-model-annotation/inducing-agent]
                                                      (reduce (fn [result attribute]
                                                                (concat result (attribute model)))
                                                              [])
@@ -104,7 +105,8 @@
                                         :disease-model-annotation/modifier-variation
                                         :disease-model-annotation/modifier-strain
                                         :disease-model-annotation/modifier-gene
-                                        :disease-model-annotation/modifier-molecule]
+                                        :disease-model-annotation/modifier-molecule
+                                        :disease-model-annotation/other-modifier]
                                        (reduce (fn [result attribute]
                                                  (concat result (attribute model)))
                                                [])
