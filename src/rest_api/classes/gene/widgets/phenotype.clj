@@ -31,11 +31,11 @@
 (def q-gene-construct-transgene-pheno
   '[:find ?pheno (distinct ?ph)
     :in $ ?g
-    :where [?cbg :construct.driven-by-gene/gene ?g]
-           [?cons :construct/driven-by-gene ?cbg]
-           [?cons :construct/transgene-construct ?tg]
-           [?tg :transgene/phenotype ?ph]
-           [?ph :transgene.phenotype/phenotype ?pheno]])
+    :where
+    [?gh :phenotype-info.caused-by-gene/gene ?g]
+    [?ph :phenotype-info/caused-by-gene ?gh]
+    [?tg :transgene/phenotype ?ph]
+    [?ph :transgene.phenotype/phenotype ?pheno]])
 
 (def q-gene-var-pheno
   '[:find ?pheno (distinct ?ph)

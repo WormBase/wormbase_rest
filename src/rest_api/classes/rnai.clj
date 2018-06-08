@@ -3,7 +3,7 @@
     [rest-api.classes.gene.widgets.external-links :as external-links]
     [rest-api.classes.rnai.widgets.phenotypes :as phenotypes]
     [rest-api.classes.rnai.widgets.overview :as overview]
-    [rest-api.classes.rnai.widgets.details :as details]
+    ;[rest-api.classes.rnai.widgets.details :as details]
     [rest-api.classes.rnai.widgets.movies :as movies]
     [rest-api.classes.rnai.widgets.references :as references]
     [rest-api.routing :as routing]))

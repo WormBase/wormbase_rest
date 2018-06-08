@@ -9,7 +9,7 @@
           :feture_seq nil
           :seq nil 
           :sequences  [{:sequence (:feature.flanking-sequences/five-prime (:feature/flanking-sequences f))
-                        :comment "flanking sequnece (upstream)"}
+                        :comment "flanking sequence (upstream)"}
                        {:sequence (:feature.flanking-sequences/three-prime (:feature/flanking-sequences f))
                         :comment "flanking sequence (downstream)"}]}
    :description "sequences flanking the feature"})

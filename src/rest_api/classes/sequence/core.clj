@@ -9,7 +9,7 @@
 (defn sequence-features [db-name id role]
   (let [db ((keyword db-name) wb-seq/sequence-dbs)]
     (case role
-      "variation" (wb-seq/get-features-by-attribute db id)
+      "variation" (wb-seq/variation-features db id)
       "cds" (wb-seq/sequence-features-where-type db id "CDS%")
       "pcr-product" (wb-seq/sequence-features-where-type db id "PCR_product%")
       (wb-seq/get-features db id))))
@@ -66,7 +66,7 @@
       :id id
       :label label
       :pos_string id
-      :seqment (:seqname segment)
+      :seqname (:seqname segment)
       :start start
       :stop stop
       :taxonomy (get-g-species object role)
@@ -85,3 +85,13 @@
                              ((juxt :start :end))
                              (sort-by +))]
       (create-genomic-location-obj start stop object segment nil true false))))
+
+(defn get-sequence [seqfeature-obj]
+  (let [g-species (:taxonomy seqfeature-obj)
+        sequence-database (seqdb/get-default-sequence-database g-species)]
+    (when sequence-database
+      (let [db ((keyword sequence-database) wb-seq/sequence-dbs)
+            start (:start seqfeature-obj)
+            stop  (:stop seqfeature-obj)
+            location (:seqname seqfeature-obj)]
+        (wb-seq/get-sequence db location start stop)))))

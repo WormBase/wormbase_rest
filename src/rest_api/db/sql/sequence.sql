@@ -46,10 +46,19 @@ AND (t.tag LIKE "transcript%"
 
 -- :name variation-features :? :*
 -- :doc Retrieve all sequences for a gene by ida
-SELECT f.id,CONVERT(f.object USING utf8),f.typeid,f.seqid,f.start,f.end,f.strand
+SELECT f.id,CONVERT(f.object USING utf8),f.typeid,f.seqid,l.seqname,f.start,f.end,f.strand
 FROM feature as f
 JOIN attribute as a ON a.id=f.id
+JOIN locationlist as l on l.id=f.seqid
 JOIN attributelist as al ON al.id=a.attribute_id
-WHERE a.attribute_value = "WBVar00101112"
+WHERE a.attribute_value = :name
 AND al.tag = "variation"
 AND f.object NOT LIKE "%PCoF%";
+
+-- :name get-sequence :? :*
+-- :doc Retrieve raw sequence from location
+SELECT CONVERT(s.sequence using UTF8) as sequence
+FROM sequence as s
+JOIN locationlist as l ON l.id=s.id
+WHERE l.seqname = :location
+AND s.offset = :offset
