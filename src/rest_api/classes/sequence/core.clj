@@ -9,7 +9,7 @@
 (defn sequence-features [db-name id role]
   (let [db ((keyword db-name) wb-seq/sequence-dbs)]
     (case role
-      "variation" (wb-seq/get-features-by-attribute db id)
+      "variation" (wb-seq/variation-features db id)
       "cds" (wb-seq/sequence-features-where-type db id "CDS%")
       "pcr-product" (wb-seq/sequence-features-where-type db id "PCR_product%")
       (wb-seq/get-features db id))))
