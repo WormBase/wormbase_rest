@@ -217,11 +217,14 @@
        db int-rules gene))
 
 (defn gene-nearby-interactions [db gene]
-  (let [neighbours (d/q '[:find (distinct ?neighbour) .
-                          :in $ % ?gene
-                          :where
-                          (x->neighbour-5-non-predicted ?gene _ ?neighbour _ ?int)]
-                        db int-rules gene)]
+  (if-let [neighbours (->>  (d/q '[:find (distinct ?neighbour) .
+                                   :in $ % ?gene
+                                   :where
+                                   (x->neighbour-5-non-predicted ?gene _ ?neighbour _ ?int)]
+                                 db int-rules gene)
+                            ;; remove string-based other-interactors that would cause problem in downstream query
+                            (filter (complement string?))
+                            (seq))]
 
     (d/q '[:find ?int ?nh ?n2h
            :in $ % [?neighbour1 ...] [?neighbour2 ...]
