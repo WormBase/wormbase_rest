@@ -34,10 +34,16 @@
                          (contains? variation :variation-source-location)
                          nil
                          1)
+               refseqobj (sequence-fns/genomic-obj variation)
+               wildtype   (sequence-fns/get-sequence
+                          (conj
+                            refseqobj
+                            {:start (- (:start refseqobj) flank)
+                             :stop (+ flank (:stop refseqobj))}))
                ]
 
            {:ldtype_fragment nil
-            :wildtype_full (seq (:variation/expr-pattern variation))
+            :wildtype_full refseq
             :mutant_fragment nil
             :keys (keys variation)
             :mutant_full nil
@@ -136,22 +142,19 @@
 (defn features-affected [variation]
   {:data (pace-utils/vmap
            "Clone"
-           (some->> (:sequence/clone
-                      (:variation/mapping-target variation))
-                    (map (fn [c]
-                           (conj
-                             (pack-obj c)
-                             {:fstart nil
-                              :fstop nil
-                              :abs_start nil
-                              :abs_stop nil
-                              :start nil
-                              :stop nil
-                              :item (pack-obj c)}
-                           ))
-                    ))
-
-           "Chromosome"
+           (when-let [s  (:variation/mapping-target variation)]
+             (when-let [refseqobj (sequence-fns/genomic-obj s)]
+               [(conj
+                  (pack-obj s)
+                  {:fstart (:start refseqobj)
+                   :keys (keys s)
+                   :fstop (:stop refseqobj)
+                   :abs_start nil
+                   :abs_stop nil
+                   :start nil
+                   :stop nil
+                   :item (pack-obj s)})]))
+          "Chromosome"
            (some->> (:variation/map variation)
                     (map :variation.map/map)
                     (map (fn [m]
@@ -163,13 +166,8 @@
                               :abs_start nil
                               :abs_stop nil
                               :start nil
-                              :stop nil
-                              }
-                             )
+                              :stop nil}))))
 
-                           ) )
-                    
-                    )
            ; commenting out just to save space in output
 ;           "Gene"
 ;           (some->> (:variation/gene variation)
@@ -248,6 +246,7 @@
 ;                                )
 ;                              ))))
            )
+   :d (:db/id variation)
    :description "genomic features affected by this variation"})
 
 (defn cgh-deleted-probes [variation]
@@ -368,20 +367,20 @@
 
 (def widget
   {:name generic/name-field
-;   :polymorphism_type polymorphism-type
-;   :amino_acid_change amino-acid-change
-;   :detection_method detection-method
-;   :deletion_verification deletion-verification
-;   :context context
-;   :flanking_pcr_products flanking-pcr-products
-;   :variation_type variation-type
-;   :features_affected features-affected
-;   :cgh_deleted_probes cgh-deleted-probes
-;   :cgh_flanking_probes cgh-flanking-probes
-;   :polymorphism_assays polymorphism-assays
-;   :affects_splice_site affects-splice-site
-;   :polymorphism_status polymorphism-status
+   :polymorphism_type polymorphism-type
+   :amino_acid_change amino-acid-change
+   :detection_method detection-method
+   :deletion_verification deletion-verification
+   :context context
+   :flanking_pcr_products flanking-pcr-products
+   :variation_type variation-type
+   :features_affected features-affected
+   :cgh_deleted_probes cgh-deleted-probes
+   :cgh_flanking_probes cgh-flanking-probes
+   :polymorphism_assays polymorphism-assays
+   :affects_splice_site affects-splice-site
+   :polymorphism_status polymorphism-status
    :nucleotide_change nucleotide-change
-;   :reference_strain reference-strain
-;   :causes_frameshift causes-frameshift
+   :reference_strain reference-strain
+   :causes_frameshift causes-frameshift
    :sequencing_status sequencing-status})
