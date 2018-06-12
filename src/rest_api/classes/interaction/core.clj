@@ -46,46 +46,34 @@
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
 
 (def int-rules
-  '[[(gene->interaction ?gene ?h ?int)
+  '[[(x->interaction ?gene ?h ?int)
      [?h :interaction.interactor-overlapping-gene/gene ?gene]
      [?int :interaction/interactor-overlapping-gene ?h]]
-    [(feature->interaction ?feature ?h ?int)
+    [(x->interaction ?feature ?h ?int)
      [?h :interaction.feature-interactor/feature ?feature]
      [?int :interaction/feature-interactor ?h]]
-    [(molecule->interaction ?molecule ?h ?int)
+    [(x->interaction ?molecule ?h ?int)
      [?h :interaction.molecule-interactor/molecule ?molecule]
      [?int :interaction/molecule-interactor ?h]]
-    [(rearrangement->interaction ?rearrangement ?h ?int)
+    [(x->interaction ?rearrangement ?h ?int)
      [?h :interaction.rearrangement/rearrangement ?rearrangement]
      [?int :interaction/rearrangement ?h]]
-    [(x->interaction ?x ?h ?ix)
-     (or (gene->interaction ?x ?h ?ix)
-         (feature->interaction ?x ?h ?ix)
-         (molecule->interaction ?x ?h ?ix)
-         (rearrangement->interaction ?x ?h ?ix))]
 
-    [(interaction->gene ?int ?h ?gene)
+    [(interaction->x ?int ?h ?gene)
      [?int :interaction/interactor-overlapping-gene ?h]
      [?h :interaction.interactor-overlapping-gene/gene ?gene]]
-    [(interaction->feature ?int ?h ?feature)
+    [(interaction->x ?int ?h ?feature)
      [?int :interaction/feature-interactor ?h]
      [?h :interaction.feature-interactor/feature ?feature]]
-    [(interaction->molecule ?int ?h ?molecule)
+    [(interaction->x ?int ?h ?molecule)
      [?int :interaction/molecule-interactor ?h]
      [?h :interaction.molecule-interactor/molecule ?molecule]]
-    [(interaction->rearrangement ?int ?h ?rearrangement)
+    [(interaction->x ?int ?h ?rearrangement)
      [?int :interaction/rearrangement ?h]
      [?h :interaction.rearrangement/rearrangement ?rearrangement]]
-    [(interaction->other ?int ?h ?other)
+    [(interaction->x ?int ?h ?other)
      [?int :interaction/other-interactor ?h]
      [?h :interaction.other-interactor/text ?other]]
-
-    [(interaction->x ?ix ?h ?neighbour)
-     (or (interaction->gene ?ix ?h ?neighbour)
-         (interaction->feature ?ix ?h ?neighbour)
-         (interaction->molecule ?ix ?h ?neighbour)
-         (interaction->rearrangement ?ix ?h ?neighbour)
-         (interaction->other ?ix ?h ?neighbour))]
 
     [(x->neighbour ?x ?xh ?neighbour ?nh ?ix)
      (x->interaction ?x ?xh ?ix)
