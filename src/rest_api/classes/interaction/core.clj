@@ -46,38 +46,38 @@
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
 
 (def int-rules
-  '[[(x->interaction ?gene ?h ?int)
+  '[[(->interaction ?gene ?h ?int)
      [?h :interaction.interactor-overlapping-gene/gene ?gene]
      [?int :interaction/interactor-overlapping-gene ?h]]
-    [(x->interaction ?feature ?h ?int)
+    [(->interaction ?feature ?h ?int)
      [?h :interaction.feature-interactor/feature ?feature]
      [?int :interaction/feature-interactor ?h]]
-    [(x->interaction ?molecule ?h ?int)
+    [(->interaction ?molecule ?h ?int)
      [?h :interaction.molecule-interactor/molecule ?molecule]
      [?int :interaction/molecule-interactor ?h]]
-    [(x->interaction ?rearrangement ?h ?int)
+    [(->interaction ?rearrangement ?h ?int)
      [?h :interaction.rearrangement/rearrangement ?rearrangement]
      [?int :interaction/rearrangement ?h]]
 
-    [(interaction->x ?int ?h ?gene)
+    [(interaction-> ?int ?h ?gene)
      [?int :interaction/interactor-overlapping-gene ?h]
      [?h :interaction.interactor-overlapping-gene/gene ?gene]]
-    [(interaction->x ?int ?h ?feature)
+    [(interaction-> ?int ?h ?feature)
      [?int :interaction/feature-interactor ?h]
      [?h :interaction.feature-interactor/feature ?feature]]
-    [(interaction->x ?int ?h ?molecule)
+    [(interaction-> ?int ?h ?molecule)
      [?int :interaction/molecule-interactor ?h]
      [?h :interaction.molecule-interactor/molecule ?molecule]]
-    [(interaction->x ?int ?h ?rearrangement)
+    [(interaction-> ?int ?h ?rearrangement)
      [?int :interaction/rearrangement ?h]
      [?h :interaction.rearrangement/rearrangement ?rearrangement]]
-    [(interaction->x ?int ?h ?other)
+    [(interaction-> ?int ?h ?other)
      [?int :interaction/other-interactor ?h]
      [?h :interaction.other-interactor/text ?other]]
 
     [(x->neighbour ?x ?xh ?neighbour ?nh ?ix)
-     (x->interaction ?x ?xh ?ix)
-     (interaction->x ?ix ?nh ?neighbour)
+     (->interaction ?x ?xh ?ix)
+     (interaction-> ?ix ?nh ?neighbour)
      [(not= ?x ?neighbour)]]
     [(x->neighbour-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
      (x->neighbour ?gene ?gh ?neighbour ?nh ?ix)

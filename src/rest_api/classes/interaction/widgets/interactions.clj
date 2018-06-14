@@ -11,8 +11,8 @@
   (d/q '[:find ?intx ?g1h ?g2h
          :in $ % ?intx
          :where
-         (interaction->x ?intx ?g1h _)
-         (interaction->x ?intx ?g2h _)
+         (interaction-> ?intx ?g1h _)
+         (interaction-> ?intx ?g2h _)
          [(not= ?g1h ?g2h)]]
        db interaction/int-rules interaction))
 

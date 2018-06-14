@@ -13,8 +13,8 @@
          :where
          [?p :wbprocess/interaction ?ih]
          [?ih :wbprocess.interaction/interaction ?intx]
-         (interaction->x ?intx ?g1h _)
-         (interaction->x ?intx ?g2h _)
+         (interaction-> ?intx ?g1h _)
+         (interaction-> ?intx ?g2h _)
          [(not= ?g1h ?g2h)]]
        db interaction/int-rules wbprocess))
 
