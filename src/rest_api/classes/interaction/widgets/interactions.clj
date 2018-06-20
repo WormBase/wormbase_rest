@@ -24,7 +24,7 @@
            (interaction/build-interactions db
                                            (partial interaction-direct-interactions db (:db/id interaction))
                                            nil
-                                           :force-details? false))})
+                                           :graph-only-mode? false))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
@@ -34,7 +34,7 @@
            (interaction/build-interactions db
                                            (partial interaction-direct-interactions db (:db/id interaction))
                                            nil
-                                           :force-details? true))})
+                                           :graph-only-mode? true))})
 
 (def widget
   {:name generic/name-field

@@ -351,9 +351,6 @@
        (map (partial pack-obj "paper"))
        (vec)))
 
-(defn- assoc-showall [data nearby?]
-  (assoc data :showall (or (< (count (:edges data)) 100) nearby?)))
-
 (defn- edge-key [x y type-name direction phenotype]
   (str/trimr
    (str x " " y " " type-name " " direction " " (:label phenotype))))
@@ -397,7 +394,7 @@
                                  :phenotype packed-phenotype
                                  :type type-name
                                  :nearby (if nearby? "1" "0")}))]
-       (assoc-showall result* nearby?))))
+       result*)))
 
 (defn- fill-interaction
   [nearby? data [interaction
@@ -425,9 +422,7 @@
                                                 (d/entity db holder1-id)
                                                 (d/entity db holder2-id)
                                                 nearby?))))]
-    (if (and nearby? (> (count ints) 3000))
-      (assoc data :showall "0")
-      (reduce mk-interaction data (mapcat mk-pair-wise ints)))))
+    (reduce mk-interaction data (mapcat mk-pair-wise ints))))
 
 
 (defn- collect-phenotypes
@@ -442,46 +437,33 @@
        (into {})
        (not-empty)))
 
-(defn arrange-interactions [results edges edges-all]
-  (if (:showall results)
-    (-> (assoc results :edges edges)
-        (assoc :edges_all edges-all)
-        (assoc :class "Gene")
-        (assoc :showall "1"))
-    {:edges edges}))
-
-(defn arrange-interaction-details [results edges edges-all]
-  (-> results
-      (assoc :edges edges-all)
-      (update-in [:showall] #(str (if % 1 0)))))
-
-(defn build-interactions [db interactions-fun interactions-nearby-fun & {:keys [force-details?]}]
+(defn build-interactions [db interactions-fun interactions-nearby-fun & {:keys [graph-only-mode?]}]
   (let [ints (interactions-fun)
         data (fill-interactions db ints {} :nearby? false)
 
         [include-details? results]
-        (if force-details?
+        (if graph-only-mode?
           [true (fill-interactions db (interactions-nearby-fun) data :nearby? true)]
-          ;; when force-details? is not set, use the following approach to determine
+          ;; when graph-only-mode? is not set, use the following approach to determine
           ;; whether to include nearby edges based on the number of direct and nearby edges
           (if (> (count (:edges data)) 100)
             [false data]
-            (let [ints-nearby (if interactions-nearby-fun
-                                (interactions-nearby-fun)
-                                [])]
+            (let [ints-nearby (when interactions-nearby-fun
+                                (interactions-nearby-fun))]
               (if (> (count ints-nearby) 500)
                 [false data]
                 [true (fill-interactions db ints-nearby data :nearby? true)]))))
 
-        edge-vals (comp vec fixup-citations vals :edges)
-        edges (edge-vals data)
-        edges-all (if include-details? (edge-vals results) edges)]
-    (if force-details?
-      (arrange-interaction-details results edges edges-all)
+        edge-vals (comp vec fixup-citations vals :edges)]
+    (if graph-only-mode?
       (-> results
-          (assoc :phenotypes (collect-phenotypes edges-all))
-          (assoc :include_details include-details?)
-          (arrange-interactions edges edges-all)))))
+          (assoc :edges_all (edge-vals results))
+          (assoc :include_details include-details?))
+      (-> results
+          (assoc :edges (edge-vals data))
+          (assoc :edges_all (edge-vals results))
+          ;; (assoc :phenotypes (collect-phenotypes (edge-vals results))) ; not used in display now
+          (assoc :include_details include-details?)))))
 
 (defn interactions
   "Produces a data structure suitable for rendering the table listing."
@@ -491,7 +473,7 @@
            (build-interactions db
                                (partial gene-direct-interactions db (:db/id gene))
                                (partial gene-nearby-interactions db (:db/id gene))
-                               :force-details? false))})
+                               :graph-only-mode? false))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
@@ -501,7 +483,7 @@
            (build-interactions db
                                (partial gene-direct-interactions db (:db/id gene))
                                (partial gene-nearby-interactions db (:db/id gene))
-                               :force-details? true))})
+                               :graph-only-mode? true))})
 
 (def widget
   {:name generic/name-field
