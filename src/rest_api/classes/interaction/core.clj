@@ -445,8 +445,8 @@
 (defn build-interactions [db interactions interactions-nearby arrange-results]
   (let [edge-vals (comp vec fixup-citations vals :edges)
         data (fill-interactions db interactions {} :nearby? false)
+        results (fill-interactions db interactions-nearby data :nearby? true)
         edges (edge-vals data)
-        results (fill-interactions db (concat interactions interactions-nearby) {} :nearby? true)
         edges-all (edge-vals results)]
     (-> results
         (assoc :phenotypes (collect-phenotypes edges-all))
