@@ -437,9 +437,10 @@
        (into {})
        (not-empty)))
 
-(defn build-interactions [db interactions-fun interactions-nearby-fun & {:keys [graph-only-mode?]}]
+(defn build-interactions [db interactions-fun interactions-nearby-fun-raw & {:keys [graph-only-mode?]}]
   (let [ints (interactions-fun)
         data (fill-interactions db ints {} :nearby? false)
+        interactions-nearby-fun (or interactions-nearby-fun-raw (constantly nil))
 
         [include-details? results]
         (if graph-only-mode?
@@ -448,8 +449,7 @@
           ;; whether to include nearby edges based on the number of direct and nearby edges
           (if (> (count (:edges data)) 100)
             [false data]
-            (let [ints-nearby (when interactions-nearby-fun
-                                (interactions-nearby-fun))]
+            (let [ints-nearby (interactions-nearby-fun)]
               (if (> (count ints-nearby) 500)
                 [false data]
                 [true (fill-interactions db ints-nearby data :nearby? true)]))))
