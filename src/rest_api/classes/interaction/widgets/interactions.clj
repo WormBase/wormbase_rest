@@ -20,17 +20,21 @@
   "Produces a data structure suitable for rendering the table listing."
   [interaction]
   {:description "genetic and predicted interactions"
-   :data (let [db (d/entity-db interaction)
-               ints (interaction-direct-interactions db (:db/id interaction))]
-           (interaction/build-interactions db ints [] interaction/arrange-interactions))})
+   :data (let [db (d/entity-db interaction)]
+           (interaction/build-interactions db
+                                           (partial interaction-direct-interactions db (:db/id interaction))
+                                           nil
+                                           :force-details? false))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [interaction]
   {:description "addtional nearby interactions"
-   :data (let [db (d/entity-db interaction)
-               ints (interaction-direct-interactions db (:db/id interaction))]
-           (interaction/build-interactions db ints [] interaction/arrange-interaction-details))})
+   :data (let [db (d/entity-db interaction)]
+           (interaction/build-interactions db
+                                           (partial interaction-direct-interactions db (:db/id interaction))
+                                           nil
+                                           :force-details? true))})
 
 (def widget
   {:name generic/name-field

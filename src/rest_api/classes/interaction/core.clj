@@ -442,16 +442,6 @@
        (into {})
        (not-empty)))
 
-(defn build-interactions [db interactions interactions-nearby arrange-results]
-  (let [edge-vals (comp vec fixup-citations vals :edges)
-        data (fill-interactions db interactions {} :nearby? false)
-        results (fill-interactions db interactions-nearby data :nearby? true)
-        edges (edge-vals data)
-        edges-all (edge-vals results)]
-    (-> results
-        (assoc :phenotypes (collect-phenotypes edges-all))
-        (arrange-results edges edges-all))))
-
 (defn arrange-interactions [results edges edges-all]
   (if (:showall results)
     (-> (assoc results :edges edges)
@@ -465,23 +455,53 @@
       (assoc :edges edges-all)
       (update-in [:showall] #(str (if % 1 0)))))
 
+(defn build-interactions [db interactions-fun interactions-nearby-fun & {:keys [force-details?]}]
+  (let [ints (interactions-fun)
+        data (fill-interactions db ints {} :nearby? false)
+
+        [include-details? results]
+        (if force-details?
+          [true (fill-interactions db (interactions-nearby-fun) data :nearby? true)]
+          ;; when force-details? is not set, use the following approach to determine
+          ;; whether to include nearby edges based on the number of direct and nearby edges
+          (if (> (count (:edges data)) 100)
+            [false data]
+            (let [ints-nearby (if interactions-nearby-fun
+                                (interactions-nearby-fun)
+                                [])]
+              (if (> (count ints-nearby) 500)
+                [false data]
+                [true (fill-interactions db ints-nearby data :nearby? true)]))))
+
+        edge-vals (comp vec fixup-citations vals :edges)
+        edges (edge-vals data)
+        edges-all (if include-details? (edge-vals results) edges)]
+    (if force-details?
+      (arrange-interaction-details results edges edges-all)
+      (-> results
+          (assoc :phenotypes (collect-phenotypes edges-all))
+          (assoc :include_details include-details?)
+          (arrange-interactions edges edges-all)))))
+
 (defn interactions
   "Produces a data structure suitable for rendering the table listing."
   [gene]
   {:description "genetic and predicted interactions"
-   :data (let [db (d/entity-db gene)
-               ints (gene-direct-interactions db (:db/id gene))
-               ints-nearby (gene-nearby-interactions db (:db/id gene))]
-           (build-interactions db ints ints-nearby arrange-interactions))})
+   :data (let [db (d/entity-db gene)]
+           (build-interactions db
+                               (partial gene-direct-interactions db (:db/id gene))
+                               (partial gene-nearby-interactions db (:db/id gene))
+                               :force-details? false))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [gene]
   {:description "addtional nearby interactions"
-   :data (let [db (d/entity-db gene)
-               ints (gene-direct-interactions db (:db/id gene))
-               ints-nearby (gene-nearby-interactions db (:db/id gene))]
-           (build-interactions db ints ints-nearby arrange-interaction-details))})
+   :data (let [db (d/entity-db gene)]
+           (build-interactions db
+                               (partial gene-direct-interactions db (:db/id gene))
+                               (partial gene-nearby-interactions db (:db/id gene))
+                               :force-details? true))})
 
 (def widget
   {:name generic/name-field
