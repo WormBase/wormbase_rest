@@ -24,4 +24,6 @@
     :go_term go-term/widget
     :anatomy anatomy/widget
     :genes genes/widget
-    :references references/widget}})
+    :references references/widget}
+   :field
+   {:interaction_details interactions/interaction-details}})

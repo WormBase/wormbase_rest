@@ -12,4 +12,6 @@
    {:overview overview/widget
     :interactions interactions/widget
     :references references/widget
-    :external_links external-links/widget}})
+    :external_links external-links/widget}
+   :field
+   {:interaction_details interactions/interaction-details}})
