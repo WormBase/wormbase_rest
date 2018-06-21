@@ -22,17 +22,21 @@
   "Produces a data structure suitable for rendering the table listing."
   [wbprocess]
   {:description "genetic and predicted interactions"
-   :data (let [db (d/entity-db wbprocess)
-               ints (wbprocess-direct-interactions db (:db/id wbprocess))]
-           (interaction/build-interactions db ints [] interaction/arrange-interactions))})
+   :data (let [db (d/entity-db wbprocess)]
+           (interaction/build-interactions db
+                                           (partial wbprocess-direct-interactions db (:db/id wbprocess))
+                                           nil
+                                           :graph-only-mode? false))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [wbprocess]
   {:description "addtional nearby interactions"
-   :data (let [db (d/entity-db wbprocess)
-               ints (wbprocess-direct-interactions db (:db/id wbprocess))]
-           (interaction/build-interactions db ints [] interaction/arrange-interaction-details))})
+   :data (let [db (d/entity-db wbprocess)]
+           (interaction/build-interactions db
+                                           (partial wbprocess-direct-interactions db (:db/id wbprocess))
+                                           nil
+                                           :graph-only-mode? true))})
 
 (def widget
   {:name generic/name-field
