@@ -55,10 +55,9 @@
                                            (map (fn [dhs]
                                                   (some->> dhs
                                                            (map (fn [dh]
-                                                                  (let [database (:clone.database/database dh)
-                                                                        accession (:clone.database/accession dh)]
-                                                                    (when (= (:database/id database) "Source_BioScience")
-                                                                      (:clone.database/accession dh))))))))
+                                                                  (when (= (:database/id (:clone.database/database dh))
+                                                                           "Source_BioScience")
+                                                                      (:clone.database/accession dh)))))))
                                            (flatten)
                                            (remove nil?)
                                            (first))})))
