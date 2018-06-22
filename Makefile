@@ -3,9 +3,6 @@ VERSION ?= $(shell git describe --abbrev=0 --tags)
 EBX_CONFIG := .ebextensions/.config
 WB_DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
-ifeq ($(WB_DB_URI),)
-	WB_DB_URI := "datomic:ddb://us-east-1/WS265/wormbase"
-endif
 WS_VERSION ?= $(shell echo ${DB_URI} | sed -rn 's|.*(WS[0-9]+).*|\1|p')
 LOWER_WS_VERSION ?= $(shell echo ${WS_VERSION} | tr A-Z a-z)
 DEPLOY_JAR := app.jar
@@ -13,7 +10,6 @@ PORT := 3000
 WB_ACC_NUM := 357210185381
 FQ_TAG := ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${VERSION}
 WB_FTP_URL := ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}
-ENV = $(shell env)
 
 define print-help
         $(if $(need-help),$(warning $1 -- $2))
@@ -100,8 +96,7 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 		-e WB_DB_URI=${WB_DB_URI} \
 		-e PORT=${PORT} \
-		${NAME}:${VERSION}; \
-		echo ${ENV}
+		${NAME}:${VERSION}
 
 .PHONY: docker-build
 docker-build: clean build \
