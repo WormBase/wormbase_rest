@@ -13,6 +13,7 @@ PORT := 3000
 WB_ACC_NUM := 357210185381
 FQ_TAG := ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${VERSION}
 WB_FTP_URL := ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}
+ENV = $(shell env)
 
 define print-help
         $(if $(need-help),$(warning $1 -- $2))
@@ -99,7 +100,8 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 		-e WB_DB_URI=${WB_DB_URI} \
 		-e PORT=${PORT} \
-		${NAME}:${VERSION}
+		${NAME}:${VERSION}; \
+		echo ${ENV}
 
 .PHONY: docker-build
 docker-build: clean build \
