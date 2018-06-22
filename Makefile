@@ -3,7 +3,10 @@ VERSION ?= $(shell git describe --abbrev=0 --tags)
 EBX_CONFIG := .ebextensions/.config
 WB_DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
-WS_VERSION ?= $(shell echo ${WB_DB_URI} | sed -rn 's|.*(WS[0-9]+).*|\1|p')
+ifeq ($(WB_DB_URI),)
+	WB_DB_URI := "datomic:ddb://us-east-1/WS265/wormbase"
+endif
+WS_VERSION ?= $(shell echo ${DB_URI} | sed -rn 's|.*(WS[0-9]+).*|\1|p')
 LOWER_WS_VERSION ?= $(shell echo ${WS_VERSION} | tr A-Z a-z)
 DEPLOY_JAR := app.jar
 PORT := 3000
@@ -55,7 +58,7 @@ eb-create: $(call print-help,eb-create,\
 	@eb create datomic-to-catalyst-${WS_VERSION} \
 		--region=us-east-1 \
 		--tags="CreatedBy=${AWS_EB_PROFILE},Role=RestAPI" \
-		--cname="datomic-to-catalyst-${LOWER_WS_VERSION}" 
+		--cname="datomic-to-catalyst-${LOWER_WS_VERSION}"
 
 .PHONY: eb-env
 eb-setenv: $(call print-help,eb-env,\
