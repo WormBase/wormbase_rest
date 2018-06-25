@@ -31,7 +31,7 @@
                               :sequence refseq
                               :header (:pcr-product/id obj)}))))
                   (remove nil?)))
-   :definition "rnai sequence"})
+   :description "rnai sequence"})
 
 (defn genotype [r]
   {:data (:rnai/genotype r)
@@ -65,7 +65,7 @@
 
 (defn life-stage [r]
   {:data nil ; non found in database
-   :description "PCR product used to generate this RNAi"})
+   :description "life stage in which rnai is observed"})
 
 (def widget
   {:name generic/name-field
