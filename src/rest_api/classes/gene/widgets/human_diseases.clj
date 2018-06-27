@@ -112,6 +112,7 @@
                                                [])
                                        (map pack-obj)
                                        (seq))
+                        :modifier_association_type (obj/humanize-ident (:disease-model-annotation/modifier-association-type model))
                         :reference (pack-obj (:disease-model-annotation/paper-evidence model))}))
                 (seq)))
    :description "Detailed disease model"})
