@@ -32,11 +32,15 @@
                   (pack-obj))
    :description (str "evidence for the gene class " (:gene-class/id gc))})
 
+(defn description [gc]
+  {:data (:gene-class/description gc)
+   :description "Description of the gene class"})
+
 (def widget
   {:name generic/name-field
    :laboratory laboratory
    :former_laboratory former-laboratory
    :evidence evidence
    :remarks generic/remarks
-   :description generic/description
+   :description description
    :other_names other-names})
