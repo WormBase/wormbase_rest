@@ -13,10 +13,23 @@
        :evidence (obj/get-evidence drh)})))
 
 (defn human-disease-relevance [gene]
-  {:data (when-let [drs (:gene/disease-relevance gene)]
-           (for [dr drs]
-             {:text (:gene.disease-relevance/note dr)
-              :evidence (obj/get-evidence dr)}))
+  {:data (let [descriptions
+               (->> (:disease-model-annotation.modeled-by-disease-relevant-gene/_gene gene)
+                    (map :disease-model-annotation/_modeled-by-disease-relevant-gene)
+                    (reduce (fn [result annotation]
+                              (if (:disease-model-annotation/disease-model-description annotation)
+                                (conj result {:text (clojure.string/join " " (:disease-model-annotation/disease-model-description annotation))
+                                              :evidence {:Curator (map pack-obj (:disease-model-annotation/curator-confirmed annotation))}})
+                                result))
+                            [])
+                    (seq))]
+           (or descriptions
+               ;; or Ranjana :gene/disease-relevance way will become deprecated
+               (->> (:gene/disease-relevance gene)
+                    (map (fn [dr]
+                           {:text (:gene.disease-relevance/note dr)
+                            :evidence (obj/get-evidence dr)}))
+                    (seq))))
    :description "curated description of human disease relevance"})
 
 (defn- get-human-diseases [gene field]
@@ -112,6 +125,7 @@
                                                [])
                                        (map pack-obj)
                                        (seq))
+                        :modifier_association_type (obj/humanize-ident (:disease-model-annotation/modifier-association-type model))
                         :reference (pack-obj (:disease-model-annotation/paper-evidence model))}))
                 (seq)))
    :description "Detailed disease model"})
