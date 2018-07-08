@@ -247,11 +247,14 @@
          ] db (:db/id gene) slim)]
     (->>
       tuples
-      (map (fn [[slim-ref term-ref anno-count]]
+      (reduce (fn [result [slim-ref term-ref anno-count]]
+                (update result slim-ref (partial cons {:term (pack-obj (d/entity db term-ref))
+                                                       :annotation_count anno-count})))
+              (zipmap slim (repeat [])))
+      (map (fn [[slim-ref terms]]
              {:slim (pack-obj (d/entity db slim-ref))
-              :term (pack-obj (d/entity db term-ref))
-              :aspect (obj/humanize-ident (:go-term/type (d/entity db term-ref)))
-              :annotation_count anno-count}))
+              :aspect (obj/humanize-ident (:go-term/type (d/entity db slim-ref)))
+              :terms terms}))
       (seq)
     ))
    :description "data for drawing the gene ontology ribbon"})
