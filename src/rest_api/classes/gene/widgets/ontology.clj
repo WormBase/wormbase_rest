@@ -188,75 +188,73 @@
 
 (def slim
   (->>
-    ["GO:0003824" ;molecular function
-;     "GO:0004872"
-     "GO:0005102"
-     "GO:0005215"
-     "GO:0005198"
-     "GO:0008092"
-     "GO:0003677"
-     "GO:0003723"
-;     "GO:0001071"
-     "GO:0036094"
-     "GO:0046872"
-     "GO:0030246"
-;     "GO:0003674"
-     "GO:0008283" ;biological process
-     "GO:0071840"
-     "GO:0051179"
-     "GO:0032502"
-     "GO:0000003"
-     "GO:0002376"
-     "GO:0050877"
-     "GO:0050896"
-     "GO:0023052"
-     "GO:0010467"
-     "GO:0019538"
-     "GO:0006259"
-     "GO:0044281"
-     "GO:0050789"
-     "GO:0042592"
-     "GO:0007610"
-;     "GO:0008150"
-     "GO:0005576" ;cellular component
-     "GO:0005737"
-     "GO:0005856"
-     "GO:0005739"
-     "GO:0005634"
-     "GO:0005694"
-     "GO:0016020"
-     "GO:0031982"
-     "GO:0071944"
-     "GO:0030054"
-     "GO:0042995"
-     "GO:0032991"
-     "GO:0045202"
-;     "GO:0005575"
+   ["GO:0003824" ;molecular function
+                                        ;     "GO:0004872"
+    "GO:0005102"
+    "GO:0005215"
+    "GO:0005198"
+    "GO:0008092"
+    "GO:0003677"
+    "GO:0003723"
+                                        ;     "GO:0001071"
+    "GO:0036094"
+    "GO:0046872"
+    "GO:0030246"
+                                        ;     "GO:0003674"
+    "GO:0008283" ;biological process
+    "GO:0071840"
+    "GO:0051179"
+    "GO:0032502"
+    "GO:0000003"
+    "GO:0002376"
+    "GO:0050877"
+    "GO:0050896"
+    "GO:0023052"
+    "GO:0010467"
+    "GO:0019538"
+    "GO:0006259"
+    "GO:0044281"
+    "GO:0050789"
+    "GO:0042592"
+    "GO:0007610"
+                                        ;     "GO:0008150"
+    "GO:0005576" ;cellular component
+    "GO:0005737"
+    "GO:0005856"
+    "GO:0005739"
+    "GO:0005634"
+    "GO:0005694"
+    "GO:0016020"
+    "GO:0031982"
+    "GO:0071944"
+    "GO:0030054"
+    "GO:0042995"
+    "GO:0032991"
+    "GO:0045202"
+                                        ;     "GO:0005575"
     ]
-    (map (fn [id]
-           [:go-term/id id]))))
+   (map (fn [id]
+          [:go-term/id id]))))
 
 (defn gene-ontology-ribbon [gene]
   {:data (let [db (d/entity-db gene)
-        tuples (d/q '[:find ?slim ?term (count ?anno)
-           :in $ ?gene [?slim ...]
-           :where
-           [?anno :go-annotation/gene ?gene]
-           [?anno :go-annotation/go-term ?term]
-           [?term :go-term/ancestor ?slim]
-         ] db (:db/id gene) slim)]
-    (->>
-      tuples
-      (reduce (fn [result [slim-ref term-ref anno-count]]
-                (update result slim-ref (partial cons {:term (pack-obj (d/entity db term-ref))
-                                                       :annotation_count anno-count})))
-              (zipmap slim (repeat [])))
-      (map (fn [[slim-ref terms]]
-             {:slim (pack-obj (d/entity db slim-ref))
-              :aspect (obj/humanize-ident (:go-term/type (d/entity db slim-ref)))
-              :terms terms}))
-      (seq)
-    ))
+               tuples (d/q '[:find ?slim ?term (count ?anno)
+                             :in $ ?gene [?slim ...]
+                             :where
+                             [?anno :go-annotation/gene ?gene]
+                             [?anno :go-annotation/go-term ?term]
+                             [?term :go-term/ancestor ?slim]]
+                           db (:db/id gene) slim)]
+           (->> tuples
+                (reduce (fn [result [slim-ref term-ref anno-count]]
+                          (update result slim-ref (partial cons {:term (pack-obj (d/entity db term-ref))
+                                                                 :annotation_count anno-count})))
+                        (zipmap slim (repeat [])))
+                (map (fn [[slim-ref terms]]
+                       {:slim (pack-obj (d/entity db slim-ref))
+                        :aspect (obj/humanize-ident (:go-term/type (d/entity db slim-ref)))
+                        :terms terms}))
+                (seq)))
    :description "data for drawing the gene ontology ribbon"})
 
 (def widget
