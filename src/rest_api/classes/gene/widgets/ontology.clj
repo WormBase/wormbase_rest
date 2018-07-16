@@ -189,18 +189,18 @@
 (def slim
   (->>
    ["GO:0003824" ;molecular function
-                                        ;     "GO:0004872"
+    ;; "GO:0004872"
     "GO:0005102"
     "GO:0005215"
     "GO:0005198"
     "GO:0008092"
     "GO:0003677"
     "GO:0003723"
-                                        ;     "GO:0001071"
+    ;; "GO:0001071"
     "GO:0036094"
     "GO:0046872"
     "GO:0030246"
-                                        ;     "GO:0003674"
+    ;; "GO:0003674"
     "GO:0008283" ;biological process
     "GO:0071840"
     "GO:0051179"
@@ -217,7 +217,7 @@
     "GO:0050789"
     "GO:0042592"
     "GO:0007610"
-                                        ;     "GO:0008150"
+    ;; "GO:0008150"
     "GO:0005576" ;cellular component
     "GO:0005737"
     "GO:0005856"
@@ -231,10 +231,13 @@
     "GO:0042995"
     "GO:0032991"
     "GO:0045202"
-                                        ;     "GO:0005575"
+    ;; "GO:0005575"
     ]
-   (map (fn [id]
-          [:go-term/id id]))))
+   (map vector (repeat :go-term/id))))
+
+(def aspects
+  (->> ["GO:0008150" "GO:0003674" "GO:0005575"]
+       (map vector (repeat :go-term/id))))
 
 (defn gene-ontology-ribbon [gene]
   {:data (let [db (d/entity-db gene)
@@ -244,14 +247,28 @@
                              [?anno :go-annotation/gene ?gene]
                              [?anno :go-annotation/go-term ?term]
                              [?term :go-term/ancestor ?slim]]
-                           db (:db/id gene) slim)]
-           (->> tuples
+                           db (:db/id gene) slim)
+               other-tuples (d/q '[:find ?slim-other ?term (count ?anno)
+                                   :in $ ?gene [?slim ...] [?slim-other ...]
+                                   :where
+                                   [?anno :go-annotation/gene ?gene]
+                                   [?anno :go-annotation/go-term ?term]
+                                   (not [?term :go-term/ancestor ?slim])
+                                   [?term :go-term/ancestor ?slim-other]]
+                                 db
+                                 (:db/id gene)
+                                 slim
+                                 aspects)]
+           (->> (concat tuples other-tuples)
                 (reduce (fn [result [slim-ref term-ref anno-count]]
                           (update result slim-ref (partial cons {:term (pack-obj (d/entity db term-ref))
                                                                  :annotation_count anno-count})))
                         (zipmap slim (repeat [])))
                 (map (fn [[slim-ref terms]]
-                       {:slim (pack-obj (d/entity db slim-ref))
+                       {:slim (let [packed (pack-obj (d/entity db slim-ref))]
+                                (if ((set aspects) slim-ref)
+                                  (update packed :label #(format "Other %s" %))
+                                  packed))
                         :aspect (obj/humanize-ident (:go-term/type (d/entity db slim-ref)))
                         :terms terms}))
                 (seq)))
