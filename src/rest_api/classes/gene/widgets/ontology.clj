@@ -239,6 +239,12 @@
   (->> ["GO:0008150" "GO:0003674" "GO:0005575"]
        (map vector (repeat :go-term/id))))
 
+(defn slim-order [slim-ref]
+  (let [order (zipmap slim (iterate inc 0))
+        n (count slim)]
+    (or (order slim-ref)
+        n)))
+
 (defn gene-ontology-ribbon [gene]
   {:data (let [db (d/entity-db gene)
                tuples (d/q '[:find ?slim ?term (count ?anno)
@@ -263,7 +269,9 @@
                 (reduce (fn [result [slim-ref term-ref anno-count]]
                           (update result slim-ref (partial cons {:term (pack-obj (d/entity db term-ref))
                                                                  :annotation_count anno-count})))
-                        (zipmap slim (repeat [])))
+                        (zipmap (concat slim aspects) (repeat [])))
+                (sort-by (fn [[slim-ref _]]
+                           (slim-order slim-ref)))
                 (map (fn [[slim-ref terms]]
                        {:slim (let [packed (pack-obj (d/entity db slim-ref))]
                                 (if ((set aspects) slim-ref)
