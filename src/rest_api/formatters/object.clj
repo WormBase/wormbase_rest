@@ -142,7 +142,8 @@
       (:transgene/id tg)))
 
 (defmethod obj-label "go-term" [_ go]
-  (first (:go-term/name go))) ;; Not clear why multiples allowed here!
+  (if-let [name (first (:go-term/name go))]
+    (str/replace name #"_" " "))) ;; Not clear why multiples allowed here!
 
 (defmethod obj-label "life-stage" [_ ls]
   (:life-stage/public-name ls))
