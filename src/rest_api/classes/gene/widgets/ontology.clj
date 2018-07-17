@@ -254,18 +254,19 @@
                              [?anno :go-annotation/go-term ?term]
                              [?term :go-term/ancestor ?slim]]
                            db (:db/id gene) slim)
-               other-tuples (d/q '[:find ?slim-other ?term (count ?anno)
-                                   :in $ ?gene [?slim ...] [?slim-other ...]
-                                   :where
-                                   [?anno :go-annotation/gene ?gene]
-                                   [?anno :go-annotation/go-term ?term]
-                                   (not [?term :go-term/ancestor ?slim])
-                                   [?term :go-term/ancestor ?slim-other]]
-                                 db
-                                 (:db/id gene)
-                                 slim
-                                 aspects)]
-           (->> (concat tuples other-tuples)
+               terms (->> tuples
+                          (map second)
+                          (set))
+               tuples-other (->> (d/q '[:find ?aspect ?term (count ?anno)
+                                        :in $ ?gene [?aspect ...]
+                                        :where
+                                        [?anno :go-annotation/gene ?gene]
+                                        [?anno :go-annotation/go-term ?term]
+                                        [?term :go-term/ancestor ?aspect]]
+                                      db (:db/id gene) aspects)
+                                 (filter (fn [[_ term _]]
+                                           (not (terms term)))))]
+           (->> (concat tuples tuples-other)
                 (reduce (fn [result [slim-ref term-ref anno-count]]
                           (update result slim-ref (partial cons {:term (pack-obj (d/entity db term-ref))
                                                                  :annotation_count anno-count})))
