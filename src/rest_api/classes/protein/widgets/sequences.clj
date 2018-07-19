@@ -47,15 +47,14 @@
 (defn amino-acid-composition [p]
   {:data 
    (let [source (when-let [h (:protein/peptide p)]
-                  (->(:peptide/sequence (:protein.peptide/peptide h))
-                                        (str/split  #"")
-                                        (frequencies)))]
-     (some->>
-       (keys source)
-       (map
-         (fn [amino-key]
-           {:comp (get source amino-key)
-            :aa (get abbrev amino-key)}))))
+                  (-> (:peptide/sequence (:protein.peptide/peptide h))
+                      (str/split  #"")
+                      (frequencies)))]
+     (some->> (keys source)
+              (map
+                (fn [amino-key]
+                  {:comp (get source amino-key)
+                   :aa (get abbrev amino-key) }))))
    :description "The amino acid composition of the protein"})
 
 (defn sequence-fn [p]
