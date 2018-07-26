@@ -45,7 +45,7 @@
    :description "the estimated molecular weight of the protein"})
 
 (defn amino-acid-composition [p]
-  {:data 
+  {:data
    (let [source (when-let [h (:protein/peptide p)]
                   (-> (:peptide/sequence (:protein.peptide/peptide h))
                       (str/split  #"")
@@ -60,8 +60,7 @@
 (defn sequence-fn [p]
   {:data (when-let [h (:protein/peptide p)]
            {:length (:protein.peptide/length h)
-            :sequences (:peptide/sequence
-                         (:protein.peptide/peptide h))
+            :sequence (:peptide/sequence (:protein.peptide/peptide h))
             :type "aa"})
    :description "the peptide sequence of the protein"})
 
