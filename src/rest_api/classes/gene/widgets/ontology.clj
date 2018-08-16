@@ -276,7 +276,7 @@
                 (map (fn [[slim-ref terms]]
                        {:slim (let [packed (pack-obj (d/entity db slim-ref))]
                                 (if ((set aspects) slim-ref)
-                                  (update packed :label #(format "Other %s" %))
+                                  (update packed :label #(format "other %s" %))
                                   packed))
                         :aspect (obj/humanize-ident (:go-term/type (d/entity db slim-ref)))
                         :terms terms}))
