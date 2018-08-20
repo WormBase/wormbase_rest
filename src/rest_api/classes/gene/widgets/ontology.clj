@@ -233,7 +233,7 @@
     "GO:0045202"
     ;; "GO:0005575"
     ]
-   (map vector (repeat :go-term/id))))
+   (map vector (repeat :go-term/id) )))
 
 (def aspects
   (->> ["GO:0008150" "GO:0003674" "GO:0005575"]
@@ -247,15 +247,24 @@
 
 (defn gene-ontology-ribbon [gene]
   {:data (let [db (d/entity-db gene)
-               tuples (d/q '[:find ?slim ?term (count ?anno)
-                             :in $ ?gene [?slim ...]
-                             :where
-                             [?anno :go-annotation/gene ?gene]
-                             [?anno :go-annotation/go-term ?term]
-                             [?term :go-term/ancestor ?slim]]
-                           db (:db/id gene) slim)
+               tuples (concat
+                       ; annotated with descendants of slim term
+                       (d/q '[:find ?slim ?term (count ?anno)
+                              :in $ ?gene [?slim ...]
+                              :where
+                              [?anno :go-annotation/gene ?gene]
+                              [?anno :go-annotation/go-term ?term]
+                              [?term :go-term/ancestor ?slim]]
+                            db (:db/id gene) slim)
+                       ; annotated with slim term directly
+                       (d/q '[:find ?slim ?slim (count ?anno)
+                              :in $ ?gene [?slim ...]
+                              :where
+                              [?anno :go-annotation/gene ?gene]
+                              [?anno :go-annotation/go-term ?slim]]
+                            db (:db/id gene) slim))
                terms (->> tuples
-                          (map second)
+                          (map (comp (partial d/entid db) second))
                           (set))
                tuples-other (->> (d/q '[:find ?aspect ?term (count ?anno)
                                         :in $ ?gene [?aspect ...]
