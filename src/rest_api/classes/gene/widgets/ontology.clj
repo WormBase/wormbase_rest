@@ -283,7 +283,9 @@
                 (sort-by (fn [[slim-ref _]]
                            (slim-order slim-ref)))
                 (map (fn [[slim-ref terms]]
-                       {:slim (let [packed (pack-obj (d/entity db slim-ref))]
+                       {:slim (let [slim-term (d/entity db slim-ref)
+                                    packed (-> (pack-obj slim-term)
+                                               (assoc :definition (first (:go-term/definition slim-term))))]
                                 (if ((set aspects) slim-ref)
                                   (update packed :label #(format "other %s" %))
                                   packed))
