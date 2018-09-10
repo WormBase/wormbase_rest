@@ -178,7 +178,7 @@
   (let [db                 (d/entity-db gene)
         [parent start end] (locatables/root-segment gene)]
     {:data
-     (if parent
+     (if (not-any? nil? '(parent start end))
        (->> (d/q '[:find [?p ...]
                    :in $ % ?seq ?min ?max
                    :where [?method :method/id "GenePairs"]
