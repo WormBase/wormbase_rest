@@ -31,7 +31,7 @@
                               :sequence refseq
                               :header (:pcr-product/id obj)}))))
                   (remove nil?)))
-   :definition "rnai sequence"})
+   :description "rnai sequence"})
 
 (defn genotype [r]
   {:data (:rnai/genotype r)
@@ -55,10 +55,9 @@
                                            (map (fn [dhs]
                                                   (some->> dhs
                                                            (map (fn [dh]
-                                                                  (let [database (:clone.database/database dh)
-                                                                        accession (:clone.database/accession dh)]
-                                                                    (when (= (:database/id database) "Source_BioScience")
-                                                                      (:clone.database/accession dh))))))))
+                                                                  (when (= (:database/id (:clone.database/database dh))
+                                                                           "Source_BioScience")
+                                                                      (:clone.database/accession dh)))))))
                                            (flatten)
                                            (remove nil?)
                                            (first))})))
@@ -66,7 +65,7 @@
 
 (defn life-stage [r]
   {:data nil ; non found in database
-   :description "PCR product used to generate this RNAi"})
+   :description "life stage in which rnai is observed"})
 
 (def widget
   {:name generic/name-field

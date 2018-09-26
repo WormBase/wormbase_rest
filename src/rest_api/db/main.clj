@@ -1,5 +1,5 @@
 (ns rest-api.db.main
-  (:require   
+  (:require
    [datomic.api :as d]
    [environ.core :as environ]
    [mount.core :as mount]))
@@ -9,7 +9,9 @@
 
 (defn- connect []
   (let [db-uri (datomic-uri)]
-    (d/connect db-uri)))
+    (do
+      (println (format "Using Datomic: %s" db-uri))
+      (d/connect db-uri))))
 
 (defn- disconnect [conn]
   (d/release conn))

@@ -14,6 +14,7 @@
    "Masters" "#FF8000"
    "Research staff" "#08298A"
    "Highschool" "#05C1F0"
+   "Collaborated" "#FFFFFF"
    "Undergrad" "#B58904"})
 
 (defn- role-has-colour [role]
@@ -260,9 +261,7 @@
 (defn worked-with [person]
   {:data (some->> (:person/worked-with person)
                   (map (fn [holder]
-                         (generate-map
-                           holder
-                           (:person.worked-with/person holder))))
+                         (generate-map holder (:person.worked-with/person holder))))
                   (flatten))
    :description "people with whom this person worked"})
 
