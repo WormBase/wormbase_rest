@@ -353,9 +353,13 @@
                                                  (second ohs)))}))})))
    :description "experimental assays for detecting this polymorphism"})
 
-(defn affects-splice-site [variation]
-  {:data {:donor nil
-          :acceptor nil}
+(defn affects-splice-site [variation] ; made from WBVar00750883. This was in Ace code but wasn't working and format slightly changed
+  {:data (some->> (:variation/predicted-cds variation)
+                  (map :molecular-change/splice-site)
+                  (map (fn [mc]
+                         {:value (name
+                                   (:molecular-change.splice-site/value mc))
+                          :text (:molecular-change.splice-site/text mc)})))
    :description "Affects splice site"})
 
 (defn polymorphism-status [variation]; WBVar00116162 is predicted
@@ -405,7 +409,7 @@
                {:mutation (if-let [mut (or (:transposon-family/id
                                             (first
                                             (:variation/transposon-insertion variation)))
-                                          (:variation/d variation))] ; meed to check method
+                                          (:variation/d variation))] ; need to check method
                             mut
                             (:variation.insertion/text insertion))
                 :type "Insertion"
@@ -447,7 +451,7 @@
    :description "A variation that alters the reading frame"})
 
 (defn sequencing-status [variation]
-  {:data (if-let [seqstatus (:variation/seqstatus variation)]
+  {:data (when-let [seqstatus (:variation/seqstatus variation)]
            (name seqstatus))
    :description "sequencing status of the variation"})
 
