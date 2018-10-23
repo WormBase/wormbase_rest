@@ -9,19 +9,38 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
+(defn str-insert
+  "Insert c in string s at index i."
+  [s c i]
+  (str (subs s 0 i) c (subs s i)))
+
+(defn- reverse-complement [dna]
+  (str/replace
+    (str/reverse dna)
+    #"A|C|G|T|a|c|g|t"
+    {"A" "T"
+     "C" "G"
+     "G" "C"
+     "T" "A"
+     "a" "t"
+     "c" "g"
+     "g" "c"
+     "t" "a"
+     "-" "-"}))
+
 (defn- fetch-coords-in-feature [varrefseqobj object]
   (let [refseqobj (sequence-fns/genomic-obj object)]
     {:fstart (:start refseqobj)
-    :fstop (:stop refseqobj)
-    :start (+ 1  ;start and stop incorrect for predicted-cds of WBVar00601206
-              (- (:start varrefseqobj)
+     :fstop (:stop refseqobj)
+     :start (+ 1  ;start and stop incorrect for predicted-cds of WBVar00601206
+               (- (:start varrefseqobj)
+                  (:start refseqobj)))
+     :stop (+ 1
+              (- (:stop varrefseqobj)
                  (:start refseqobj)))
-    :stop (+ 1
-             (- (:stop varrefseqobj)
-                (:start refseqobj)))
-    :abs_start (:start varrefseqobj)
-    :abs_stop (:stop varrefseqobj)
-    :item (pack-obj object)}))
+     :abs_start (:start varrefseqobj)
+     :abs_stop (:stop varrefseqobj)
+     :item (pack-obj object)}))
 
 (defn- retrieve-molecular-changes [object]
   (let [do-translation (if (or
@@ -38,11 +57,11 @@
   (let [ev (obj/get-evidence feature)]
     (not-empty
       (pace-utils/vmap
-         :evidence_type
-         (some->> ev vals flatten first)
+        :evidence_type
+        (some->> ev vals flatten first)
 
-         :evidence
-         (some->> ev keys first)))))
+        :evidence
+        (some->> ev keys first)))))
 
 (defn- mutant-conceptual-translation [pseq position from to]
   (str
@@ -72,6 +91,8 @@
       (conj
         {:aa_change (str from position to)
          :position position
+         :from from
+         :to to
          :description description
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
@@ -85,16 +106,16 @@
              "SNP and RFLP"
              "SNP")
            (when-let [insertion-str (:transposon-family/id
-                           (first
-                             (:variation/transposon-insertion variation)))]
+                                      (first
+                                        (:variation/transposon-insertion variation)))]
              (str insertion-str " transposon insertion" )))
    :description "the general class of this polymorphism"})
 
 (defn amino-acid-change [variation] ; e.g. WBVar00271007
   {:data (some->> (:variation/predicted-cds variation)
                   (map (fn [pcdsh]
-                        {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
-                         :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
+                         {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
+                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
    :description "amino acid changes for this variation, if appropriate"})
 
 (defn detection-method [variation] ; WBVar00601206
@@ -108,36 +129,160 @@
                           :evidence (obj/get-evidence h)})))
    :description "the method used to verify deletion alleles"})
 
-;has data
+;tested with: WBVar00750883,
 (defn context [variation]
-  {:data (let [public-name (:variation/public-name variation)
-               max-seqlen 1000000
-               flank 250
-               seq-len (if
-                         (contains? variation :variation-source-location)
-                         nil
-                         1)
+  {:data (let [max-seqlen 1000000
+               padding 250
+               flank-length 15
                refseqobj (sequence-fns/genomic-obj variation)
-               wildtype   (sequence-fns/get-sequence
-                          (conj
-                            refseqobj
-                            {:start (- (:start refseqobj) flank)
-                             :stop (+ flank (:stop refseqobj))}))
-               ]
 
-           {:ldtype_fragment nil
-            :wildtype_full refseqobj
-            :mutant_fragment nil
-            :keys (keys variation)
-            :mutant_full nil
-            :wildtype_header (str "Wild type N2, with " flank " bp flanks")
-            :sl (seq (:variation/source-location variation))
-            :mutant_header (str name " with " flank " bp flanks")
-            :placeholder nil})
+               seq-length (+ 1
+                             (- (:stop refseqobj)
+                                (:start refseqobj)))
+
+               placeholder (when (> seq-length 1000000)
+                             seq-length)
+
+               wildtype-sequence (when (nil? placeholder)
+                                   (sequence-fns/get-sequence
+                                     (conj
+                                       refseqobj
+                                       {:start (- (:start refseqobj) padding)
+                                        :stop (+ padding (:stop refseqobj))})))
+
+               wildtype-full-length (+ (* 2 padding)
+                                       seq-length)
+
+               length-change (if-let [insertion (:variation/insertion variation)]
+                               (or (if-let [insertion-str (:variation.insertion/text insertion)]
+                                     (count insertion-str)
+                                     (when (contains? variation :variation/transposon-insertion)
+                                       (- (count (:transposon-family/id
+                                                   (first (:variation.transpon-insertion variation))))
+                                          1))))
+                               (if-let [deletion (:variation/deletion variation)]
+                                 (- 0 seq-length)
+                                 (if-let [substitution (:variation/substitution variation)]
+                                   (- (count (:variation.substitution/alt substitution))
+                                      (count (:variation.substitution/ref substitution)))
+                                   (when (contains? variation :variation/tandem-duplication) 0))))
+
+               wildtype-positive (when (nil? placeholder)
+                                   {:sequence (if (or
+                                                    (contains? variation :variation/insertion)
+                                                    (contains? variation :variation/transpson-insertion)
+                                                    (contains? variation :variation/tandem-duplication))
+                                                      (str-insert wildtype-sequence
+                                                                  "-"
+                                                                  padding)
+                                                (apply str (map-indexed (fn [index val]
+                                                                          (if (and (>= index (+ 1 padding))
+                                                                                   (<= index (+ padding
+                                                                                                seq-length)))
+                                                                            (str/upper-case val)
+                                                                            val))
+                                                                        wildtype-sequence)))
+                                    :features
+                                    {:variation
+                                     {:start (+ padding 1)
+                                      :stop (+ padding
+                                               seq-length)}
+                                     :left-flank {:start (- (+ padding 1) flank-length)
+                                                  :stop padding}
+                                     :right-flank {:start (+ padding 1 seq-length)
+                                                   :stop (+
+                                                          padding
+                                                          seq-length
+                                                          flank-length)}}})
+
+               wildtype-negative (when (nil? placeholder)
+                                   {:sequence
+                                    (reverse-complement (:sequence wildtype-positive))
+
+                                    :features
+                                    (:features wildtype-positive)})
+
+               mutant-positive (when (nil? placeholder)
+                                     {:sequence
+                                      (cond
+                                        (contains? variation :variation/substitution)
+                                        (let [substitution (:variation/substitution variation)]
+                                          (str/replace
+                                            (:sequence wildtype-positive)
+                                            (:variation.substitution/ref substitution)
+                                            (:variation.substitution/alt substitution)))
+
+                                        (contains? variation :variation/insertion)
+                                        (let [insertion (:variation/insertion variation)
+                                              insert-str (or (:variation.insertion/text insertion)
+                                                             (:transposon-family/id
+                                                               (first
+                                                                 (:variation/transposon-insertion variation))))]
+                                          (str/replace
+                                            (:sequence wildtype-positive)
+                                            #"\-+"
+                                            insert-str))
+
+                                        (contains? variation :variation/deletion)
+                                        (str/replace
+                                          (:sequence wildtype-positive)
+                                          #"[A-Z]+"
+                                          "")
+
+                                        (contains? variation :variation/tandem-duplication)
+                                        (:sequence wildtype-positive))
+
+                                      :features
+                                      {:variation
+                                       {:start (:start (:variation (:features wildtype-positive)))
+                                        :stop (+ (:stop (:variation (:features wildtype-positive)))
+                                                 length-change)}
+
+                                       :left-flank
+                                       (:left-flank (:features wildtype-positive))
+
+                                       :right-flank
+                                       {:start (+ (:start (:right-flank (:features wildtype-positive)))
+                                                  length-change)
+                                        :stop (+ (:stop (:right-flank (:features wildtype-positive)))
+                                                 length-change)}}})
+
+                 mutant-negative (when (nil? placeholder)
+                                   {:sequence
+                                    (if-let [transposon-family (:transposon-family/id
+                                                                 (first
+                                                                   (:variation/transposon-insertion variation)))]
+                                      (str/replace
+                                        (reverse-complement (:sequence mutant-positive))
+                                        (re-pattern (reverse-complement transposon-family))
+                                        transposon-family)
+                                      (reverse-complement (:sequence mutant-positive)))
+
+                                    :features
+                                    (:features mutant-positive)})
+
+                 species (some->> (:species/assembly (:variation/species variation))
+                                  (map (fn [assembly]
+                                         (:strain/id (first (:sequence-collection/strain assembly))))))]
+               (when-not (every? nil? [wildtype-positive placeholder])
+                 (pace-utils/vmap
+                   :wildtype (not-empty
+                               (pace-utils/vmap
+                                 :positive-strand wildtype-positive
+                                 :negative-strand wildtype-negative))
+                   :mutant (not-empty
+                             (pace-utils/vmap
+                               :positive-strand mutant-positive
+                               :negative-strand mutant-negative
+                               ))
+                   :public-name (:variation/public-name variation)
+                   :placeholder placeholder)))
    :description "wild type and variant sequences in genomic context"})
 
-(defn flanking-pcr-products [variation]
-  {:data nil
+(defn flanking-pcr-products [variation] ; tested with WBVar00145789
+  {:data (some->> (:variation/pcr-product variation)
+                  (map (fn [p]
+                        {(:pcr-product/id p) (pack-obj p)})))
    :description "PCR products that flank the variation"})
 
 ;test WBVar01112111
@@ -148,27 +293,27 @@
                             :variation/confirmed-snp "Confirmed SNP"
                             :variation/reference-strain-digest "RFLP"
                             :variation/predicted-snp "Predicted SNP"
-                            :variation/transposon-insertion "Transposon Insertion"
+                            :variation/transposon-linsertion "Transposon Insertion"
                             :variation/natural-variant "Natural Variant"}
         type-of-mutation-map {:variation/substitution "Substitution"
                               :variation/insertion "Insertion"
                               :variation/deletion "Deletion"
                               :variation/tandem-duplication "Tandem Duplication"}]
     {:data {:physical_class (cond
-                             (contains? variation :variation/transposon-insertion)
-                             "Transposon insertion"
+                              (contains? variation :variation/transposon-insertion)
+                              "Transposon insertion"
 
-                             (contains? variation :variation/transposon-excision)
-                             "Transposon excision"
+                              (contains? variation :variation/transposon-excision)
+                              "Transposon excision"
 
-                             :else
-                             (->> type-of-mutation-map
-                                  (map
-                                    #(str (if
-                                            (contains? variation (first %))
-                                            (second %))))
-                                  (filter #(not= % ""))
-                                  (str/join "/")))
+                              :else
+                              (->> type-of-mutation-map
+                                   (map
+                                     #(str (if
+                                             (contains? variation (first %))
+                                             (second %))))
+                                   (filter #(not= % ""))
+                                   (str/join "/")))
             :general_class (->> variation-type-map
                                 (map
                                   #(str (if
@@ -176,50 +321,6 @@
                                           (second %))))
                                 (filter #(not= % "")))}
      :description "the general type of the variation"}))
-
-(defn- count-affects [variation]
-  (reduce
-    +
-    (map count [(:variation/gene variation)
-                (:variation/predicted-cds variation)
-                (:variation/transcript variation)
-                (:variation/pseudogene variation)
-                (:variation/feature variation)
-                (:variation/interactor variation)])))
-
-(defn- create-fragment [peptide position]
-  (str (- position 19)
-       "..."
-       (subs peptide (- position 20) 19)
-       " "
-       "<b>" (subs peptide (- position 1) 1) "</b>"
-       " "
-       (subs peptide position 20)
-       "..."
-       (+ position 19)))
-
-(defn- do-markup [peptide var-start variation mutation-type]
-  (let [style-map {:utr "FGCOLOR gray"
-                   :cds0 "BGCOLOR yellow"
-                   :cds1 "BGCOLOR orange"
-                   :space " "
-                   :unknown_mutation "background-color:#FF8080; text-transform:uppercase;"
-                   :tandem_duplication "background-color:#FF8080; text-transform:uppercase;"
-                   :substitution "background-color:#FF8080; text-transform:uppercase;"
-                   :deletion "background-color:#FF8080; text-transform:uppercase;"
-                   :insertion "background-color:#FF8080; text-transform:uppercase;"
-                   :flank (if (= mutation-type "Insertion")
-                            "background-color:yellow;font-weight:bold;text-transform:uppercase;"
-                            "background-color:yellow")
-                   :deletion_with_insertion "background-color: #FF8080; text-transform:uppercase;"}
-        var-stop (if (= (count variation) 0)
-                   (+ var-start 1)
-                   (+ var-start (count variation)))
-        sequence (if (= (count variation) 0)
-                   (str (subs peptide 0 var-start) "-" (subs peptide (+ var-start (count variation))))
-                   peptide)
-        ]
-    nil))
 
 ;test WBVar01112111 WBVar00601206
 (defn features-affected [variation]
@@ -259,7 +360,7 @@
                           (let [cds (:variation.predicted-cds/cds predicted-cds-holder)]
                             (conj
                               (pack-obj cds)
-                              (fetch-coords-in-feature varrefseqobj cds) ; appears to a discreptency. This code gives 2945. The 
+                              (fetch-coords-in-feature varrefseqobj cds) ; appears to a discreptency. This code gives 2945
                               (pace-utils/vmap
                                 :protein_effects
                                 (not-empty
@@ -277,9 +378,8 @@
                                     "Frameshift" ; e.g. WBVar00273213
                                     (when-let [fs (first (:molecular-change/frameshift predicted-cds-holder))]
                                       (conj
-                                       {:description (:molecular-change.frameshift/text fs)}
-                                       (get-feature-affected-evidence fs)
-                                    ))))
+                                        {:description (:molecular-change.frameshift/text fs)}
+                                        (get-feature-affected-evidence fs)))))
 
                                 :location_effects
                                 (not-empty
@@ -378,19 +478,6 @@
    :wildtype-label "wildtype"
    :mutant-label "variant"})
 
-(defn- reverse-complement [dna]
-  (str/replace
-    (str/reverse dna)
-    #"A|C|G|T|a|c|g|t"
-    {"A" "T"
-     "C" "G"
-     "G" "C"
-     "T" "A"
-     "a" "t"
-     "c" "g"
-     "g" "c"
-     "t" "a"}))
-
 (defn- variation-features [variation]
   (if-let  [species-name (->> variation :variation/species :species/id)]
     (let  [g-species (generic-functions/xform-species-name species-name)
@@ -407,9 +494,9 @@
               :wildtype_label "wild type"}
              (when-let [insertion (:variation/insertion variation)] ; tested with WBVar00269113
                {:mutation (if-let [mut (or (:transposon-family/id
-                                            (first
-                                            (:variation/transposon-insertion variation)))
-                                          (:variation/d variation))] ; need to check method
+                                             (first
+                                               (:variation/transposon-insertion variation)))
+                                           (:variation/d variation))] ; need to check method
                             mut
                             (:variation.insertion/text insertion))
                 :type "Insertion"
