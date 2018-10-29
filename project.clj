@@ -17,7 +17,7 @@
    [mysql/mysql-connector-java "6.0.5"]
    [org.biojava/biojava-core "4.2.7"]
    [org.biojava/biojava-aa-prop "4.2.7"]
-   [org.clojure/clojure "1.8.0"]
+   [org.clojure/clojure "1.9.0"]
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.6.3"]
