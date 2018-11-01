@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.2] - 2018-11-01
+- Preping for WS267 release
+
 ## [0.6.1] - 2018-08-23
 - Small changes
 - first release for WS266
