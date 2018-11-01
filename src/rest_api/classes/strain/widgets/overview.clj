@@ -8,7 +8,7 @@
    :description "the mutagen used to generate this stain"})
 
 (defn outcrossed [s]
-  {:data (first (:strain/outcrossed s))
+  {:data (:strain/outcrossed s)
    :description "extent to which the strain has been outcrossed"})
 
 (defn genotype [s]
