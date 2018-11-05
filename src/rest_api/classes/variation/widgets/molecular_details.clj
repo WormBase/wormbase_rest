@@ -184,12 +184,15 @@
                                                                         wildtype-sequence)))
                                     :features
                                     {:variation
-                                     {:start (+ padding 1)
+                                     {:type "variation"
+                                      :start (+ padding 1)
                                       :stop (+ padding
                                                seq-length)}
-                                     :left-flank {:start (- (+ padding 1) flank-length)
+                                     :left-flank {:type "flank"
+                                                  :start (- (+ padding 1) flank-length)
                                                   :stop padding}
-                                     :right-flank {:start (+ padding 1 seq-length)
+                                     :right-flank {:type "flank"
+                                                   :start (+ padding 1 seq-length)
                                                    :stop (+
                                                           padding
                                                           seq-length
@@ -234,7 +237,8 @@
 
                                       :features
                                       {:variation
-                                       {:start (:start (:variation (:features wildtype-positive)))
+                                       {:type "variation"
+                                        :start (:start (:variation (:features wildtype-positive)))
                                         :stop (+ (:stop (:variation (:features wildtype-positive)))
                                                  length-change)}
 
@@ -242,7 +246,8 @@
                                        (:left-flank (:features wildtype-positive))
 
                                        :right-flank
-                                       {:start (+ (:start (:right-flank (:features wildtype-positive)))
+                                       {:type "flank"
+                                        :start (+ (:start (:right-flank (:features wildtype-positive)))
                                                   length-change)
                                         :stop (+ (:stop (:right-flank (:features wildtype-positive)))
                                                  length-change)}}})
