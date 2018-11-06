@@ -3,17 +3,6 @@
     [datomic.api :as d]
     [rest-api.classes.generic-fields :as generic]))
 
-(defn predicted-exon-structure [s]
-  {:data (some->> (:transcript/source-exons s)
-                  (map (fn [exon]
-                         {:start (:transcript.source-exons/min exon)
-                          :stop (:transcript.source-exons/max exon)}))
-                  (sort-by :start)
-                  (map-indexed (fn [idx obj]
-                         (conj obj
-                               {:no (+ 1 idx)}))))
-   :description "predicted exon structure within the sequence"})
-
 (defn strand [s]
   {:data (when-let [strand (:locatable/strand s)]
            (cond
@@ -32,7 +21,7 @@
 
 (def widget
   {:name generic/name-field
- ;  :predicted_exon_structure predicted-exon-structure
+   :predicted_exon_structure generic/predicted-exon-structure
  ;  :strand strand
    :predicted_units generic/predicted-units
    :transcripts transcripts
