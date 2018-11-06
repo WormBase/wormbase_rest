@@ -9,6 +9,14 @@
 (defn name-field [object]
   (obj/name-field object))
 
+(defn print-sequence [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+    {:data {:keys (keys object)
+            :protein (when-let [protein (:dd object)]
+                       "found protein")}
+     :description "the sequence of the sequence"}))
+
 (defn gene-product [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
