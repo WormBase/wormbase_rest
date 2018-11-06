@@ -12,21 +12,10 @@
   {:data nil
    :description "links to BLAST analyses"})
 
-(defn print-sequence [c]
-  {:data (when-let [p (:locatable-parent c)]
-           (map (fn [s]
-                  (let [h (:sequence/dna s)]
-                    {:header "Sequence"
-                     :sequence (-> h
-                                   :sequence.dna/dna
-                                   :dna/sequence)
-                     :length (:sequence.dna/length h)}))))
-   :description "the sequence of the sequence"})
-
 (def widget
   {:name generic/name-field
    :predicted_exon_structure generic/predicted-exon-structure
    :print_homologies print-homologies
    :print_blast print-blast
    :predicted_unit generic/predicted-units
-   :print_sequence print-sequence})
+   :print_sequence generic/print-sequence})

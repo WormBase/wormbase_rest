@@ -21,8 +21,8 @@
 
 (def widget
   {:name generic/name-field
-   :predicted_exon_structure generic/predicted-exon-structure
- ;  :strand strand
+  ;:predicted_exon_structure generic/predicted-exon-structure
+  ;:strand strand
    :predicted_units generic/predicted-units
    :transcripts transcripts
-   :print_sequence print-sequence})
+   :print_sequence generic/print-sequence})
