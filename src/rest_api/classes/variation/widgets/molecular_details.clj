@@ -161,7 +161,7 @@
                                                    (first (:variation.transpon-insertion variation))))
                                           1))))
                                (if-let [deletion (:variation/deletion variation)]
-                                 (- 0 seq-length)
+                                 (- 1 seq-length)
                                  (if-let [substitution (:variation/substitution variation)]
                                    (- (count (:variation.substitution/alt substitution))
                                       (count (:variation.substitution/ref substitution)))
@@ -266,6 +266,27 @@
                                     :features
                                     (:features mutant-positive)})
 
+                  wildtype-positive-flattened (when (nil? placeholder)
+                                                {:sequence (:sequence wildtype-positive)
+                                                 :features (sort-by
+                                                             :start
+                                                             (vals (:features wildtype-positive)))})
+                  wildtype-negative-flattened (when (nil? placeholder)
+                                                {:sequence (:sequence wildtype-negative)
+                                                 :features (sort-by
+                                                             :start
+                                                             (vals (:features wildtype-negative)))})
+                  mutant-positive-flattened (when (nil? placeholder)
+                                              {:sequence (:sequence mutant-positive)
+                                               :features (sort-by
+                                                           :start
+                                                           (vals (:features mutant-positive)))})
+                  mutant-negative-flattened (when (nil? placeholder)
+                                              {:sequence (:sequence mutant-negative)
+                                               :features (sort-by
+                                                           :start
+                                                           (vals (:features mutant-negative)))})
+
                  species (some->> (:species/assembly (:variation/species variation))
                                   (map (fn [assembly]
                                          (:strain/id (first (:sequence-collection/strain assembly))))))]
@@ -273,13 +294,12 @@
                  (pace-utils/vmap
                    :wildtype (not-empty
                                (pace-utils/vmap
-                                 :positive-strand wildtype-positive
-                                 :negative-strand wildtype-negative))
+                                 :positive-strand wildtype-positive-flattened
+                                 :negative-strand wildtype-negative-flattened))
                    :mutant (not-empty
                              (pace-utils/vmap
-                               :positive-strand mutant-positive
-                               :negative-strand mutant-negative
-                               ))
+                               :positive-strand mutant-positive-flattened
+                               :negative-strand mutant-negative-flattened))
                    :public-name (:variation/public-name variation)
                    :placeholder placeholder)))
    :description "wild type and variant sequences in genomic context"})
