@@ -127,8 +127,9 @@
                   (map (fn [pcdsh]
                         (when (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
                          {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
-                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
-                         ))))
+                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
+                  (remove nil?)
+                  (not-empty))
    :description "amino acid changes for this variation, if appropriate"})
 
 (defn detection-method [variation] ; WBVar00601206
