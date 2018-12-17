@@ -345,7 +345,7 @@
                             :variation/confirmed-snp "Confirmed SNP"
                             :variation/reference-strain-digest "RFLP"
                             :variation/predicted-snp "Predicted SNP"
-                            :variation/transposon-linsertion "Transposon Insertion"
+                            :variation/transposon-insertion "Transposon Insertion"
                             :variation/natural-variant "Natural Variant"}
         type-of-mutation-map {:variation/substitution "Substitution"
                               :variation/insertion "Insertion"
