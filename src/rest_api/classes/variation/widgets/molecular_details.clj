@@ -42,6 +42,17 @@
      :abs_stop (:stop varrefseqobj)
      :item (pack-obj object)}))
 
+
+(defn- get-cgh-deleted-probes [variation]
+   (when-let [dp (:variation/cgh-deleted-probes variation)]
+           {:left_flank (:variation.cgh-deleted-probes/text-a dp)
+            :right_flank (:variation.cgh-deleted-probes/text-b dp)}))
+
+(defn- get-cgh-flanking-probes [variation]
+   (when-let [fp (:variation/cgh-flanking-probes variation)]
+           {:left_flank (:variation.cgh-flanking-probes/text-a fp)
+            :right_flank (:variation.cgh-flanking-probes/text-b fp)}))
+
 (defn- retrieve-molecular-changes [object]
   (let [do-translation (if (or
                              (contains? object :molecular-change/missense)
@@ -114,8 +125,10 @@
 (defn amino-acid-change [variation] ; e.g. WBVar00271007
   {:data (some->> (:variation/predicted-cds variation)
                   (map (fn [pcdsh]
+                        (when (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
                          {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
-                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
+                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+                         ))))
    :description "amino acid changes for this variation, if appropriate"})
 
 (defn detection-method [variation] ; WBVar00601206
@@ -130,10 +143,10 @@
    :description "the method used to verify deletion alleles"})
 
 ;tested with: WBVar00750883,
-(defn context [variation]
+(defn sequence-context [variation]
   {:data (let [max-seqlen 1000000
-               padding 250
-               flank-length 15
+               padding 500
+               flank-length 25
                refseqobj (sequence-fns/genomic-obj variation)
 
                seq-length (+ 1
@@ -167,6 +180,8 @@
                                       (count (:variation.substitution/ref substitution)))
                                    (when (contains? variation :variation/tandem-duplication) 0))))
 
+               cgh-deleted-probes (get-cgh-deleted-probes variation)
+
                wildtype-positive (when (nil? placeholder)
                                    {:sequence (if (or
                                                     (contains? variation :variation/insertion)
@@ -176,27 +191,38 @@
                                                                   "-"
                                                                   padding)
                                                 (apply str (map-indexed (fn [index val]
-                                                                          (if (and (>= index (+ 1 padding))
-                                                                                   (<= index (+ padding
-                                                                                                seq-length)))
+                                                                          (if (and (>= index padding)
+                                                                                   (<= index (- (+ padding
+                                                                                                seq-length)
+                                                                                                1)))
                                                                             (str/upper-case val)
                                                                             val))
                                                                         wildtype-sequence)))
                                     :features
-                                    {:variation
-                                     {:type "variation"
-                                      :start (+ padding 1)
-                                      :stop (+ padding
-                                               seq-length)}
-                                     :left-flank {:type "flank"
+                                    (pace-utils/vmap
+                                      :variation {:type "variation"
+                                                  :start (+ padding 1)
+                                                  :stop (+ padding
+                                                           seq-length)}
+                                     :left_cgh_deleted_flank (when cgh-deleted-probes
+                                                               {:type "cgh_deleted_probe"
+                                                                :start (+ padding 1)
+                                                                :stop (+ padding
+                                                                         (count (:left_flank cgh-deleted-probes)))})
+                                     :left_flank {:type "flank"
                                                   :start (- (+ padding 1) flank-length)
                                                   :stop padding}
-                                     :right-flank {:type "flank"
+                                     :right_flank {:type "flank"
                                                    :start (+ padding 1 seq-length)
                                                    :stop (+
                                                           padding
                                                           seq-length
-                                                          flank-length)}}})
+                                                          flank-length)}
+                                     :right_cgh_deleted_flank (when cgh-deleted-probes
+                                                               {:type "cgh_deleted_probe"
+                                                                :start (- (+ padding 1 seq-length)
+                                                                          (count (:right_flank cgh-deleted-probes)))
+                                                                :stop (+ padding seq-length)}))})
 
                wildtype-negative (when (nil? placeholder)
                                    {:sequence
@@ -230,7 +256,7 @@
                                         (str/replace
                                           (:sequence wildtype-positive)
                                           #"[A-Z]+"
-                                          "")
+                                          "-")
 
                                         (contains? variation :variation/tandem-duplication)
                                         (:sequence wildtype-positive))
@@ -242,14 +268,14 @@
                                         :stop (+ (:stop (:variation (:features wildtype-positive)))
                                                  length-change)}
 
-                                       :left-flank
-                                       (:left-flank (:features wildtype-positive))
+                                       :left_flank
+                                       (:left_flank (:features wildtype-positive))
 
-                                       :right-flank
+                                       :right_flank
                                        {:type "flank"
-                                        :start (+ (:start (:right-flank (:features wildtype-positive)))
+                                        :start (+ (:start (:right_flank (:features wildtype-positive)))
                                                   length-change)
-                                        :stop (+ (:stop (:right-flank (:features wildtype-positive)))
+                                        :stop (+ (:stop (:right_flank (:features wildtype-positive)))
                                                  length-change)}}})
 
                  mutant-negative (when (nil? placeholder)
@@ -294,20 +320,21 @@
                  (pace-utils/vmap
                    :wildtype (not-empty
                                (pace-utils/vmap
-                                 :positive-strand wildtype-positive-flattened
-                                 :negative-strand wildtype-negative-flattened))
+                                 :positive_strand wildtype-positive-flattened
+                                 :negative_strand wildtype-negative-flattened))
                    :mutant (not-empty
                              (pace-utils/vmap
-                               :positive-strand mutant-positive-flattened
-                               :negative-strand mutant-negative-flattened))
-                   :public-name (:variation/public-name variation)
+                               :positive_strand mutant-positive-flattened
+                               :negative_strand mutant-negative-flattened))
+                   :public_name (:variation/public-name variation)
                    :placeholder placeholder)))
    :description "wild type and variant sequences in genomic context"})
 
 (defn flanking-pcr-products [variation] ; tested with WBVar00145789
   {:data (some->> (:variation/pcr-product variation)
                   (map (fn [p]
-                        {(:pcr-product/id p) (pack-obj p)})))
+                        {(:pcr-product/id p) (pack-obj p)}))
+                  (apply merge))
    :description "PCR products that flank the variation"})
 
 ;test WBVar01112111
@@ -357,13 +384,22 @@
                   (pack-obj s)
                   (fetch-coords-in-feature varrefseqobj s))])
 
-             "Chromosome" ;tested with WBVar00274017
+             "Chromosome"
              (some->> (:variation/gene variation)
-                      (first)
-                      (:variation.gene/gene)
-                      (:gene/interpolated-map-position)
-                      (:gene.interpolated-map-position/map)
-                      (pack-obj))
+                      (map :variation.gene/gene)
+                      (map (fn [g]
+                             (or (-> g ; WBVar00274017
+                                     :gene/interpolated-map-position
+                                     :gene.interpolated-map-position/map)
+                                 (-> g ; WBVar00145789
+                                     :gene/map
+                                     :gene.map/map))))
+                      (remove nil?)
+                      (distinct)
+                      (map (fn [chromosome-map]
+                             (conj
+                               (pack-obj chromosome-map)
+                               {:item (pack-obj chromosome-map)}))))
 
              "Gene" ;tested with WBVar00274017
              (some->> (:variation/gene variation)
@@ -382,10 +418,15 @@
              (some->> (:variation/predicted-cds variation)
                       (map
                         (fn [predicted-cds-holder]
-                          (let [cds (:variation.predicted-cds/cds predicted-cds-holder)]
+                          (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
+                                missense-obj (get-missense-obj predicted-cds-holder)]
                             (conj
                               (pack-obj cds)
                               (fetch-coords-in-feature varrefseqobj cds) ; appears to a discreptency. This code gives 2945
+                               (select-keys missense-obj [:wildtype_conceptual_translation
+                                                         :mutant_conceptual_translation
+                                                         :from
+                                                         :to])
                               (pace-utils/vmap
                                 :protein_effects
                                 (not-empty
@@ -398,7 +439,8 @@
                                                       (get-feature-affected-evidence mc)))))
 
                                     "Missense" ; eg. WBVar00273293
-                                    (get-missense-obj predicted-cds-holder)
+                                    (when (some? missense-obj)
+                                      (select-keys missense-obj [:aa_change :evidence :evidence_type :position :description]))
 
                                     "Frameshift" ; e.g. WBVar00273213
                                     (when-let [fs (first (:molecular-change/frameshift predicted-cds-holder))]
@@ -451,21 +493,19 @@
    :description "genomic features affected by this variation"})
 
 (defn cgh-deleted-probes [variation] ; tested with WBVar00601206
-  {:data (when-let [dp (:variation/cgh-deleted-probes variation)]
-           {:left_flank (:variation.cgh-deleted-probes/text-a dp)
-            :right_flank (:variation.cgh-deleted-probes/text-b dp)})
+  {:data (get-cgh-deleted-probes variation)
    :description "probes used for CGH of deletion alleles"})
 
-(defn cgh-flanking-probes [variation] ; missing data in Datomic for WBVar00601206
-  {:data (keys variation)
-   :d (:db/id variation)
+(defn cgh-flanking-probes [variation] ; WBVar00601206
+  {:data (get-cgh-flanking-probes variation)
    :desciption "probes used for CGH of deletion alleles"})
 
 (defn polymorphism-assays [variation]; WBVar00597552
-  {:data  (some->> (:variation/pcr-product variation)
-                   (map (fn [pcr]
-                          {(:pcr-product/id pcr)
-                           (let [ohs (:pcr-product/oligo pcr)]
+  {:data (some->> (:variation/pcr-product variation)
+                  (map (fn [pcr]
+                         {(:pcr-product/id pcr)
+                          (let [ohs (:pcr-product/oligo pcr)]
+                            {:pcr_product
                              (conj
                                (pack-obj pcr)
                                {:pcr_conditions nil ; from pcr-product/assay-conditions non found
@@ -475,16 +515,21 @@
                                                 (first ohs)))
                                 :right_oligo (:oligo/sequence
                                                (:pcr-product.oligo/oligo
-                                                 (second ohs)))}))})))
+                                                 (second ohs)))})
+                             :assay_type (if (contains? (-> ohs first :pcr-product.oligo/oligo) :oligo/sequence)
+                                           "sequence")})}))
+                  (apply merge))
    :description "experimental assays for detecting this polymorphism"})
 
 (defn affects-splice-site [variation] ; made from WBVar00750883. This was in Ace code but wasn't working and format slightly changed
   {:data (some->> (:variation/predicted-cds variation)
                   (map :molecular-change/splice-site)
+                  (remove nil?)
                   (map (fn [mc]
                          {:value (name
                                    (:molecular-change.splice-site/value mc))
-                          :text (:molecular-change.splice-site/text mc)})))
+                          :text (:molecular-change.splice-site/text mc)}))
+                  (not-empty))
    :description "Affects splice site"})
 
 (defn polymorphism-status [variation]; WBVar00116162 is predicted
@@ -529,13 +574,19 @@
              (when-let [deletion (:variation/deletion variation)] ;eg WBVar00601206
                (if (contains? variation :variation/cgh-deleted-probes)
                  {:type "Definition Deletion" ; eg WBVar00601206
-                  :db (:db/id variation)
-                  :wildtype nil ; need to figure out how to get full sequence
+                  :mutant nil ; might not be needed
+                  :wildtype (if-let [refseqobj  (sequence-fns/genomic-obj variation)]
+                             (sequence-fns/get-sequence refseqobj))
+
+
                   }
                  {:type "Deletion" ; eg WBVar00274723
-                  :wildtype (when-let [deletion (:variation.deletion/text
-                                                  (:variation/deletion variation))]
-                              (str/lower-case deletion))}))
+                  :wildtype (or
+                              (when-let [deletion (:variation.deletion/text
+                                                    (:variation/deletion variation))]
+                                (str/lower-case deletion))
+                              (if-let [refseqobj  (sequence-fns/genomic-obj variation)] ;WBVar00145789
+                                (sequence-fns/get-sequence refseqobj)))}))
              (when-let [substitution (:variation/substitution variation)] ; e.g. tested with WBVar00274017
                {:mutant (:variation.substitution/alt substitution)
                 :wildtype (:variation.substitution/ref substitution)
@@ -564,7 +615,7 @@
 
 (defn sequencing-status [variation]
   {:data (when-let [seqstatus (:variation/seqstatus variation)]
-           (name seqstatus))
+           (obj/humanize-ident (name seqstatus)))
    :description "sequencing status of the variation"})
 
 (def widget
@@ -573,7 +624,7 @@
    :amino_acid_change amino-acid-change
    :detection_method detection-method
    :deletion_verification deletion-verification
-   :context context
+   :sequence_context sequence-context
    :flanking_pcr_products flanking-pcr-products
    :variation_type variation-type
    :features_affected features-affected
