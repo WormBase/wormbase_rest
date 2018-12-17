@@ -46,7 +46,7 @@ AND (t.tag LIKE "transcript%"
 
 -- :name variation-features :? :*
 -- :doc Retrieve all sequences for a gene by ida
-SELECT f.id,CONVERT(f.object USING utf8),f.typeid,f.seqid,l.seqname,f.start,f.end,f.strand
+SELECT f.id,f.typeid,f.seqid,l.seqname,f.start,f.end,f.strand
 FROM feature as f
 JOIN attribute as a ON a.id=f.id
 JOIN locationlist as l on l.id=f.seqid
