@@ -77,18 +77,9 @@
    :description "Reported uses/affects of the molecule with regards to nematode species biology"})
 
 (defn- convert-value [value]
-  (cond
-    (= (str/lower-case value) "nmr")
-    "NMR"
-
-    (= (str/lower-case value) "lc ms")
-    "LC-MS"
-
-    (= (str/lower-case value) "etoh")
-    "EtOH"
-
-    :else
-    (obj/humanize-ident value)))
+  ;; It appears that this is no longer needed accroding to:
+  ;; https://github.com/WormBase/website/issues/6690
+  value)
 
 (defn biological-role [m]
   {:data (let [data (group-by
@@ -98,7 +89,7 @@
                           {:br
                            (some->> (:molecule/biofunction-role m)
                                     (map (fn [br]
-                                           {:value (convert-value (:molecule.biofunction-role/value br))
+                                           {:value (obj/humanize-ident (:molecule.biofunction-role/value br))
                                             :column :biofunction_role
                                             :paper_evidence (some->> (:evidence/paper-evidence br)
                                                                      (first)
@@ -106,7 +97,7 @@
                            :status
                            (some->> (:molecule/status m)
                                     (map (fn [s]
-                                           {:value (convert-value (:molecule.status/value s))
+                                           {:value (obj/humanize-ident (:molecule.status/value s))
                                             :column :status
                                             :paper_evidence (some->> (:evidence/paper-evidence s)
                                                                      (first)
