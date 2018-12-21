@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.4] - 2018-12-21
+- Adding fix for Interactions schema change
+
 ## [0.6.3] - 2018-12-17
 - Preping for WS268 release
 
