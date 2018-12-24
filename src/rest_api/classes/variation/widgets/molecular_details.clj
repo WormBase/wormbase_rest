@@ -30,18 +30,32 @@
 
 (defn- fetch-coords-in-feature [varrefseqobj object]
   (let [refseqobj (sequence-fns/genomic-obj object)]
-    {:fstart (:start refseqobj)
-     :fstop (:stop refseqobj)
-     :start (+ 1  ;start and stop incorrect for predicted-cds of WBVar00601206
-               (- (:start varrefseqobj)
-                  (:start refseqobj)))
-     :stop (+ 1
-              (- (:stop varrefseqobj)
-                 (:start refseqobj)))
-     :abs_start (:start varrefseqobj)
-     :abs_stop (:stop varrefseqobj)
-     :item (pack-obj object)}))
-
+    (if (and
+          (contains? object :cds/id)
+          (= :locatable.strand/negative
+             (:locatable/strand object)))
+      {:fstart (:start refseqobj)
+       :fstop (:stop refseqobj)
+       :start (+ 1
+                 (- (:stop refseqobj)
+                    (:stop varrefseqobj)))
+       :stop (+ 1
+                (- (:stop refseqobj)
+                   (:start varrefseqobj)))
+       :abs_start (:start varrefseqobj)
+       :abs_stop (:stop varrefseqobj)
+       :item (pack-obj object)}
+      {:fstart (:start refseqobj)
+       :fstop (:stop refseqobj)
+       :start (+ 1
+                 (- (:start varrefseqobj)
+                    (:start refseqobj)))
+       :stop (+ 1
+                (- (:stop varrefseqobj)
+                   (:start refseqobj)))
+       :abs_start (:start varrefseqobj)
+       :abs_stop (:stop varrefseqobj)
+       :item (pack-obj object)})))
 
 (defn- get-cgh-deleted-probes [variation]
    (when-let [dp (:variation/cgh-deleted-probes variation)]
