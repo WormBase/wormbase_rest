@@ -67,18 +67,15 @@
            {:left_flank (:variation.cgh-flanking-probes/text-a fp)
             :right_flank (:variation.cgh-flanking-probes/text-b fp)}))
 
-(defn- retrieve-molecular-changes [object]
-  (let [do-translation (if (or
-                             (contains? object :molecular-change/missense)
-                             (contains? object :molecular-change/nonsense))
-                         true
-                         false)
-        protein-effects nil
-        molecular-effects "todo"
-        ]
-    [protein-effects molecular-effects do-translation]))
-
 (defn- get-feature-affected-evidence [feature]
+  (if-let [rt (:molecular-change.readthrough/text feature)]
+      (pace-utils/vmap
+        :evidence_type
+        rt
+
+        :evidence
+        (when (contains? feature :evidence/inferred-automatically)
+                         "Inferred Automatically"))
   (let [ev (obj/get-evidence feature)]
     (not-empty
       (pace-utils/vmap
@@ -86,7 +83,7 @@
         (some->> ev vals flatten first)
 
         :evidence
-        (some->> ev keys first)))))
+        (some->> ev keys first))))))
 
 (defn- mutant-conceptual-translation [pseq position from to]
   (str
@@ -250,11 +247,27 @@
                                      {:sequence
                                       (cond
                                         (contains? variation :variation/substitution)
-                                        (let [substitution (:variation/substitution variation)]
-                                          (str/replace
-                                            (:sequence wildtype-positive)
-                                            (:variation.substitution/ref substitution)
-                                            (:variation.substitution/alt substitution)))
+                                        (let [substitution (:variation/substitution variation)
+					      varseq (sequence-fns/get-sequence
+		                                       (conj
+							 refseqobj
+							 {:start (:start refseqobj)
+							  :stop (:stop refseqobj)}))
+					      refseq (:variation.substitution/ref substitution)
+					      altseq (:variation.substitution/alt substitution)
+                                              wildtype-seq (:sequence wildtype-positive)]
+					  (str
+					      (subs wildtype-seq 0 padding)
+					      (cond
+						       (= varseq refseq)
+						       (str/upper-case altseq)
+
+						       (= varseq (reverse-complement refseq))
+						       (str/upper-case (reverse-complement altseq))
+
+						       :else
+						       (throw (Exception. "substution/ref does not match either + or - strand")))
+					      (subs wildtype-seq (+ padding (count varseq)))))
 
                                         (contains? variation :variation/insertion)
                                         (let [insertion (:variation/insertion variation)
@@ -470,6 +483,10 @@
                                     (when-let [ce (:molecular-change/coding-exon predicted-cds-holder)]
                                       (get-feature-affected-evidence ce))
 
+                                    "Readthrough" ; tested with WBVar00215920
+                                    (when-let [rt (first (:molecular-change/readthrough predicted-cds-holder))]
+                                      (get-feature-affected-evidence rt))
+
                                     "Intron" ;tested with WBVar00271172
                                     (when-let [i (:molecular-change/intron predicted-cds-holder)]
                                       (get-feature-affected-evidence i))))))))))
@@ -591,22 +608,34 @@
                  {:type "Definition Deletion" ; eg WBVar00601206
                   :mutant nil ; might not be needed
                   :wildtype (if-let [refseqobj  (sequence-fns/genomic-obj variation)]
-                             (sequence-fns/get-sequence refseqobj))
-
-
-                  }
+                             (sequence-fns/get-sequence refseqobj))}
                  {:type "Deletion" ; eg WBVar00274723
                   :wildtype (or
                               (when-let [deletion (:variation.deletion/text
-                                                    (:variation/deletion variation))]
-                                (str/lower-case deletion))
-                              (if-let [refseqobj  (sequence-fns/genomic-obj variation)] ;WBVar00145789
-                                (sequence-fns/get-sequence refseqobj)))}))
-             (when-let [substitution (:variation/substitution variation)] ; e.g. tested with WBVar00274017
-               {:mutant (:variation.substitution/alt substitution)
-                :wildtype (:variation.substitution/ref substitution)
-                :type "Substitution"}))]))
+						    (:variation/deletion variation))]
+				(str/lower-case deletion))
+			      (if-let [refseqobj  (sequence-fns/genomic-obj variation)] ;WBVar00145789
+				(sequence-fns/get-sequence refseqobj)))}))
+	     (when-let [substitution (:variation/substitution variation)] ; e.g. tested with WBVar00274017
+	       (if-let [refseqobj (sequence-fns/genomic-obj variation)]
+		 (let [varseq (sequence-fns/get-sequence
+				(conj
+				  refseqobj
+				  {:start (:start refseqobj)
+				   :stop (:stop refseqobj)}))]
+                   (cond
+                      (= varseq (:variation.substitution/ref substitution))
+		      {:mutant (:variation.substitution/alt substitution)
+		       :wildtype (:variation.substitution/ref substitution)
+		       :type "Substitution"}
 
+                      (= varseq (reverse-complement (:variation.substitution/ref substitution)))
+		      {:mutant (reverse-complement (:variation.substitution/alt substitution))
+		       :wildtype (reverse-complement (:variation.substitution/ref substitution))
+		       :type "Substitution"}
+
+                      :else
+                       (throw (Exception. "substution/ref does not match either + or - strand")))))))]))
 
 (defn nucleotide-change [variation]
   {:data (compile-nucleotide-changes variation)
