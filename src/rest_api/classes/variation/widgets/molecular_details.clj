@@ -248,25 +248,28 @@
                                       (cond
                                         (contains? variation :variation/substitution)
                                         (let [substitution (:variation/substitution variation)
-					      varseq (sequence-fns/get-sequence
+					      varseq (str/upper-case
+                                                       (sequence-fns/get-sequence
 		                                       (conj
 							 refseqobj
 							 {:start (:start refseqobj)
-							  :stop (:stop refseqobj)}))
-					      refseq (:variation.substitution/ref substitution)
-					      altseq (:variation.substitution/alt substitution)
+							  :stop (:stop refseqobj)})))
+					      refseq (str/upper-case
+                                                       (:variation.substitution/ref substitution))
+					      altseq (str/upper-case
+                                                       (:variation.substitution/alt substitution))
                                               wildtype-seq (:sequence wildtype-positive)]
 					  (str
 					      (subs wildtype-seq 0 padding)
-					      (cond
-						       (= varseq refseq)
-						       (str/upper-case altseq)
+                                              (cond
+                                                (= varseq refseq)
+                                                (str/upper-case altseq)
 
-						       (= varseq (reverse-complement refseq))
-						       (str/upper-case (reverse-complement altseq))
+                                                (= varseq (reverse-complement refseq))
+                                                (str/upper-case (reverse-complement altseq))
 
-						       :else
-						       (throw (Exception. "substution/ref does not match either + or - strand")))
+                                                :else
+                                                (throw (Exception. "substution/ref does not match either + or - strand")))
 					      (subs wildtype-seq (+ padding (count varseq)))))
 
                                         (contains? variation :variation/insertion)
@@ -618,24 +621,27 @@
 				(sequence-fns/get-sequence refseqobj)))}))
 	     (when-let [substitution (:variation/substitution variation)] ; e.g. tested with WBVar00274017
 	       (if-let [refseqobj (sequence-fns/genomic-obj variation)]
-		 (let [varseq (sequence-fns/get-sequence
+		 (let [varseq (str/lower-case (sequence-fns/get-sequence
 				(conj
 				  refseqobj
 				  {:start (:start refseqobj)
-				   :stop (:stop refseqobj)}))]
+				   :stop (:stop refseqobj)})))]
                    (cond
-                      (= varseq (:variation.substitution/ref substitution))
+                      (= varseq (str/lower-case
+                                  (:variation.substitution/ref substitution)))
 		      {:mutant (:variation.substitution/alt substitution)
-		       :wildtype (:variation.substitution/ref substitution)
-		       :type "Substitution"}
+                       :wildtype (:variation.substitution/ref substitution)
+                       :type "Substitution"}
 
-                      (= varseq (reverse-complement (:variation.substitution/ref substitution)))
-		      {:mutant (reverse-complement (:variation.substitution/alt substitution))
-		       :wildtype (reverse-complement (:variation.substitution/ref substitution))
-		       :type "Substitution"}
+                      (= varseq (str/lower-case
+                                  (reverse-complement
+                                    (:variation.substitution/ref substitution))))
+                      {:mutant (reverse-complement (:variation.substitution/alt substitution))
+                       :wildtype (reverse-complement (:variation.substitution/ref substitution))
+                       :type "Substitution"}
 
                       :else
-                       (throw (Exception. "substution/ref does not match either + or - strand")))))))]))
+                      (throw (Exception. "substution/ref does not match either + or - strand")))))))]))
 
 (defn nucleotide-change [variation]
   {:data (compile-nucleotide-changes variation)
