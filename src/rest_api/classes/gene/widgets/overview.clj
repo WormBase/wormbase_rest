@@ -218,7 +218,7 @@
 (defn legacy-info [gene]
   {:data (let [data (map :gene.legacy-information/text
                          (:gene/legacy-information gene))]
-           data)
+           (seq data))
    :description
    "legacy information from the CSHL Press C. elegans I/II books"})
 
