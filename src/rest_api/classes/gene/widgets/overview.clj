@@ -47,8 +47,16 @@
 
 (defn concise-description [gene]
   {:data
+   (if-let [desc (first (:gene/automated-description gene))]
+     {:text (some (fn [[k v]] (if (= (name k) "text") v)) desc)
+      :evidence (obj/get-evidence desc)}
+     {:text nil :evidence nil})
+   :description
+   "An automatically generated description of the gene's function"})
+
+(defn legacy-manual-description [gene]
+  {:data
    (if-let [desc (or (first (:gene/concise-description gene))
-                     (first (:gene/automated-description gene))
                      (->> (:gene/corresponding-cds gene)
                           (first)
                           (:cds/brief-identification))
@@ -56,12 +64,10 @@
                           (first)
                           (:transcript/brief-identification)))]
      {:text (some (fn [[k v]] (if (= (name k) "text") v)) desc)
-      :evidence (let [pdesc (first (:gene/provisional-description gene))]
-                      (or (obj/get-evidence desc)
-                          (obj/get-evidence pdesc)))}
+      :evidence (obj/get-evidence desc)}
      {:text nil :evidence nil})
    :description
-   "A manually curated description of the gene's function"})
+   "A legacy manually curated description of the gene's function"})
 
 (defn curatorial-remarks [gene]
   (let [data (->> (:gene/remark gene)
@@ -218,7 +224,7 @@
 (defn legacy-info [gene]
   {:data (let [data (map :gene.legacy-information/text
                          (:gene/legacy-information gene))]
-           data)
+           (seq data))
    :description
    "legacy information from the CSHL Press C. elegans I/II books"})
 
@@ -341,6 +347,7 @@
    :clone                    parent-clone
    :cloned_by                cloned-by
    :concise_description      concise-description
+   :legacy_manual_description legacy-manual-description
    :gene_class               gene-class
    :gene_cluster             gene-cluster
    :human_disease_relevance  disease-relevance
