@@ -156,209 +156,209 @@
 
 ;tested with: WBVar00750883,
 (defn sequence-context [variation]
-  {:data (let [max-seqlen 1000000
-               padding 500
-               flank-length 25
-               refseqobj (sequence-fns/genomic-obj variation)
+  {:data (when-let [refseqobj (sequence-fns/genomic-obj variation)]
+           (let [max-seqlen 1000000
+                 padding 500
+                 flank-length 25
 
-               seq-length (+ 1
-                             (- (:stop refseqobj)
-                                (:start refseqobj)))
+                 seq-length (+ 1
+                               (- (:stop refseqobj)
+                                  (:start refseqobj)))
 
-               placeholder (when (> seq-length 1000000)
-                             seq-length)
+                 placeholder (when (> seq-length 1000000)
+                               seq-length)
 
-               wildtype-sequence (when (nil? placeholder)
-                                   (sequence-fns/get-sequence
-                                     (conj
-                                       refseqobj
-                                       {:start (- (:start refseqobj) padding)
-                                        :stop (+ padding (:stop refseqobj))})))
+                 wildtype-sequence (when (nil? placeholder)
+                                     (sequence-fns/get-sequence
+                                       (conj
+                                         refseqobj
+                                         {:start (- (:start refseqobj) padding)
+                                          :stop (+ padding (:stop refseqobj))})))
 
-               wildtype-full-length (+ (* 2 padding)
-                                       seq-length)
+                 wildtype-full-length (+ (* 2 padding)
+                                         seq-length)
 
-               length-change (if-let [insertion (:variation/insertion variation)]
-                               (or (if-let [insertion-str (:variation.insertion/text insertion)]
-                                     (count insertion-str)
-                                     (when (contains? variation :variation/transposon-insertion)
-                                       (- (count (:transposon-family/id
-                                                   (first (:variation.transpon-insertion variation))))
-                                          1))))
-                               (if-let [deletion (:variation/deletion variation)]
-                                 (- 1 seq-length)
-                                 (if-let [substitution (:variation/substitution variation)]
-                                   (- (count (:variation.substitution/alt substitution))
-                                      (count (:variation.substitution/ref substitution)))
-                                   (when (contains? variation :variation/tandem-duplication) 0))))
+                 length-change (if-let [insertion (:variation/insertion variation)]
+                                 (or (if-let [insertion-str (:variation.insertion/text insertion)]
+                                       (count insertion-str)
+                                       (when (contains? variation :variation/transposon-insertion)
+                                         (- (count (:transposon-family/id
+                                                     (first (:variation.transpon-insertion variation))))
+                                            1))))
+                                 (if-let [deletion (:variation/deletion variation)]
+                                   (- 1 seq-length)
+                                   (if-let [substitution (:variation/substitution variation)]
+                                     (- (count (:variation.substitution/alt substitution))
+                                        (count (:variation.substitution/ref substitution)))
+                                     (when (contains? variation :variation/tandem-duplication) 0))))
 
-               cgh-deleted-probes (get-cgh-deleted-probes variation)
+                 cgh-deleted-probes (get-cgh-deleted-probes variation)
 
-               wildtype-positive (when (nil? placeholder)
-                                   {:sequence (if (or
-                                                    (contains? variation :variation/insertion)
-                                                    (contains? variation :variation/transpson-insertion)
-                                                    (contains? variation :variation/tandem-duplication))
-                                                      (str-insert wildtype-sequence
-                                                                  "-"
-                                                                  padding)
-                                                (apply str (map-indexed (fn [index val]
-                                                                          (if (and (>= index padding)
-                                                                                   (<= index (- (+ padding
-                                                                                                seq-length)
-                                                                                                1)))
-                                                                            (str/upper-case val)
-                                                                            val))
-                                                                        wildtype-sequence)))
-                                    :features
-                                    (pace-utils/vmap
-                                      :variation {:type "variation"
-                                                  :start (+ padding 1)
-                                                  :stop (+ padding
-                                                           seq-length)}
-                                     :left_cgh_deleted_flank (when cgh-deleted-probes
-                                                               {:type "cgh_deleted_probe"
-                                                                :start (+ padding 1)
-                                                                :stop (+ padding
-                                                                         (count (:left_flank cgh-deleted-probes)))})
-                                     :left_flank {:type "flank"
-                                                  :start (- (+ padding 1) flank-length)
-                                                  :stop padding}
-                                     :right_flank {:type "flank"
-                                                   :start (+ padding 1 seq-length)
-                                                   :stop (+
-                                                          padding
-                                                          seq-length
-                                                          flank-length)}
-                                     :right_cgh_deleted_flank (when cgh-deleted-probes
-                                                               {:type "cgh_deleted_probe"
-                                                                :start (- (+ padding 1 seq-length)
-                                                                          (count (:right_flank cgh-deleted-probes)))
-                                                                :stop (+ padding seq-length)}))})
+                 wildtype-positive (when (nil? placeholder)
+                                     {:sequence (if (or
+                                                      (contains? variation :variation/insertion)
+                                                      (contains? variation :variation/transpson-insertion)
+                                                      (contains? variation :variation/tandem-duplication))
+                                                  (str-insert wildtype-sequence
+                                                              "-"
+                                                              padding)
+                                                  (apply str (map-indexed (fn [index val]
+                                                                            (if (and (>= index padding)
+                                                                                     (<= index (- (+ padding
+                                                                                                     seq-length)
+                                                                                                  1)))
+                                                                              (str/upper-case val)
+                                                                              val))
+                                                                          wildtype-sequence)))
+                                      :features
+                                      (pace-utils/vmap
+                                        :variation {:type "variation"
+                                                    :start (+ padding 1)
+                                                    :stop (+ padding
+                                                             seq-length)}
+                                        :left_cgh_deleted_flank (when cgh-deleted-probes
+                                                                  {:type "cgh_deleted_probe"
+                                                                   :start (+ padding 1)
+                                                                   :stop (+ padding
+                                                                            (count (:left_flank cgh-deleted-probes)))})
+                                        :left_flank {:type "flank"
+                                                     :start (- (+ padding 1) flank-length)
+                                                     :stop padding}
+                                        :right_flank {:type "flank"
+                                                      :start (+ padding 1 seq-length)
+                                                      :stop (+
+                                                             padding
+                                                             seq-length
+                                                             flank-length)}
+                                        :right_cgh_deleted_flank (when cgh-deleted-probes
+                                                                   {:type "cgh_deleted_probe"
+                                                                    :start (- (+ padding 1 seq-length)
+                                                                              (count (:right_flank cgh-deleted-probes)))
+                                                                    :stop (+ padding seq-length)}))})
 
-               wildtype-negative (when (nil? placeholder)
-                                   {:sequence
-                                    (reverse-complement (:sequence wildtype-positive))
-
-                                    :features
-                                    (:features wildtype-positive)})
-
-               mutant-positive (when (nil? placeholder)
+                 wildtype-negative (when (nil? placeholder)
                                      {:sequence
-                                      (cond
-                                        (contains? variation :variation/substitution)
-                                        (let [substitution (:variation/substitution variation)
-					      varseq (str/upper-case
-                                                       (sequence-fns/get-sequence
-		                                       (conj
-							 refseqobj
-							 {:start (:start refseqobj)
-							  :stop (:stop refseqobj)})))
-					      refseq (str/upper-case
-                                                       (:variation.substitution/ref substitution))
-					      altseq (str/upper-case
-                                                       (:variation.substitution/alt substitution))
-                                              wildtype-seq (:sequence wildtype-positive)]
-					  (str
-					      (subs wildtype-seq 0 padding)
-                                              (cond
-                                                (= varseq refseq)
-                                                (str/upper-case altseq)
-
-                                                (= varseq (reverse-complement refseq))
-                                                (str/upper-case (reverse-complement altseq))
-
-                                                :else
-                                                (throw (Exception. "substution/ref does not match either + or - strand")))
-					      (subs wildtype-seq (+ padding (count varseq)))))
-
-                                        (contains? variation :variation/insertion)
-                                        (let [insertion (:variation/insertion variation)
-                                              insert-str (or (:variation.insertion/text insertion)
-                                                             (:transposon-family/id
-                                                               (first
-                                                                 (:variation/transposon-insertion variation))))]
-                                          (str/replace
-                                            (:sequence wildtype-positive)
-                                            #"\-+"
-                                            insert-str))
-
-                                        (contains? variation :variation/deletion)
-                                        (str/replace
-                                          (:sequence wildtype-positive)
-                                          #"[A-Z]+"
-                                          "-")
-
-                                        (contains? variation :variation/tandem-duplication)
-                                        (:sequence wildtype-positive))
+                                      (reverse-complement (:sequence wildtype-positive))
 
                                       :features
-                                      {:variation
-                                       {:type "variation"
-                                        :start (:start (:variation (:features wildtype-positive)))
-                                        :stop (+ (:stop (:variation (:features wildtype-positive)))
-                                                 length-change)}
+                                      (:features wildtype-positive)})
 
-                                       :left_flank
-                                       (:left_flank (:features wildtype-positive))
-
-                                       :right_flank
-                                       {:type "flank"
-                                        :start (+ (:start (:right_flank (:features wildtype-positive)))
-                                                  length-change)
-                                        :stop (+ (:stop (:right_flank (:features wildtype-positive)))
-                                                 length-change)}}})
-
-                 mutant-negative (when (nil? placeholder)
+                 mutant-positive (when (nil? placeholder)
                                    {:sequence
-                                    (if-let [transposon-family (:transposon-family/id
-                                                                 (first
-                                                                   (:variation/transposon-insertion variation)))]
+                                    (cond
+                                      (contains? variation :variation/substitution)
+                                      (let [substitution (:variation/substitution variation)
+                                            varseq (str/upper-case
+                                                     (sequence-fns/get-sequence
+                                                       (conj
+                                                         refseqobj
+                                                         {:start (:start refseqobj)
+                                                          :stop (:stop refseqobj)})))
+                                            refseq (str/upper-case
+                                                     (:variation.substitution/ref substitution))
+                                            altseq (str/upper-case
+                                                     (:variation.substitution/alt substitution))
+                                            wildtype-seq (:sequence wildtype-positive)]
+                                        (str
+                                          (subs wildtype-seq 0 padding)
+                                          (cond
+                                            (= varseq refseq)
+                                            (str/upper-case altseq)
+
+                                            (= varseq (reverse-complement refseq))
+                                            (str/upper-case (reverse-complement altseq))
+
+                                            :else
+                                            (throw (Exception. "substution/ref does not match either + or - strand")))
+                                          (subs wildtype-seq (+ padding (count varseq)))))
+
+                                      (contains? variation :variation/insertion)
+                                      (let [insertion (:variation/insertion variation)
+                                            insert-str (or (:variation.insertion/text insertion)
+                                                           (:transposon-family/id
+                                                             (first
+                                                               (:variation/transposon-insertion variation))))]
+                                        (str/replace
+                                          (:sequence wildtype-positive)
+                                          #"\-+"
+                                          insert-str))
+
+                                      (contains? variation :variation/deletion)
                                       (str/replace
-                                        (reverse-complement (:sequence mutant-positive))
-                                        (re-pattern (reverse-complement transposon-family))
-                                        transposon-family)
-                                      (reverse-complement (:sequence mutant-positive)))
+                                        (:sequence wildtype-positive)
+                                        #"[A-Z]+"
+                                        "-")
+
+                                      (contains? variation :variation/tandem-duplication)
+                                      (:sequence wildtype-positive))
 
                                     :features
-                                    (:features mutant-positive)})
+                                    {:variation
+                                     {:type "variation"
+                                      :start (:start (:variation (:features wildtype-positive)))
+                                      :stop (+ (:stop (:variation (:features wildtype-positive)))
+                                               length-change)}
 
-                  wildtype-positive-flattened (when (nil? placeholder)
-                                                {:sequence (:sequence wildtype-positive)
-                                                 :features (sort-by
-                                                             :start
-                                                             (vals (:features wildtype-positive)))})
-                  wildtype-negative-flattened (when (nil? placeholder)
-                                                {:sequence (:sequence wildtype-negative)
-                                                 :features (sort-by
-                                                             :start
-                                                             (vals (:features wildtype-negative)))})
-                  mutant-positive-flattened (when (nil? placeholder)
-                                              {:sequence (:sequence mutant-positive)
-                                               :features (sort-by
-                                                           :start
-                                                           (vals (:features mutant-positive)))})
-                  mutant-negative-flattened (when (nil? placeholder)
-                                              {:sequence (:sequence mutant-negative)
-                                               :features (sort-by
-                                                           :start
-                                                           (vals (:features mutant-negative)))})
+                                     :left_flank
+                                     (:left_flank (:features wildtype-positive))
 
-                 species (some->> (:species/assembly (:variation/species variation))
-                                  (map (fn [assembly]
-                                         (:strain/id (first (:sequence-collection/strain assembly))))))]
-               (when-not (every? nil? [wildtype-positive placeholder])
-                 (pace-utils/vmap
-                   :wildtype (not-empty
-                               (pace-utils/vmap
-                                 :positive_strand wildtype-positive-flattened
-                                 :negative_strand wildtype-negative-flattened))
-                   :mutant (not-empty
-                             (pace-utils/vmap
-                               :positive_strand mutant-positive-flattened
-                               :negative_strand mutant-negative-flattened))
-                   :public_name (:variation/public-name variation)
-                   :placeholder placeholder)))
+                                     :right_flank
+                                     {:type "flank"
+                                      :start (+ (:start (:right_flank (:features wildtype-positive)))
+                                                length-change)
+                                      :stop (+ (:stop (:right_flank (:features wildtype-positive)))
+                                               length-change)}}})
+
+mutant-negative (when (nil? placeholder)
+                  {:sequence
+                   (if-let [transposon-family (:transposon-family/id
+                                                (first
+                                                  (:variation/transposon-insertion variation)))]
+                     (str/replace
+                       (reverse-complement (:sequence mutant-positive))
+                       (re-pattern (reverse-complement transposon-family))
+                       transposon-family)
+                     (reverse-complement (:sequence mutant-positive)))
+
+                   :features
+                   (:features mutant-positive)})
+
+wildtype-positive-flattened (when (nil? placeholder)
+                              {:sequence (:sequence wildtype-positive)
+                               :features (sort-by
+                                           :start
+                                           (vals (:features wildtype-positive)))})
+wildtype-negative-flattened (when (nil? placeholder)
+                              {:sequence (:sequence wildtype-negative)
+                               :features (sort-by
+                                           :start
+                                           (vals (:features wildtype-negative)))})
+mutant-positive-flattened (when (nil? placeholder)
+                            {:sequence (:sequence mutant-positive)
+                             :features (sort-by
+                                         :start
+                                         (vals (:features mutant-positive)))})
+mutant-negative-flattened (when (nil? placeholder)
+                            {:sequence (:sequence mutant-negative)
+                             :features (sort-by
+                                         :start
+                                         (vals (:features mutant-negative)))})
+
+species (some->> (:species/assembly (:variation/species variation))
+                 (map (fn [assembly]
+                        (:strain/id (first (:sequence-collection/strain assembly))))))]
+(when-not (every? nil? [wildtype-positive placeholder])
+  (pace-utils/vmap
+    :wildtype (not-empty
+                (pace-utils/vmap
+                  :positive_strand wildtype-positive-flattened
+                  :negative_strand wildtype-negative-flattened))
+    :mutant (not-empty
+              (pace-utils/vmap
+                :positive_strand mutant-positive-flattened
+                :negative_strand mutant-negative-flattened))
+    :public_name (:variation/public-name variation)
+    :placeholder placeholder))))
    :description "wild type and variant sequences in genomic context"})
 
 (defn flanking-pcr-products [variation] ; tested with WBVar00145789
