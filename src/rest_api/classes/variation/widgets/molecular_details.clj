@@ -413,7 +413,7 @@ species (some->> (:species/assembly (:variation/species variation))
              (when-let [s (:variation/mapping-target variation)]
                [(conj
                   (pack-obj s)
-                  (when (not nil? varrefseqobj)
+                  (when (some? varrefseqobj)
                     (fetch-coords-in-feature varrefseqobj s)))])
 
              "Chromosome"
@@ -454,7 +454,7 @@ species (some->> (:species/assembly (:variation/species variation))
                                 missense-obj (get-missense-obj predicted-cds-holder)]
                             (conj
                               (pack-obj cds)
-                              (when (not nil? varrefseqobj)
+                              (when (some? varrefseqobj)
                                 (fetch-coords-in-feature varrefseqobj cds)) ; appears to a discreptency. This code gives 2945
                               (select-keys missense-obj [:wildtype_conceptual_translation
                                                          :mutant_conceptual_translation
@@ -503,8 +503,8 @@ species (some->> (:species/assembly (:variation/species variation))
                                (when-let [refseqobj (sequence-fns/genomic-obj t)]
                                  (conj
                                    (pack-obj t)
-                                   (when (not nil? varrefseqobj)
-                                     (fetch-coords-in-feature varrefseqobj t)) ; start and stop incorrect when testing with WBVar00601206
+                                   (when (some? varrefseqobj)
+                                     (fetch-coords-in-feature varrefseqobj t))
                                    {:item
                                     (pack-obj t)
 
@@ -526,7 +526,7 @@ species (some->> (:species/assembly (:variation/species variation))
                              (when-let [refseqobj (sequence-fns/genomic-obj pseudogene)]
                                (conj
                                  (pack-obj pseudogene)
-                                 (when (not nil? varrefseqobj)
+                                 (when (some? varrefseqobj)
                                    (fetch-coords-in-feature varrefseqobj pseudogene))
                                  {:item (pack-obj pseudogene)})))))
 
