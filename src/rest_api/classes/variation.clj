@@ -16,7 +16,7 @@
    {:overview overview/widget
     :genetics genetics/widget
     :isolation isolation/widget
-    :molecular_details molecular-details/widget
+    ;:molecular_details molecular-details/widget
     :phenotypes phenotypes/widget
     :external_links external-links/widget
     :location location/widget

@@ -407,13 +407,14 @@ species (some->> (:species/assembly (:variation/species variation))
 
 ;test WBVar01112111 WBVar00601206
 (defn features-affected [variation]
-  {:data (when-let [varrefseqobj (sequence-fns/genomic-obj variation)]
+  {:data (let [varrefseqobj (sequence-fns/genomic-obj variation)]
            (pace-utils/vmap
              "Clone" ;checked with WBVar00274017
              (when-let [s (:variation/mapping-target variation)]
                [(conj
                   (pack-obj s)
-                  (fetch-coords-in-feature varrefseqobj s))])
+                  (when (not nil? varrefseqobj)
+                    (fetch-coords-in-feature varrefseqobj s)))])
 
              "Chromosome"
              (some->> (:variation/gene variation)
@@ -453,8 +454,9 @@ species (some->> (:species/assembly (:variation/species variation))
                                 missense-obj (get-missense-obj predicted-cds-holder)]
                             (conj
                               (pack-obj cds)
-                              (fetch-coords-in-feature varrefseqobj cds) ; appears to a discreptency. This code gives 2945
-                               (select-keys missense-obj [:wildtype_conceptual_translation
+                              (when (not nil? varrefseqobj)
+                                (fetch-coords-in-feature varrefseqobj cds)) ; appears to a discreptency. This code gives 2945
+                              (select-keys missense-obj [:wildtype_conceptual_translation
                                                          :mutant_conceptual_translation
                                                          :from
                                                          :to])
@@ -501,7 +503,8 @@ species (some->> (:species/assembly (:variation/species variation))
                                (when-let [refseqobj (sequence-fns/genomic-obj t)]
                                  (conj
                                    (pack-obj t)
-                                   (fetch-coords-in-feature varrefseqobj t) ; start and stop incorrect when testing with WBVar00601206
+                                   (when (not nil? varrefseqobj)
+                                     (fetch-coords-in-feature varrefseqobj t)) ; start and stop incorrect when testing with WBVar00601206
                                    {:item
                                     (pack-obj t)
 
@@ -523,8 +526,19 @@ species (some->> (:species/assembly (:variation/species variation))
                              (when-let [refseqobj (sequence-fns/genomic-obj pseudogene)]
                                (conj
                                  (pack-obj pseudogene)
-                                 (fetch-coords-in-feature varrefseqobj pseudogene)
-                                 {:item (pack-obj pseudogene)})))))))
+                                 (when (not nil? varrefseqobj)
+                                   (fetch-coords-in-feature varrefseqobj pseudogene))
+                                 {:item (pack-obj pseudogene)})))))
+
+             "Interactor"
+             (some->> (:interaction.variation-interactor/_variation variation)
+                      (map :interaction/_variation-interactor)
+                      (map (fn [i]
+                             (let [obj (pack-obj i)]
+                               (conj
+                                 obj
+                                 {:item obj})))))))
+   :d (:db/id variation)
    :description "genomic features affected by this variation"})
 
 (defn cgh-deleted-probes [variation] ; tested with WBVar00601206
