@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.2] - 2019-01-10
+- Fix for variations that are not in sequence database for molecular details widget
+
 ## [0.7.1] - 2019-01-10
 - Adding Sibyls hotfix for gene descriptions
 
