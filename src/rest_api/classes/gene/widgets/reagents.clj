@@ -175,10 +175,10 @@
      :description "ORFeome Project primers and sequences"}))
 
 (defn primer-pairs [gene]
-  (let [db                 (d/entity-db gene)
+  (let [db (d/entity-db gene)
         [parent start end] (locatables/root-segment gene)]
     {:data
-     (if (not-any? nil? '(parent start end))
+     (if (not-any? nil? [parent start end])
        (->> (d/q '[:find [?p ...]
                    :in $ % ?seq ?min ?max
                    :where [?method :method/id "GenePairs"]
