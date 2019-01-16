@@ -622,7 +622,7 @@
 (defn- compile-nucleotide-changes [variation] ;WBVar00116162 substitution
   (remove nil?
           [(when-let [insertion (:variation/insertion variation)] ; tested with WBVar00269113
-             {:mutation (if-let [mut (or (:transposon-family/id
+             {:mutant (if-let [mut (or (:transposon-family/id
                                            (first
                                              (:variation/transposon-insertion variation)))
                                          (:variation/d variation))] ; need to check method
@@ -635,11 +635,12 @@
            (when-let [deletion (:variation/deletion variation)] ;eg WBVar00601206
              (if (contains? variation :variation/cgh-deleted-probes)
                {:type "Definition Deletion" ; eg WBVar00601206
-                :mutant nil ; might not be needed
+                :mutant "" ; might not be needed
                 :wildtype (if-let [refseqobj  (sequence-fns/genomic-obj variation)]
                             (sequence-fns/get-sequence refseqobj))}
                {:type "Deletion" ; eg WBVar00274723
                 :mutant_label "variant"
+                :mutant ""
                 :wildtype_label "wild type"
                 :wildtype (or
                             (when-let [deletion (:variation.deletion/text
