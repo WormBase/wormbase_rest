@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.4] - 2019-01-16
+- Hot fix for when there is a variation with and insertion and a deletion
+
 ## [0.7.3] - 2019-01-15
 - Fix for when there are no primer pairs in gene reagents widget
 
