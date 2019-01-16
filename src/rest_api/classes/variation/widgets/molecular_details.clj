@@ -28,6 +28,14 @@
      "t" "a"
      "-" "-"}))
 
+(defn- get-deletion-str [variation]
+  (or
+    (when-let [deletion (:variation.deletion/text
+                          (:variation/deletion variation))]
+      (str/lower-case deletion))
+    (if-let [refseqobj  (sequence-fns/genomic-obj variation)] ;WBVar00145789
+      (sequence-fns/get-sequence refseqobj))))
+
 (defn- fetch-coords-in-feature [varrefseqobj object]
   (let [refseqobj (sequence-fns/genomic-obj object)]
     (if (and
@@ -180,12 +188,15 @@
 
                  length-change (if-let [insertion (:variation/insertion variation)]
                                  (or (if-let [insertion-str (:variation.insertion/text insertion)]
-                                       (count insertion-str)
+                                       (if (contains? variation :variation/deletion)
+                                         (- (count insertion-str)
+                                            (count (get-deletion-str variation)))
+                                         (count insertion-str))
                                        (when (contains? variation :variation/transposon-insertion)
                                          (- (count (:transposon-family/id
                                                      (first (:variation.transpon-insertion variation))))
                                             1))))
-                                 (if-let [deletion (:variation/deletion variation)]
+                                 (if (contains? variation :variation/deletion)
                                    (- 1 seq-length)
                                    (if-let [substitution (:variation/substitution variation)]
                                      (- (count (:variation.substitution/alt substitution))
@@ -635,19 +646,14 @@
            (when-let [deletion (:variation/deletion variation)] ;eg WBVar00601206
              (if (contains? variation :variation/cgh-deleted-probes)
                {:type "Definition Deletion" ; eg WBVar00601206
-                :mutant "" ; might not be needed
+                :mutant ""
                 :wildtype (if-let [refseqobj  (sequence-fns/genomic-obj variation)]
                             (sequence-fns/get-sequence refseqobj))}
                {:type "Deletion" ; eg WBVar00274723
                 :mutant_label "variant"
                 :mutant ""
                 :wildtype_label "wild type"
-                :wildtype (or
-                            (when-let [deletion (:variation.deletion/text
-                                                  (:variation/deletion variation))]
-                              (str/lower-case deletion))
-                            (if-let [refseqobj  (sequence-fns/genomic-obj variation)] ;WBVar00145789
-                              (sequence-fns/get-sequence refseqobj)))}))
+                :wildtype (get-deletion-str variation)}))
            (when-let [substitution (:variation/substitution variation)] ; e.g. tested with WBVar00274017
              (if-let [refseqobj (sequence-fns/genomic-obj variation)]
                (let [varseq (str/lower-case (sequence-fns/get-sequence
@@ -703,20 +709,21 @@
 
 (def widget
   {:name generic/name-field
-   :polymorphism_type polymorphism-type
-   :amino_acid_change amino-acid-change
-   :detection_method detection-method
-   :deletion_verification deletion-verification
+;   :polymorphism_type polymorphism-type
+;   :amino_acid_change amino-acid-change
+;   :detection_method detection-method
+;   :deletion_verification deletion-verification
    :sequence_context sequence-context
-   :flanking_pcr_products flanking-pcr-products
-   :variation_type variation-type
-   :features_affected features-affected
-   :cgh_deleted_probes cgh-deleted-probes
-   :cgh_flanking_probes cgh-flanking-probes
-   :polymorphism_assays polymorphism-assays
-   :affects_splice_site affects-splice-site
-   :polymorphism_status polymorphism-status
-   :nucleotide_change nucleotide-change
-   :reference_strain reference-strain
-   :causes_frameshift causes-frameshift
-   :sequencing_status sequencing-status})
+;   :flanking_pcr_products flanking-pcr-products
+;   :variation_type variation-type
+;   :features_affected features-affected
+;   :cgh_deleted_probes cgh-deleted-probes
+;   :cgh_flanking_probes cgh-flanking-probes
+;   :polymorphism_assays polymorphism-assays
+;   :affects_splice_site affects-splice-site
+;   :polymorphism_status polymorphism-status
+;   :nucleotide_change nucleotide-change
+;   :reference_strain reference-strain
+;   :causes_frameshift causes-frameshift
+;   :sequencing_status sequencing-status
+})
