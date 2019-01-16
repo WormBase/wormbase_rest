@@ -712,21 +712,20 @@
 
 (def widget
   {:name generic/name-field
-;   :polymorphism_type polymorphism-type
-;   :amino_acid_change amino-acid-change
-;   :detection_method detection-method
-;   :deletion_verification deletion-verification
+   :polymorphism_type polymorphism-type
+   :amino_acid_change amino-acid-change
+   :detection_method detection-method
+   :deletion_verification deletion-verification
    :sequence_context sequence-context
-;   :flanking_pcr_products flanking-pcr-products
-;   :variation_type variation-type
-;   :features_affected features-affected
-;   :cgh_deleted_probes cgh-deleted-probes
-;   :cgh_flanking_probes cgh-flanking-probes
-;   :polymorphism_assays polymorphism-assays
-;   :affects_splice_site affects-splice-site
-;   :polymorphism_status polymorphism-status
-;   :nucleotide_change nucleotide-change
-;   :reference_strain reference-strain
-;   :causes_frameshift causes-frameshift
-;   :sequencing_status sequencing-status
-})
+   :flanking_pcr_products flanking-pcr-products
+   :variation_type variation-type
+   :features_affected features-affected
+   :cgh_deleted_probes cgh-deleted-probes
+   :cgh_flanking_probes cgh-flanking-probes
+   :polymorphism_assays polymorphism-assays
+   :affects_splice_site affects-splice-site
+   :polymorphism_status polymorphism-status
+   :nucleotide_change nucleotide-change
+   :reference_strain reference-strain
+   :causes_frameshift causes-frameshift
+   :sequencing_status sequencing-status})
