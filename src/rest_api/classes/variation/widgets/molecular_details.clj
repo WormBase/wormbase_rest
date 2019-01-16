@@ -291,13 +291,12 @@
                                                insert-str (or (:variation.insertion/text insertion)
                                                               (:transposon-family/id
                                                                 (first
-                                                                  (:variation/transposon-insertion variation))))
-                                               strand (if (str/includes? (:sequence wildtype-positive)
-                                                                         (str/upper-case (get-deletion-str variation))) "+" "-")]
+                                                                  (:variation/transposon-insertion variation))))]
                                            (str/replace
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
-                                             (if (= strand "-")
+                                             (if (str/includes? (:sequence wildtype-positive)
+                                                                (str/upper-case (get-deletion-str variation)))
                                                (reverse-complement insert-str)
                                                insert-str)))
 
