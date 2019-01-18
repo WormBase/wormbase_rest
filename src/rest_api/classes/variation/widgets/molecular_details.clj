@@ -9,7 +9,10 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
-(defn str-insert
+(defn- parse-int [s]
+  (Integer/parseInt (re-find #"\A-?\d+" s)))
+
+(defn- str-insert
   "Insert c in string s at index i."
   [s c i]
   (str (subs s 0 i) c (subs s i)))
@@ -76,22 +79,22 @@
             :right_flank (:variation.cgh-flanking-probes/text-b fp)}))
 
 (defn- get-feature-affected-evidence [feature]
-  (if-let [rt (:molecular-change.readthrough/text feature)]
-      (pace-utils/vmap
-        :evidence_type
-        rt
+  (if-let [rt (some (fn [[k v]] (if (= (name k) "text") v)) feature)]
+    (pace-utils/vmap
+      :evidence_type
+      rt
 
-        :evidence
-        (when (contains? feature :evidence/inferred-automatically)
-                         "Inferred Automatically"))
-  (let [ev (obj/get-evidence feature)]
-    (not-empty
-      (pace-utils/vmap
-        :evidence_type
-        (some->> ev vals flatten first)
+      :evidence
+      (when (contains? feature :evidence/inferred-automatically)
+        "Inferred Automatically"))
+    (let [ev (obj/get-evidence feature)]
+      (not-empty
+        (pace-utils/vmap
+          :evidence_type
+          (some->> ev vals flatten first)
 
-        :evidence
-        (some->> ev keys first))))))
+          :evidence
+          (some->> ev keys first))))))
 
 (defn- mutant-conceptual-translation [pseq position from to]
   (str
@@ -106,6 +109,54 @@
           position
           (count from))
          1))))
+
+(defn- get-readthrough-obj [predicted-cds-holder]
+  (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
+     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
+           description (:molecular-change.readthrough/text holder)
+           added-aa (last (re-matches #"\* to (.*)" description))
+           protein (:cds.corresponding-protein/protein
+                     (:cds/corresponding-protein cds))
+           peptide (:protein.peptide/peptide
+                     (:protein/peptide protein))
+           pseq (:peptide/sequence peptide)]
+      (conj
+        {:aa_change description
+         :mutant_start (str (count pseq))
+         :mutant_stop (str (+ (count pseq)
+                     (count added-aa)))
+         :wildtype_start (str (count pseq))
+         :wildtype_stop (str (count pseq))
+         :description description
+         :protein (pack-obj protein)
+         :peptide (pack-obj peptide)
+         :wildtype_conceptual_translation pseq ;eg. WBVar00466445
+         :mutant_conceptual_translation (str pseq added-aa)}
+        (get-feature-affected-evidence holder)))))
+
+(defn- get-nonsense-obj [predicted-cds-holder]
+  (when-let [holder (:molecular-change/nonsense predicted-cds-holder)]
+     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
+           description (:molecular-change.nonsense/text holder)
+           mutant-stop (last (re-matches #".*\((\d+)\).*" description))
+           position (re-matches #"\(.*\)" description)
+           protein (:cds.corresponding-protein/protein
+                     (:cds/corresponding-protein cds))
+           peptide (:protein.peptide/peptide
+                     (:protein/peptide protein))
+           pseq (:peptide/sequence peptide)]
+      (conj
+        {:aa_change (str (first description) " to STOP")
+         :mutant_start mutant-stop
+         :mutant_stop mutant-stop
+         :wildtype_start mutant-stop
+         :wildtype_stop (str (count pseq))
+         :description description
+         :protein (pack-obj protein)
+         :peptide (pack-obj peptide)
+         :wildtype_conceptual_translation pseq ;eg. WBVar00466445
+         :mutant_conceptual_translation (subs pseq 0 (parse-int mutant-stop))}
+        (get-feature-affected-evidence holder)))))
 
 (defn- get-missense-obj [predicted-cds-holder]
   (when-let [m (first (:molecular-change/missense predicted-cds-holder))]
@@ -123,10 +174,14 @@
          :position position
          :from from
          :to to
+         :mutant_start position
+         :mutant_stop position
+         :wildtype_start position
+         :wildtype_stop position
          :description description
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
-         :wildtype_conceptual_translation pseq ; eg. WBVar00274871
+         :wildtype_conceptual_translation pseq ; eg. WBVar01684110
          :mutant_conceptual_translation (mutant-conceptual-translation pseq position from to)}
         (get-feature-affected-evidence m)))))
 
@@ -144,9 +199,18 @@
 (defn amino-acid-change [variation] ; e.g. WBVar00271007
   {:data (some->> (:variation/predicted-cds variation)
                   (map (fn [pcdsh]
-                        (when (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
+                        (case
+                          (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
                          {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
-                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
+                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+
+                          (contains? pcdsh :molecular-change/nonsense)
+                          {:amino_acid_change (:aa_change (get-nonsense-obj pcdsh))
+                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+
+                          (contains? pcdsh :molecular-change/readthrough)
+                          {:amin_acid_change (:aa_change (get-readthrough-obj  pcdsh))
+                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
                   (remove nil?)
                   (not-empty))
    :description "amino acid changes for this variation, if appropriate"})
@@ -479,15 +543,18 @@
                       (map
                         (fn [predicted-cds-holder]
                           (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-                                missense-obj (get-missense-obj predicted-cds-holder)]
+                                missense-obj (get-missense-obj predicted-cds-holder)
+                                nonsense-obj (get-nonsense-obj predicted-cds-holder)
+                                readthrough-obj (get-readthrough-obj predicted-cds-holder)
+                                cds-obj (or missense-obj (or nonsense-obj readthrough-obj))]
                             (conj
                               (pack-obj cds)
                               (when (some? varrefseqobj)
                                 (fetch-coords-in-feature varrefseqobj cds)) ; appears to a discreptency. This code gives 2945
-                              (select-keys missense-obj [:wildtype_conceptual_translation
-                                                         :mutant_conceptual_translation
-                                                         :from
-                                                         :to])
+                              (select-keys cds-obj [:wildtype_conceptual_translation
+                                                    :mutant_conceptual_translation
+                                                    :from
+                                                    :to])
                               (pace-utils/vmap
                                 :protein_effects
                                 (not-empty
@@ -499,9 +566,17 @@
                                                       {:description (:molecular-change.silent/text mc)}
                                                       (get-feature-affected-evidence mc)))))
 
-                                    "Missense" ; eg. WBVar00273293
+                                    "Missense" ; eg. WBVar01684110
                                     (when (some? missense-obj)
-                                      (select-keys missense-obj [:aa_change :evidence :evidence_type :position :description]))
+                                      (select-keys missense-obj [:aa_change :evidence :evidence_type :from :to :wildtype_start :wildtype_stop :mutant_start :mutant_stop :position :description]))
+
+                                    "Nonsense" ; eg. WBVar00466445
+                                    (when (some? nonsense-obj)
+                                      (select-keys nonsense-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
+
+                                    "Readthrough" ; eg. WBVar00215920
+                                    (when (some? readthrough-obj)
+                                      (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
                                     "Frameshift" ; e.g. WBVar00273213
                                     (when-let [fs (first (:molecular-change/frameshift predicted-cds-holder))]
@@ -514,6 +589,14 @@
                                   (pace-utils/vmap
                                     "Coding_exon" ;tested with WBVar01112111
                                     (when-let [ce (:molecular-change/coding-exon predicted-cds-holder)]
+                                      (get-feature-affected-evidence ce))
+
+                                    "Missense"
+                                    (when-let [ce (:molecular-change/missense predicted-cds-holder)]
+                                      (get-feature-affected-evidence (first ce)))
+
+                                    "Nonsense"
+                                    (when-let [ce (:molecular-change/nonsense predicted-cds-holder)]
                                       (get-feature-affected-evidence ce))
 
                                     "Readthrough" ; tested with WBVar00215920
