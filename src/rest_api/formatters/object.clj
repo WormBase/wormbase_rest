@@ -75,31 +75,24 @@
       (:variation/id obj)))
 
 ;; Helpers for paper labels.
-(defn- author-lastname [author-holder]
-  (or
-   (->> (:affiliation/person author-holder)
-        (first)
-        (:person/last-name))
-   (-> (:paper.author/author author-holder)
-       (:author/id)
-       (.trim)
-       (str/split #"\s+")
-       (first))))
+(defn- author-name [author-holder]
+  (-> (:paper.author/author author-holder)
+      (:author/id)))
 
 (defn author-list [paper]
   (let [authors (sort-by :ordered/index (:paper/author paper))]
     (cond
      (= (count authors) 1)
-     (author-lastname (first authors))
+     (author-name (first authors))
 
      (< (count authors) 6)
-     (let [last-names (map author-lastname authors)]
-       (str (str/join ", " (butlast last-names))
+     (let [names (map author-name authors)]
+       (str (str/join ", " (butlast names))
             " & "
-            (last last-names)))
+            (last names)))
 
      :default
-     (str (author-lastname (first authors)) " et al."))))
+     (str (author-name (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
   (if (contains? paper :paper/author)
