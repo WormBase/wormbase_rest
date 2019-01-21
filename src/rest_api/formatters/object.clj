@@ -122,8 +122,7 @@
 
 (defmethod obj-label "person" [_ person]
  (or (:person/standard-name person)
-     (or (:author/id (first (:person/possibly-publishes-as person)))
-         (:person/id person))))
+     (:person/id person)))
 
 (defmethod obj-label "author" [_ author]
   (:author/id author))
