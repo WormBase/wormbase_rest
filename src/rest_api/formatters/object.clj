@@ -132,6 +132,9 @@
      (or (:author/id (first (:person/possibly-publishes-as person)))
          (:person/id person))))
 
+(defmethod obj-label "author" [_ author]
+  (:author/id author))
+
 (defmethod obj-label "construct" [_ cons]
   (or (first (:construct/public-name cons))
       (or (first (:construct/other-name cons))
@@ -271,9 +274,7 @@
                       (:oligo/id obj))))
       :label (or label (obj-label class obj))
       :class (if class
-               (if (= class "author")
-                 "person"
-                 (str/replace class "-" "_")))
+               (str/replace class "-" "_"))
       :taxonomy (obj-tax class obj)}))
 
 (defmulti pack-obj-helper
@@ -340,7 +341,7 @@
    :Author_evidence
    (seq (for [ah (:evidence/author-evidence holder)
               :let [author (:evidence.author-evidence/author ah)]]
-          {:evidence (pack-obj "author" author)}))
+          {:evidence (pack-obj author)}))
 
    :Accession_evidence
    (when-let [accs (:evidence/accession-evidence holder)]
