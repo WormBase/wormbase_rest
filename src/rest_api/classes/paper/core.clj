@@ -26,9 +26,7 @@
              :let [author (:paper.author/author h)
                    person (first (:affiliation/person h))]]
          {(:ordered/index h)
-          {:id (or (:person/id person)
-                   (:author/id author))
-           :class (cond person "person"
-                        author "author")
-           :label (:author/id author)
-           :taxonomy "all"}}))))))
+          (if person
+            (-> (obj/pack-obj person)
+                (assoc :label (:author/id author)))
+            (obj/pack-obj author))}))))))
