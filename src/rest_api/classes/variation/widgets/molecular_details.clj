@@ -42,7 +42,8 @@
 (defn- fetch-coords-in-feature [varrefseqobj object]
   (let [refseqobj (sequence-fns/genomic-obj object)]
     (if (and
-          (contains? object :cds/id)
+          (or (contains? object :cds/id)
+              (contains? object :pseudogene/id))
           (= :locatable.strand/negative
              (:locatable/strand object)))
       {:fstart (:start refseqobj)
@@ -256,16 +257,22 @@
                                          (- (count insertion-str)
                                             (count (get-deletion-str variation)))
                                          (count insertion-str))
-                                       (when (contains? variation :variation/transposon-insertion)
-                                         (- (count (:transposon-family/id
-                                                     (first (:variation.transpon-insertion variation))))
-                                            1))))
-                                 (if (contains? variation :variation/deletion)
-                                   (- 1 seq-length)
-                                   (if-let [substitution (:variation/substitution variation)]
-                                     (- (count (:variation.substitution/alt substitution))
-                                        (count (:variation.substitution/ref substitution)))
-                                     (when (contains? variation :variation/tandem-duplication) 0))))
+                                       (if (contains? variation :variation/deletion)
+                                         (- 1 (count (get-deletion-str variation)))
+                                         (when (contains? variation :variation/transposon-insertion)
+                                           (- (count (:transposon-family/id
+                                                       (first (:variation.transpon-insertion variation))))
+                                              1))))
+                                     (if (contains? variation :variation/deletion)
+                                       (- 1 (count (get-deletion-str variation)))
+                                       (if-let [substitution (:variation/substitution variation)]
+                                         (- (count (:variation.substitution/alt substitution))
+                                            (count (:variation.substitution/ref substitution)))
+                                         (when (contains? variation :variation/tandem-duplication)
+                                           (- 1 seq-length))))))
+
+                 k (get-deletion-str variation)
+                 d (count (get-deletion-str variation))
 
                  cgh-deleted-probes (get-cgh-deleted-probes variation)
 
@@ -274,8 +281,7 @@
                                                       (not (contains? variation :variation/deletion))
                                                       (or
                                                         (contains? variation :variation/insertion)
-                                                        (contains? variation :variation/transpson-insertion)
-                                                        (contains? variation :variation/tandem-duplication)))
+                                                        (contains? variation :variation/transpson-insertion)))
                                                   (str-insert wildtype-sequence
                                                               "-"
                                                               padding)
@@ -352,10 +358,12 @@
                                       (and (contains? variation :variation/insertion)
                                             (contains? variation :variation/deletion))
                                          (let [insertion (:variation/insertion variation)
-                                               insert-str (or (:variation.insertion/text insertion)
-                                                              (:transposon-family/id
-                                                                (first
-                                                                  (:variation/transposon-insertion variation))))]
+                                               insert-str (or
+                                                            (:variation.insertion/text insertion)
+                                                            (or (:transposon-family/id
+                                                                  (first
+                                                                    (:variation/transposon-insertion variation))))
+                                                            "-")]
                                            (str/replace
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
@@ -375,14 +383,13 @@
                                           #"\-+"
                                           insert-str))
 
-                                      (contains? variation :variation/deletion)
+                                      (or
+                                        (contains? variation :variation/deletion)
+                                        (contains? variation :variation/tandem-duplication))
                                       (str/replace
                                         (:sequence wildtype-positive)
                                         #"[A-Z]+"
-                                        "-")
-
-                                      (contains? variation :variation/tandem-duplication)
-                                      (:sequence wildtype-positive))
+                                        "-"))
 
                                     :features
                                     {:variation
@@ -441,6 +448,8 @@
                                          (:strain/id (first (:sequence-collection/strain assembly))))))]
               (when-not (every? nil? [wildtype-positive placeholder])
                 (pace-utils/vmap
+                  :d d
+                  :k k
                   :wildtype (not-empty
                               (pace-utils/vmap
                                 :positive_strand wildtype-positive-flattened
@@ -791,24 +800,25 @@
 (defn sequencing-status [variation]
   {:data (when-let [seqstatus (:variation/seqstatus variation)]
            (obj/humanize-ident (name seqstatus)))
+   :d (:db/id variation)
    :description "sequencing status of the variation"})
 
 (def widget
   {:name generic/name-field
-   :polymorphism_type polymorphism-type
-   :amino_acid_change amino-acid-change
-   :detection_method detection-method
-   :deletion_verification deletion-verification
+;   :polymorphism_type polymorphism-type
+;   :amino_acid_change amino-acid-change
+;   :detection_method detection-method
+;   :deletion_verification deletion-verification
    :sequence_context sequence-context
-   :flanking_pcr_products flanking-pcr-products
-   :variation_type variation-type
-   :features_affected features-affected
-   :cgh_deleted_probes cgh-deleted-probes
-   :cgh_flanking_probes cgh-flanking-probes
-   :polymorphism_assays polymorphism-assays
-   :affects_splice_site affects-splice-site
-   :polymorphism_status polymorphism-status
-   :nucleotide_change nucleotide-change
-   :reference_strain reference-strain
-   :causes_frameshift causes-frameshift
+;   :flanking_pcr_products flanking-pcr-products
+;   :variation_type variation-type
+;   :features_affected features-affected
+;   :cgh_deleted_probes cgh-deleted-probes
+;   :cgh_flanking_probes cgh-flanking-probes
+;   :polymorphism_assays polymorphism-assays
+;   :affects_splice_site affects-splice-site
+;   :polymorphism_status polymorphism-status
+;   :nucleotide_change nucleotide-change
+;   :reference_strain reference-strain
+;   :causes_frameshift causes-frameshift
    :sequencing_status sequencing-status})
