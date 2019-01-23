@@ -262,14 +262,14 @@
                                          (when (contains? variation :variation/transposon-insertion)
                                            (- (count (:transposon-family/id
                                                        (first (:variation.transpon-insertion variation))))
-                                              1))))
+                                              1)))))
                                      (if (contains? variation :variation/deletion)
                                        (- 1 (count (get-deletion-str variation)))
                                        (if-let [substitution (:variation/substitution variation)]
                                          (- (count (:variation.substitution/alt substitution))
                                             (count (:variation.substitution/ref substitution)))
                                          (when (contains? variation :variation/tandem-duplication)
-                                           (- 1 seq-length))))))
+                                           (- 1 seq-length)))))
 
                  k (get-deletion-str variation)
                  d (count (get-deletion-str variation))
@@ -448,8 +448,6 @@
                                          (:strain/id (first (:sequence-collection/strain assembly))))))]
               (when-not (every? nil? [wildtype-positive placeholder])
                 (pace-utils/vmap
-                  :d d
-                  :k k
                   :wildtype (not-empty
                               (pace-utils/vmap
                                 :positive_strand wildtype-positive-flattened
@@ -800,25 +798,24 @@
 (defn sequencing-status [variation]
   {:data (when-let [seqstatus (:variation/seqstatus variation)]
            (obj/humanize-ident (name seqstatus)))
-   :d (:db/id variation)
    :description "sequencing status of the variation"})
 
 (def widget
   {:name generic/name-field
-;   :polymorphism_type polymorphism-type
-;   :amino_acid_change amino-acid-change
-;   :detection_method detection-method
-;   :deletion_verification deletion-verification
+   :polymorphism_type polymorphism-type
+   :amino_acid_change amino-acid-change
+   :detection_method detection-method
+   :deletion_verification deletion-verification
    :sequence_context sequence-context
-;   :flanking_pcr_products flanking-pcr-products
-;   :variation_type variation-type
-;   :features_affected features-affected
-;   :cgh_deleted_probes cgh-deleted-probes
-;   :cgh_flanking_probes cgh-flanking-probes
-;   :polymorphism_assays polymorphism-assays
-;   :affects_splice_site affects-splice-site
-;   :polymorphism_status polymorphism-status
-;   :nucleotide_change nucleotide-change
-;   :reference_strain reference-strain
-;   :causes_frameshift causes-frameshift
+   :flanking_pcr_products flanking-pcr-products
+   :variation_type variation-type
+   :features_affected features-affected
+   :cgh_deleted_probes cgh-deleted-probes
+   :cgh_flanking_probes cgh-flanking-probes
+   :polymorphism_assays polymorphism-assays
+   :affects_splice_site affects-splice-site
+   :polymorphism_status polymorphism-status
+   :nucleotide_change nucleotide-change
+   :reference_strain reference-strain
+   :causes_frameshift causes-frameshift
    :sequencing_status sequencing-status})
