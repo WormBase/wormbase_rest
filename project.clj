@@ -21,7 +21,7 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.6.3"]
-   [wormbase/pseudoace "0.4.15"]]
+   [wormbase/pseudoace "0.5.9"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
             [lein-pprint "1.1.1"]
@@ -42,10 +42,10 @@
              "-Ddatomic.txTimeoutMsec=1000000"]
   :profiles
   {:datomic-free
-   {:dependencies [[com.datomic/datomic-free "0.9.5561.56"
+   {:dependencies [[com.datomic/datomic-free "0.9.5703"
                     :exclusions [joda-time]]]}
    :datomic-pro
-   {:dependencies [[com.datomic/datomic-pro "0.9.5561.56"
+   {:dependencies [[com.datomic/datomic-pro "0.9.5703"
                     :exclusions [joda-time]]]}
    :ddb
    {:dependencies
