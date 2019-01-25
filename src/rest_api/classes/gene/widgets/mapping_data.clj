@@ -23,7 +23,7 @@
      [?mc :multi-counts/gene ?mc2]]])
 
 (defn- twopt-item [tp]
-  {:mapper (pack-obj "author" (first (:two-point-data/mapper tp)))
+  {:mapper (pack-obj (first (:two-point-data/mapper tp)))
    :date (if (:two-point-data/date tp)
            (dates/format-date (:two-point-data/date tp)))
    :raw_data (:two-point-data/results tp)
@@ -94,7 +94,7 @@
         result (when-let [pn-results (:pos-neg-data/results pn)]
                  (str/split pn-results #"\s+"))]
     {:mapper (when-first [m (seq (:pos-neg-data/mapper pn))]
-               (pack-obj "author" m))
+               (pack-obj m))
      :comment (let [comment (str/join "<br>"
                                       (map :pos-neg-data.remark/text
                                            (:pos-neg-data/remark pn)))]
@@ -156,7 +156,7 @@
                                first
                                :multi-pt-data.remark/text)]
               (if (empty? comment) "" comment))
-   :mapper (pack-obj "author" (first (:multi-pt-data/mapper mp)))
+   :mapper (pack-obj (first (:multi-pt-data/mapper mp)))
    :date (if-let [mp-date (:multi-pt-data/date mp)]
            (dates/format-date3 (str mp-date))
            "")

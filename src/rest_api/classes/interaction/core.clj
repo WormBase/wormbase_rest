@@ -331,9 +331,13 @@
               associated :associated-product} (group-by interactor-role
                                                         [holder1 holder2])
               pack-iroles (partial pack-int-roles ia nearby?)
-              roles (if (and effectors affected)
-                      (pack-iroles effectors affected "Effector->Affected")
-                      (pack-iroles [holder1] [holder2] "non-directional"))]
+              roles (cond (and effectors affected)
+                          (pack-iroles effectors affected "Effector->Affected")
+
+                          (and others (not (or effectors affected associated)))
+                          (pack-iroles [holder1] [holder2] "non-directional")
+
+                          :else nil)]
          (when (seq (remove nil? roles))
            (->> roles
                 (vec)

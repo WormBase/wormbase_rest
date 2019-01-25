@@ -2,6 +2,30 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.4] - 2019-01-16
+- Hot fix for when there is a variation with and insertion and a deletion
+
+## [0.7.3] - 2019-01-15
+- Fix for when there are no primer pairs in gene reagents widget
+
+## [0.7.2] - 2019-01-10
+- Fix for variations that are not in sequence database for molecular details widget
+
+## [0.7.1] - 2019-01-10
+- Adding Sibyls hotfix for gene descriptions
+
+## [0.7.0] - 2019-01-03
+- Adding variation mulecular-details widget
+
+## [0.6.4] - 2018-12-21
+- Adding fix for Interactions schema change
+
+## [0.6.3] - 2018-12-17
+- Preping for WS268 release
+
+## [0.6.2] - 2018-11-01
+- Preping for WS267 release
+
 ## [0.6.1] - 2018-08-23
 - Small changes
 - first release for WS266
