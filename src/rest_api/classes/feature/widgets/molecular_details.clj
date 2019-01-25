@@ -3,21 +3,9 @@
     [clojure.string :as str]
     [rest-api.classes.sequence.core :as sequence-fns]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]
+    [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.classes.generic-fields :as generic]))
 
-(defn- reverse-complement [dna]
-  (str/replace
-    (str/reverse dna)
-    #"A|C|G|T|a|c|g|t"
-    {"A" "T"
-     "C" "G"
-     "G" "C"
-     "T" "A"
-     "a" "t"
-     "c" "g"
-     "g" "c"
-     "t" "a"
-     "-" "-"}))
 
 (defn flanking-sequences [f]
   {:data (when-let [s (:locatable/parent f)]
@@ -55,7 +43,7 @@
                                    (str/includes? s padding-end))
                             "positive" "negative")
                    processed-sequence (if (= strand "negative")
-                                        (reverse-complement s)
+                                        (generic-functions/reverse-complement s)
                                         s)
                    feature-seq (str/upper-case
                                  (subs
@@ -73,7 +61,7 @@
                                                (- (count processed-sequence) padding))
                                          feature-seq)
                              :comment (str "upper case: feature sequence; lower case: flanking sequences (" strand ")")
-                             :higlight
+                             :highlight
                              {:offset padding
                               :length (count feature-seq)}}]})))
    :description "sequences flanking the feature"})

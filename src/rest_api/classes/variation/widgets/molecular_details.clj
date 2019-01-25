@@ -213,21 +213,7 @@
    :wildtype wildtype
    :mutant mutant
    :wildtype-label "wildtype"
-   :mutant-label "variant"}
-  )
-
-(defn- reverse-complement [dna]
-  (str/replace
-    (str/reverse dna)
-    #"A|C|G|T|a|c|g|t"
-    {"A" "T"
-     "C" "G"
-     "G" "C"
-     "T" "A"
-     "a" "t"
-     "c" "g"
-     "g" "c"
-     "t" "a"}))
+   :mutant-label "variant"})
 
 (defn- variation-features [variation]
   (if-let  [species-name (->> variation :variation/species :species/id)]
@@ -260,16 +246,15 @@
                          uc-plus-strand-dna (do (println plus-strand-dna)
                                                 (str/upper-case plus-strand-dna))]
                      (if (not= (str/upper-case wt) uc-plus-strand-dna)
-                       (let [rc-wt (reverse-complement wt)]
+                       (let [rc-wt (generic-functions/reverse-complement wt)]
                          (println rc-wt)
                          (println uc-plus-strand-dna)
                          (if (= (str/upper-case rc-wt) uc-plus-strand-dna)
                            (pack-nulcleotide-change-obj )
                            {:wt rc-wt
                             :dbid (:db/id variation)
-                            :mut (reverse-complement mut)}))))))
-
-               ))]))
+                            :mut (generic-functions/reverse-complement mut)}))))))
+        ))]))
 
 
 (defn nucleotide-change [variation]
