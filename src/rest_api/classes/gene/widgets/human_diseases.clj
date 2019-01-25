@@ -3,6 +3,7 @@
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.strain.core :as strain]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn- gene-disease-relevance [gene]
@@ -74,6 +75,62 @@
 				   (map #(get % k obj) mapping))])))]))
    :description "Diseases related to the gene"})
 
+(defn- get-model-genotype [model]
+  (let [strain
+        (->> (:disease-model-annotation/modeled-by-strain model)
+             (first)
+             (:disease-model-annotation.modeled-by-strain/strain))
+
+        variations
+        (concat (->> (:disease-model-annotation/modeled-by-variation model)
+                     (map :disease-model-annotation.modeled-by-variation/variation))
+                (:disease-model-annotation/interacting-variation model))
+
+        variation-gene-fn
+        (fn [var]
+          (->> (:variation/gene var)
+               (first)
+               (:variation.gene/gene)))
+
+        variation-genes
+        (map variation-gene-fn variations)
+
+        genes
+        (concat (->> (:disease-model-annotation/modeled-by-disease-relevant-gene model)
+                     (map :disease-model-annotation.modeled-by-disease-relevant-gene/gene))
+                (:disease-model-annotation/interacting-gene model))
+
+        non-redundant-genes
+        (let [variation-gene-set (set variation-genes)
+              strain-gene-set (set (:gene/_strain strain))]
+          (filter (fn [gene]
+                    (and (not (variation-gene-set gene))
+                         (not (strain-gene-set gene))))
+                  genes))
+
+        transgenes
+        (->> (:disease-model-annotation/modeled-by-transgene model)
+             (map :disease-model-annotation.modeled-by-transgene/transgene))]
+
+    (let [entities (concat variations transgenes non-redundant-genes)
+          {strain-str :str
+           strain-data :data} (strain/get-genotype strain)
+          entities-str (->> entities
+                            (map (fn [e]
+                                   (if (:variation/id e)
+                                     (let [gene (variation-gene-fn e)]
+                                       (format "%s(%s)" (:label (pack-obj gene)) (:label (pack-obj e))))
+                                     (:label (pack-obj e)))))
+                            (cons (when strain-str
+                                    (clojure.string/replace strain-str #"\.$" "")))
+                            (filter identity)
+                            (clojure.string/join "; " ))]
+      {:str entities-str
+       :data (reduce (fn [result obj]
+                       (assoc result (:label (pack-obj obj)) (pack-obj obj)))
+                     strain-data
+                     (concat entities variation-genes))})))
+
 (defn detailed-disease-model [gene]
   {:data (let [db (d/entity-db gene)
                models (->> (d/q '[:find [?e ...]
@@ -86,21 +143,7 @@
            (->> models
                 (map (fn [model]
                        {:disease_term (pack-obj (:disease-model-annotation/disease-term model))
-                        :genetic_entity (->> ((some-fn (fn [model]
-                                                         (->> (:disease-model-annotation/modeled-by-strain model)
-                                                              (map :disease-model-annotation.modeled-by-strain/strain)
-                                                              (seq)))
-                                                       (fn [model]
-                                                         (->> (:disease-model-annotation/modeled-by-variation model)
-                                                              (map :disease-model-annotation.modeled-by-variation/variation)
-                                                              (seq)))
-                                                       (fn [model]
-                                                         (->> (:disease-model-annotation/modeled-by-transgene model)
-                                                              (map :disease-model-annotation.modeled-by-transgene/transgene)
-                                                              (seq))))
-                                              model)
-                                             (map pack-obj)
-                                             (seq))
+                        :genetic_entity {:genotype (get-model-genotype model)}
                         :association_type (obj/humanize-ident (:disease-model-annotation/association-type model))
                         :evidence_code (->> (:disease-model-annotation/evidence-code model)
                                             (map (fn [evidence-code]

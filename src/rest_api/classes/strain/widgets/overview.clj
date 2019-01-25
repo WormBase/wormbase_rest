@@ -1,6 +1,7 @@
 (ns rest-api.classes.strain.widgets.overview
   (:require
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.strain.core :refer [get-genotype]]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn mutagen [s]
@@ -12,15 +13,7 @@
    :description "extent to which the strain has been outcrossed"})
 
 (defn genotype [s]
-  {:data (when-let [genotype (:strain/genotype s)]
-           {:str genotype
-            :data (when-let [genes (:gene/_strain s)]
-                    (into
-                      {}
-                      (for [gene genes]
-                        {(or (:gene/public-name gene)
-                             (:gene/id gene))
-                         (pack-obj gene)})))})
+  {:data (get-genotype s)
    :description "the genotype of the strain"})
 
 (def widget
