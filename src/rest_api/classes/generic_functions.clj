@@ -5,16 +5,17 @@
     [clojure.string :as str]))
 
 (defn dna-reverse-complement [dna]
-  (str/replace (str/reverse dna)
-               #"A|C|G|T|a|c|g|t"
-               {"A" "T"
-                "C" "G"
-                "G" "C"
-                "T" "A"
-                "a" "t"
-                "c" "g"
-                "g" "c"
-                "t" "a"}))
+  (some-> (str/reverse dna)
+          (str/replace "a" "z")
+          (str/replace "c" "g")
+          (str/replace "g" "c")
+          (str/replace "t" "a")
+          (str/replace "z" "t")
+          (str/replace "A" "Z")
+          (str/replace "C" "G")
+          (str/replace "G" "C")
+          (str/replace "T" "A")
+          (str/replace "Z" "T")))
 
 (defn xform-species-name
   "Transforms a `species-name` from the WB database into
