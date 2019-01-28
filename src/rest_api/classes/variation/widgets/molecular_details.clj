@@ -17,20 +17,6 @@
   [s c i]
   (str (subs s 0 i) c (subs s i)))
 
-(defn- reverse-complement [dna]
-  (str/replace
-    (str/reverse dna)
-    #"A|C|G|T|a|c|g|t"
-    {"A" "T"
-     "C" "G"
-     "G" "C"
-     "T" "A"
-     "a" "t"
-     "c" "g"
-     "g" "c"
-     "t" "a"
-     "-" "-"}))
-
 (defn- get-deletion-str [variation]
   (or
     (when-let [deletion (:variation.deletion/text
@@ -321,7 +307,7 @@
 
                  wildtype-negative (when (nil? placeholder)
                                      {:sequence
-                                      (reverse-complement (:sequence wildtype-positive))
+                                      (generic-functions/dna-reverse-complement (:sequence wildtype-positive))
 
                                       :features
                                       (:features wildtype-positive)})
@@ -348,8 +334,8 @@
                                             (= varseq refseq)
                                             (str/upper-case altseq)
 
-                                            (= varseq (reverse-complement refseq))
-                                            (str/upper-case (reverse-complement altseq))
+                                            (= varseq (generic-functions/dna-reverse-complement refseq))
+                                            (str/upper-case (generic-functions/dna-reverse-complement altseq))
 
                                             :else
                                             (throw (Exception. "substution/ref does not match either + or - strand")))
@@ -369,7 +355,7 @@
                                              #"[A-Z]+"
                                              (if (str/includes? (:sequence wildtype-positive)
                                                                 (str/upper-case (get-deletion-str variation)))
-                                               (reverse-complement insert-str)
+                                               (generic-functions/dna-reverse-complement insert-str)
                                                insert-str)))
 
                                       (contains? variation :variation/insertion)
@@ -414,10 +400,10 @@
                                                                  (first
                                                                    (:variation/transposon-insertion variation)))]
                                       (str/replace
-                                        (reverse-complement (:sequence mutant-positive))
-                                        (re-pattern (reverse-complement transposon-family))
+                                        (generic-functions/dna-reverse-complement (:sequence mutant-positive))
+                                        (re-pattern (generic-functions/dna-reverse-complement transposon-family))
                                         transposon-family)
-                                      (reverse-complement (:sequence mutant-positive)))
+                                      (generic-functions/dna-reverse-complement (:sequence mutant-positive)))
 
                                     :features
                                     (:features mutant-positive)})
@@ -764,10 +750,10 @@
                     :type "Substitution"}
 
                    (= varseq (str/lower-case
-                               (reverse-complement
+                               (generic-functions/dna-reverse-complement
                                  (:variation.substitution/ref substitution))))
-                   {:mutant (reverse-complement (:variation.substitution/alt substitution))
-                    :wildtype (reverse-complement (:variation.substitution/ref substitution))
+                   {:mutant (generic-functions/dna-reverse-complement (:variation.substitution/alt substitution))
+                    :wildtype (generic-functions/dna-reverse-complement (:variation.substitution/ref substitution))
                     :mutant_label "variant"
                     :wildtype_label "wild type"
                     :type "Substitution"}
