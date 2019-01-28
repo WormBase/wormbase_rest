@@ -354,9 +354,11 @@
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
                                              (if (str/includes? (:sequence wildtype-positive)
-                                                                (str/upper-case (get-deletion-str variation)))
-                                               (generic-functions/dna-reverse-complement insert-str)
-                                               insert-str)))
+                                                                (get-deletion-str variation));)
+                                               insert-str
+                                               (str/upper-case
+                                                 (generic-functions/dna-reverse-complement
+                                                   (str/lower-case insert-str))))))
 
                                       (contains? variation :variation/insertion)
                                       (let [insertion (:variation/insertion variation)
