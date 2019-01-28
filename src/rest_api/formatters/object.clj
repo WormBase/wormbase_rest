@@ -75,31 +75,24 @@
       (:variation/id obj)))
 
 ;; Helpers for paper labels.
-(defn- author-lastname [author-holder]
-  (or
-   (->> (:affiliation/person author-holder)
-        (first)
-        (:person/last-name))
-   (-> (:paper.author/author author-holder)
-       (:author/id)
-       (.trim)
-       (str/split #"\s+")
-       (first))))
+(defn- author-name [author-holder]
+  (-> (:paper.author/author author-holder)
+      (:author/id)))
 
 (defn author-list [paper]
   (let [authors (sort-by :ordered/index (:paper/author paper))]
     (cond
      (= (count authors) 1)
-     (author-lastname (first authors))
+     (author-name (first authors))
 
      (< (count authors) 6)
-     (let [last-names (map author-lastname authors)]
-       (str (str/join ", " (butlast last-names))
+     (let [names (map author-name authors)]
+       (str (str/join ", " (butlast names))
             " & "
-            (last last-names)))
+            (last names)))
 
      :default
-     (str (author-lastname (first authors)) " et al."))))
+     (str (author-name (first authors)) " et al."))))
 
 (defmethod obj-label "paper" [_ paper]
   (if (contains? paper :paper/author)
@@ -129,8 +122,10 @@
 
 (defmethod obj-label "person" [_ person]
  (or (:person/standard-name person)
-     (or (:author/id (first (:person/possibly-publishes-as person)))
-         (:person/id person))))
+     (:person/id person)))
+
+(defmethod obj-label "author" [_ author]
+  (:author/id author))
 
 (defmethod obj-label "construct" [_ cons]
   (or (first (:construct/public-name cons))
@@ -271,9 +266,7 @@
                       (:oligo/id obj))))
       :label (or label (obj-label class obj))
       :class (if class
-               (if (= class "author")
-                 "person"
-                 (str/replace class "-" "_")))
+               (str/replace class "-" "_"))
       :taxonomy (obj-tax class obj)}))
 
 (defmulti pack-obj-helper
@@ -340,7 +333,7 @@
    :Author_evidence
    (seq (for [ah (:evidence/author-evidence holder)
               :let [author (:evidence.author-evidence/author ah)]]
-          {:evidence (pack-obj "author" author)}))
+          {:evidence (pack-obj author)}))
 
    :Accession_evidence
    (when-let [accs (:evidence/accession-evidence holder)]

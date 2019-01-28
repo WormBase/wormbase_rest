@@ -4,6 +4,18 @@
     [rest-api.formatters.object :as obj :refer [pack-obj]]
     [clojure.string :as str]))
 
+(defn dna-reverse-complement [dna]
+  (str/replace (str/reverse dna)
+               #"A|C|G|T|a|c|g|t"
+               {"A" "T"
+                "C" "G"
+                "G" "C"
+                "T" "A"
+                "a" "t"
+                "c" "g"
+                "g" "c"
+                "t" "a"}))
+
 (defn xform-species-name
   "Transforms a `species-name` from the WB database into
   a name used to look up connection configuration to a sequence db."
