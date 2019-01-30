@@ -21,8 +21,13 @@
                    dna-sequence (if (= strand "negative")
                                   (generic-functions/dna-reverse-complement dna-sequence)
                                   dna-sequence)]
+
                {:length (count dna-sequence)
-                :sequence dna-sequence
+                :positive_strand
+                {:sequence dna-sequence}
+                :negative_strand
+                {:sequence (generic-functions/dna-reverse-complement p)}
+                :strand (if (= strand "positive") "+" "-")
                 :header "Sequence"})))
    :descriptions "The sequence of the pseudogene"})
 
