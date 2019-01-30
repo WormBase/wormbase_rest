@@ -93,3 +93,6 @@
     (subs offsets-sequence
           (- (mod low 2000) 1)
           (- high low-offset))))
+
+(defn get-seq-features [db-spec transcript]
+  (sequencesql/get-seq-features db-spec {:name transcript}))

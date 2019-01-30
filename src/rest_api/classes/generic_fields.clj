@@ -32,8 +32,7 @@
 (defn print-sequence [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-    {:data {:keys (keys object)
-            :protein (let [kw-cds-holder (keyword role "corresponding-cds")
+    {:data {:protein (let [kw-cds-holder (keyword role "corresponding-cds")
                            kw-protein-holder (keyword role "corresponding-protein")
                            corresponding-cds-base-str (str role ".corresponding-cds")
                            corresponding-protein-base-str (str role ".corresponding-protein")
