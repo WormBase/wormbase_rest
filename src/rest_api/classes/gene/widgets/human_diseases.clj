@@ -129,7 +129,11 @@
        :data (reduce (fn [result obj]
                        (assoc result (:label (pack-obj obj)) (pack-obj obj)))
                      strain-data
-                     (concat entities variation-genes))})))
+                     (concat entities variation-genes))
+       :entities (->> entities
+                      (cons strain)
+                      (filter identity)
+                      (map pack-obj)) })))
 
 (defn detailed-disease-model [gene]
   {:data (let [db (d/entity-db gene)
@@ -143,7 +147,8 @@
            (->> models
                 (map (fn [model]
                        {:disease_term (pack-obj (:disease-model-annotation/disease-term model))
-                        :genetic_entity {:genotype (get-model-genotype model)}
+                        :genotype {:genotype (get-model-genotype model)}
+                        :genetic_entity (:entities(get-model-genotype model))
                         :association_type (obj/humanize-ident (:disease-model-annotation/association-type model))
                         :evidence_code (->> (:disease-model-annotation/evidence-code model)
                                             (map (fn [evidence-code]
