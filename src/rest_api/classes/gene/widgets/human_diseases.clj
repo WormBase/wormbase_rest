@@ -112,9 +112,13 @@
         (->> (:disease-model-annotation/modeled-by-transgene model)
              (map :disease-model-annotation.modeled-by-transgene/transgene))]
 
-    (let [entities (concat variations transgenes non-redundant-genes)
+    (let [strain-genotype (strain/get-genotype strain)
           {strain-str :str
            strain-data :data} (strain/get-genotype strain)
+          non-strain-entities (concat variations transgenes non-redundant-genes)
+          entities (if (and strain (not strain-genotype))
+                     (cons strain non-strain-entities)
+                     non-strain-entities)
           entities-str (->> entities
                             (map (fn [e]
                                    (if (:variation/id e)
