@@ -39,7 +39,6 @@
    :strand strand
    :protein_sequence protein-sequence
    :predicted_units generic/predicted-units
-   :transcripts transcripts
    :unspliced_sequence_context_with_padding unspliced-sequence-context-with-padding
    :unspliced_sequence_context unspliced-sequence-context
    :spliced_sequence_context spliced-sequence-context})
