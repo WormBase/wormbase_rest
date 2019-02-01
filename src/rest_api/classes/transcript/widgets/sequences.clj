@@ -12,14 +12,6 @@
              (= strand :locatable.strand/positive) "+"))
    :description "strand orientation of the sequence"})
 
-(defn transcripts [t]
-  {:data (when (or
-                 (= "Vancouver_fosmid"
-                    (:method/id (:locatable/method t)))
-                 (contains? t :transcript/source-exons))
-           "get transcripts from sequence database")
-   :description "Transcripts in this region of the sequence"})
-
 (defn unspliced-sequence-context-with-padding [t]
   {:data (sequence-fns/transcript-sequence-features t 2001 "unspliced")
    :description "the unpliced sequence of the sequence"})
@@ -43,12 +35,11 @@
 
 (def widget
   {:name generic/name-field
-;   :predicted_exon_structure generic/predicted-exon-structure
-;   :strand strand
-;   :protein_sequence protein-sequence
-;   :predicted_units generic/predicted-units
-    :transcripts transcripts
-;   :unspliced_sequence_context_with_padding unspliced-sequence-context-with-padding
-;   :unspliced_sequence_context unspliced-sequence-context
-;   :spliced_sequence_context spliced-sequence-context
-})
+   :predicted_exon_structure generic/predicted-exon-structure
+   :strand strand
+   :protein_sequence protein-sequence
+   :predicted_units generic/predicted-units
+   :transcripts transcripts
+   :unspliced_sequence_context_with_padding unspliced-sequence-context-with-padding
+   :unspliced_sequence_context unspliced-sequence-context
+   :spliced_sequence_context spliced-sequence-context})
