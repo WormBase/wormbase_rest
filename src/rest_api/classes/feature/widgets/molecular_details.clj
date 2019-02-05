@@ -67,7 +67,13 @@
   {:data (:feature/dna-text f)
    :description "DNA text of the sequence feature"})
 
+(defn so-term [f]
+  {:data (some->> (:feature/so-term f)
+                  (map pack-obj))
+   :description "SO term for feature"})
+
 (def widget
   {:name generic/name-field
+   :so_term so-term
    :sequence_context sequence-context
    :dna_text dna-text})

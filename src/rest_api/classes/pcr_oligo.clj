@@ -9,5 +9,5 @@
   {:entity-ns "pcr-oligo"
    :widget
    {:overview overview/widget
-    ;:sequence sequences/widget
+    :sequence sequences/widget
     :location location/widget}})

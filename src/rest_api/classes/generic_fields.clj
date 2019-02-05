@@ -9,6 +9,54 @@
 (defn name-field [object]
   (obj/name-field object))
 
+(defn predicted-exon-structure [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+	role (namespace id-kw)]
+    {:data (some->> ((keyword role "source-exons") object)
+		    (map (fn [h]
+			   (let [kw-holder (str role ".source-exons")
+				 start (or ((keyword kw-holder "start") h)
+                                           ((keyword kw-holder "min") h))
+				 end (or ((keyword kw-holder "end") h)
+                                          ((keyword kw-holder "max") h))
+				 length (+ (- end start) 1)]
+			     {:start start
+			      :end end
+			      :len length})))
+		    (sort-by :start)
+		    (map-indexed
+		      (fn [idx o]
+			(conj {:no (+ 1 idx)} o))))
+     :description (str "predicted exon structure within the " role)}))
+
+(defn print-sequence [object]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+    {:data {:protein (let [kw-cds-holder (keyword role "corresponding-cds")
+                           kw-protein-holder (keyword role "corresponding-protein")
+                           corresponding-cds-base-str (str role ".corresponding-cds")
+                           corresponding-protein-base-str (str role ".corresponding-protein")
+                           kw-protein (keyword corresponding-protein-base-str "protein")
+                           kw-cds (keyword corresponding-cds-base-str "cds")]
+                       (when-let [ph (or ; need to add in print translation
+                                       (-> object ; e.g. cds PPA23565
+                                           kw-protein-holder
+                                           kw-protein
+                                           :protein/peptide)
+                                       (-> object ; e.g. transcript T22F3.7.1
+                                           kw-cds-holder
+                                           kw-cds
+                                           :cds/corresponding-protein
+                                           :cds.corresponding-protein/protein
+                                           :protein/peptide))]
+                       {:length (:protein.peptide/length ph)
+                        :sequence (-> ph
+                                      :protein.peptide/peptide
+                                      :peptide/sequence)
+                        :type "aa"
+                        :header "conceptual translation"}))}
+     :description "the sequence of the sequence"}))
+
 (defn gene-product [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
@@ -526,10 +574,14 @@
 (defn predicted-units [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-    {:data (some->> (or (:locatable/_parent
-                          (first
-                            (:sequence/_cds object)))
-                        (:locatable/_parent object))
+    {:data (some->> (if (= role "clone")
+                      (:locatable/_parent
+                        (first
+                          (:sequence/_clone object)))
+                      (or (:locatable/_parent
+                            (first
+                              (:sequence/_cds object)))
+                          (:locatable/_parent object)))
                     (map (fn [transcript]
                            (some->> (:gene.corresponding-transcript/_transcript transcript)
                                     (map (fn [h]

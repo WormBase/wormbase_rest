@@ -2,7 +2,7 @@
   (:require
     [datomic.api :as d]
     [rest-api.classes.generic-fields :as generic]
-    [rest-api.formatters.object :as obj :refer  [pack-obj]]
+    [rest-api.formatters.object :as obj :refer [pack-obj]]
     [pseudoace.binning]
     [pseudoace.utils :as pace-utils]
     [pseudoace.locatables :as locatables]))
