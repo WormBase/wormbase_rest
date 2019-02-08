@@ -47,7 +47,7 @@
                              :human_orthologs (gene-disease-orthologs gene)}})))
                   (apply merge)
                   (vals))
-   :description "Genes by orthology to human disease gene"})
+   :description "Associated genes based on experimental data"})
 
 (defn parent [d]
   {:data (some->> (:do-term/is-a d)
