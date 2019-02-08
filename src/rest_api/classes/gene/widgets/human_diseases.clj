@@ -150,7 +150,7 @@
                            (map (partial d/entity db)))]
            (->> models
                 (map (fn [model]
-                       {:disease_term (pack-obj (:disease-model-annotation/disease-term model))
+                       {:disease_term {:text (pack-obj (:disease-model-annotation/disease-term model)) :evidence {:annotation_id (:disease-model-annotation/id model)}}
                         :genotype {:genotype (get-model-genotype model)}
                         :genetic_entity (:entities(get-model-genotype model))
                         :association_type (obj/humanize-ident (:disease-model-annotation/association-type model))
