@@ -2,6 +2,7 @@
   (:require
     [clojure.string :as str]
     [rest-api.classes.generic-fields :as generic]
+    [rest-api.classes.do-term.core :as do-term]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn- gene-disease-relevance [gene]
@@ -103,6 +104,11 @@
                   (sort))
    :description "Type of this disease"})
 
+(defn detailed-disease-model [do-term]
+  {:data (let [models (:disease-model-annotation/_disease-term do-term)]
+           (do-term/process-disease-models models))
+   :description "Detailed disease model"})
+
 (def widget
   {:genes_orthology genes-orthology
    :parent parent
@@ -114,4 +120,5 @@
    :genes_biology genes-biology
    :synonym synonym
    :remarks generic/remarks
-   :type type-field})
+   :type type-field
+   :detailed_disease_model detailed-disease-model})
