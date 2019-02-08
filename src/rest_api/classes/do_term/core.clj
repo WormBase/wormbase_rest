@@ -71,14 +71,15 @@
 (defn process-disease-models [models]
   (->> models
        (map (fn [model]
-              {:disease_term {:text (pack-obj (:disease-model-annotation/disease-term model)) :evidence {:annotation_id (:disease-model-annotation/id model)}}
+              {:disease_term (pack-obj (:disease-model-annotation/disease-term model))
                :genotype {:genotype (get-model-genotype model)}
                :genetic_entity (:entities(get-model-genotype model))
                :association_type (obj/humanize-ident (:disease-model-annotation/association-type model))
                :evidence_code (->> (:disease-model-annotation/evidence-code model)
                                    (map (fn [evidence-code]
                                           {:text (:go-code/id evidence-code)
-                                           :evidence {:description (:go-code/description evidence-code)}}))
+                                           :evidence {:description (:go-code/description evidence-code)
+                                                      :annotation (:disease-model-annotation/id model)}}))
                                    (seq))
                :experimental_condition (->> [:disease-model-annotation/inducing-chemical
                                              :disease-model-annotation/inducing-agent]
