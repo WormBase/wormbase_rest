@@ -85,7 +85,7 @@
                             db (:db/id gene))
                            (map (partial d/entity db)))]
            (do-term/process-disease-models models))
-   :description "Detailed disease model"})
+   :description "Detailed disease model based on experimental data"})
 
 (def widget
   {:name generic/name-field

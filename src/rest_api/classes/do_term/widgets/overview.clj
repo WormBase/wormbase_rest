@@ -47,7 +47,7 @@
                              :human_orthologs (gene-disease-orthologs gene)}})))
                   (apply merge)
                   (vals))
-   :description "Associated genes based on experimental data"})
+   :description "Automatically inferred gene associations based on orthology to human disease genes"})
 
 (defn parent [d]
   {:data (some->> (:do-term/is-a d)
@@ -87,7 +87,7 @@
                            :human_orthologs (gene-disease-orthologs gene)}}))
                   (apply merge)
                   (vals))
-   :description "Genes by orthology to human disease gene"})
+   :description "Curated gene associations based on experimental data"})
 
 (defn synonym [d]
   {:data (some->> (:do-term/synonym d)
@@ -107,7 +107,7 @@
 (defn detailed-disease-model [do-term]
   {:data (let [models (:disease-model-annotation/_disease-term do-term)]
            (do-term/process-disease-models models))
-   :description "Detailed disease model"})
+   :description (format "Experimental model for %s" (:label (pack-obj do-term)))})
 
 (def widget
   {:genes_orthology genes-orthology

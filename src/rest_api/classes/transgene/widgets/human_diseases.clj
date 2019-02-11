@@ -16,7 +16,7 @@
                             db (:db/id transgene))
                            (map (partial d/entity db)))]
            (do-term/process-disease-models models))
-   :description "Detailed disease model"})
+   :description "Curated disease associations based on experimental data"})
 
 (def widget
   {:name generic/name-field
