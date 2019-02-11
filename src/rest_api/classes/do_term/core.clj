@@ -57,8 +57,8 @@
                             (cons (when strain-str
                                     (str/replace strain-str #"\.$" "")))
                             (filter identity)
-                            (clojure.string/join "; " ))]
-      {:str entities-str
+                            (clojure.string/join "; "))]
+      {:str (str/replace entities-str #"\s+" "&nbsp;")
        :data (reduce (fn [result obj]
                        (assoc result (:label (pack-obj obj)) (pack-obj obj)))
                      strain-data
@@ -88,17 +88,19 @@
                                                     [])
                                             (map pack-obj)
                                             (seq))
-               :modifier (->> [:disease-model-annotation/modifier-transgene
-                               :disease-model-annotation/modifier-variation
-                               :disease-model-annotation/modifier-strain
-                               :disease-model-annotation/modifier-gene
-                               :disease-model-annotation/modifier-molecule
-                               :disease-model-annotation/other-modifier]
-                              (reduce (fn [result attribute]
-                                        (concat result (attribute model)))
-                                      [])
-                              (map pack-obj)
-                              (seq))
-               :modifier_association_type (obj/humanize-ident (:disease-model-annotation/modifier-association-type model))
+               :modifier (let [modifiers (->> [:disease-model-annotation/modifier-transgene
+                                               :disease-model-annotation/modifier-variation
+                                               :disease-model-annotation/modifier-strain
+                                               :disease-model-annotation/modifier-gene
+                                               :disease-model-annotation/modifier-molecule
+                                               :disease-model-annotation/other-modifier]
+                                              (reduce (fn [result attribute]
+                                                        (concat result (attribute model)))
+                                                      [])
+                                              (map pack-obj)
+                                              (seq))]
+                           (if modifiers
+                             {:text modifiers
+                              :evidence {:modifier_association_type (obj/humanize-ident (:disease-model-annotation/modifier-association-type model))}}))
                :reference (pack-obj (:disease-model-annotation/paper-evidence model))}))
        (seq)))
