@@ -2,6 +2,7 @@
   (:require
     [clojure.string :as str]
     [rest-api.classes.generic-fields :as generic]
+    [rest-api.classes.do-term.core :as do-term]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn- gene-disease-relevance [gene]
@@ -46,7 +47,7 @@
                              :human_orthologs (gene-disease-orthologs gene)}})))
                   (apply merge)
                   (vals))
-   :description "Genes by orthology to human disease gene"})
+   :description "Automatically inferred gene associations based on orthology to human disease genes"})
 
 (defn parent [d]
   {:data (some->> (:do-term/is-a d)
@@ -86,7 +87,7 @@
                            :human_orthologs (gene-disease-orthologs gene)}}))
                   (apply merge)
                   (vals))
-   :description "Genes by orthology to human disease gene"})
+   :description "Curated gene associations based on experimental data"})
 
 (defn synonym [d]
   {:data (some->> (:do-term/synonym d)
@@ -103,6 +104,11 @@
                   (sort))
    :description "Type of this disease"})
 
+(defn detailed-disease-model [do-term]
+  {:data (let [models (:disease-model-annotation/_disease-term do-term)]
+           (do-term/process-disease-models models))
+   :description (format "Experimental model for %s" (:label (pack-obj do-term)))})
+
 (def widget
   {:genes_orthology genes-orthology
    :parent parent
@@ -114,4 +120,5 @@
    :genes_biology genes-biology
    :synonym synonym
    :remarks generic/remarks
-   :type type-field})
+   :type type-field
+   :detailed_disease_model detailed-disease-model})
