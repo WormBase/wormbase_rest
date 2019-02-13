@@ -107,7 +107,7 @@
 (defn detailed-disease-model [do-term]
   {:data (let [models (:disease-model-annotation/_disease-term do-term)]
            (do-term/process-disease-models models))
-   :description (format "Experimental model for %s" (:label (pack-obj do-term)))})
+   :description (format "Curated annotations for %s based on experimental data" (:label (pack-obj do-term)))})
 
 (def widget
   {:genes_orthology genes-orthology
