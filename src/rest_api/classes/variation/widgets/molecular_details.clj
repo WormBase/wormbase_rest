@@ -97,6 +97,33 @@
           (count from))
          1))))
 
+(defn- get-silent-obj [predicted-cds-holder]
+  (when-let [holder (first (:molecular-change/silent predicted-cds-holder))]
+     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
+           description (:molecular-change.silent/text holder)
+           [full added-aa location-str] (re-matches #"(.*)\ \((.*)\)" description)
+           location (Integer/parseInt location-str)
+           protein (:cds.corresponding-protein/protein
+                     (:cds/corresponding-protein cds))
+           peptide (:protein.peptide/peptide
+                     (:protein/peptide protein))
+           pseq (:peptide/sequence peptide)]
+      (conj
+        {:aa_change description
+         :mutant_start (str (count pseq))
+         :mutant_stop (str (+ (count pseq)
+                       (count added-aa)))
+         :wildtype_start (str (count pseq))
+         :wildtype_stop (str (count pseq))
+         :description description
+         :protein (pack-obj protein)
+         :peptide (pack-obj peptide)
+         :wildtype_conceptual_translation pseq ;eg. WBVar00466445
+         :mutant_conceptual_translation (str (subs pseq 0 (- location 1))
+                                             added-aa
+                                             (subs pseq (+ location (- (count added-aa) 1)) (count pseq)))}
+        (get-feature-affected-evidence holder)))))
+
 (defn- get-readthrough-obj [predicted-cds-holder]
   (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
      (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
@@ -188,15 +215,19 @@
                   (map (fn [pcdsh]
                         (case
                           (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
-                         {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
-                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+                          {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
+                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
 
                           (contains? pcdsh :molecular-change/nonsense)
                           {:amino_acid_change (:aa_change (get-nonsense-obj pcdsh))
                            :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
 
                           (contains? pcdsh :molecular-change/readthrough)
-                          {:amin_acid_change (:aa_change (get-readthrough-obj  pcdsh))
+                          {:amin_acid_change (:aa_change (get-readthrough-obj pcdsh))
+                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+
+                          (contains? pcdsh :molecular-change/silent) ; e.g. WBVar00829234
+                          {:amin_acid_change (:aa_change (get-silent-obj pcdsh))
                            :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
                   (remove nil?)
                   (not-empty))
