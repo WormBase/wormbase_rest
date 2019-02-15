@@ -211,7 +211,7 @@
 (defn amino-acid-change [variation] ; e.g. WBVar00271007
   {:data (some->> (:variation/predicted-cds variation)
                   (map (fn [pcdsh]
-                        (case
+                        (cond
                           (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
                           {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
                            :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
@@ -221,12 +221,14 @@
                            :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
 
                           (contains? pcdsh :molecular-change/readthrough)
-                          {:amin_acid_change (:aa_change (get-readthrough-obj pcdsh))
+                          {:amino_acid_change (:aa_change (get-readthrough-obj pcdsh))
+                           :keys (keys pcdsh)
                            :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
 
-                          (contains? pcdsh :molecular-change/silent) ; e.g. WBVar00829234
-                          {:amin_acid_change (:aa_change (get-silent-obj pcdsh))
-                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
+                         ; (contains? pcdsh :molecular-change/silent) ; e.g. WBVar00829234
+                         ; {:amin_acid_change (:aa_change (get-silent-obj pcdsh))
+                         ;  :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+                         )))
                   (remove nil?)
                   (not-empty))
    :description "amino acid changes for this variation, if appropriate"})
