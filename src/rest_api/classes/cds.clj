@@ -16,7 +16,7 @@
    {:overview overview/widget
     :location location/widget
     :feature feature/widget
-    :sequences sequences/widget
+    ;:sequences sequences/widget
     :reagents reagents/widget
     :external_links external-links/widget
     :references references/widget}

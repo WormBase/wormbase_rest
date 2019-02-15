@@ -17,7 +17,7 @@
     :feature feature/widget
     :genetics genetics/widget
     :reagents reagents/widget
-    :sequences sequences/widget
+    ;:sequences sequences/widget
     :expression expression/widget
     :location location/widget
     }
