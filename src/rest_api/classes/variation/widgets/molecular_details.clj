@@ -338,7 +338,7 @@
                                             (str/upper-case (generic-functions/dna-reverse-complement altseq))
 
                                             :else
-                                            (throw (Exception. "substution/ref does not match either + or - strand")))
+                                            (throw (Exception. "substitution/ref does not match either + or - strand")))
                                           (subs wildtype-seq (+ padding (count varseq)))))
 
                                       (and (contains? variation :variation/insertion)
