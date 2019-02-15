@@ -36,7 +36,7 @@
 (routing/defroutes
   {:entity-ns "transcript"
    :widget
-   {;:overview overview/widget
+   {:overview overview/widget
     :reagents reagents/widget
     :expression expression-widget
     :external_links external-links/widget
