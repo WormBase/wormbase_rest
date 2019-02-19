@@ -122,28 +122,40 @@
          :mutant_conceptual_translation pseq}
         (get-feature-affected-evidence holder)))))
 
+(defn- remove-from-end [s end]
+  (if (.endsWith s end)
+    (.substring s 0 (- (count s)
+                       (count end)))
+    s))
+
+
 (defn- get-readthrough-obj [predicted-cds-holder]
   (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
      (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
            description (:molecular-change.readthrough/text holder)
            added-aa (last (re-matches #"\* to (.*)" description))
+           [description-tmp removed-aa added-aaa] (re-matches #"(.*)\* to (.*)" description)
+           d (println removed-aa)
            protein (:cds.corresponding-protein/protein
                      (:cds/corresponding-protein cds))
            peptide (:protein.peptide/peptide
                      (:protein/peptide protein))
            pseq (:peptide/sequence peptide)]
-      (conj
-        {:aa_change description
-         :mutant_start (str (count pseq))
-         :mutant_stop (str (+ (count pseq)
-                     (count added-aa)))
-         :wildtype_start (str (count pseq))
+       (conj
+         {:aa_change description
+          :mutant_start (str (- (count pseq)
+                                (count removed-aa)))
+          :mutant_stop (str (- (+ (count pseq)
+                                  (count added-aa))
+                               (count removed-aa)))
+          :wildtype_start (str (- (count pseq) (count removed-aa)))
          :wildtype_stop (str (count pseq))
          :description description
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_translation (str pseq added-aa)}
+         :mutant_conceptual_transladtion (println (str (remove-from-end pseq removed-aa) added-aa))
+         :mutant_conceptual_translation (str (remove-from-end pseq removed-aa) added-aaa)}
         (get-feature-affected-evidence holder)))))
 
 (defn- get-nonsense-obj [predicted-cds-holder]
