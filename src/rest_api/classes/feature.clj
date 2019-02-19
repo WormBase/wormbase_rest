@@ -14,6 +14,6 @@
    {:overview overview/widget
     :history history/widget
     :associations associations/widget
-    :molecular_details molecular-details/widget
+    ;:molecular_details molecular-details/widget
     :evidence evidence/widget
     :location location/widget}})
