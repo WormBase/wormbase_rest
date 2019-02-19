@@ -625,10 +625,6 @@
                                     (when-let [ce (:molecular-change/nonsense predicted-cds-holder)]
                                       (get-feature-affected-evidence ce))
 
-                                    "Readthrough" ; tested with WBVar00215920
-                                    (when-let [rt (first (:molecular-change/readthrough predicted-cds-holder))]
-                                      (get-feature-affected-evidence rt))
-
                                     "Intron" ;tested with WBVar00271172
                                     (when-let [i (:molecular-change/intron predicted-cds-holder)]
                                       (get-feature-affected-evidence i))))))))))
