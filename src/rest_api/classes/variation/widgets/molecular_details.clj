@@ -133,8 +133,7 @@
   (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
      (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
            description (:molecular-change.readthrough/text holder)
-           added-aa (last (re-matches #"\* to (.*)" description))
-           [description-tmp removed-aa added-aaa] (re-matches #"(.*)\* to (.*)" description)
+           [description-tmp removed-aa added-aa] (re-matches #"(.*)\* to (.*)" description)
            d (println removed-aa)
            protein (:cds.corresponding-protein/protein
                      (:cds/corresponding-protein cds))
@@ -154,8 +153,7 @@
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_transladtion (println (str (remove-from-end pseq removed-aa) added-aa))
-         :mutant_conceptual_translation (str (remove-from-end pseq removed-aa) added-aaa)}
+         :mutant_conceptual_translation (str (remove-from-end pseq removed-aa) added-aa)}
         (get-feature-affected-evidence holder)))))
 
 (defn- get-nonsense-obj [predicted-cds-holder]
