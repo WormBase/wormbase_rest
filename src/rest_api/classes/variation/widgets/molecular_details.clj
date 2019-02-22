@@ -134,7 +134,6 @@
      (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
            description (:molecular-change.readthrough/text holder)
            [description-tmp removed-aa added-aa] (re-matches #"(.*)\* to (.*)" description)
-           d (println removed-aa)
            protein (:cds.corresponding-protein/protein
                      (:cds/corresponding-protein cds))
            peptide (:protein.peptide/peptide
@@ -232,7 +231,6 @@
 
                           (contains? pcdsh :molecular-change/readthrough)
                           {:amino_acid_change (:aa_change (get-readthrough-obj pcdsh))
-                           :keys (keys pcdsh)
                            :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
 
                          ; (contains? pcdsh :molecular-change/silent) ; e.g. WBVar00829234
@@ -581,8 +579,8 @@
                           (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
                                 missense-obj (get-missense-obj predicted-cds-holder)
                                 nonsense-obj (get-nonsense-obj predicted-cds-holder)
-                                readthrough-obj (get-readthrough-obj predicted-cds-holder)
-                                cds-obj (or missense-obj (or nonsense-obj readthrough-obj))]
+                                ;readthrough-obj (get-readthrough-obj predicted-cds-holder)
+                                cds-obj (or missense-obj nonsense-obj)] ; readthrough-obj could be added to this))]
                             (conj
                               (pack-obj cds)
                               (when (some? varrefseqobj)
@@ -610,9 +608,9 @@
                                     (when (some? nonsense-obj)
                                       (select-keys nonsense-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
-                                    "Readthrough" ; eg. WBVar00215920
-                                    (when (some? readthrough-obj)
-                                      (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
+                                    ;"Readthrough" ; eg. WBVar00215920
+                                    ;(when (some? readthrough-obj)
+                                    ;  (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
                                     "Frameshift" ; e.g. WBVar00273213
                                     (when-let [fs (first (:molecular-change/frameshift predicted-cds-holder))]
