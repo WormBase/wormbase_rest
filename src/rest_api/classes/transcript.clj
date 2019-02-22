@@ -5,6 +5,7 @@
    [rest-api.classes.transcript.widgets.location :as location]
    [rest-api.classes.transcript.widgets.reagents :as reagents]
    [rest-api.classes.transcript.widgets.feature :as feature]
+   [rest-api.classes.transcript.widgets.sequences :as sequences]
    [rest-api.classes.transcript.widgets.references :as references]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.formatters.object :as obj]
@@ -41,6 +42,7 @@
     :external_links external-links/widget
     :location location/widget
     :feature feature/widget
+    ;:sequences sequences/widget
     :references references/widget}
    :field
    {:fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})

@@ -9,24 +9,13 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
-(defn str-insert
+(defn- parse-int [s]
+  (Integer/parseInt (re-find #"\A-?\d+" s)))
+
+(defn- str-insert
   "Insert c in string s at index i."
   [s c i]
   (str (subs s 0 i) c (subs s i)))
-
-(defn- reverse-complement [dna]
-  (str/replace
-    (str/reverse dna)
-    #"A|C|G|T|a|c|g|t"
-    {"A" "T"
-     "C" "G"
-     "G" "C"
-     "T" "A"
-     "a" "t"
-     "c" "g"
-     "g" "c"
-     "t" "a"
-     "-" "-"}))
 
 (defn- get-deletion-str [variation]
   (or
@@ -39,7 +28,8 @@
 (defn- fetch-coords-in-feature [varrefseqobj object]
   (let [refseqobj (sequence-fns/genomic-obj object)]
     (if (and
-          (contains? object :cds/id)
+          (or (contains? object :cds/id)
+              (contains? object :pseudogene/id))
           (= :locatable.strand/negative
              (:locatable/strand object)))
       {:fstart (:start refseqobj)
@@ -76,22 +66,22 @@
             :right_flank (:variation.cgh-flanking-probes/text-b fp)}))
 
 (defn- get-feature-affected-evidence [feature]
-  (if-let [rt (:molecular-change.readthrough/text feature)]
-      (pace-utils/vmap
-        :evidence_type
-        rt
+  (if-let [rt (some (fn [[k v]] (if (= (name k) "text") v)) feature)]
+    (pace-utils/vmap
+      :evidence_type
+      rt
 
-        :evidence
-        (when (contains? feature :evidence/inferred-automatically)
-                         "Inferred Automatically"))
-  (let [ev (obj/get-evidence feature)]
-    (not-empty
-      (pace-utils/vmap
-        :evidence_type
-        (some->> ev vals flatten first)
+      :evidence
+      (when (contains? feature :evidence/inferred-automatically)
+        "Inferred Automatically"))
+    (let [ev (obj/get-evidence feature)]
+      (not-empty
+        (pace-utils/vmap
+          :evidence_type
+          (some->> ev vals flatten first)
 
-        :evidence
-        (some->> ev keys first))))))
+          :evidence
+          (some->> ev keys first))))))
 
 (defn- mutant-conceptual-translation [pseq position from to]
   (str
@@ -106,6 +96,88 @@
           position
           (count from))
          1))))
+
+(defn- get-silent-obj [predicted-cds-holder]
+  (when-let [holder (first (:molecular-change/silent predicted-cds-holder))]
+     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
+           description (:molecular-change.silent/text holder)
+           [full added-aa location-str] (re-matches #"(.*)\ \((.*)\)" description)
+           location (Integer/parseInt location-str)
+           protein (:cds.corresponding-protein/protein
+                     (:cds/corresponding-protein cds))
+           peptide (:protein.peptide/peptide
+                     (:protein/peptide protein))
+           pseq (:peptide/sequence peptide)]
+      (conj
+        {:aa_change description
+         :mutant_start (str (count pseq))
+         :mutant_stop (str (+ (count pseq)
+                       (count added-aa)))
+         :wildtype_start (str (count pseq))
+         :wildtype_stop (str (count pseq))
+         :description description
+         :protein (pack-obj protein)
+         :peptide (pack-obj peptide)
+         :wildtype_conceptual_translation pseq ;eg. WBVar00466445
+         :mutant_conceptual_translation pseq}
+        (get-feature-affected-evidence holder)))))
+
+(defn- remove-from-end [s end]
+  (if (.endsWith s end)
+    (.substring s 0 (- (count s)
+                       (count end)))
+    s))
+
+
+(defn- get-readthrough-obj [predicted-cds-holder]
+  (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
+     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
+           description (:molecular-change.readthrough/text holder)
+           [description-tmp removed-aa added-aa] (re-matches #"(.*)\* to (.*)" description)
+           protein (:cds.corresponding-protein/protein
+                     (:cds/corresponding-protein cds))
+           peptide (:protein.peptide/peptide
+                     (:protein/peptide protein))
+           pseq (:peptide/sequence peptide)]
+       (conj
+         {:aa_change description
+          :mutant_start (str (- (count pseq)
+                                (count removed-aa)))
+          :mutant_stop (str (- (+ (count pseq)
+                                  (count added-aa))
+                               (count removed-aa)))
+          :wildtype_start (str (- (count pseq) (count removed-aa)))
+         :wildtype_stop (str (count pseq))
+         :description description
+         :protein (pack-obj protein)
+         :peptide (pack-obj peptide)
+         :wildtype_conceptual_translation pseq ;eg. WBVar00466445
+         :mutant_conceptual_translation (str (remove-from-end pseq removed-aa) added-aa)}
+        (get-feature-affected-evidence holder)))))
+
+(defn- get-nonsense-obj [predicted-cds-holder]
+  (when-let [holder (:molecular-change/nonsense predicted-cds-holder)]
+     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
+           description (:molecular-change.nonsense/text holder)
+           mutant-stop (last (re-matches #".*\((\d+)\).*" description))
+           position (re-matches #"\(.*\)" description)
+           protein (:cds.corresponding-protein/protein
+                     (:cds/corresponding-protein cds))
+           peptide (:protein.peptide/peptide
+                     (:protein/peptide protein))
+           pseq (:peptide/sequence peptide)]
+      (conj
+        {:aa_change (str (first description) " to STOP")
+         :mutant_start mutant-stop
+         :mutant_stop mutant-stop
+         :wildtype_start mutant-stop
+         :wildtype_stop (str (count pseq))
+         :description description
+         :protein (pack-obj protein)
+         :peptide (pack-obj peptide)
+         :wildtype_conceptual_translation pseq ;eg. WBVar00466445
+         :mutant_conceptual_translation (subs pseq 0 (parse-int mutant-stop))}
+        (get-feature-affected-evidence holder)))))
 
 (defn- get-missense-obj [predicted-cds-holder]
   (when-let [m (first (:molecular-change/missense predicted-cds-holder))]
@@ -123,10 +195,14 @@
          :position position
          :from from
          :to to
+         :mutant_start position
+         :mutant_stop position
+         :wildtype_start position
+         :wildtype_stop position
          :description description
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
-         :wildtype_conceptual_translation pseq ; eg. WBVar00274871
+         :wildtype_conceptual_translation pseq ; eg. WBVar01684110
          :mutant_conceptual_translation (mutant-conceptual-translation pseq position from to)}
         (get-feature-affected-evidence m)))))
 
@@ -144,9 +220,23 @@
 (defn amino-acid-change [variation] ; e.g. WBVar00271007
   {:data (some->> (:variation/predicted-cds variation)
                   (map (fn [pcdsh]
-                        (when (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
-                         {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
-                          :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))})))
+                        (cond
+                          (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
+                          {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
+                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+
+                          (contains? pcdsh :molecular-change/nonsense)
+                          {:amino_acid_change (:aa_change (get-nonsense-obj pcdsh))
+                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+
+                          (contains? pcdsh :molecular-change/readthrough)
+                          {:amino_acid_change (:aa_change (get-readthrough-obj pcdsh))
+                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+
+                         ; (contains? pcdsh :molecular-change/silent) ; e.g. WBVar00829234
+                         ; {:amin_acid_change (:aa_change (get-silent-obj pcdsh))
+                         ;  :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+                         )))
                   (remove nil?)
                   (not-empty))
    :description "amino acid changes for this variation, if appropriate"})
@@ -192,16 +282,22 @@
                                          (- (count insertion-str)
                                             (count (get-deletion-str variation)))
                                          (count insertion-str))
-                                       (when (contains? variation :variation/transposon-insertion)
-                                         (- (count (:transposon-family/id
-                                                     (first (:variation.transpon-insertion variation))))
-                                            1))))
-                                 (if (contains? variation :variation/deletion)
-                                   (- 1 seq-length)
-                                   (if-let [substitution (:variation/substitution variation)]
-                                     (- (count (:variation.substitution/alt substitution))
-                                        (count (:variation.substitution/ref substitution)))
-                                     (when (contains? variation :variation/tandem-duplication) 0))))
+                                       (if (contains? variation :variation/deletion)
+                                         (- 1 (count (get-deletion-str variation)))
+                                         (when (contains? variation :variation/transposon-insertion)
+                                           (- (count (:transposon-family/id
+                                                       (first (:variation.transpon-insertion variation))))
+                                              1)))))
+                                     (if (contains? variation :variation/deletion)
+                                       (- 1 (count (get-deletion-str variation)))
+                                       (if-let [substitution (:variation/substitution variation)]
+                                         (- (count (:variation.substitution/alt substitution))
+                                            (count (:variation.substitution/ref substitution)))
+                                         (when (contains? variation :variation/tandem-duplication)
+                                           (- 1 seq-length)))))
+
+                 k (get-deletion-str variation)
+                 d (count (get-deletion-str variation))
 
                  cgh-deleted-probes (get-cgh-deleted-probes variation)
 
@@ -210,8 +306,7 @@
                                                       (not (contains? variation :variation/deletion))
                                                       (or
                                                         (contains? variation :variation/insertion)
-                                                        (contains? variation :variation/transpson-insertion)
-                                                        (contains? variation :variation/tandem-duplication)))
+                                                        (contains? variation :variation/transpson-insertion)))
                                                   (str-insert wildtype-sequence
                                                               "-"
                                                               padding)
@@ -251,7 +346,7 @@
 
                  wildtype-negative (when (nil? placeholder)
                                      {:sequence
-                                      (reverse-complement (:sequence wildtype-positive))
+                                      (generic-functions/dna-reverse-complement (:sequence wildtype-positive))
 
                                       :features
                                       (:features wildtype-positive)})
@@ -278,27 +373,31 @@
                                             (= varseq refseq)
                                             (str/upper-case altseq)
 
-                                            (= varseq (reverse-complement refseq))
-                                            (str/upper-case (reverse-complement altseq))
+                                            (= varseq (generic-functions/dna-reverse-complement refseq))
+                                            (str/upper-case (generic-functions/dna-reverse-complement altseq))
 
                                             :else
-                                            (throw (Exception. "substution/ref does not match either + or - strand")))
+                                            (throw (Exception. "substitution/ref does not match either + or - strand")))
                                           (subs wildtype-seq (+ padding (count varseq)))))
 
                                       (and (contains? variation :variation/insertion)
                                             (contains? variation :variation/deletion))
                                          (let [insertion (:variation/insertion variation)
-                                               insert-str (or (:variation.insertion/text insertion)
-                                                              (:transposon-family/id
-                                                                (first
-                                                                  (:variation/transposon-insertion variation))))]
+                                               insert-str (or
+                                                            (:variation.insertion/text insertion)
+                                                            (or (:transposon-family/id
+                                                                  (first
+                                                                    (:variation/transposon-insertion variation))))
+                                                            "-")]
                                            (str/replace
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
                                              (if (str/includes? (:sequence wildtype-positive)
-                                                                (str/upper-case (get-deletion-str variation)))
-                                               (reverse-complement insert-str)
-                                               insert-str)))
+                                                                (get-deletion-str variation))
+                                               (str/upper-case insert-str)
+                                               (generic-functions/dna-reverse-complement
+                                                 (str/upper-case
+                                                   insert-str)))))
 
                                       (contains? variation :variation/insertion)
                                       (let [insertion (:variation/insertion variation)
@@ -311,14 +410,13 @@
                                           #"\-+"
                                           insert-str))
 
-                                      (contains? variation :variation/deletion)
+                                      (or
+                                        (contains? variation :variation/deletion)
+                                        (contains? variation :variation/tandem-duplication))
                                       (str/replace
                                         (:sequence wildtype-positive)
                                         #"[A-Z]+"
-                                        "-")
-
-                                      (contains? variation :variation/tandem-duplication)
-                                      (:sequence wildtype-positive))
+                                        "-"))
 
                                     :features
                                     {:variation
@@ -343,10 +441,10 @@
                                                                  (first
                                                                    (:variation/transposon-insertion variation)))]
                                       (str/replace
-                                        (reverse-complement (:sequence mutant-positive))
-                                        (re-pattern (reverse-complement transposon-family))
+                                        (generic-functions/dna-reverse-complement (:sequence mutant-positive))
+                                        (re-pattern (generic-functions/dna-reverse-complement transposon-family))
                                         transposon-family)
-                                      (reverse-complement (:sequence mutant-positive)))
+                                      (generic-functions/dna-reverse-complement (:sequence mutant-positive)))
 
                                     :features
                                     (:features mutant-positive)})
@@ -479,15 +577,18 @@
                       (map
                         (fn [predicted-cds-holder]
                           (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-                                missense-obj (get-missense-obj predicted-cds-holder)]
+                                missense-obj (get-missense-obj predicted-cds-holder)
+                                nonsense-obj (get-nonsense-obj predicted-cds-holder)
+                                ;readthrough-obj (get-readthrough-obj predicted-cds-holder)
+                                cds-obj (or missense-obj nonsense-obj)] ; readthrough-obj could be added to this))]
                             (conj
                               (pack-obj cds)
                               (when (some? varrefseqobj)
                                 (fetch-coords-in-feature varrefseqobj cds)) ; appears to a discreptency. This code gives 2945
-                              (select-keys missense-obj [:wildtype_conceptual_translation
-                                                         :mutant_conceptual_translation
-                                                         :from
-                                                         :to])
+                              (select-keys cds-obj [:wildtype_conceptual_translation
+                                                    :mutant_conceptual_translation
+                                                    :from
+                                                    :to])
                               (pace-utils/vmap
                                 :protein_effects
                                 (not-empty
@@ -499,9 +600,17 @@
                                                       {:description (:molecular-change.silent/text mc)}
                                                       (get-feature-affected-evidence mc)))))
 
-                                    "Missense" ; eg. WBVar00273293
+                                    "Missense" ; eg. WBVar01684110
                                     (when (some? missense-obj)
-                                      (select-keys missense-obj [:aa_change :evidence :evidence_type :position :description]))
+                                      (select-keys missense-obj [:aa_change :evidence :evidence_type :from :to :wildtype_start :wildtype_stop :mutant_start :mutant_stop :position :description]))
+
+                                    "Nonsense" ; eg. WBVar00466445
+                                    (when (some? nonsense-obj)
+                                      (select-keys nonsense-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
+
+                                    ;"Readthrough" ; eg. WBVar00215920
+                                    ;(when (some? readthrough-obj)
+                                    ;  (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
                                     "Frameshift" ; e.g. WBVar00273213
                                     (when-let [fs (first (:molecular-change/frameshift predicted-cds-holder))]
@@ -516,9 +625,13 @@
                                     (when-let [ce (:molecular-change/coding-exon predicted-cds-holder)]
                                       (get-feature-affected-evidence ce))
 
-                                    "Readthrough" ; tested with WBVar00215920
-                                    (when-let [rt (first (:molecular-change/readthrough predicted-cds-holder))]
-                                      (get-feature-affected-evidence rt))
+                                    "Missense"
+                                    (when-let [ce (:molecular-change/missense predicted-cds-holder)]
+                                      (get-feature-affected-evidence (first ce)))
+
+                                    "Nonsense"
+                                    (when-let [ce (:molecular-change/nonsense predicted-cds-holder)]
+                                      (get-feature-affected-evidence ce))
 
                                     "Intron" ;tested with WBVar00271172
                                     (when-let [i (:molecular-change/intron predicted-cds-holder)]
@@ -674,10 +787,10 @@
                     :type "Substitution"}
 
                    (= varseq (str/lower-case
-                               (reverse-complement
+                               (generic-functions/dna-reverse-complement
                                  (:variation.substitution/ref substitution))))
-                   {:mutant (reverse-complement (:variation.substitution/alt substitution))
-                    :wildtype (reverse-complement (:variation.substitution/ref substitution))
+                   {:mutant (generic-functions/dna-reverse-complement (:variation.substitution/alt substitution))
+                    :wildtype (generic-functions/dna-reverse-complement (:variation.substitution/ref substitution))
                     :mutant_label "variant"
                     :wildtype_label "wild type"
                     :type "Substitution"}

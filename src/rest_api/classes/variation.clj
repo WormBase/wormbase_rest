@@ -2,6 +2,7 @@
   (:require
     [rest-api.classes.variation.widgets.overview :as overview]
     [rest-api.classes.variation.widgets.genetics :as genetics]
+    [rest-api.classes.variation.widgets.human-diseases :as human-diseases]
     [rest-api.classes.variation.widgets.isolation :as isolation]
     [rest-api.classes.variation.widgets.molecular-details :as molecular-details]
     [rest-api.classes.variation.widgets.phenotypes :as phenotypes]
@@ -15,6 +16,7 @@
    :widget
    {:overview overview/widget
     :genetics genetics/widget
+    :human_diseases human-diseases/widget
     :isolation isolation/widget
     :molecular_details molecular-details/widget
     :phenotypes phenotypes/widget

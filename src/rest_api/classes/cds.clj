@@ -4,7 +4,7 @@
     [rest-api.classes.cds.widgets.overview :as overview]
     [rest-api.classes.cds.widgets.location :as location]
     [rest-api.classes.cds.widgets.feature :as feature]
-    ;[rest-api.classes.cds.widgets.sequences :as sequences]
+    [rest-api.classes.cds.widgets.sequences :as sequences]
     [rest-api.classes.cds.widgets.reagents :as reagents]
     [rest-api.classes.cds.widgets.references :as references]
     [rest-api.classes.gene.expression :as gene-expression]

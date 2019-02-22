@@ -5,6 +5,7 @@
     [rest-api.classes.pseudogene.widgets.genetics :as genetics]
     [rest-api.classes.pseudogene.widgets.reagents :as reagents]
     [rest-api.classes.pseudogene.widgets.expression :as expression]
+    [rest-api.classes.pseudogene.widgets.sequences :as sequences]
     [rest-api.classes.pseudogene.widgets.location :as location]
     [rest-api.classes.gene.expression :as gene-expression]
     [rest-api.routing :as routing]))
@@ -16,6 +17,7 @@
     :feature feature/widget
     :genetics genetics/widget
     :reagents reagents/widget
+    ;:sequences sequences/widget
     :expression expression/widget
     :location location/widget
     }

@@ -17,7 +17,7 @@
    :available_from generic/available-from
    :laboratory generic/laboratory
    :taxonomy generic/taxonomy
-   :sequnece_type generic/sequence-type
+   :sequence_type generic/sequence-type
    :description generic/description
    :feature feature
    :identity generic/identity-field

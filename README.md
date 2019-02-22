@@ -14,7 +14,7 @@
 Run following commands and test each step happens correctly.
 
 ```bash
-export WB_DB_URI="datomic:ddb://us-east-1/WS268/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS269/wormbase"
 lein ring server-headless 8130
 lein do eastwood, test
 make docker-build
@@ -33,7 +33,7 @@ eb deploy
 ## Setting environment variables
 
 ```bash
-export WB_DB_URI="datomic:ddb://us-east-1/WS268/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS269/wormbase"
 ```
 
 ## Starting server in development
@@ -190,6 +190,21 @@ eb deploy
    - nothing changed yet.
   ```
 - commit and push to develop.
+
+
+## Deploy to staging environment
+
+The staging environment is relied on by staging.wormbase.org and runs the latest successful build of the `develop` branch.
+
+Its deployment is managed by Jenkins CI server in response to commits to the `develop` branch. Containers are created from the source code, and deployed on the shared dev instance.
+
+For Jenkins CI to accomplish these tasks, it needs to be setup to with the proper dependencies. Jenkins CI server is run as the jenkins user (on the shared dev instance). In general, providing the jenkins user with a similar setup, as would be given to a human developer, would be sufficient. For example, it should be able to access docker, maven, java, lein, Datomic-pro, etc.
+
+Note:
+- **Datomic-pro needs to be manually installed or upgrade for the jenkins user.** Failure to do so would break builds.
+- Jenkins might need to be restarted after an installation or other changes. This can be done with `sudo /etc/init.d/jenkins restart` on the shared dev instance.
+
+For details about the Jenkins configuration, please refer to jenkins.wormbase.org.
 
 
 TBD: JVM memory options.
