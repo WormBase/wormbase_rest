@@ -140,7 +140,7 @@
                      (:protein/peptide protein))
            pseq (:peptide/sequence peptide)]
        (conj
-         {:aa_change description
+         {:aa_change (when-let [description (str/replace description "*" "STOP")] description)
           :mutant_start (str (- (count pseq)
                                 (count removed-aa)))
           :mutant_stop (str (- (+ (count pseq)
@@ -623,14 +623,6 @@
                                   (pace-utils/vmap
                                     "Coding_exon" ;tested with WBVar01112111
                                     (when-let [ce (:molecular-change/coding-exon predicted-cds-holder)]
-                                      (get-feature-affected-evidence ce))
-
-                                    "Missense"
-                                    (when-let [ce (:molecular-change/missense predicted-cds-holder)]
-                                      (get-feature-affected-evidence (first ce)))
-
-                                    "Nonsense"
-                                    (when-let [ce (:molecular-change/nonsense predicted-cds-holder)]
                                       (get-feature-affected-evidence ce))
 
                                     "Intron" ;tested with WBVar00271172
