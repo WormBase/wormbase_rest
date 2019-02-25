@@ -69,7 +69,7 @@
   (if-let [rt (some (fn [[k v]] (if (= (name k) "text") v)) feature)]
     (pace-utils/vmap
       :evidence_type
-      rt
+      (when-let [evidence-str (str/replace rt "*" "STOP")] evidence-str)
 
       :evidence
       (when (contains? feature :evidence/inferred-automatically)
