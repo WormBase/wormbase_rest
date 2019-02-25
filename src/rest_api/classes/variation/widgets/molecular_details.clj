@@ -579,8 +579,11 @@
                           (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
                                 missense-obj (get-missense-obj predicted-cds-holder)
                                 nonsense-obj (get-nonsense-obj predicted-cds-holder)
-                                ;readthrough-obj (get-readthrough-obj predicted-cds-holder)
-                                cds-obj (or missense-obj nonsense-obj)] ; readthrough-obj could be added to this))]
+                                readthrough-obj (get-readthrough-obj predicted-cds-holder)
+                                cds-obj (or missense-obj
+                                            (or nonsense-obj
+                                                (select-keys readthrough-obj
+                                                             [:from :to])))]
                             (conj
                               (pack-obj cds)
                               (when (some? varrefseqobj)
@@ -608,9 +611,9 @@
                                     (when (some? nonsense-obj)
                                       (select-keys nonsense-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
-                                    ;"Readthrough" ; eg. WBVar00215920
-                                    ;(when (some? readthrough-obj)
-                                    ;  (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
+                                    "Readthrough" ; eg. WBVar00215920
+                                    (when (some? readthrough-obj)
+                                      (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
                                     "Frameshift" ; e.g. WBVar00273213
                                     (when-let [fs (first (:molecular-change/frameshift predicted-cds-holder))]
