@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.8.1] - 2019-02-25
+- Fixing a couple things with the variation molecular details widget
+
 ## [0.8.0] - 2019-02-22
 - New disease wigets
 - First WS269 release

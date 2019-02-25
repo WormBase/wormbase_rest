@@ -69,7 +69,7 @@
   (if-let [rt (some (fn [[k v]] (if (= (name k) "text") v)) feature)]
     (pace-utils/vmap
       :evidence_type
-      rt
+      (when-let [evidence-str (str/replace rt "*" "STOP")] evidence-str)
 
       :evidence
       (when (contains? feature :evidence/inferred-automatically)
@@ -132,8 +132,9 @@
 (defn- get-readthrough-obj [predicted-cds-holder]
   (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
      (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-           description (:molecular-change.readthrough/text holder)
-           [description-tmp removed-aa added-aa] (re-matches #"(.*)\* to (.*)" description)
+           description (when-let[t (:molecular-change.readthrough/text holder)]
+                        (str/replace t "*" "STOP"))
+           [tmp-txt removed-aa added-aa] (re-matches #"(.*)\* to (.*)"(:molecular-change.readthrough/text holder))
            protein (:cds.corresponding-protein/protein
                      (:cds/corresponding-protein cds))
            peptide (:protein.peptide/peptide
@@ -579,8 +580,11 @@
                           (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
                                 missense-obj (get-missense-obj predicted-cds-holder)
                                 nonsense-obj (get-nonsense-obj predicted-cds-holder)
-                                ;readthrough-obj (get-readthrough-obj predicted-cds-holder)
-                                cds-obj (or missense-obj nonsense-obj)] ; readthrough-obj could be added to this))]
+                                readthrough-obj (get-readthrough-obj predicted-cds-holder)
+                                cds-obj (or missense-obj
+                                            (or nonsense-obj
+                                                (select-keys readthrough-obj
+                                                             [:from :to])))]
                             (conj
                               (pack-obj cds)
                               (when (some? varrefseqobj)
@@ -608,9 +612,9 @@
                                     (when (some? nonsense-obj)
                                       (select-keys nonsense-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
-                                    ;"Readthrough" ; eg. WBVar00215920
-                                    ;(when (some? readthrough-obj)
-                                    ;  (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
+                                    "Readthrough" ; eg. WBVar00215920
+                                    (when (some? readthrough-obj)
+                                      (select-keys readthrough-obj [:aa_change :evidence :evidence_type :wildtype_start :wildtype_stop :mutant_start :mutant_stop :description]))
 
                                     "Frameshift" ; e.g. WBVar00273213
                                     (when-let [fs (first (:molecular-change/frameshift predicted-cds-holder))]
@@ -623,14 +627,6 @@
                                   (pace-utils/vmap
                                     "Coding_exon" ;tested with WBVar01112111
                                     (when-let [ce (:molecular-change/coding-exon predicted-cds-holder)]
-                                      (get-feature-affected-evidence ce))
-
-                                    "Missense"
-                                    (when-let [ce (:molecular-change/missense predicted-cds-holder)]
-                                      (get-feature-affected-evidence (first ce)))
-
-                                    "Nonsense"
-                                    (when-let [ce (:molecular-change/nonsense predicted-cds-holder)]
                                       (get-feature-affected-evidence ce))
 
                                     "Intron" ;tested with WBVar00271172
