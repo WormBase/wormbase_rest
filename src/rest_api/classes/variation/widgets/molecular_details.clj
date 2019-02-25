@@ -132,15 +132,16 @@
 (defn- get-readthrough-obj [predicted-cds-holder]
   (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
      (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-           description (:molecular-change.readthrough/text holder)
-           [description-tmp removed-aa added-aa] (re-matches #"(.*)\* to (.*)" description)
+           description (when-let[t (:molecular-change.readthrough/text holder)]
+                        (str/replace t "*" "STOP"))
+           [tmp-txt removed-aa added-aa] (re-matches #"(.*)\* to (.*)"(:molecular-change.readthrough/text holder))
            protein (:cds.corresponding-protein/protein
                      (:cds/corresponding-protein cds))
            peptide (:protein.peptide/peptide
                      (:protein/peptide protein))
            pseq (:peptide/sequence peptide)]
        (conj
-         {:aa_change (when-let [description (str/replace description "*" "STOP")] description)
+         {:aa_change description
           :mutant_start (str (- (count pseq)
                                 (count removed-aa)))
           :mutant_stop (str (- (+ (count pseq)
