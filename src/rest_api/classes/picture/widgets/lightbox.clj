@@ -6,6 +6,20 @@
     [rest-api.formatters.object :as obj :refer [pack-obj]]
     [rest-api.classes.generic-fields :as generic]))
 
+(defn name-field [p]
+  {:class "picture"
+   :label (if-let [ge (some->> (:picture/expr-pattern p)
+                               (first)
+                               (:expr-pattern/gene)
+                               (map :expr-pattern.gene/gene)
+                               (map pack-obj)
+                               (first)
+                               (:label))]
+            (str "Expression pattern for " ge)
+            (:picture/id p))
+   :id (:picture/id p)
+   :taxonomy "all"})
+
 (defn cropped-from [p] ;e.g.WBPicture0000007800
   {:data (some->> (:picture/cropped-from p)
                   (map pack-obj)
@@ -77,7 +91,7 @@
    :description (str "expression patterns associated with the Picture: " (:picture/id p))})
 
 (def widget
-  {:name generic/name-field
+  {:name name-field
    :cropped_from cropped-from
    :go_terms go-terms
    :external_source external-source
