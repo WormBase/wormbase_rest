@@ -3,6 +3,7 @@
    [clojure.string :as str]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.picture.core :as picture-fns]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn- index-of
@@ -43,29 +44,7 @@
 			 {:format extension
 			  :name (str/join "/" [id basename])
 			  :class "/img-static/pictures"}))
-               :external_source (not-empty
-                                  (pace-utils/vmap
-                                    :template
-                                    (:picture/acknowledgement-template picture)
-
-                                    :template-items
-                                    (not-empty
-                                      (pace-utils/vmap
-                                        :Article_URL
-                                        (when-let [ah (:picture/article-url picture)]
-                                          (let [d (:picture.article-url/database ah)]
-                                            {:db (:database/id d)
-                                             :text (:database/name d)}))
-
-                                        :Journal_URL
-                                        (when-let [d (:picture/journal-url picture)]
-                                          {:db (:database/id d)
-                                           :text (:database/name d)})
-
-                                        :Publisher_URL
-                                        (when-let [d (:picture/publisher-url picture)]
-                                          {:db (:database/id d)
-                                           :text (:database/name d)})))))
+               :external_source (picture-fns/external-sources picture)
               :group_id id
               :id (:picture/id picture)})))
    :description "Curated images of the expression pattern"})
