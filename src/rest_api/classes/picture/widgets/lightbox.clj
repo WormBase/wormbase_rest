@@ -65,7 +65,9 @@
 (defn cropped-pictures [p];e.g. WBPicture0000007799
   {:data (some->> (:picture/_cropped-from p)
                   (map pack-obj)
-                  (first))
+                  (map (fn [obj]
+                         {(:id go-obj) obj}))
+                  (into (sorted-map)))
    :description "Picture(s) that were cropped from this picture"})
 
 (defn expression-patterns [p] ;e.g. WBPicture0001123381
