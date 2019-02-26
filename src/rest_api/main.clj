@@ -34,6 +34,7 @@
    [rest-api.classes.pcr-oligo :as pcr-oligo]
    [rest-api.classes.person :as person]
    [rest-api.classes.phenotype :as phenotype]
+   [rest-api.classes.picture :as picture]
    [rest-api.classes.position-matrix :as position-matrix]
    [rest-api.classes.protein :as protein]
    [rest-api.classes.pseudogene :as pseudogene]
@@ -79,6 +80,7 @@
    pcr-oligo/routes
    person/routes
    phenotype/routes
+   picture/routes
    position-matrix/routes
    protein/routes
    pseudogene/routes
