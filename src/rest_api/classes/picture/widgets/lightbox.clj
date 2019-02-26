@@ -7,18 +7,19 @@
     [rest-api.classes.generic-fields :as generic]))
 
 (defn name-field [p]
-  {:class "picture"
-   :label (if-let [ge (some->> (:picture/expr-pattern p)
-                               (first)
-                               (:expr-pattern/gene)
-                               (map :expr-pattern.gene/gene)
-                               (map pack-obj)
-                               (first)
-                               (:label))]
-            (str "Expression pattern for " ge)
-            (:picture/id p))
-   :id (:picture/id p)
-   :taxonomy "all"})
+  {:data {:class "picture"
+          :label (if-let [ge (some->> (:picture/expr-pattern p)
+                                      (first)
+                                      (:expr-pattern/gene)
+                                      (map :expr-pattern.gene/gene)
+                                      (map pack-obj)
+                                      (first)
+                                      (:label))]
+                   (str "Expression pattern for " ge)
+                   (:picture/id p))
+          :id (:picture/id p)
+          :taxonomy "all"}
+   :description (str "The name and WormBase internal ID of " (:picture/id p))})
 
 (defn cropped-from [p] ;e.g.WBPicture0000007800
   {:data (some->> (:picture/cropped-from p)
