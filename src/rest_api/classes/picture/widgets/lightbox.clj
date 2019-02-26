@@ -78,7 +78,7 @@
   {:name generic/name-field
    :cropped_from cropped-from
    :go_terms go-terms
-   :extenal_source external-source
+   :external_source external-source
    :contact contact
    :description description
    :image image
