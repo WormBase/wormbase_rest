@@ -21,7 +21,9 @@
    :description "GO terms for this picture"})
 
 (defn external-source [p];e.g. WBPicture0000007800
-  {:data (picture-fns/external-sources p)
+  {:data (when-let [es (picture-fns/external-sources p) ]
+           {:template (:template es)
+            :template_items (:template-items es)})
    :description "Information to link to the source of this picture"})
 
 (defn contact [p] ;e.g. WBPicture0001123381
@@ -43,9 +45,7 @@
    :description (str "description of the Picture " (:picture/id p))})
 
 (defn image [p]
-  {:data (when-let [thumbnail  (picture-fns/pack-image p)]
-           (conj (pack-obj p)
-                {:thumbnail thumbnail}))
+  {:data (:thumbnail (picture-fns/pack-image p))
    :description "Information pertaining to the underlying image of the picture"})
 
 (defn reference [p] ;e.g. WBPicture0001123381
@@ -66,7 +66,7 @@
   {:data (some->> (:picture/_cropped-from p)
                   (map pack-obj)
                   (map (fn [obj]
-                         {(:id go-obj) obj}))
+                         {(:id obj) obj}))
                   (into (sorted-map)))
    :description "Picture(s) that were cropped from this picture"})
 
