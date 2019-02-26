@@ -20,7 +20,7 @@
                   (into (sorted-map)))
    :description "GO terms for this picture"})
 
-(defn external-sources [p];e.g. WBPicture0000007800
+(defn external-source [p];e.g. WBPicture0000007800
   {:data (picture-fns/external-sources p)
    :description "Information to link to the source of this picture"})
 
@@ -43,7 +43,9 @@
    :description (str "description of the Picture " (:picture/id p))})
 
 (defn image [p]
-  {:data (picture-fns/pack-image p)
+  {:data (when-let [thumbnail  (picture-fns/pack-image p)]
+           (conj (pack-obj p)
+                {:thumbnail thumbnail}))
    :description "Information pertaining to the underlying image of the picture"})
 
 (defn reference [p] ;e.g. WBPicture0001123381
@@ -52,7 +54,7 @@
                   (first))
    :description "Paper that this picture belongs to"})
 
-(defn anatomy-term [p]
+(defn anatomy-terms [p]
   {:data (some->> (:picture/anatomy p)
                   (map pack-obj)
                   (map (fn [obj]
@@ -76,13 +78,12 @@
   {:name generic/name-field
    :cropped_from cropped-from
    :go_terms go-terms
-   :extenal_sources external-sources
+   :extenal_source external-source
    :contact contact
    :description description
    :image image
    :reference reference
-   :anatomy_term anatomy-term
+   :anatomy_terms anatomy-terms
    :cropped_pictures cropped-pictures
    :remarks generic/remarks
-   ;:expression_patterns expression-patterns
-   })
+   :expression_patterns expression-patterns})
