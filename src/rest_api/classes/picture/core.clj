@@ -46,4 +46,3 @@
 	  (when-let [d (:picture/publisher-url picture)]
 	    {:db (:database/id d)
 	     :text (:database/name d)}))))))
-
