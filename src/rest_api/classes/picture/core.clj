@@ -26,16 +26,26 @@
   (not-empty
     (pace-utils/vmap
       :template
-      (:picture/acknowledgement-template picture)
+      (if-let [template (:picture/acknowledgement-template picture)]
+        (-> template
+            (str/replace #"<Publication_year>" (str (:picture/publication-year picture)))))
 
       :template_items
       (not-empty
 	(pace-utils/vmap
-	  :Article_URL
-	  (when-let [ah (:picture/article-url picture)]
-	    (let [d (:picture.article-url/database ah)]
-	      {:db (:database/id d)
-	       :text (:database/name d)}))
+          :Article_URL
+          (when-let [ah (:picture/article-url picture)]
+            (let [d (:picture.article-url/database ah)
+                  label (->> picture
+                             (:picture/reference)
+                             (map pack-obj)
+                             (map :label)
+                             (first))]
+              {:db (:database/id d)
+               :dbt (:database-field/id (:picture.article-url/field ah))
+               :id (:picture.article-url/accession ah)
+               :text label}))
+
 
 	  :Journal_URL
 	  (when-let [d (:picture/journal-url picture)]
