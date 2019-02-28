@@ -28,7 +28,7 @@
       :template
       (:picture/acknowledgement-template picture)
 
-      :template-items
+      :template_items
       (not-empty
 	(pace-utils/vmap
 	  :Article_URL
@@ -46,4 +46,3 @@
 	  (when-let [d (:picture/publisher-url picture)]
 	    {:db (:database/id d)
 	     :text (:database/name d)}))))))
-
