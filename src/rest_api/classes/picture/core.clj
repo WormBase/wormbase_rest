@@ -28,7 +28,7 @@
       :template
       (:picture/acknowledgement-template picture)
 
-      :template-items
+      :template_items
       (not-empty
 	(pace-utils/vmap
 	  :Article_URL

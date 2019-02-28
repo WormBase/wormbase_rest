@@ -36,9 +36,7 @@
    :description "GO terms for this picture"})
 
 (defn external-source [p];e.g. WBPicture0000007800
-  {:data (when-let [es (picture-fns/external-sources p) ]
-           {:template (:template es)
-            :template_items (:template-items es)})
+  {:data (picture-fns/external-sources p)
    :description "Information to link to the source of this picture"})
 
 (defn contact [p] ;e.g. WBPicture0001123381
