@@ -76,22 +76,73 @@
     :in $
     :where [?t :transcript/id]])
 
-(defn get-transcript []
+(def q-variation
+  '[:find  [?v ...]
+    :in $
+    :where [?v :variation/id]])
+
+(defn get-variation []
   (let [db (d/db datomic-conn)]
-    (->> (d/q q-transcript db)
+    (->> (d/q q-variation db)
          (map (fn [id]
                 (let [obj (d/entity db id)]
-                  {:primaryIdentifier (str "Transcript:" (:transcript/id obj))
-                   :symbol (:transcript/id obj)
-                   :method (some->> obj :locatable/method :method/id)
-                   :organism.name (->> obj :transcript/species :species/id)
-                   :gene.primaryIdentifier (some->> (:gene/corresponding-transcript/_transcript obj)
-                                                    (map :gene/_corresponding-transcript)
+                  {:primaryIdentifier (:variation/id obj)
+                   :symbol (:variation/public-name obj)
+                   :otherName (:variation/other-name obj)
+                   :engineeredAllele_type (if (:variation/engineered-allele obj) true false)
+                   :allele_type (if (:variation/allele obj) true false)
+                   :snp_type (if (:variation/snp obj) true false)
+                   :confirmed_snp_type (if (:variation/confirmed-snp obj) true false)
+                   :predicted_snp_type (if (:variation/predicted-snp obj) true false)
+                   :rflp_type nil ; field exists on locus but is not populated
+                   :transposonInsertion_type (some->> (:variation/transposon-insertion obj)
+                                                      (map :transposon-family/id))
+                   :naturalVariant_type  (if (:variation/natural-variant obj) true false)
+                   :substitution_typeOfMutation (when-let [s (:variation/substitution obj)]
+                                                    {:ref (:variation.substitution/ref s)
+                                                     :alt (:variation.substitution/alt s)})
+                   :deletion_typeOfMutation (if (contains? obj :variation/deletion) true false)
+                   :tandemDuplication_typeOfMutation (if (contains? obj :variation/tandem-duplication) true false)
+                   :sequenceStatus (when (contains? obj :variation/seqstatus)
+                                     (name (:variation/seqstatus obj)))
+                   :linkedTo (some->> (:variation/linked-to obj)
+                                      (map :variation/id))
+                   :species (->> obj :variation/species :species/id)
+                   :productionMethod (when (contains? obj :variation/production-method)
+                                       (name (:variation/production-method obj)))
+                   :if.KOConsoriumAllele (if (:variation/ko-consortium-allele obj) true false)
+                   :if.NBPAllele (if (:variation/nbp-allele obj) true false)
+                   :if.NemaGENETAGConsortiumAllele (if (:variation/nemagenetag-consortium-allele obj) true false)
+                   :detectionMethod (:variation/detection-method obj)
+                   :live_status (when-let [s (->> obj
+                                                  :variation/status
+                                                  :variation.status/value)]
+                                  (name s))
+                   :gene.primaryIdentifier (some->> (:variation/gene obj)
+                                                    (map :variation.gene/gene)
                                                     (map :gene/id))
-                   :CDSs.primaryIdentifier (->> obj
-                                                :transcript/corresponding-cds
-                                                :transcript.corresponding-cds/cds
-                                                :cds/id)})))
+                   :mutagen (->> obj :variation/mutagen :variation.mutagen/text)
+                   :geneClass (some->> (:variation/gene-class obj)
+                                       (map :gene-class/id))
+                   :nonsense.molecularChange (some->> (:variation/predicted-cds obj)
+                                                      (map :molecular-change/nonsense)
+                                                      (remove nil?)
+                                                      (map (fn [h]
+                                                             {:text (:molecular-change.nonsense/text h)
+                                                              :value (when-let [t (:molecular-change.nonsense/value h)]
+                                                                       (name t))})))
+                   :missenseChange (some->> (:variation/predicted-cds obj)
+                                            (map :molecular-change/missense)
+                                            (map (fn [m]
+                                                   (some-> m
+                                                           (first)
+                                                           (:molecular-change.missense/text)))))
+                   :phenotype.primaryIdentifier (some->> (:variation/phenotype obj)
+                                                         (map :variation.phenotype/phenotype)
+                                                         (map :phenotype/id))
+                   :phenotypeNotObserved.primary.identifier (some->> (:variation/phenotype-not-observed obj)
+                                                                     (map :variation.phenotype-not-observed/phenotype)
+                                                                     (map :phenotype/id))})))
          (seq))))
 
 (defn get-strain []
@@ -440,6 +491,8 @@
 (defn transcript-handler [request]
 (ok {:data (get-transcript)}))
 
+(defn variation-handler [request]
+(ok {:data (get-variation)}))
 
 (def routes
   [(sweet/GET "/intermine/rnai" [] :tags ["intermine"] rnai-handler)
@@ -455,4 +508,5 @@
    (sweet/GET "/intermine/protein" [] :tags ["intermine"] protein-handler)
    (sweet/GET "/intermine/strain" [] :tags ["intermine"] strain-handler)
    (sweet/GET "/intermine/transcript" [] :tags ["intermine"] transcript-handler)
+   (sweet/GET "/intermine/variation" [] :tags ["intermine"] variation-handler)
    (sweet/GET "/intermine/gene-class" [] :tags ["intermine"] gene-class-handler)])
