@@ -145,6 +145,24 @@
                                                                      (map :phenotype/id))})))
          (seq))))
 
+(defn get-transcript []
+   (let [db (d/db datomic-conn)]
+     (->> (d/q q-transcript db)
+          (map (fn [id]
+                 (let [obj (d/entity db id)]
+                   {:primaryIdentifier (str "Transcript:" (:transcript/id obj))
+                    :symbol (:transcript/id obj)
+                    :method (->> obj :locatable/method :method/id)
+                    :organism.name (->> obj :transcript/species :species/id)
+                    :gene.primaryIdentifier (some->> (:gene.corresponding-transcript/_transcript obj)
+                                                     (map :gene/_corresponding-transcript)
+                                                     (map :gene/id))
+                    :CDSs.primaryIdentifier (->> obj
+                                                 :transcript/corresponding-cds
+                                                 :transcript.corresponding-cds/cds
+                                                 :cds/id)})))
+          (seq))))
+
 (defn get-strain []
   (let [db (d/db datomic-conn)]
     (->> (d/q q-strain db)
@@ -495,18 +513,18 @@
 (ok {:data (get-variation)}))
 
 (def routes
-  [(sweet/GET "/intermine/rnai" [] :tags ["intermine"] rnai-handler)
-   (sweet/GET "/intermine/anatomy-term" [] :tags ["intermine"] anatomy-term-handler)
+  [(sweet/GET "/intermine/anatomy-term" [] :tags ["intermine"] anatomy-term-handler)
    (sweet/GET "/intermine/cds" [] :tags ["intermine"] cds-handler)
    (sweet/GET "/intermine/expression-cluster" [] :tags ["intermine"] expression-cluster-handler)
    (sweet/GET "/intermine/expr-pattern" [] :tags ["intermine"] expr-pattern-handler)
+   (sweet/GET "/intermine/gene-class" [] :tags ["intermine"] gene-class-handler)
+   (sweet/GET "/intermine/gene" [] :tags ["intermine"] gene-handler)
    (sweet/GET "/intermine/laboratory" [] :tags ["intermine"] laboratory-handler)
    (sweet/GET "/intermine/life-stage" [] :tags ["intermine"] life-stage-handler)
    (sweet/GET "/intermine/phenotype" [] :tags ["intermine"] phenotype-handler)
-   (sweet/GET "/intermine/gene" [] :tags ["intermine"] gene-handler)
-   (sweet/GET "/intermine/species" [] :tags ["intermine"] species-handler)
    (sweet/GET "/intermine/protein" [] :tags ["intermine"] protein-handler)
+   (sweet/GET "/intermine/rnai" [] :tags ["intermine"] rnai-handler)
+   (sweet/GET "/intermine/species" [] :tags ["intermine"] species-handler)
    (sweet/GET "/intermine/strain" [] :tags ["intermine"] strain-handler)
    (sweet/GET "/intermine/transcript" [] :tags ["intermine"] transcript-handler)
-   (sweet/GET "/intermine/variation" [] :tags ["intermine"] variation-handler)
-   (sweet/GET "/intermine/gene-class" [] :tags ["intermine"] gene-class-handler)])
+   (sweet/GET "/intermine/variation" [] :tags ["intermine"] variation-handler)])
