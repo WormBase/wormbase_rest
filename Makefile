@@ -91,6 +91,7 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 	docker run \
 		--name datomic-to-catalyst \
 		--publish-all=true \
+		--restart=always \
 		--publish ${PORT}:${PORT} \
 		--detach \
 		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
