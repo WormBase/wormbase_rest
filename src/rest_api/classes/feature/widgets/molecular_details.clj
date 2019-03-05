@@ -32,7 +32,7 @@
                                     :stop (+ (max (count five-prime-flank) (count three-prime-flank)) (:stop refseqobj))}))
                      strand (if (and (str/includes? positive-strand-wide five-prime-flank)
                                      (str/includes? positive-strand-wide three-prime-flank))
-                              "positive" "negative")
+                              "+" "-")
                      padding 30
                      positive-sequence-raw (sequence-fns/get-sequence
                                          (conj
