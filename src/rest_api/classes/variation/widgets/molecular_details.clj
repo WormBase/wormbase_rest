@@ -26,7 +26,7 @@
       (sequence-fns/get-sequence refseqobj))))
 
 (defn- fetch-coords-in-feature [varrefseqobj object]
-  (let [refseqobj (sequence-fns/genomic-obj object)]
+  (when-let [refseqobj (sequence-fns/genomic-obj object)]
     (if (and
           (or (contains? object :cds/id)
               (contains? object :pseudogene/id))
@@ -558,7 +558,8 @@
                       (map (fn [chromosome-map]
                              (conj
                                (pack-obj chromosome-map)
-                               {:item (pack-obj chromosome-map)}))))
+                               {:item (pack-obj chromosome-map)})))
+                      (not-empty))
 
              "Gene" ;tested with WBVar00274017
              (some->> (:variation/gene variation)
