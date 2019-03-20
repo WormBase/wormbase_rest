@@ -540,7 +540,8 @@
              (when-let [s (:variation/mapping-target variation)]
                [(conj
                   (pack-obj s)
-                  (when (some? varrefseqobj)
+                  (when (and (some? varrefseqobj)
+                             (not= "MTCE" (:sequence/id s)))
                     (fetch-coords-in-feature varrefseqobj s)))])
 
              "Chromosome"
