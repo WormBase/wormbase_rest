@@ -7,15 +7,17 @@
 (defn dna-reverse-complement [dna]
   (some-> (str/reverse dna)
           (str/replace "a" "z")
-          (str/replace "c" "g")
+          (str/replace "c" "y")
           (str/replace "g" "c")
           (str/replace "t" "a")
           (str/replace "z" "t")
+          (str/replace "y" "g")
           (str/replace "A" "Z")
-          (str/replace "C" "G")
+          (str/replace "C" "Y")
           (str/replace "G" "C")
           (str/replace "T" "A")
-          (str/replace "Z" "T")))
+          (str/replace "Z" "T")
+          (str/replace "Y" "G")))
 
 (defn xform-species-name
   "Transforms a `species-name` from the WB database into
