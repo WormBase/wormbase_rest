@@ -1,4 +1,4 @@
-# datomic-to-catalyst
+# wormbase-rest
 
 - Provide interface to datomic database to WormBase website.
 

@@ -1,4 +1,4 @@
-NAME := wormbase/datomic-to-catalyst
+NAME := wormbase/wormbase-rest
 VERSION ?= $(shell git describe --abbrev=0 --tags)
 #VERSION = "latest"
 EBX_CONFIG := .ebextensions/.config
@@ -53,10 +53,10 @@ docker-push-ecr: docker-ecr-login $(call print-help,docker-push-ecr,\
 eb-create: $(call print-help,eb-create,\
 	    "Create an ElasticBeanStalk environment using \
 	     the Docker platofrm.")
-	@eb create datomic-to-catalyst-${WS_VERSION} \
+	@eb create wormbase-rest-${WS_VERSION} \
 		--region=us-east-1 \
 		--tags="CreatedBy=${AWS_EB_PROFILE},Role=RestAPI" \
-		--cname="datomic-to-catalyst-${LOWER_WS_VERSION}"
+		--cname="wormbase-rest-${LOWER_WS_VERSION}"
 
 .PHONY: eb-env
 eb-setenv: $(call print-help,eb-env,\
@@ -66,7 +66,7 @@ eb-setenv: $(call print-help,eb-env,\
 		  _JAVA_OPTIONS="-Xmx14g" \
 		  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
 		  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
-		  -e "datomic-to-catalyst"
+		  -e "wormbase-rest"
 
 .PHONY: eb-local
 eb-local: docker-ecr-login $(call print-help,eb-local,\
@@ -89,7 +89,7 @@ build: docker/${DEPLOY_JAR} \
 .PHONY: run
 run: $(call print-help,run,"Run the application in docker (locally).")
 	docker run \
-		--name datomic-to-catalyst \
+		--name wormbase-rest \
 		--publish-all=true \
 		--restart=always \
 		--publish ${PORT}:${PORT} \
@@ -106,8 +106,8 @@ docker-build: clean build \
 
 docker-clean: $(call print-help,docker-clean,\
                "Stop and remove the docker container (if running).")
-	@docker stop datomic-to-catalyst
-	@docker rm datomic-to-catalyst
+	@docker stop wormbase-rest
+	@docker rm wormbase-rest
 
 .PHONY: clean
 clean: $(call print-help,clean,"Remove the locally built JAR file.")
