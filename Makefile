@@ -48,7 +48,7 @@ docker-tag: $(call print-help,docker-tag,\
 docker-tag-latest: $(call print-help,docker-tag,\
 	     "Tag the image with current git revision \
 	      and ':latest' alias")
-	@docker tag ${NAME}:latest ${FQ_TAG}
+	@docker tag ${NAME}:latest ${FQ_TAG_LATEST}
 	@docker tag ${NAME}:latest \
 		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
