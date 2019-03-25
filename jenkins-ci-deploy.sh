@@ -6,6 +6,9 @@ export REST_TEST_LOG=/tmp/jenkins_rest_test_log_`date '+%s'`.log
 
 export PATH="${HOME}/.local/bin:$PATH";
 
+echo $PATH
+env
+
 # build container
 make build-staging
 
