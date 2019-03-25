@@ -4,6 +4,8 @@ set -e
 # Output of unit tests; path cannot contain spaces:
 export REST_TEST_LOG=/tmp/jenkins_rest_test_log_`date '+%s'`.log
 
+export PATH="${HOME}/.local/bin:$PATH";
+
 # build container
 make build-staging
 
