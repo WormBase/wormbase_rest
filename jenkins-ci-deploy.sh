@@ -2,7 +2,7 @@
 set -e
 
 # Output of unit tests; path cannot contain spaces:
-export TEST_LOG=/tmp/jenkins_rest_test_log_`date '+%s'`.log
+export REST_TEST_LOG=/tmp/jenkins_rest_test_log_`date '+%s'`.log
 
 # build container
 make build-latest
