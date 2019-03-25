@@ -166,7 +166,7 @@ dockerrun-latest: $(call print-help,dockerrun-latest, "Change docker run file to
 .PHONY: staging-deploy
 staging-deploy:
 	eb use rest-staging
-	eb deploy
+	eb deploy --region us-east-1 --timeout 10
 
 .PHONY: clean
 clean: $(call print-help,clean,"Remove the locally built JAR file.")
