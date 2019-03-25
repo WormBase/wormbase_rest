@@ -1,5 +1,5 @@
 NAME := wormbase/rest
-VERSION ?= $(shell git describe --abbrev=0 --tags)
+VERSION ?= "0.8.3"
 EBX_CONFIG := .ebextensions/.config
 WB_DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
