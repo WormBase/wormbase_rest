@@ -5,7 +5,7 @@ set -e
 export REST_TEST_LOG=/tmp/jenkins_rest_test_log_`date '+%s'`.log
 
 # build container
-make build-latest
+make build-staging
 
 # Unit tests: WormBase API and REST API
 #make build-run-test | tee $TEST_LOG

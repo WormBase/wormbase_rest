@@ -1,5 +1,4 @@
 NAME := wormbase/rest
-NAME_STAGING := wormbase/rest-staging
 VERSION ?= $(shell git describe --abbrev=0 --tags)
 EBX_CONFIG := .ebextensions/.config
 WB_DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
@@ -49,9 +48,9 @@ docker-tag: $(call print-help,docker-tag,\
 docker-tag-latest: $(call print-help,docker-tag,\
 	     "Tag the image with current git revision \
 	      and ':latest' alias")
-	@docker tag ${NAME_STAGING}:latest ${FQ_TAG}
-	@docker tag ${NAME_STAGING}:latest \
-		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME_STAGING}
+	@docker tag ${NAME}:latest ${FQ_TAG}
+	@docker tag ${NAME}:latest \
+		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
 .PHONY: docker-push-ecr
 docker-push-ecr: docker-ecr-login $(call print-help,docker-push-ecr,\
@@ -59,8 +58,8 @@ docker-push-ecr: docker-ecr-login $(call print-help,docker-push-ecr,\
                                     current git revision to ECR")
 	@docker push ${FQ_TAG}
 
-.PHONY: docker-push-ecr-staging
-docker-push-ecr-staging: docker-ecr-login $(call print-help,docker-push-ecr,\
+.PHONY: docker-push-ecr-latest
+docker-push-ecr-latest: docker-ecr-login $(call print-help,docker-push-ecr,\
 	                           "Push the image tagged with the \
                                     current git revision to ECR")
 	@docker push ${FQ_TAG_LATEST}
