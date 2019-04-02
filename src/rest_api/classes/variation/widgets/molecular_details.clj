@@ -390,8 +390,8 @@
                                            (str/replace
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
-                                             (if (str/includes? (str/lower-case (:sequence wildtype-positive))
-                                                                (get-deletion-str variation))
+                                             (if (str/includes? (:sequence wildtype-positive)
+                                                                (str/upper-case (get-deletion-str variation)))
                                                (str/upper-case insert-str)
                                                (generic-functions/dna-reverse-complement
                                                  (str/upper-case
