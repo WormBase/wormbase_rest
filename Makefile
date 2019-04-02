@@ -49,8 +49,6 @@ docker-tag-latest: $(call print-help,docker-tag,\
 	     "Tag the image with current git revision \
 	      and ':latest' alias")
 	@docker tag ${NAME}:latest ${FQ_TAG_LATEST}
-	@docker tag ${NAME}:latest \
-		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
 .PHONY: docker-push-ecr
 docker-push-ecr: docker-ecr-login $(call print-help,docker-push-ecr,\
