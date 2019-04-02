@@ -9,6 +9,9 @@ export PATH="${HOME}/.local/bin:$PATH";
 echo $PATH
 env
 
+# make the jar
+make clean && make docker/app.jar
+
 # build container
 make build-staging
 
