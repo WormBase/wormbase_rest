@@ -297,9 +297,6 @@
                                          (when (contains? variation :variation/tandem-duplication)
                                            (- 1 seq-length)))))
 
-                 k (get-deletion-str variation)
-                 d (count (get-deletion-str variation))
-
                  cgh-deleted-probes (get-cgh-deleted-probes variation)
 
                  wildtype-positive (when (nil? placeholder)
@@ -393,7 +390,7 @@
                                            (str/replace
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
-                                             (if (str/includes? (:sequence wildtype-positive)
+                                             (if (str/includes? (str/lower-case (:sequence wildtype-positive))
                                                                 (get-deletion-str variation))
                                                (str/upper-case insert-str)
                                                (generic-functions/dna-reverse-complement
