@@ -2,7 +2,7 @@
    "b_malayi" : {
       "assemblies" : [
          {
-            "appeared_in" : "WS251",
+            "appeared_in" : "WS252",
             "assembly_accession" : null,
             "assembly_name" : "B_malayi-4.0",
             "bioproject" : "PRJNA10729",
@@ -83,7 +83,7 @@
             "is_canonical" : true,
             "laboratory" : [
                "Washington University, St. Louis MO",
-               "Wellcome Trust Sanger Institute, Cambridge UK"
+               "European Bioinformatics Institute; Hinxton, United Kingdom"
             ],
             "strain" : "N2",
             "ucsc_name" : "ce11"
@@ -96,13 +96,44 @@
             "bioproject_description" : "University of Washington C. elegans CB4856 genome project",
             "is_canonical" : false,
             "laboratory" : [
-               "University of Washington, Seattle, WA"
+               "University of Washington, Seattle WA"
             ],
             "strain" : "CB4856",
+            "ucsc_name" : null
+         },
+         {
+            "appeared_in" : "WS268",
+            "assembly_accession" : "GCA_900538205.1",
+            "assembly_name" : "C_elegans_vc2010-v1",
+            "bioproject" : "PRJEB28388",
+            "bioproject_description" : "Caenorhabditis elegans strain VC2010 genome sequencing project",
+            "is_canonical" : false,
+            "laboratory" : [
+               "Cornell University, Ithaca NY"
+            ],
+            "strain" : "VC2010",
             "ucsc_name" : null
          }
       ],
       "full_name" : "Caenorhabditis elegans"
+   },
+   "c_inopinata" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS268",
+            "assembly_accession" : "GCA_003052745.1",
+            "assembly_name" : "Sp34_v7",
+            "bioproject" : "PRJDB5687",
+            "bioproject_description" : "University of Miyazaki",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Forestry and Forest Products Research Institute, Ibaraki, Japan"
+            ],
+            "strain" : "Unknown strain",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis inopinata"
    },
    "c_japonica" : {
       "assemblies" : [
@@ -121,6 +152,42 @@
          }
       ],
       "full_name" : "Caenorhabditis japonica"
+   },
+   "c_latens" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS268",
+            "assembly_accession" : "GCA_002259235.1",
+            "assembly_name" : "CaeLat1.0",
+            "bioproject" : "PRJNA248912",
+            "bioproject_description" : "University of Oregon",
+            "is_canonical" : true,
+            "laboratory" : [
+               "University of Texas, Arlington TX"
+            ],
+            "strain" : "Unknown strain",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis latens"
+   },
+   "c_nigoni" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS264",
+            "assembly_accession" : "GCA_002742825.1",
+            "assembly_name" : "C_nigoni-v1",
+            "bioproject" : "PRJNA384657",
+            "bioproject_description" : "Caenorhabditis nigoni strain JU1422, whole genome shotgun sequencing project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Cornell University, Ithaca NY"
+            ],
+            "strain" : "JU1422",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis nigoni"
    },
    "c_remanei" : {
       "assemblies" : [
@@ -148,6 +215,32 @@
                "University of Texas, Arlington TX"
             ],
             "strain" : "PX356",
+            "ucsc_name" : null
+         },
+         {
+            "appeared_in" : "WS268",
+            "assembly_accession" : "GCA_001643735.2",
+            "assembly_name" : "ASM164373v2",
+            "bioproject" : "PRJNA248909",
+            "bioproject_description" : "University of Oregon University C. remanei PX356 genome project",
+            "is_canonical" : false,
+            "laboratory" : [
+               "University of Texas, Arlington TX"
+            ],
+            "strain" : "PX356",
+            "ucsc_name" : null
+         },
+         {
+            "appeared_in" : "WS268",
+            "assembly_accession" : "GCA_002259225.1",
+            "assembly_name" : "CaeRem1.0",
+            "bioproject" : "PRJNA248911",
+            "bioproject_description" : "University of Oregon University C. remanei PX439 genome project",
+            "is_canonical" : false,
+            "laboratory" : [
+               "University of Texas, Arlington TX"
+            ],
+            "strain" : "PX439",
             "ucsc_name" : null
          }
       ],
@@ -188,6 +281,24 @@
          }
       ],
       "full_name" : "Caenorhabditis tropicalis"
+   },
+   "o_tipulae" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS268",
+            "assembly_accession" : "GCA_900184235.1",
+            "assembly_name" : "Oscheius_tipulae_assembly_v2",
+            "bioproject" : "PRJEB15512",
+            "bioproject_description" : "The genome of Oscheius tipulae",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Institute of Evolutionary Biology, University of Edinburgh, Edinburgh, UK"
+            ],
+            "strain" : "Unknown strain",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Oscheius tipulae"
    },
    "o_volvulus" : {
       "assemblies" : [
@@ -254,12 +365,30 @@
             "bioproject_description" : "Wellcome Trust Sanger Institute S. ratti genome project",
             "is_canonical" : true,
             "laboratory" : [
-               "Wellcome Trust Sanger Institute, Cambridge UK"
+               "Wellcome Trust Sanger Institute, Cambridge, UK"
             ],
             "strain" : "ED321",
             "ucsc_name" : null
          }
       ],
       "full_name" : "Strongyloides ratti"
+   },
+   "t_muris" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS264",
+            "assembly_accession" : "GCA_000612645.2",
+            "assembly_name" : "T_muris-TMUE3.1",
+            "bioproject" : "PRJEB126",
+            "bioproject_description" : "Wellcome Trust Sanger Institute T. muris genome project",
+            "is_canonical" : true,
+            "laboratory" : [
+               "Wellcome Trust Sanger Institute, Cambridge, UK"
+            ],
+            "strain" : "Edinburgh",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Trichuris muris"
    }
 }
