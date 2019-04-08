@@ -101,5 +101,5 @@
 
 (def widget
   {:name generic/name-field
-   :former_member former-members
+   :former_members former-members
    :current_members current-members})
