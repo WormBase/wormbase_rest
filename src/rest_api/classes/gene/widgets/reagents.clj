@@ -147,7 +147,8 @@
   (let [db (d/entity-db gene)
         [parent start end] (locatables/root-segment gene)]
     {:data
-    (if parent
+    (if (and parent
+             (:locatable/_assembly-parent parent))
        (->> (d/q '[:find [?p ...]
                    :in $ % ?seq ?min ?max
                    :where [?method :method/id "Orfeome"]
