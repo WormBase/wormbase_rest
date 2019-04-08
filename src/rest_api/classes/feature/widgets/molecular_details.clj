@@ -55,14 +55,13 @@
                               {:features
                                [{:type "feature"
                                  :start (+ 1 padding)
-                                 :stop  (+ 1
-                                           (+ padding (count feature-seq)))}]
+                                 :stop  (padding (count feature-seq))}]
                                :sequence positive-sequence}
                               :negative_strand
                               {:features
                                [{:type "feature"
                                  :start (+ 1 padding)
-                                 :stop (+ 1 (+ padding feature-length))}]
+                                 :stop (+ padding feature-length)}]
                                 :sequence negative-sequence}}}))))
    :description "sequences flanking the feature"})
 
