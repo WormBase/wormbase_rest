@@ -55,7 +55,7 @@
                               {:features
                                [{:type "feature"
                                  :start (+ 1 padding)
-                                 :stop  (padding (count feature-seq))}]
+                                 :stop  (+ padding (count feature-seq))}]
                                :sequence positive-sequence}
                               :negative_strand
                               {:features
