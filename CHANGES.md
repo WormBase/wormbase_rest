@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.8.4] - 2019-04-08
+- Hotfix for ASSEMBLIES.json
+
 ## [0.8.3] - 2019-03-20
 - Fixing when the clond is MTCE for a variations clone
 
