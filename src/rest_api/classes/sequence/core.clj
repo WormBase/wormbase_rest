@@ -219,7 +219,7 @@
                                                  (:start feature))))))
                                 (if (= status "spliced")
                                   (doseq [feature (reverse (sort-by :start features-raw))
-                                          :when (= "intron" (:type feature))]
+                                          :when (contains? (set `("intron" "three_prime_UTR" "five_prime_UTR")) (:type feature))]
                                     (swap! dna-sequence
                                            assoc
                                            :seq
