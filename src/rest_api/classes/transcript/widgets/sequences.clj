@@ -21,7 +21,7 @@
    :description "the unpliced sequence of the sequence"})
 
 (defn spliced-sequence-context [t]
-  {:data (sequence-fns/transcript-sequence-features t 0 "spliced-plus-utr")
+  {:data (sequence-fns/transcript-sequence-features t 0 "spliced-with-utr")
    :description "the spliced sequence of the sequence"})
 
 (defn protein-sequence [t]

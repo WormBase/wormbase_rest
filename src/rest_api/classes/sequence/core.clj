@@ -138,32 +138,47 @@
      :stop feature-end
      :type (:type feature)}))
 
-(defn transcript-sequence-features [transcript padding status] ; status can be spliced or unspliced
+(defn transcript-sequence-features [transcript padding status] ; status can be spliced, spliced-with-utr, and unspliced
   (when-let [refseq-obj (genomic-obj transcript)]
-    (let [sequence-strand (if (> (:start refseq-obj) (:stop refseq-obj))
-                            "negative"
-                            "positive")
+    (let [
+          dddd (println refseq-obj)
           seq-features (genomic-obj-child-positions transcript)
-          three-prime-utr (filter (comp #{"three_prime_UTR"} :type) seq-features)
-          five-prime-utr (filter (comp #{"five_prime_UTR"} :type) seq-features)
+          ddddd (println seq-features)
+          three-prime-utr (first (filter (comp #{"three_prime_UTR"} :type) seq-features))
+          five-prime-utr (first (filter (comp #{"five_prime_UTR"} :type) seq-features))
+          sequence-strand (if (> (:start three-prime-utr) (:start five-prime-utr)) "+" "-")
+          start (if (= "+" sequence-strand)
+                  (if (= status "spliced")
+                    (+ 1 (:stop five-prime-utr))
+                    (:start five-prime-utr))
+                  (if (= status "spliced")
+                    (- (:start three-prime-utr) 1)
+                    (:stop three-prime-utr)))
+          stop (if (= "+" sequence-strand)
+                  (if (= status "spliced")
+                    (- (:start three-prime-utr) 1)
+                    (:stop three-prime-utr))
+                  (if (= status "spliced")
+                    (+ (:stop five-prime-utr) 1)
+                    (:start three-prime-utr)))
           features-raw (when-let [features seq-features]
                          (some->> features
                                   (map (fn [feature]
                                          (when (not= "CDS" (:type feature))
                                            {:start (+ 1
                                                       (+ padding
-                                                         (if (= sequence-strand "positive")
-                                                           (- (if-let [three-prime-utr-start (:start three-prime-utr)]
-                                                                three-prime-utr-start
+                                                         (if (= sequence-strand "+")
+                                                           (- (if (= status "spliced-with-utr" (if-let [five-prime-utr-start (:start five-prime-utr)]
+                                                                five-prime-utr-start
                                                                 (:start feature))
                                                               (:start refseq-obj))
                                                            (- (:stop feature)
-                                                              (if-let [three-prime-utr-start (:start three-prime-utr)]
+                                                             (if-let [three-prime-utr-start (:start three-prime-utr)]
                                                                 three-prime-utr-start
                                                                 (:stop refseq-obj))))))
                                             :stop (+ 1
                                                      (+ padding
-                                                        (if (= sequence-strand "positive")
+                                                       (if (= sequence-strand "+")
                                                           (- (:stop feature)
                                                              (if-let [three-prime-utr-start (:start three-prime-utr)]
                                                                three-prime-utr-start
@@ -177,7 +192,7 @@
           sequence-positive-raw (get-sequence
                                   (conj
                                     refseq-obj
-                                    (if (= sequence-strand "positive")
+                                    (if (= sequence-strand "+")
                                       {:start (if-let [three-prime-utr-start (:start three-prime-utr)]
                                                 (- three-prime-utr-start padding)
                                                 (- (:start refseq-obj) padding))
@@ -217,7 +232,7 @@
                                            (+ 1
                                               (- (:stop feature)
                                                  (:start feature))))))
-                                (if (= status "spliced-plus-utr")
+                                (if (= status "spliced-with-utr")
                                   (doseq [feature (reverse (sort-by :start features-raw))
                                           :when (contains? (set `("intron" "three_prime_UTR" "five_prime_UTR")) (:type feature))]
                                     (swap! dna-sequence
