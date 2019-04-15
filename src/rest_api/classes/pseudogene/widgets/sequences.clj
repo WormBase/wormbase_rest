@@ -14,20 +14,21 @@
 
 (defn print-sequence [p]
   {:data (when-let [refseqobj (sequence-fns/genomic-obj p)]
-           (if-let [dna-sequence (sequence-fns/get-sequence refseqobj)]
+           (when-let [dna-sequence (sequence-fns/get-sequence refseqobj)]
              (let [strand (if-let [strand-kw (:locatable/strand p)]
-                            (name strand-kw)
-                            "positive")
-                   dna-sequence (if (= strand "negative")
+                            (case (name strand-kw)
+                              "positive" "+"
+                              "negative" "-")
+                            "+")
+                   dna-sequence (if (= strand "+")
                                   (generic-functions/dna-reverse-complement dna-sequence)
                                   dna-sequence)]
-
                {:length (count dna-sequence)
                 :positive_strand
                 {:sequence dna-sequence}
                 :negative_strand
-                {:sequence (generic-functions/dna-reverse-complement p)}
-                :strand (if (= strand "positive") "+" "-")
+                {:sequence (generic-functions/dna-reverse-complement dna-sequence)}
+                :strand strand
                 :header "Sequence"})))
    :descriptions "The sequence of the pseudogene"})
 

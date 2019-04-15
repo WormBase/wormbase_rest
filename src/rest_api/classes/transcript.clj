@@ -42,7 +42,7 @@
     :external_links external-links/widget
     :location location/widget
     :feature feature/widget
-    :sequences sequences/widget
+    ;:sequences sequences/widget
     :references references/widget}
    :field
    {:fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})
