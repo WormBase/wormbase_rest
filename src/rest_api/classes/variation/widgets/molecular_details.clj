@@ -26,7 +26,7 @@
       (sequence-fns/get-sequence refseqobj))))
 
 (defn- fetch-coords-in-feature [varrefseqobj object]
-  (let [refseqobj (sequence-fns/genomic-obj object)]
+  (when-let [refseqobj (sequence-fns/genomic-obj object)]
     (if (and
           (or (contains? object :cds/id)
               (contains? object :pseudogene/id))
@@ -297,9 +297,6 @@
                                          (when (contains? variation :variation/tandem-duplication)
                                            (- 1 seq-length)))))
 
-                 k (get-deletion-str variation)
-                 d (count (get-deletion-str variation))
-
                  cgh-deleted-probes (get-cgh-deleted-probes variation)
 
                  wildtype-positive (when (nil? placeholder)
@@ -394,7 +391,7 @@
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
                                              (if (str/includes? (:sequence wildtype-positive)
-                                                                (get-deletion-str variation))
+                                                                (str/upper-case (get-deletion-str variation)))
                                                (str/upper-case insert-str)
                                                (generic-functions/dna-reverse-complement
                                                  (str/upper-case
@@ -559,7 +556,8 @@
                       (map (fn [chromosome-map]
                              (conj
                                (pack-obj chromosome-map)
-                               {:item (pack-obj chromosome-map)}))))
+                               {:item (pack-obj chromosome-map)})))
+                      (not-empty))
 
              "Gene" ;tested with WBVar00274017
              (some->> (:variation/gene variation)

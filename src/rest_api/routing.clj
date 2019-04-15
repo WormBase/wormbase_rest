@@ -44,7 +44,7 @@
                 :pcr-product/id
                 (keyword entity-ns "id"))
           lookup-ref [attr id]]
-      (if-let [entity (or (d/entity db lookup-ref)
+      (when-let [entity (or (d/entity db lookup-ref)
                           (or (d/entity db [:oligo/id id])
                               (d/entity db [:oligo-set/id id])))]
         (->> (conform-to-scheme scheme entity-handler entity request)

@@ -2,6 +2,7 @@
   (:require
     [pseudoace.utils :as pace-utils]
     [clojure.string :as str]
+    [rest-api.classes.picture.core :as picture-fns]
     [rest-api.classes.gene.expression :as gene-expr]
     [rest-api.classes.generic-fields :as generic]
     [rest-api.classes.generic-functions :as generic-functions]
@@ -144,7 +145,7 @@
            (when-let [pictures (:picture/_reference p)]
              {:curated_images
               (some->> pictures
-                       (map gene-expr/pack-image)
+                       (map picture-fns/pack-image)
                        (sort-by :label))})
 
            "Antibody"

@@ -6,6 +6,15 @@
     [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.classes.generic-fields :as generic]))
 
+; This was being displayed instead of the sequence if the sequence was not in the database
+;{:flanks flanks  ; section tested with WBsf000519
+; :seq seq-obj
+; :method method
+; :sequences [{:sequence five-prime-flank
+;              :comment "flanking sequence (upstream)"}
+;             {:sequence three-prime-flank
+;              :comment "flanking sequence (downstream)"}]}
+
 (defn sequence-context [f]
   {:data (when-let [s (:locatable/parent f)]
            (let [five-prime-flank (:feature.flanking-sequences/five-prime (:feature/flanking-sequences f))
@@ -13,15 +22,8 @@
                  flanks [five-prime-flank three-prime-flank]
                  seq-obj (pack-obj s)
                  method (-> f :locatable/method :method/id)]
-             (if (or (some #(= method %) ["SL1" "SL2" "polyA_site" "history feature"])
-                     (not (contains? f :locatable/min)))
-               {:flanks flanks  ; section tested with WBsf000519
-                :seq seq-obj
-                :method method
-                :sequences [{:sequence five-prime-flank
-                             :comment "flanking sequence (upstream)"}
-                            {:sequence three-prime-flank
-                             :comment "flanking sequence (downstream)"}]}
+             (when (not (or (some #(= method %) ["SL1" "SL2" "polyA_site" "history feature"])
+                     (not (contains? f :locatable/min))))
                (let [refseqobj (sequence-fns/genomic-obj f) ;tested with WBsf019129
                      positive-strand-wide (sequence-fns/get-sequence
                                  (conj
@@ -30,7 +32,7 @@
                                     :stop (+ (max (count five-prime-flank) (count three-prime-flank)) (:stop refseqobj))}))
                      strand (if (and (str/includes? positive-strand-wide five-prime-flank)
                                      (str/includes? positive-strand-wide three-prime-flank))
-                              "positive" "negative")
+                              "+" "-")
                      padding 30
                      positive-sequence-raw (sequence-fns/get-sequence
                                          (conj
@@ -52,13 +54,13 @@
                   :sequences {:positive_strand
                               {:features
                                [{:type "feature"
-                                 :start padding
-                                 :stop (+ padding (count feature-seq))}]
+                                 :start (+ 1 padding)
+                                 :stop  (+ padding (count feature-seq))}]
                                :sequence positive-sequence}
                               :negative_strand
                               {:features
                                [{:type "feature"
-                                 :start padding
+                                 :start (+ 1 padding)
                                  :stop (+ padding feature-length)}]
                                 :sequence negative-sequence}}}))))
    :description "sequences flanking the feature"})
