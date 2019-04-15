@@ -217,7 +217,7 @@
                                            (+ 1
                                               (- (:stop feature)
                                                  (:start feature))))))
-                                (if (= status "spliced")
+                                (if (= status "spliced-plus-utr")
                                   (doseq [feature (reverse (sort-by :start features-raw))
                                           :when (contains? (set `("intron" "three_prime_UTR" "five_prime_UTR")) (:type feature))]
                                     (swap! dna-sequence
@@ -230,6 +230,20 @@
                                              (+ 1
                                                 (- (:stop feature)
                                                    (:start feature)))))))
+                                (if (= status "spliced")
+                                  (doseq [feature (reverse (sort-by :start features-raw))
+                                          :when (= "intron" (:type feature))]
+                                    (swap! dna-sequence
+                                           assoc
+                                           :seq
+                                           (replace-in-str
+                                             "remove"
+                                             (:seq @dna-sequence)
+                                             (- (:start feature) 1)
+                                             (+ 1
+                                                (- (:stop feature)
+                                                   (:start feature)))))))
+
                                 (:seq @dna-sequence)))
 
           positive-features (if (= status "unspliced")
