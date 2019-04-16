@@ -7,20 +7,12 @@
     [rest-api.classes.generic-functions :as generic-functions]
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-(defn unspliced-sequence-context [c]
+(defn cds-sequence [c]
   {:data (when-let [transcript  (-> c
                                     :transcript.corresponding-cds/_cds
                                     first
                                     :transcript/_corresponding-cds)]
-          (sequence-fns/transcript-sequence-features transcript 0 "unspliced"))
-   :description "the unpliced sequence of the sequence"})
-
-(defn spliced-sequence-context [c]
-  {:data (when-let [transcript  (-> c
-                                    :transcript.corresponding-cds/_cds
-                                    first
-                                    :transcript/_corresponding-cds)]
-          (sequence-fns/transcript-sequence-features transcript 0 "spliced"))
+          (sequence-fns/transcript-sequence-features transcript 0 :cds))
    :description "the unpliced sequence of the sequence"})
 
 (defn protein-sequence [c]
@@ -46,9 +38,6 @@
 
 (def widget
   {:name generic/name-field
-   :predicted_exon_structure generic/predicted-exon-structure
    :print_blast print-blast
    :protein_sequence protein-sequence
-   :predicted_unit generic/predicted-units
-   :unspliced_sequence_context unspliced-sequence-context
-   :spliced_sequence_context spliced-sequence-context})
+   :cds_sequence cds-sequence})

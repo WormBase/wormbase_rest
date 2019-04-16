@@ -13,15 +13,15 @@
    :description "strand orientation of the sequence"})
 
 (defn unspliced-sequence-context-with-padding [t]
-  {:data (sequence-fns/transcript-sequence-features t 2001 "unspliced")
+  {:data (sequence-fns/transcript-sequence-features t 2001 :unspliced)
    :description "the unpliced sequence of the sequence"})
 
 (defn unspliced-sequence-context [t]
-  {:data (sequence-fns/transcript-sequence-features t 0 "unspliced")
+  {:data (sequence-fns/transcript-sequence-features t 0 :unspliced)
    :description "the unpliced sequence of the sequence"})
 
 (defn spliced-sequence-context [t]
-  {:data (sequence-fns/transcript-sequence-features t 0 "spliced-with-utr")
+  {:data (sequence-fns/transcript-sequence-features t 0 :spliced)
    :description "the spliced sequence of the sequence"})
 
 (defn protein-sequence [t]
