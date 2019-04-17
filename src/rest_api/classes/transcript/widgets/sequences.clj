@@ -25,8 +25,10 @@
    :description "the spliced sequence of the sequence"})
 
 (defn protein-sequence [t]
-  {:data (when-let [peptide (some->> (:transcript/corresponding-protein t)
-                                     (:transcript.corresponding-protein/protein)
+  {:data (when-let [peptide (some->> (->> t :transcript/corresponding-cds
+                                            :transcript.corresponding-cds/cds
+                                            :cds/corresponding-protein)
+                                     (:cds.corresponding-protein/protein)
                                      (:protein/peptide)
                                      (:protein.peptide/peptide)
                                      (:peptide/sequence))]
