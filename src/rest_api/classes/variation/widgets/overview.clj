@@ -61,6 +61,21 @@
            (pack-obj new-var))
    :description (str "the variation " (:variation/id v) " was merged into, if it was")})
 
+(defn production-method [variation]
+  {:data (if-let [method (-> (:variation/production-method variation)
+                             (first))]
+           (case (name method)
+             "crispr-cas9" "CRISPR-Cas9"
+             "homologous-recombination" "Homologous recombination"
+             "mosdel" "MosDEL"
+             "mossci" "MosSci"
+             "nhej" "NHEJ"
+             "talens" "TALENs"
+             "zfnhr-repair" "ZFNHR repair"
+             "zfnnhej-repair" "ZFNNHEJ repair"
+             (obj/humanize-ident method)))
+   :description "the production method of the engineered allele"})
+
 (def widget
   {:name generic/name-field
    :status generic/status
@@ -70,4 +85,5 @@
    :variation_type variation-type
    :remarks generic/remarks
    :merged_into merged-into
-   :other_names generic/other-names})
+   :other_names generic/other-names
+   :production_method production-method})
