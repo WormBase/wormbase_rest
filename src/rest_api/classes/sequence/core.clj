@@ -141,20 +141,19 @@
 (defn transcript-sequence-features [transcript padding status] ; status can be :cds, :spliced, and :unspliced
   (when-let [refseq-obj (genomic-obj transcript)]
     (let [seq-features (genomic-obj-child-positions transcript)
-          status :spliced
           three-prime-utr (first (filter (comp #{"three_prime_UTR"} :type) seq-features))
           five-prime-utr (first (filter (comp #{"five_prime_UTR"} :type) seq-features))
           cds (first (filter (comp #{"CDS"} :type) seq-features))
           sequence-strand (if (< (:start five-prime-utr) (:stop three-prime-utr)) "+" "-")
           context-obj (if (= status :cds) cds refseq-obj)
           [context-left context-right] (if (neg? (- (:start context-obj) (:stop context-obj)))
-                                         [(:start context-obj) (:stop context-obj)]
-                                         [(:stop context-obj) (:start context-obj)])
+                                         [(- (:start context-obj) padding) (+ (:stop context-obj) padding)]
+                                         [(- (:stop context-obj) padding) (+ (:start context-obj) padding)])
           positive-features (some->> seq-features
                                      (map (fn [feature]
                                             (let [feature-type (keyword (:type feature))
                                                   [left-position right-position]
-                                                  (if (< (:start feature) (:stop feature))
+                                                  (if (neg? (- (:start feature) (:stop feature)))
                                                     [(:start feature) (:stop feature)]
                                                     [(:stop feature) (:start feature)])]
                                               (when (and (not= feature-type :CDS)
@@ -162,13 +161,9 @@
                                                            (and (= status :cds)
                                                                 (or (= feature-type :five_prime_UTR)
                                                                     (= feature-type :three_prime_UTR)))))
-                                                {:start (let [start (+ 1
-                                                                       (+ padding
-                                                                          (- left-position context-left)))]
-                                                          (if (neg? start) 0 start))
-                                                 :stop (let [stop (+ 1
-                                                                     (+ padding
-                                                                        (- right-position context-left)))]
+                                                {:start (let [start (+ 1 (- left-position context-left))]
+                                                          (if (neg? start) 1 start))
+                                                 :stop (let [stop (+ 1 (- right-position context-left))]
                                                          (let [length (+ 1 (- context-right context-left))]
                                                            (if (> stop length) length stop)))
                                                  :type feature-type}))))
@@ -181,7 +176,7 @@
           sequence-positive (let [dna-sequence (atom {:seq sequence-positive-raw})]
                               (do
                                 (doseq [feature positive-features
-                                        :when (= "exon" (:type feature))]
+                                        :when (= :exon (:type feature))]
                                   (swap! dna-sequence
                                          assoc
                                          :seq
@@ -193,8 +188,8 @@
                                               (- (:stop feature)
                                                  (:start feature))))))
                                 (doseq [feature positive-features
-                                        :when (or (= "three_prime_UTR" (:type feature))
-                                                  (= "five_prime_UTR" (:type feature)))]
+                                        :when (or (= :three_prime_UTR (:type feature))
+                                                  (= :five_prime_UTR (:type feature)))]
                                   (swap! dna-sequence
                                          assoc
                                          :seq
@@ -207,7 +202,7 @@
                                                  (:start feature))))))
                                 (if (= status :cds)
                                   (doseq [feature (reverse (sort-by :start positive-features))
-                                          :when (contains? (set `("intron" "three_prime_UTR" "five_prime_UTR")) (:type feature))]
+                                          :when (contains? (set '(:intron :three_prime_UTR :five_prime_UTR)) (:type feature))]
                                     (swap! dna-sequence
                                            assoc
                                            :seq
@@ -220,7 +215,7 @@
                                                    (:start feature)))))))
                                 (if (= status :spliced)
                                   (doseq [feature (reverse (sort-by :start positive-features))
-                                          :when (= "intron" (:type feature))]
+                                          :when (= :intron (:type feature))]
                                     (swap! dna-sequence
                                            assoc
                                            :seq
@@ -237,7 +232,7 @@
        {:features positive-features
         :sequence sequence-positive}
        :negative-strand
-       {:features (when-let [seq-length (count sequence-positive)]
+       {:features (when-let [seq-length (count sequence-positive-raw)]
                     (let [neg-features (atom {:features ()})]
                       (do
                         (doseq [feature positive-features]
