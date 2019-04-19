@@ -13,7 +13,7 @@
                                     first
                                     :transcript/_corresponding-cds)]
           (sequence-fns/transcript-sequence-features transcript 0 :cds))
-   :description "the unpliced sequence of the sequence"})
+   :description "the spliced sequence of the transcripts without UTR"})
 
 (defn protein-sequence [c]
   {:data (when-let [peptide (some->> (:cds/corresponding-protein c)
