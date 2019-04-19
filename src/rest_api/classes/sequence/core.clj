@@ -138,9 +138,31 @@
      :stop feature-end
      :type (:type feature)}))
 
+(defn- get-spliced-exon-positions [positive-features]
+  (let [last-stop (atom 0)]
+    (for [feature (sort-by :start positive-features)
+          :when (= (:type feature) :exon)
+          :let [last-stop-position @last-stop
+                new-stop-position (+ last-stop-position
+                                     (+ 1
+                                        (- (:stop feature) (:start feature))))
+                new-start-position (+ 1 last-stop-position)]]
+      (do (reset! last-stop new-stop-position)
+          {:start new-start-position
+           :stop new-stop-position
+           :type (:type feature)}))))
+
 (defn transcript-sequence-features [transcript padding status] ; status can be :cds, :spliced, and :unspliced
   (when-let [refseq-obj (genomic-obj transcript)]
     (let [seq-features (genomic-obj-child-positions transcript)
+          status-parts  (case status
+                          :spliced
+                          #{:exon :three_prime_UTR :five_prime_UTR}
+
+                          :cds
+                          #{:exon}
+
+                          #{:intron :exon :three_prime_UTR :five_prime_UTR})
           three-prime-utr (first (filter (comp #{"three_prime_UTR"} :type) seq-features))
           five-prime-utr (first (filter (comp #{"five_prime_UTR"} :type) seq-features))
           cds (first (filter (comp #{"CDS"} :type) seq-features))
@@ -200,9 +222,9 @@
                                            (+ 1
                                               (- (:stop feature)
                                                  (:start feature))))))
-                                (if (= status :cds)
+                                (if (contains? #{:cds :spliced} status)
                                   (doseq [feature (reverse (sort-by :start positive-features))
-                                          :when (contains? (set '(:intron :three_prime_UTR :five_prime_UTR)) (:type feature))]
+                                          :when (not (some #(= (:type feature) %) status-parts))]
                                     (swap! dna-sequence
                                            assoc
                                            :seq
@@ -213,29 +235,39 @@
                                              (+ 1
                                                 (- (:stop feature)
                                                    (:start feature)))))))
-                                (if (= status :spliced)
-                                  (doseq [feature (reverse (sort-by :start positive-features))
-                                          :when (= :intron (:type feature))]
-                                    (swap! dna-sequence
-                                           assoc
-                                           :seq
-                                           (replace-in-str
-                                             "remove"
-                                             (:seq @dna-sequence)
-                                             (- (:start feature) 1)
-                                             (+ 1
-                                                (- (:stop feature)
-                                                   (:start feature)))))))
+                                (:seq @dna-sequence)))
+          modified-positive-features (case status
+                                           :unspliced
+                                           positive-features
 
-                                (:seq @dna-sequence)))]
+                                           :cds
+                                           (get-spliced-exon-positions positive-features)
+
+                                           :spliced
+                                           (flatten
+                                             (conj
+                                               (get-spliced-exon-positions positive-features)
+                                               (if (= sequence-strand "+")
+                                                 (first (filter #(= (:type %) :five_primeUTR) positive-features))
+                                                 (first (filter #(= (:type %) :three_prime_UTR) positive-features)))
+                                               (let [feature (if (= sequence-strand "+")
+                                                               (first (filter #(= (:type %) :three_prime_UTR) positive-features))
+                                                               (first (filter #(= (:type %) :five_prime_UTR) positive-features)))
+                                                     end (count sequence-positive)]
+                                                 (conj
+                                                   feature
+                                                   {:start (- end
+                                                              (+ 1 (- (:stop feature) (:start feature))))
+                                                    :stop (count sequence-positive)}))
+                                               )))]
       {:positive-strand
-       {:features positive-features
+       {:features modified-positive-features
         :sequence sequence-positive}
        :negative-strand
-       {:features (when-let [seq-length (count sequence-positive-raw)]
+       {:features (when-let [seq-length (count sequence-positive)]
                     (let [neg-features (atom {:features ()})]
                       (do
-                        (doseq [feature positive-features]
+                        (doseq [feature modified-positive-features]
                           (swap! neg-features
                                  assoc
                                  :features
