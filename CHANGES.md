@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.0] - 2019-04-22
+- First release for WS270
+
 ## [0.8.4] - 2019-04-08
 - Hotfix for ASSEMBLIES.json
 
