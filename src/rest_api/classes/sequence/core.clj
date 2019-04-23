@@ -157,9 +157,9 @@
     ((comp vec flatten conj) features
      [{:type :padding
        :start 1
-       :stop (- padding 1)}
+       :stop  padding}
       {:type :padding
-       :start (+ 2 (- length padding))
+       :start (- length padding)
        :stop length}])))
 
 (defn transcript-sequence-features [transcript padding status]
