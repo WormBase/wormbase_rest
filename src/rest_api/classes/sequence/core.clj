@@ -162,7 +162,7 @@
        :start (+ 2 (- length padding))
        :stop length}])))
 
-(defn transcript-sequence-features [transcript padding status] ; status can be :cds, :spliced, and :unspliced
+(defn transcript-sequence-features [transcript padding status]
   (when-let [refseq-obj (genomic-obj transcript)]
     (let [seq-features (genomic-obj-child-positions transcript)
           padding (if (> padding 0) (- padding 1) 0)
@@ -271,12 +271,12 @@
                                                               (+ 1 (- (:stop feature) (:start feature))))
                                                     :stop (count sequence-positive)}))
                                                )))]
-      {:positive-strand
+      {:positive_strand
        {:features (if (> padding 0)
                     (add-padding-to-feature-list modified-positive-features padding (count sequence-positive))
                     modified-positive-features)
         :sequence sequence-positive}
-       :negative-strand
+       :negative_strand
        {:features (when-let [seq-length (count sequence-positive)]
                     (let [neg-features (atom {:features ()})]
                       (do
@@ -287,4 +287,4 @@
                                  (feature-complement (:features @neg-features) feature seq-length)))
                         (:features @neg-features))))
         :sequence (generic-functions/dna-reverse-complement sequence-positive)}
-       :sequence_strand sequence-strand})))
+       :strand sequence-strand})))
