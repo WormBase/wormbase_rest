@@ -165,6 +165,7 @@
 (defn transcript-sequence-features [transcript padding status] ; status can be :cds, :spliced, and :unspliced
   (when-let [refseq-obj (genomic-obj transcript)]
     (let [seq-features (genomic-obj-child-positions transcript)
+          padding (if (> padding 0) (- padding 1) 0)
           status-parts  (case status
                           :spliced
                           #{:exon :three_prime_UTR :five_prime_UTR}

@@ -12,7 +12,7 @@
            (name strand-kw))
    :description "strand orientation of the sequence"})
 
-(defn print-sequence [p]
+(defn sequence-context [p]
   {:data (when-let [refseqobj (sequence-fns/genomic-obj p)]
            (when-let [dna-sequence (sequence-fns/get-sequence refseqobj)]
              (let [strand (if-let [strand-kw (:locatable/strand p)]
@@ -36,4 +36,4 @@
   {:name generic/name-field
    :predicted_exon_structure generic/predicted-exon-structure
    :strand strand
-   :print_sequence print-sequence})
+   :sequence_context sequence-context})
