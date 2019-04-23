@@ -152,6 +152,16 @@
            :stop new-stop-position
            :type (:type feature)}))))
 
+(defn- add-padding-to-feature-list [features padding length]
+  (when (> padding 0)
+    ((comp vec flatten conj) features
+     [{:type :padding
+       :start 1
+       :stop (- padding 1)}
+      {:type :padding
+       :start (+ 2 (- length padding))
+       :stop length}])))
+
 (defn transcript-sequence-features [transcript padding status] ; status can be :cds, :spliced, and :unspliced
   (when-let [refseq-obj (genomic-obj transcript)]
     (let [seq-features (genomic-obj-child-positions transcript)
@@ -261,7 +271,9 @@
                                                     :stop (count sequence-positive)}))
                                                )))]
       {:positive-strand
-       {:features modified-positive-features
+       {:features (if (> padding 0)
+                    (add-padding-to-feature-list modified-positive-features padding (count sequence-positive))
+                    modified-positive-features)
         :sequence sequence-positive}
        :negative-strand
        {:features (when-let [seq-length (count sequence-positive)]
