@@ -159,13 +159,12 @@
        :start 1
        :stop  padding}
       {:type :padding
-       :start (- length padding)
+       :start (+ (- length padding) 1)
        :stop length}])))
 
 (defn transcript-sequence-features [transcript padding status]
   (when-let [refseq-obj (genomic-obj transcript)]
     (let [seq-features (genomic-obj-child-positions transcript)
-          padding (if (> padding 0) (- padding 1) 0)
           status-parts  (case status
                           :spliced
                           #{:exon :three_prime_UTR :five_prime_UTR}
@@ -269,18 +268,21 @@
                                                    feature
                                                    {:start (- end
                                                               (+ 1 (- (:stop feature) (:start feature))))
-                                                    :stop (count sequence-positive)}))
-                                               )))]
+                                                    :stop (count sequence-positive)})))))
+          modified-positive-features-with-padding (if (> padding 0)
+                                                    (add-padding-to-feature-list
+                                                      modified-positive-features
+                                                      padding
+                                                      (count sequence-positive))
+                                                    modified-positive-features)]
       {:positive_strand
-       {:features (if (> padding 0)
-                    (add-padding-to-feature-list modified-positive-features padding (count sequence-positive))
-                    modified-positive-features)
+       {:features modified-positive-features-with-padding
         :sequence sequence-positive}
        :negative_strand
        {:features (when-let [seq-length (count sequence-positive)]
                     (let [neg-features (atom {:features ()})]
                       (do
-                        (doseq [feature modified-positive-features]
+                        (doseq [feature modified-positive-features-with-padding]
                           (swap! neg-features
                                  assoc
                                  :features
