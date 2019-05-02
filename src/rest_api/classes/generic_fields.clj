@@ -89,9 +89,9 @@
                                  [(some->> (:cds.corresponding-protein/_protein object)
                                            (map :cds/_corresponding-protein)
                                            (filter #(not= "history" (:method/id (:locatable/method %))))
-                                           (map :gene.corresponding-cds/_cds)
-                                           first
-                                           (map :gene/_corresponding-cds))
+              ;                             (map :gene.corresponding-cds/_cds)
+                                           first)
+               ;                            (map :gene/_corresponding-cds))
                                   "gene"]
 
                                  :else
@@ -152,14 +152,13 @@
              (some->> (:cds.corresponding-protein/_protein object)
                       (map :cds/_corresponding-protein)
                       (filter #(not= "history"  (:method/id  (:locatable/method %))))
-                      (map :gene.corresponding-cds/_cds)
-                      first
-                      (map :gene/_corresponding-cds)
-                      (map sequence-fns/genomic-obj))
-             (when-let [position (sequence-fns/genomic-obj-position object)]
+                      (first)
+                      (sequence-fns/genomic-obj))
+             (when-let [position (sequence-fns/genomic-obj object)]
                [position]))
      :description "The genomic location of the sequence"}))
-
+              ;        (map :gene/_corresponding-cds)
+;                      (map sequence-fns/genomic-obj))
 (defn microarray-assays [object]
   {:data (some->> (:locatable/_parent object)
                   (map (fn [f]

@@ -95,4 +95,5 @@
           (- high low-offset))))
 
 (defn get-seq-features [db-spec transcript]
-  (sequencesql/get-seq-features db-spec {:name transcript}))
+  (do (println "DDDD") (println transcript) (println "EEEE")
+  (sequencesql/get-seq-features db-spec {:name transcript})))

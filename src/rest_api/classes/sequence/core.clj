@@ -35,12 +35,12 @@
       (when sequence-database
         (sequence-features sequence-database (id-kw object) role)))))
 
-(defn get-transcript-segments [object]
+(defn get-transcript-segments [object feature-id]
   (let [g-species (get-g-species object "transcript")
         sequence-database (seqdb/get-default-sequence-database g-species)]
     (when sequence-database
       (when-let [db ((keyword sequence-database) wb-seq/sequence-dbs)]
-        (wb-seq/get-seq-features db (:transcript/id object))))))
+        (wb-seq/get-seq-features db feature-id)))))
 
 (defn longest-segment [segments]
   (first
@@ -51,26 +51,30 @@
     (if (seq segments)
       (longest-segment segments))))
 
-(defn create-genomic-location-obj [start stop object segment tracks gbrowse img]
+(defn get-transcript-segment [object]
+  (some->> (get-segments object)
+           (filter #(not (str/starts-with? (:type %) "Gene")))
+           (first)))
+
+(defn create-genomic-location-obj [start stop object segment tracks gbrowse]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         calc-browser-pos (fn [x-op x y mult-offset]
-                           (if gbrowse
-                             (->> (reduce - (sort-by - [x y]))
-                                  (double)
-                                  (* mult-offset)
-                                  (int)
-                                  (x-op x))
-                             y))
-        browser-start (calc-browser-pos - start stop 0.2)
-        browser-stop (calc-browser-pos + stop start 0.5)
+                            (if gbrowse
+                              (->> (reduce - (sort-by - [x y]))
+                                   (double)
+                                   (* mult-offset)
+                                   (int)
+                                   (x-op x))
+                              y))
+        browser-start (calc-browser-pos - start stop 0.15)
+        browser-stop (calc-browser-pos + stop start 0.25)
         id (str (:seqname segment) ":" browser-start ".." browser-stop)
-        label (if (= img true)
-                id
-                (str (:seqname segment) ":" start ".." stop))]
+        label (str (:seqname segment) ":" start ".." stop)]
     (pace-utils/vmap
       :class "genomic_location"
       :id id
+      :feature_id (id-kw object)
       :label label
       :pos_string id
       :seqname (:seqname segment)
@@ -80,21 +84,20 @@
       :tracks tracks)))
 
 (defn genomic-obj [object]
-  (when-let [segment (get-longest-segment object)]
+  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
+        role (namespace id-kw)]
+  (when-let [segment (if (= "transcript" role)
+                       (get-transcript-segment object)
+                       (get-longest-segment object))]
     (let [[start stop] (->> segment
-                            ((juxt :start :end))
-                            (sort-by +))]
-      (create-genomic-location-obj start stop object segment nil true true))))
+                             ((juxt :start :end))
+                             (sort-by +))]
+      (create-genomic-location-obj start stop object segment nil true)))))
 
-(defn genomic-obj-position [object]
-  (when-let [segment (get-longest-segment object)]
-    (let [[start stop] (->> segment
-                            ((juxt :start :end))
-                            (sort-by +))]
-      (create-genomic-location-obj start stop object segment nil true false))))
-
-(defn genomic-obj-child-positions [object]
-  (some->> (get-transcript-segments object)
+(defn genomic-obj-child-positions [object feature-id]
+  (some->> (let [d (get-transcript-segments object feature-id)]
+             (do (println "before") (println d) (println "after")
+                 d))
            (map (fn [feature]
                   (conj
                     feature
@@ -164,7 +167,9 @@
 
 (defn transcript-sequence-features [transcript padding status]
   (when-let [refseq-obj (genomic-obj transcript)]
-    (let [seq-features (genomic-obj-child-positions transcript)
+    (let [d (println refseq-obj)
+          seq-features (genomic-obj-child-positions transcript (:feature_id refseq-obj))
+          dd (println seq-features)
           status-parts  (case status
                           :spliced
                           #{:exon :three_prime_UTR :five_prime_UTR}
