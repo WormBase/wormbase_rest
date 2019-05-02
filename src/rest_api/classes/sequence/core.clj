@@ -51,7 +51,7 @@
     (if (seq segments)
       (longest-segment segments))))
 
-(defn create-genomic-location-obj [start stop object segment tracks gbrowse img]
+(defn create-genomic-location-obj [start stop object segment tracks gbrowse]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)
         calc-browser-pos (fn [x-op x y mult-offset]
@@ -62,12 +62,10 @@
                                    (int)
                                    (x-op x))
                               y))
-        browser-start (calc-browser-pos - start stop 0.2)
-        browser-stop (calc-browser-pos + stop start 0.5)
+        browser-start (calc-browser-pos - start stop 0.15)
+        browser-stop (calc-browser-pos + stop start 0.25)
         id (str (:seqname segment) ":" browser-start ".." browser-stop)
-        label (if (= img true)
-                   id
-                 (str (:seqname segment) ":" start ".." stop))]
+        label (str (:seqname segment) ":" start ".." stop)]
     (pace-utils/vmap
       :class "genomic_location"
       :id id
@@ -84,14 +82,7 @@
     (let [[start stop] (->> segment
                              ((juxt :start :end))
                              (sort-by +))]
-      (create-genomic-location-obj start stop object segment nil true true))))
-
-(defn genomic-obj-position [object]
-  (when-let [segment (get-longest-segment object)]
-    (let [[start stop] (->> segment
-                             ((juxt :start :end))
-                             (sort-by +))]
-      (create-genomic-location-obj start stop object segment nil true false))))
+      (create-genomic-location-obj start stop object segment nil true))))
 
 (defn genomic-obj-child-positions [object]
   (some->> (get-transcript-segments object)

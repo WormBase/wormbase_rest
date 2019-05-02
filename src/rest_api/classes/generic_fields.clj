@@ -156,7 +156,7 @@
                       first
                       (map :gene/_corresponding-cds)
                       (map sequence-fns/genomic-obj))
-             (when-let [position (sequence-fns/genomic-obj-position object)]
+             (when-let [position (sequence-fns/genomic-obj object)]
                [position]))
      :description "The genomic location of the sequence"}))
 
