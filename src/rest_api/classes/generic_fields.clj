@@ -149,11 +149,11 @@
         id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
     {:data (if (= role "protein")
-             (some->> (:cds.corresponding-protein/_protein object)
+             [(some->> (:cds.corresponding-protein/_protein object)
                       (map :cds/_corresponding-protein)
                       (filter #(not= "history"  (:method/id  (:locatable/method %))))
                       (first)
-                      (sequence-fns/genomic-obj))
+                      (sequence-fns/genomic-obj))]
              (when-let [position (sequence-fns/genomic-obj object)]
                [position]))
      :description "The genomic location of the sequence"}))
