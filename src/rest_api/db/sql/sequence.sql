@@ -65,14 +65,14 @@ AND s.offset = :offset
 
 -- :name get-seq-features :? :*
 -- :doc Retreive all sequence features from transcript
-SELECT tc.tag,fc.start AS start,fc.end AS stop
+SELECT t.tag,fc.start AS start,fc.end AS stop
 FROM feature as f
 LEFT OUTER JOIN parent2child as pc ON pc.id=f.id
-LEFT OUTER JOIN typelist as t ON t.id=f.typeid
 LEFT OUTER JOIN feature as fc ON pc.child=fc.id
-LEFT OUTER JOIN typelist as tc ON tc.id=fc.typeid
+LEFT OUTER JOIN typelist as t ON t.id=fc.typeid
 LEFT OUTER JOIN name as n ON n.id=f.id
 WHERE n.name = :name
 AND (t.tag LIKE "transcript%"
 	    OR t.tag LIKE "CDS%"
+	    OR t.tag LIKE "exon%"
 	    OR t.tag LIKE "mRNA%")
