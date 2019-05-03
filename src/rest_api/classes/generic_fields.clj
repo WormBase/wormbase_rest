@@ -89,9 +89,7 @@
                                  [(some->> (:cds.corresponding-protein/_protein object)
                                            (map :cds/_corresponding-protein)
                                            (filter #(not= "history" (:method/id (:locatable/method %))))
-                                           (map :gene.corresponding-cds/_cds)
-                                           first
-                                           (map :gene/_corresponding-cds))
+                                           first)
                                   "gene"]
 
                                  :else
@@ -535,19 +533,33 @@
                                  (corresponding-all-gene gene object role nil))))
 
                  "cds"
-                 (when-let [ths (:transcript.corresponding-cds/_cds object)]
-                   (let [genes
-                         (distinct
-                           (flatten
-                             (for [th ths
-                                   :let [ghs (:gene.corresponding-transcript/_transcript
-                                               (:transcript/_corresponding-cds th))]]
-                               (for [gh ghs
-                                     :let [gene (:gene/_corresponding-transcript gh)]]
-                                 gene))))]
-                     (flatten
-                       (for [gene genes]
-                         (corresponding-all-gene gene object role nil)))))
+                 (or
+                   (when-let [ths (:transcript.corresponding-cds/_cds object)]
+                     (let [genes
+                           (distinct
+                             (flatten
+                               (for [th ths
+                                     :let [ghs (:gene.corresponding-transcript/_transcript
+                                                 (:transcript/_corresponding-cds th))]]
+                                 (for [gh ghs
+                                       :let [gene (:gene/_corresponding-transcript gh)]]
+                                   gene))))]
+                       (flatten
+                         (for [gene genes]
+                           (corresponding-all-gene gene object role nil)))))
+                   (when-let [ths (:transposon.corresponding-cds/_cds object)]
+                     (let [genes
+                           (distinct
+                             (flatten
+                               (for [th ths
+                                     :let [ghs (:gene.corresponding-transposon/_transposon
+                                                 (:transposon/_corresponding-cds th))]]
+                                 (for [gh ghs
+                                       :let [gene (:gene/_corresponding-transposon gh)]]
+                                   gene))))]
+                       (flatten
+                         (for [gene genes]
+                           (corresponding-all-gene gene object role nil))))))
 
                  "protein" ;; need to make it filter for only the row with the protein
                  (when-let [cdshs (:cds.corresponding-protein/_protein object)]

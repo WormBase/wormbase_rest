@@ -7,7 +7,6 @@
 
 (defn description [cds]
   {:data (:cds.detailed-description/text (first (:cds/detailed-description cds)))
-   :d (:db/id cds)
    :description (str "description of the CDS " (:cds/id cds))})
 
 (defn partial-field [cds]
