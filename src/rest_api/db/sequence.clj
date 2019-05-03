@@ -61,10 +61,17 @@
         (sequencesql/get-features-by-id db-spec attribute)))))
 
 (defn sequence-features-where-type [db-spec feature-name method]
-  (sequencesql/sequence-features-where-type
-    db-spec
-    {:name feature-name
-     :tag method}))
+  (let [features (sequencesql/sequence-features-where-type
+                      db-spec
+                      {:name feature-name
+                       :tag method}) ]
+    (if (> (count features) 0)
+      features
+      (when (= method "CDS%")
+        (sequencesql/sequence-features-where-type
+          db-spec
+          {:name feature-name
+           :tag "mRNA%"})))))
 
 (defn variation-features [db-spec variation-name]
   (sequencesql/variation-features

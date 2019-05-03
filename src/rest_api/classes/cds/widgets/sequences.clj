@@ -8,10 +8,12 @@
     [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn cds-sequence [c]
-  {:data (when-let [transcript  (-> c
+  {:data (when-let [transcript  (or
+                                 (-> c
                                     :transcript.corresponding-cds/_cds
                                     first
-                                    :transcript/_corresponding-cds)]
+                                    :transcript/_corresponding-cds)
+                                 c)]
           (sequence-fns/transcript-sequence-features transcript 0 :cds))
    :description "the spliced sequence of the transcripts without UTR"})
 

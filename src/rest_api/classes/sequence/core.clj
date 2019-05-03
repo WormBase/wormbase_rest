@@ -36,7 +36,8 @@
         (sequence-features sequence-database (id-kw object) role)))))
 
 (defn get-transcript-segments [object feature-id]
-  (let [g-species (get-g-species object "transcript")
+  (let [g-species (or (get-g-species object "transcript")
+                      (get-g-species object "cds"))
         sequence-database (seqdb/get-default-sequence-database g-species)]
     (when sequence-database
       (when-let [db ((keyword sequence-database) wb-seq/sequence-dbs)]
@@ -86,7 +87,8 @@
 (defn genomic-obj [object]
   (let [id-kw (first (filter #(= (name %) "id") (keys object)))
         role (namespace id-kw)]
-  (when-let [segment (if (= "transcript" role)
+  (when-let [segment (if (or (= "cds" role)
+                             (= "transcript" role))
                        (get-transcript-segment object)
                        (get-longest-segment object))]
     (let [[start stop] (->> segment
@@ -153,6 +155,32 @@
            :stop new-stop-position
            :type (:type feature)}))))
 
+(defn- add-introns [features]
+  (let [features-with-introns (atom ())
+        intron-and-exon-features (filter #(or (= "exon" (:type %))
+                                              (= "intron" (:type %))) features)
+        non-intron-and-exon-features (filter #(and (not= "exon" (:type %))
+                                                   (not= "intron" (:type %))) features)]
+    (do
+      (doseq [feature (sort-by :start intron-and-exon-features)]
+        (if (or (= (count @features-with-introns) 0)
+                (= (:stop (last @features-with-introns))
+                   (- (:start feature) 1)))
+          (swap! features-with-introns conj feature)
+          (do
+            (swap! features-with-introns conj (let [stop (- (:start feature) 1)]
+                                                {:start (+ (:stop (last
+                                                                    (filter
+                                                                      #(< (:stop %) stop)
+                                                                      (sort-by :start @features-with-introns))))
+                                                           1)
+                                               :stop stop
+                                               :type "intron"}))
+            (swap! features-with-introns conj feature))))
+      (doseq [feature (sort-by :start non-intron-and-exon-features)]
+        (swap! features-with-introns conj feature))
+      @features-with-introns)))
+
 (defn- add-padding-to-feature-list [features padding length]
   (when (> padding 0)
     ((comp vec flatten conj) features
@@ -165,124 +193,128 @@
 
 (defn transcript-sequence-features [transcript padding status]
   (when-let [refseq-obj (genomic-obj transcript)]
-    (let [seq-features (genomic-obj-child-positions transcript (:feature_id refseq-obj))]
-        (let [status-parts  (case status
-                              :spliced
-                              #{:exon :three_prime_UTR :five_prime_UTR}
+    (let [seq-features (genomic-obj-child-positions transcript (:feature_id refseq-obj))
+          status-parts  (case status
+                          :spliced
+                          #{:exon :three_prime_UTR :five_prime_UTR}
 
-                              :cds
-                              #{:exon}
+                          :cds
+                          #{:exon}
 
-                              #{:intron :exon :three_prime_UTR :five_prime_UTR})
-              three-prime-utr (first (filter (comp #{"three_prime_UTR"} :type) seq-features))
-              five-prime-utr (first (filter (comp #{"five_prime_UTR"} :type) seq-features))
-              cds (first (filter (comp #{"CDS"} :type) seq-features))
-              sequence-strand (if (some nil? [three-prime-utr  five-prime-utr])
-                                (when-let [strand (:locatable/strand transcript)]
-                                  (cond
-                                    (= strand :locatable.strand/negative) "-"
-                                    (= strand :locatable.strand/positive) "+"))
-                                (if (< (:start five-prime-utr) (:stop three-prime-utr)) "+" "-"))
-              context-obj (if (and (= status :cds) (some? cds))cds refseq-obj)
-              [context-left context-right] (if (neg? (- (:start context-obj) (:stop context-obj)))
-                                             [(- (:start context-obj) padding) (+ (:stop context-obj) padding)]
-                                             [(- (:stop context-obj) padding) (+ (:start context-obj) padding)])
-              positive-features (some->> seq-features
-                                         (map (fn [feature]
-                                                (let [feature-type (keyword (:type feature))
-                                                      [left-position right-position]
-                                                      (if (neg? (- (:start feature) (:stop feature)))
-                                                        [(:start feature) (:stop feature)]
-                                                        [(:stop feature) (:start feature)])]
-                                                  (when (and (not= feature-type :CDS)
-                                                             (not
-                                                               (and (= status :cds)
-                                                                    (or (= feature-type :five_prime_UTR)
-                                                                        (= feature-type :three_prime_UTR)))))
-                                                    {:start (let [start (+ 1 (- left-position context-left))]
-                                                              (if (neg? start) 1 start))
-                                                     :stop (let [stop (+ 1 (- right-position context-left))]
-                                                             (let [length (+ 1 (- context-right context-left))]
-                                                               (if (> stop length) length stop)))
-                                                     :type feature-type}))))
-                                         (remove nil?))
-              sequence-positive-raw (get-sequence
-                                      (conj
-                                        refseq-obj
-                                        {:start context-left
-                                         :stop context-right}))
-              sequence-positive (let [dna-sequence (atom {:seq sequence-positive-raw})]
-                                  (do
-                                    (doseq [feature positive-features
-                                            :when (= :exon (:type feature))]
-                                      (swap! dna-sequence
-                                             assoc
-                                             :seq
-                                             (replace-in-str
-                                               "uppercase"
-                                               (:seq @dna-sequence)
-                                               (- (:start feature) 1)
-                                               (+ 1
-                                                  (- (:stop feature)
-                                                     (:start feature))))))
-                                    (doseq [feature positive-features
-                                            :when (or (= :three_prime_UTR (:type feature))
-                                                      (= :five_prime_UTR (:type feature)))]
-                                      (swap! dna-sequence
-                                             assoc
-                                             :seq
-                                             (replace-in-str
-                                               "lowercase"
-                                               (:seq @dna-sequence)
-                                               (- (:start feature) 1)
-                                               (+ 1
-                                                  (- (:stop feature)
-                                                     (:start feature))))))
-                                    (if (contains? #{:cds :spliced} status)
-                                      (doseq [feature (reverse (sort-by :start positive-features))
-                                              :when (not (some #(= (:type feature) %) status-parts))]
-                                        (swap! dna-sequence
-                                               assoc
-                                               :seq
-                                               (replace-in-str
-                                                 "remove"
-                                                 (:seq @dna-sequence)
-                                                 (- (:start feature) 1)
-                                                 (+ 1
-                                                    (- (:stop feature)
-                                                       (:start feature)))))))
-                                    (:seq @dna-sequence)))
-              modified-positive-features (case status
-                                           :unspliced
-                                           positive-features
+                          #{:intron :exon :three_prime_UTR :five_prime_UTR})
+          three-prime-utr (first (filter (comp #{"three_prime_UTR"} :type) seq-features))
+          five-prime-utr (first (filter (comp #{"five_prime_UTR"} :type) seq-features))
+          cds (first (filter (comp #{"CDS"} :type) seq-features))
+          mrna (first (filter (comp #{"mRNA"} :type) seq-features))
+          sequence-strand (if (some nil? [three-prime-utr  five-prime-utr])
+                            (when-let [strand (:locatable/strand transcript)]
+                              (cond
+                                (= strand :locatable.strand/negative) "-"
+                                (= strand :locatable.strand/positive) "+"))
+                            (if (< (:start five-prime-utr) (:stop three-prime-utr)) "+" "-"))
+          context-obj (if (and (= status :cds) (some? cds)) cds refseq-obj)
+          [context-left context-right] (if (neg? (- (:start context-obj) (:stop context-obj)))
+                                         [(- (:start context-obj) padding) (+ (:stop context-obj) padding)]
+                                         [(- (:stop context-obj) padding) (+ (:start context-obj) padding)])
 
-                                           :cds
-                                           (get-spliced-exon-positions positive-features)
+          seq-features-with-introns (add-introns seq-features)
+          positive-features (some->> seq-features-with-introns
+                                     (map (fn [feature]
+                                            (let [feature-type (keyword (:type feature))
+                                                  [left-position right-position]
+                                                  (if (neg? (- (:start feature) (:stop feature)))
+                                                    [(:start feature) (:stop feature)]
+                                                    [(:stop feature) (:start feature)])]
+                                              (when (and (not= feature-type :CDS)
+                                                         (and (not= feature-type :mRNA)
+                                                              (not
+                                                                (and (= status :cds)
+                                                                     (or (= feature-type :five_prime_UTR)
+                                                                         (= feature-type :three_prime_UTR))))))
+                                                {:start (let [start (+ 1 (- left-position context-left))]
+                                                          (if (neg? start) 1 start))
+                                                 :stop (let [stop (+ 1 (- right-position context-left))]
+                                                         (let [length (+ 1 (- context-right context-left))]
+                                                           (if (> stop length) length stop)))
+                                                 :type feature-type}))))
+                                     (remove nil?))
+          sequence-positive-raw (get-sequence
+                                  (conj
+                                    refseq-obj
+                                    {:start context-left
+                                     :stop context-right}))
+          sequence-positive (let [dna-sequence (atom {:seq sequence-positive-raw})]
+                              (do
+                                (doseq [feature positive-features
+                                        :when (= :exon (:type feature))]
+                                  (swap! dna-sequence
+                                         assoc
+                                         :seq
+                                         (replace-in-str
+                                           "uppercase"
+                                           (:seq @dna-sequence)
+                                           (- (:start feature) 1)
+                                           (+ 1
+                                              (- (:stop feature)
+                                                 (:start feature))))))
+                                (doseq [feature positive-features
+                                        :when (or (= :three_prime_UTR (:type feature))
+                                                  (= :five_prime_UTR (:type feature)))]
+                                  (swap! dna-sequence
+                                         assoc
+                                         :seq
+                                         (replace-in-str
+                                           "lowercase"
+                                           (:seq @dna-sequence)
+                                           (- (:start feature) 1)
+                                           (+ 1
+                                              (- (:stop feature)
+                                                 (:start feature))))))
+                                (if (contains? #{:cds :spliced} status)
+                                  (doseq [feature (reverse (sort-by :start positive-features))
+                                          :when (not (some #(= (:type feature) %) status-parts))]
+                                    (swap! dna-sequence
+                                           assoc
+                                           :seq
+                                           (replace-in-str
+                                             "remove"
+                                             (:seq @dna-sequence)
+                                             (- (:start feature) 1)
+                                             (+ 1
+                                                (- (:stop feature)
+                                                   (:start feature))))))))
+                              (:seq @dna-sequence))
+          modified-positive-features (case status
+                                       :unspliced
+                                       positive-features
 
-                                           :spliced
-                                           (remove nil?
-                                                   (flatten
-                                                     (conj
-                                                       (get-spliced-exon-positions positive-features)
-                                                       (if (= sequence-strand "+")
-                                                         (first (filter #(= (:type %) :five_primeUTR) positive-features))
-                                                         (first (filter #(= (:type %) :three_prime_UTR) positive-features)))
-                                                       (let [feature (if (= sequence-strand "+")
-                                                                       (first (filter #(= (:type %) :three_prime_UTR) positive-features))
-                                                                       (first (filter #(= (:type %) :five_prime_UTR) positive-features)))
-                                                             end (count sequence-positive)]
-                                                         (if (some? feature)
-                                                           (conj
-                                                             feature
-                                                             {:start (- end
-                                                                        (+ 1 (- (:stop feature) (:start feature))))
-                                                              :stop (count sequence-positive)})))))))
-              modified-positive-features-with-padding (if (> padding 0)
-                                                        (add-padding-to-feature-list
-                                                          modified-positive-features
-                                                          padding
-                                                          (count sequence-positive))
-                                                        modified-positive-features)]
+                                       :cds
+                                       (get-spliced-exon-positions positive-features)
+
+                                       :spliced
+                                       (remove nil?
+                                               (flatten
+                                                 (conj
+                                                   (get-spliced-exon-positions positive-features)
+                                                   (if (= sequence-strand "+")
+                                                     (first (filter #(= (:type %) :five_primeUTR) positive-features))
+                                                     (first (filter #(= (:type %) :three_prime_UTR) positive-features)))
+                                                   (let [feature (if (= sequence-strand "+")
+                                                                   (first (filter #(= (:type %) :three_prime_UTR) positive-features))
+                                                                   (first (filter #(= (:type %) :five_prime_UTR) positive-features)))
+                                                         end (count sequence-positive)]
+                                                     (if (some? feature)
+                                                       (conj
+                                                         feature
+                                                         {:start (- end
+                                                                    (+ 1 (- (:stop feature) (:start feature))))
+                                                          :stop (count sequence-positive)})))))))
+          modified-positive-features-with-padding (if (> padding 0)
+                                                    (add-padding-to-feature-list
+                                                      modified-positive-features
+                                                      padding
+                                                      (count sequence-positive))
+                                                    modified-positive-features)]
                    {:positive_strand
                     {:features modified-positive-features-with-padding
                     :sequence sequence-positive}
@@ -297,4 +329,4 @@
                                               (feature-complement (:features @neg-features) feature seq-length)))
                                      (:features @neg-features))))
                      :sequence (generic-functions/dna-reverse-complement sequence-positive)}
-                    :strand sequence-strand}))))
+                    :strand sequence-strand})))
