@@ -216,7 +216,6 @@
           [context-left context-right] (if (neg? (- (:start context-obj) (:stop context-obj)))
                                          [(- (:start context-obj) padding) (+ (:stop context-obj) padding)]
                                          [(- (:stop context-obj) padding) (+ (:start context-obj) padding)])
-
           seq-features-with-introns (add-introns seq-features)
           positive-features (some->> seq-features-with-introns
                                      (map (fn [feature]

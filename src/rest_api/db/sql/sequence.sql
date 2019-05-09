@@ -75,4 +75,6 @@ WHERE n.name = :name
 AND (t.tag LIKE "transcript%"
 	    OR t.tag LIKE "CDS%"
 	    OR t.tag LIKE "exon%"
+	    OR t.tag LIKE "three_prime_UTR%"
+	    OR t.tag LIKE "five_prime_UTR%"
 	    OR t.tag LIKE "mRNA%")
