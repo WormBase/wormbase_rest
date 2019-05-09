@@ -306,7 +306,7 @@
                                                        (conj
                                                          feature
                                                          {:start (- end
-                                                                    (+ 1 (- (:stop feature) (:start feature))))
+                                                                    (- (:stop feature) (:start feature)))
                                                           :stop (count sequence-positive)})))))))
           modified-positive-features-with-padding (if (> padding 0)
                                                     (add-padding-to-feature-list
