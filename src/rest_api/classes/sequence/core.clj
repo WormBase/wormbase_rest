@@ -308,12 +308,12 @@
                                                          {:start (- end
                                                                     (- (:stop feature) (:start feature)))
                                                           :stop (count sequence-positive)})))))))
-          modified-positive-features-with-padding (if (> padding 0)
-                                                    (add-padding-to-feature-list
-                                                      modified-positive-features
-                                                      padding
-                                                      (count sequence-positive))
-                                                    modified-positive-features)]
+          modified-positive-features-with-padding (sort-by :start (if (> padding 0)
+                                                                    (add-padding-to-feature-list
+                                                                      modified-positive-features
+                                                                      padding
+                                                                      (count sequence-positive))
+                                                                    modified-positive-features))]
                    {:positive_strand
                     {:features modified-positive-features-with-padding
                     :sequence sequence-positive}
