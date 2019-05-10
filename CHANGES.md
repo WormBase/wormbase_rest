@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.1] - 2019-05-10
+- Adding in pseudogene, transcript and CSD widgets
+
 ## [0.9.0] - 2019-04-22
 - First release for WS270
 
