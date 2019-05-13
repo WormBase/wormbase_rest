@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.2] - 2019-05-13
+- Fix missing 5 prime UTR in spliced transcript sequence caused by typo
+
 ## [0.9.1] - 2019-05-10
 - Adding in pseudogene, transcript and CSD widgets
 
