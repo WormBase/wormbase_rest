@@ -296,7 +296,7 @@
                                                  (conj
                                                    (get-spliced-exon-positions positive-features)
                                                    (if (= sequence-strand "+")
-                                                     (first (filter #(= (:type %) :five_primeUTR) positive-features))
+                                                     (first (filter #(= (:type %) :five_prime_UTR) positive-features))
                                                      (first (filter #(= (:type %) :three_prime_UTR) positive-features)))
                                                    (let [feature (if (= sequence-strand "+")
                                                                    (first (filter #(= (:type %) :three_prime_UTR) positive-features))
