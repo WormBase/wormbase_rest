@@ -181,15 +181,18 @@
         (swap! features-with-introns conj feature))
       @features-with-introns)))
 
-(defn- add-padding-to-feature-list [features padding length]
-  (when (> padding 0)
+(defn- add-padding-to-feature-list [features padding-left padding-right length]
+  (when (or (> padding-left 0) (> padding-right 0))
     ((comp vec flatten conj) features
-     [{:type :padding
-       :start 1
-       :stop  padding}
-      {:type :padding
-       :start (+ (- length padding) 1)
-       :stop length}])))
+     (remove nil?
+             [(when (> padding-left 0)
+                {:type :padding
+                 :start 1
+                 :stop  padding-left})
+              (when (> padding-right 0)
+                {:type :padding
+                 :start (+ (- length padding-right) 1)
+                 :stop length})]))))
 
 (defn transcript-sequence-features [transcript padding status]
   (when-let [refseq-obj (genomic-obj transcript)]
@@ -216,6 +219,9 @@
           [context-left context-right] (if (neg? (- (:start context-obj) (:stop context-obj)))
                                          [(- (:start context-obj) padding) (+ (:stop context-obj) padding)]
                                          [(- (:stop context-obj) padding) (+ (:start context-obj) padding)])
+          [context-left padding-left] (if (> 1 context-left) ; adjustment for when padding goes negative
+                                        [1 (- (+ padding context-left) 1)]
+                                        [context-left padding])
           seq-features-with-introns (add-introns seq-features)
           positive-features (some->> seq-features-with-introns
                                      (map (fn [feature]
@@ -242,6 +248,12 @@
                                     refseq-obj
                                     {:start context-left
                                      :stop context-right}))
+          [context-right padding-right] (if (< (count sequence-positive-raw) ; adjustment for when feature is on the right end of genome
+                                               (+ (- context-right context-left) 1))
+                                          (let [adjustment (- (+ (- context-right context-left) 1)
+                                                              (count sequence-positive-raw))]
+                                            [(- context-left adjustment) (- padding adjustment)])
+                                          [context-right padding])
           sequence-positive (let [dna-sequence (atom {:seq sequence-positive-raw})]
                               (do
                                 (doseq [feature positive-features
@@ -290,7 +302,7 @@
                                        :cds
                                        (get-spliced-exon-positions positive-features)
 
-                                       :spliced
+                                       :spliced ; This needs to change to accomidate  mulitple five prime and three prime UTRs
                                        (remove nil?
                                                (flatten
                                                  (conj
@@ -308,10 +320,11 @@
                                                          {:start (- end
                                                                     (- (:stop feature) (:start feature)))
                                                           :stop (count sequence-positive)})))))))
-          modified-positive-features-with-padding (sort-by :start (if (> padding 0)
+          modified-positive-features-with-padding (sort-by :start (if (> padding-left 0)
                                                                     (add-padding-to-feature-list
                                                                       modified-positive-features
-                                                                      padding
+                                                                      padding-left
+                                                                      padding-right
                                                                       (count sequence-positive))
                                                                     modified-positive-features))]
                    {:positive_strand

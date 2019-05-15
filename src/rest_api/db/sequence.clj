@@ -82,8 +82,8 @@
   (let [low (if (> stop start) start stop)
         high (if (> stop start) stop start)
         low-offset (* (int (/ low 2000)) 2000)
-        high-offset  (* (int (/ high 2000)) 2000)
-        offsets  (range low-offset (+ 2000 high-offset) 2000)
+        high-offset  (* (+ 1 (int (/ high 2000))) 2000)
+        offsets  (range low-offset  high-offset 2000)
         start-remove (mod low 2000)
         offsets-sequence (some->> offsets
                                   (map
@@ -93,13 +93,13 @@
                                                  {:location location
                                                   :offset offset})
                                                (first)
-                                               (:sequence)
-                                               )))
+                                               (:sequence))))
                                   (str/join)
                                   (str/lower-case))]
     (subs offsets-sequence
           (- (mod low 2000) 1)
-          (- high low-offset))))
+          (min (count offsets-sequence)
+               (- high low-offset)))))
 
 (defn get-seq-features [db-spec transcript]
   (sequencesql/get-seq-features db-spec {:name transcript}))
