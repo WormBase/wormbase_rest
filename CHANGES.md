@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.3] - 2019-05-15
+- Adding logic for when there is not enough room for 2000 bp padding on either side
+
 ## [0.9.2] - 2019-05-13
 - Fix missing 5 prime UTR in spliced transcript sequence caused by typo
 
