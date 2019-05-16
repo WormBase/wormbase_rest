@@ -15,7 +15,9 @@
 (defn corresponding-gene [variation]
   {:data (when-let [genes (some->> (:variation/gene variation)
                                    (map :variation.gene/gene)
-                                   (map pack-obj))]
+                                   (remove nil?)
+                                   (map pack-obj)
+                                   (not-empty))]
            [genes])
    :description "gene in which this variation is found (if any)"})
 
