@@ -29,17 +29,18 @@
   {:data (some->> (:variation/gene variation)
                   (map :variation.gene/gene)
                   (map (fn [gene]
-                         (let [db  (d/entity-db gene)
-                               alleles (some->> (d/q '[:find [?var ...]
-                                                       :in $ ?variation ?gene
-                                                       :where [?vh :variation.gene/gene ?gene]
-                                                       [?var :variation/gene ?vh]
-                                                       [?var :variation/allele true]
-                                                       (not [?var :variation/phenotype _])
-                                                       [(not= ?var ?variation)]]
-                                                     db (:db/id variation) (:db/id gene))
-                                                (map (fn [allele-id]
-                                                       (d/entity db allele-id))))]
+                         (when (not (nil? gene))
+                                  (let [db (d/entity-db gene)
+                                        alleles (some->> (d/q '[:find [?var ...]
+                                                            :in $ ?variation ?gene
+                                                            :where [?vh :variation.gene/gene ?gene]
+                                                            [?var :variation/gene ?vh]
+                                                            [?var :variation/allele true]
+                                                            (not [?var :variation/phenotype _])
+                                                            [(not= ?var ?variation)]]
+                                                          db (:db/id variation) (:db/id gene))
+                                                     (map (fn [allele-id]
+                                                            (d/entity db allele-id))))]
                            (not-empty
                              (pace-utils/vmap
                                :polymorphisms
@@ -56,7 +57,7 @@
                                           (fn [allele]
                                             (not (contains? allele :variation/confirmed-snp))))
                                         (map pack-obj)
-                                        (not-empty)))))))
+                                        (not-empty))))))))
                   (remove nil?)
                   (not-empty))
    :description "other variations of the containing gene (if known)"})
