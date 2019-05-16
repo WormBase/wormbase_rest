@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.4] - 2018-05-16
+- fixed minor issues with #6437 and #7112
+
 ## [0.9.3] - 2019-05-15
 - Adding logic for when there is not enough room for 2000 bp padding on either side
 

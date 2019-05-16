@@ -1,5 +1,5 @@
 NAME := wormbase/rest
-VERSION ?= "0.9.3"
+VERSION ?= "0.9.4"
 EBX_CONFIG := .ebextensions/.config
 WB_DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
