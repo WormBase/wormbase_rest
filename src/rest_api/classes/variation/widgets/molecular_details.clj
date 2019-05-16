@@ -688,20 +688,23 @@
   {:data (some->> (:variation/pcr-product variation)
                   (map (fn [pcr]
                          {(:pcr-product/id pcr)
-                          (let [ohs (:pcr-product/oligo pcr)]
+                          (let [ohs (:pcr-product/oligo pcr)
+                                first-ohs-id (:id (pack-obj (:pcr-product.oligo/oligo (first ohs))))
+                                p (println first-ohs-id)
+                                [left-oh right-oh] (if (str/ends-with? first-ohs-id "_b")
+                                                          [(second ohs) (first ohs)]
+                                                          [(first ohs) (second ohs)])
+                                pd (println [left-oh right-oh])
+                                ]
                             {:pcr_product
                              (conj
                                (pack-obj pcr)
-                               {:pcr_conditions nil ; from pcr-product/assay-conditions non found
-                                :dna nil ;non found
-                                :left_oligo (:oligo/sequence
-                                              (:pcr-product.oligo/oligo
-                                                (first ohs)))
-                                :right_oligo (:oligo/sequence
-                                               (:pcr-product.oligo/oligo
-                                                 (second ohs)))})
-                             :assay_type (if (contains? (-> ohs first :pcr-product.oligo/oligo) :oligo/sequence)
-                                           "sequence")})}))
+                                 {:pcr_conditions nil ; from pcr-product/assay-conditions non found
+                                  :dna nil ;non found
+                                  :left_oligo (-> left-oh :pcr-product.oligo/oligo :oligo/sequence)
+                                  :right_oligo (-> right-oh :pcr-product.oligo/oligo :oligo/sequence)})
+                               :assay_type (if (contains? (-> ohs first :pcr-product.oligo/oligo) :oligo/sequence)
+                                             "sequence")})}))
                   (apply merge))
    :description "experimental assays for detecting this polymorphism"})
 

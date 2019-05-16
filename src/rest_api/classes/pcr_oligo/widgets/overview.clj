@@ -75,7 +75,7 @@
            (for [oh ohs :let [oligo (:pcr-product.oligo/oligo oh)]]
              {:obj (pack-obj oligo)
               :sequence (:oligo/sequence oligo)}))
-   :description "Oligos of thisPCR product"})
+   :description "Oligos of this PCR product"})
 
 (defn pcr-products [p]
   {:data (some->> (:pcr-product.oligo/_oligo p)
