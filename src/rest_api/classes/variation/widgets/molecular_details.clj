@@ -270,6 +270,7 @@
                                {:start (+ 1 (:start refseqobj))
                                 :stop (+ 1 (:stop refseqobj))})
                              refseqobj)
+
                  placeholder (when (> seq-length 1000000)
                                seq-length)
 
@@ -278,7 +279,7 @@
                                        (conj
                                          refseqobj
                                          {:start (- (:start refseqobj) padding)
-                                          :stop (+ padding (:stop refseqobj))})))
+                                          :stop (- (+ padding (:stop refseqobj)) 1)})))
 
                  wildtype-full-length (+ (* 2 padding)
                                          seq-length)
