@@ -284,7 +284,8 @@
                                          seq-length)
 
                  length-change (if-let [insertion (:variation/insertion variation)]
-                                 (or (if-let [insertion-str (:variation.insertion/text insertion)]
+                                 (or (if-let [insertion-str (let [insertion (:variation.insertion/text insertion)]
+                                                                  (if (= insertion "Mos") "<Mos>" insertion))]
                                        (if (contains? variation :variation/deletion)
                                          (- (count insertion-str)
                                             (count (get-deletion-str variation)))
@@ -412,7 +413,7 @@
                                         (str/replace
                                           (:sequence wildtype-positive)
                                           #"\-+"
-                                          insert-str))
+                                          (if (= insert-str "Mos") "<Mos>" (str/upper-case insert-str))))
 
                                       (or
                                         (contains? variation :variation/deletion)
@@ -452,13 +453,14 @@
                                                  length-change))}}})
                  mutant-negative (when (nil? placeholder)
                                    {:sequence
-                                    (if-let [transposon-family (:transposon-family/id
-                                                                 (first
-                                                                   (:variation/transposon-insertion variation)))]
+                                    (if-let [transposon-family-str (let [transposon-family (:transposon-family/id
+                                                                                             (first
+                                                                                               (:variation/transposon-insertion variation)))]
+                                                                     (if (= transposon-family "Mos") "<Mos>" transposon-family))]
                                       (str/replace
                                         (generic-functions/dna-reverse-complement (:sequence mutant-positive))
-                                        (re-pattern (generic-functions/dna-reverse-complement transposon-family))
-                                        transposon-family)
+                                        (re-pattern (generic-functions/dna-reverse-complement transposon-family-str))
+                                        transposon-family-str)
                                       (generic-functions/dna-reverse-complement (:sequence mutant-positive)))
 
                                     :features
