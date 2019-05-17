@@ -278,8 +278,8 @@
                                      (sequence-fns/get-sequence
                                        (conj
                                          refseqobj
-                                         {:start (- (- (:start refseqobj) padding) 1)
-                                          :stop (- (+ padding (:stop refseqobj)) 1)})))
+                                         {:start (- (:start refseqobj) padding)
+                                          :stop (+ padding (:stop refseqobj))})))
 
                  wildtype-full-length (+ (* 2 padding)
                                          seq-length)
