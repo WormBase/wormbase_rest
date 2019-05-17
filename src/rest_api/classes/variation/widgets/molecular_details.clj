@@ -284,8 +284,11 @@
                                          seq-length)
 
                  length-change (if-let [insertion (:variation/insertion variation)]
-                                 (or (if-let [insertion-str (let [insertion (:variation.insertion/text insertion)]
-                                                                  (if (= insertion "Mos") "<Mos>" insertion))]
+                                 (or (if-let [insertion-str (let [insertion (or (:variation.insertion/text insertion)
+                                                                                (:transposon-family/id
+                                                                                  (first
+                                                                                    (:variation/transposon-insertion variation))))]
+                                                              (if (= insertion "Mos") "<Mos>" insertion))]
                                        (if (contains? variation :variation/deletion)
                                          (- (count insertion-str)
                                             (count (get-deletion-str variation)))
