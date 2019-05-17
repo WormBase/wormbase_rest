@@ -426,19 +426,28 @@
                                     {:variation
                                      {:type "variation"
                                       :start (:start (:variation (:features wildtype-positive)))
-                                      :stop (+ (:stop (:variation (:features wildtype-positive)))
-                                               length-change)}
+                                      :stop (if (and (contains? variation :variation/insertion)
+                                                     (not (contains? variation :variation/deletion)))
+                                              (:start (:variation (:features wildtype-positive)))
+                                              (+ (:stop (:variation (:features wildtype-positive)))
+                                                 length-change))}
 
                                      :left_flank
                                      (:left_flank (:features wildtype-positive))
 
                                      :right_flank
                                      {:type "flank"
-                                      :start (+ (:start (:right_flank (:features wildtype-positive)))
-                                                length-change)
-                                      :stop (+ (:stop (:right_flank (:features wildtype-positive)))
-                                               length-change)}}})
-
+                                      :start (if (and (contains? variation :variation/insertion)
+                                                      (not (contains? variation :variation/deletion)))
+                                               (+ 1 (:start (:variation (:features wildtype-positive))))
+                                               (+ (:start (:right_flank (:features wildtype-positive)))
+                                                length-change))
+                                      :stop (if (and (contains? variation :variation/insertion)
+                                                      (not (contains? variation :variation/deletion)))
+                                            (+ 1 (+ (:stop (:right_flank (:features wildtype-positive)))
+                                               length-change))
+                                            (+ (:stop (:right_flank (:features wildtype-positive)))
+                                               length-change))}}})
                  mutant-negative (when (nil? placeholder)
                                    {:sequence
                                     (if-let [transposon-family (:transposon-family/id
@@ -696,12 +705,9 @@
                          {(:pcr-product/id pcr)
                           (let [ohs (:pcr-product/oligo pcr)
                                 first-ohs-id (:id (pack-obj (:pcr-product.oligo/oligo (first ohs))))
-                                p (println first-ohs-id)
                                 [left-oh right-oh] (if (str/ends-with? first-ohs-id "_b")
                                                           [(second ohs) (first ohs)]
-                                                          [(first ohs) (second ohs)])
-                                pd (println [left-oh right-oh])
-                                ]
+                                                          [(first ohs) (second ohs)])]
                             {:pcr_product
                              (conj
                                (pack-obj pcr)
