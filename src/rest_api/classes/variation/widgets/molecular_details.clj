@@ -295,13 +295,13 @@
                                            (- (count (:transposon-family/id
                                                        (first (:variation.transpon-insertion variation))))
                                               1)))))
-                                     (if (contains? variation :variation/deletion)
-                                       (- 1 (count (get-deletion-str variation)))
-                                       (if-let [substitution (:variation/substitution variation)]
-                                         (- (count (:variation.substitution/alt substitution))
-                                            (count (:variation.substitution/ref substitution)))
-                                         (when (contains? variation :variation/tandem-duplication)
-                                           (- 1 seq-length)))))
+                                 (if (contains? variation :variation/deletion)
+                                   (- 1 (count (get-deletion-str variation)))
+                                   (if-let [substitution (:variation/substitution variation)]
+                                     (- (count (:variation.substitution/alt substitution))
+                                        (count (:variation.substitution/ref substitution)))
+                                     (when (contains? variation :variation/tandem-duplication)
+                                       (- 1 seq-length)))))
 
                  cgh-deleted-probes (get-cgh-deleted-probes variation)
 
@@ -428,7 +428,8 @@
                                       :start (:start (:variation (:features wildtype-positive)))
                                       :stop (if (and (contains? variation :variation/insertion)
                                                      (not (contains? variation :variation/deletion)))
-                                              (:start (:variation (:features wildtype-positive)))
+                                              (- (+ (:stop (:variation (:features wildtype-positive)))
+                                                 length-change) 1)
                                               (+ (:stop (:variation (:features wildtype-positive)))
                                                  length-change))}
 
@@ -439,15 +440,16 @@
                                      {:type "flank"
                                       :start (if (and (contains? variation :variation/insertion)
                                                       (not (contains? variation :variation/deletion)))
-                                               (+ 1 (:start (:variation (:features wildtype-positive))))
+                                               (- (+ (:start (:right_flank (:features wildtype-positive)))
+                                                length-change) 1)
                                                (+ (:start (:right_flank (:features wildtype-positive)))
                                                 length-change))
                                       :stop (if (and (contains? variation :variation/insertion)
-                                                      (not (contains? variation :variation/deletion)))
-                                            (+ 1 (+ (:stop (:right_flank (:features wildtype-positive)))
-                                               length-change))
-                                            (+ (:stop (:right_flank (:features wildtype-positive)))
-                                               length-change))}}})
+                                                     (not (contains? variation :variation/deletion)))
+                                              (+ 1 (+ (:stop (:right_flank (:features wildtype-positive)))
+                                                      length-change))
+                                              (+ (:stop (:right_flank (:features wildtype-positive)))
+                                                 length-change))}}})
                  mutant-negative (when (nil? placeholder)
                                    {:sequence
                                     (if-let [transposon-family (:transposon-family/id
