@@ -264,7 +264,9 @@
                                (- (:stop refseqobj)
                                   (:start refseqobj)))
 
-                 refseqobj (if (= seq-length 1)
+                 refseqobj (if (and (= seq-length 1)
+                                   (and (contains? variation :variation/insertion)
+                                        (not (contains? variation :variation/deletion))))
                              (conj
                                refseqobj
                                {:start (+ 1 (:start refseqobj))
