@@ -270,7 +270,7 @@
                              (conj
                                refseqobj
                                {:start (+ 1 (:start refseqobj))
-                                :stop (+ 1 (:stop refseqobj))})
+                                :stop (:stop refseqobj)})
                              refseqobj)
 
                  placeholder (when (> seq-length 1000000)
