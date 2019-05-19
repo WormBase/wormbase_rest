@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.5] - 2018-05-18
+- fix for #6490 (off by one error with variation molecular details widget)
+
 ## [0.9.4] - 2018-05-16
 - fixed minor issues with #6437 and #7112
 
