@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.6] - 2018-05-20
+- fixing handling of multiple 5 prime and/or 3 prime utr on transcripts and cds sequence pages
+
 ## [0.9.5] - 2018-05-18
 - fix for #6490 (off by one error with variation molecular details widget)
 

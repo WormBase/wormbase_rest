@@ -141,11 +141,6 @@
      :stop feature-end
      :type (:type feature)}))
 
-(defn- my-flatten  [x]
-    (if  (sequential? x)
-          (mapcat my-flatten x)
-              [x]))
-
 (defn- remove-introns-from-features [positive-features]
   (let [last-stop (atom 0)]
     (flatten
