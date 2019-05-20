@@ -172,7 +172,7 @@
                                               (and
                                                 (not= :exon (:type f))
                                                 (=  (:stop feature) (:stop f))))
-                                        {:start (- new-stop-position (+ 1 (- (:stop f) (:start f))))
+                                        {:start (- new-stop-position (- (:stop f) (:start f)))
                                          :stop new-stop-position
                                          :type (:type f)})))))
                     (do (reset! last-stop new-stop-position)
