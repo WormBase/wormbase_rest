@@ -141,19 +141,44 @@
      :stop feature-end
      :type (:type feature)}))
 
-(defn- get-spliced-exon-positions [positive-features]
+(defn- my-flatten  [x]
+    (if  (sequential? x)
+          (mapcat my-flatten x)
+              [x]))
+
+(defn- remove-introns-from-features [positive-features]
   (let [last-stop (atom 0)]
-    (for [feature (sort-by :start positive-features)
-          :when (= (:type feature) :exon)
-          :let [last-stop-position @last-stop
-                new-stop-position (+ last-stop-position
-                                     (+ 1
-                                        (- (:stop feature) (:start feature))))
-                new-start-position (+ 1 last-stop-position)]]
-      (do (reset! last-stop new-stop-position)
-          {:start new-start-position
-           :stop new-stop-position
-           :type (:type feature)}))))
+    (flatten
+      (for [feature (sort-by :start positive-features)
+            :when (= (:type feature) :exon)
+            :let [last-stop-position @last-stop
+                  new-stop-position (+ last-stop-position
+                                       (+ 1
+                                          (- (:stop feature) (:start feature))))
+                  new-start-position (+ 1 last-stop-position)]]
+        (flatten
+          (remove nil?
+                  (conj
+                    (some->> positive-features
+                             (map (fn [f]
+                                    (if (and
+                                          (not= :exon (:type f))
+                                          (= (:start feature) (:start f)))
+                                      {:start new-start-position
+                                       :stop (+ new-start-position (- (:stop f) (:start f)))
+                                       :type (:type f)}
+                                      (when (and
+                                              (not= (:start feature) (:start f))
+                                              (and
+                                                (not= :exon (:type f))
+                                                (=  (:stop feature) (:stop f))))
+                                        {:start (- new-stop-position (+ 1 (- (:stop f) (:start f))))
+                                         :stop new-stop-position
+                                         :type (:type f)})))))
+                    (do (reset! last-stop new-stop-position)
+                        [{:start new-start-position
+                          :stop new-stop-position
+                          :type (:type feature)}]))))))))
 
 (defn- add-introns [features]
   (let [features-with-introns (atom ())
@@ -223,24 +248,26 @@
                                         [1 (- (+ padding context-left) 1)]
                                         [context-left padding])
           seq-features-with-introns (add-introns seq-features)
+          context-length (+ 1 (- context-right context-left))
           positive-features (some->> seq-features-with-introns
                                      (map (fn [feature]
                                             (let [feature-type (keyword (:type feature))
                                                   [left-position right-position]
                                                   (if (neg? (- (:start feature) (:stop feature)))
                                                     [(:start feature) (:stop feature)]
-                                                    [(:stop feature) (:start feature)])]
+                                                    [(:stop feature) (:start feature)])
+                                                  start (+ 1 (- left-position context-left))
+                                                  stop (+ 1 (- right-position context-left))]
                                               (when (and (not= feature-type :CDS)
                                                          (and (not= feature-type :mRNA)
-                                                              (not
-                                                                (and (= status :cds)
-                                                                     (or (= feature-type :five_prime_UTR)
-                                                                         (= feature-type :three_prime_UTR))))))
-                                                {:start (let [start (+ 1 (- left-position context-left))]
-                                                          (if (neg? start) 1 start))
-                                                 :stop (let [stop (+ 1 (- right-position context-left))]
-                                                         (let [length (+ 1 (- context-right context-left))]
-                                                           (if (> stop length) length stop)))
+                                                              (and (and (> stop 1)
+                                                                        (< start context-length))
+                                                                   (not
+                                                                     (and (= status :cds)
+                                                                          (or (= feature-type :five_prime_UTR)
+                                                                              (= feature-type :three_prime_UTR)))))))
+                                                {:start (if (neg? start) 1 start)
+                                                 :stop (if (> stop context-length) context-length stop)
                                                  :type feature-type}))))
                                      (remove nil?))
           sequence-positive-raw (get-sequence
@@ -296,30 +323,9 @@
                                                    (:start feature))))))))
                               (:seq @dna-sequence))
           modified-positive-features (case status
-                                       :unspliced
-                                       positive-features
-
-                                       :cds
-                                       (get-spliced-exon-positions positive-features)
-
-                                       :spliced ; This needs to change to accomidate  mulitple five prime and three prime UTRs
-                                       (remove nil?
-                                               (flatten
-                                                 (conj
-                                                   (get-spliced-exon-positions positive-features)
-                                                   (if (= sequence-strand "+")
-                                                     (first (filter #(= (:type %) :five_prime_UTR) positive-features))
-                                                     (first (filter #(= (:type %) :three_prime_UTR) positive-features)))
-                                                   (let [feature (if (= sequence-strand "+")
-                                                                   (first (filter #(= (:type %) :three_prime_UTR) positive-features))
-                                                                   (first (filter #(= (:type %) :five_prime_UTR) positive-features)))
-                                                         end (count sequence-positive)]
-                                                     (if (some? feature)
-                                                       (conj
-                                                         feature
-                                                         {:start (- end
-                                                                    (- (:stop feature) (:start feature)))
-                                                          :stop (count sequence-positive)})))))))
+                                       :unspliced positive-features
+                                       :cds (filter #(= :exon (:type %)) (remove-introns-from-features positive-features))
+                                       :spliced (remove-introns-from-features positive-features))
           modified-positive-features-with-padding (sort-by :start (if (> padding-left 0)
                                                                     (add-padding-to-feature-list
                                                                       modified-positive-features
