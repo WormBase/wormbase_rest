@@ -49,7 +49,8 @@
    [rest-api.classes.transposon-family :as transposon-family]
    [rest-api.classes.variation :as variation]
    [rest-api.classes.wbprocess :as wbprocess]
-   [rest-api.intermine :as intermine]))
+   [rest-api.intermine :as intermine]
+   [rest-api.db.endpoints :as db-endpoints]))
 
 (def ^:private all-routes
   "A collection of all routes to served by the application."
@@ -96,7 +97,8 @@
    transposon/routes
    variation/routes
    wbprocess/routes
-   intermine/routes])
+   intermine/routes
+   db-endpoints/routes])
 
 (def ^:private swagger-validator-url
   "The URL used to validate the swagger JSON produced by the application."
