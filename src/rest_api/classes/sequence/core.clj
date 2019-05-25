@@ -255,8 +255,8 @@
                                                   stop (+ 1 (- right-position context-left))]
                                               (when (and (not= feature-type :CDS)
                                                          (and (not= feature-type :mRNA)
-                                                              (and (and (> stop 1)
-                                                                        (< start context-length))
+                                                              (and (and (>= stop 1)
+                                                                        (<= start context-length))
                                                                    (not
                                                                      (and (= status :cds)
                                                                           (or (= feature-type :five_prime_UTR)
