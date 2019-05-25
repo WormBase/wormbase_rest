@@ -713,20 +713,22 @@
   {:data (some->> (:variation/pcr-product variation)
                   (map (fn [pcr]
                          {(:pcr-product/id pcr)
-                          (when-let [ohs (:pcr-product/oligo pcr)]
-                               (let [first-ohs-id (:id (pack-obj (:pcr-product.oligo/oligo (first ohs))))
-                                [left-oh right-oh] (if (str/ends-with? first-ohs-id "_b")
-                                                          [(second ohs) (first ohs)]
-                                                          [(first ohs) (second ohs)])]
+                          (let [ohs (:pcr-product/oligo pcr)
+                                first-ohs-id (:id (pack-obj (:pcr-product.oligo/oligo (first ohs))))
+                                [left-oh right-oh] (if (nil? first-ohs-id)
+                                                     [nil nil]
+                                                     (if (str/ends-with? first-ohs-id "_b")
+                                                       [(second ohs) (first ohs)]
+                                                       [(first ohs) (second ohs)]))]
                             {:pcr_product
                              (conj
                                (pack-obj pcr)
-                                 {:pcr_conditions nil ; from pcr-product/assay-conditions non found
-                                  :dna nil ;non found
-                                  :left_oligo (-> left-oh :pcr-product.oligo/oligo :oligo/sequence)
-                                  :right_oligo (-> right-oh :pcr-product.oligo/oligo :oligo/sequence)})
-                               :assay_type (if (contains? (-> ohs first :pcr-product.oligo/oligo) :oligo/sequence)
-                                             "sequence")}))}))
+                               {:pcr_conditions nil ; from pcr-product/assay-conditions non found
+                                :dna nil ;non found
+                                :left_oligo (-> left-oh :pcr-product.oligo/oligo :oligo/sequence)
+                                :right_oligo (-> right-oh :pcr-product.oligo/oligo :oligo/sequence)})
+                             :assay_type (if (contains? (-> ohs first :pcr-product.oligo/oligo) :oligo/sequence)
+                                           "sequence")})}))
                   (apply merge))
    :description "experimental assays for detecting this polymorphism"})
 
@@ -845,20 +847,20 @@
 
 (def widget
   {:name generic/name-field
-   :polymorphism_type polymorphism-type
-   :amino_acid_change amino-acid-change
-   :detection_method detection-method
-   :deletion_verification deletion-verification
-   :sequence_context sequence-context
-   :flanking_pcr_products flanking-pcr-products
-   :variation_type variation-type
-   :features_affected features-affected
-   :cgh_deleted_probes cgh-deleted-probes
-   :cgh_flanking_probes cgh-flanking-probes
+;   :polymorphism_type polymorphism-type
+;   :amino_acid_change amino-acid-change
+;   :detection_method detection-method
+;   :deletion_verification deletion-verification
+;   :sequence_context sequence-context
+;   :flanking_pcr_products flanking-pcr-products
+;   :variation_type variation-type
+;   :features_affected features-affected
+;   :cgh_deleted_probes cgh-deleted-probes
+;   :cgh_flanking_probes cgh-flanking-probes
    :polymorphism_assays polymorphism-assays
-   :affects_splice_site affects-splice-site
-   :polymorphism_status polymorphism-status
-   :nucleotide_change nucleotide-change
-   :reference_strain reference-strain
-   :causes_frameshift causes-frameshift
+;   :affects_splice_site affects-splice-site
+;   :polymorphism_status polymorphism-status
+;   :nucleotide_change nucleotide-change
+;   :reference_strain reference-strain
+;   :causes_frameshift causes-frameshift
    :sequencing_status sequencing-status})
