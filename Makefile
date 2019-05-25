@@ -1,5 +1,5 @@
 NAME := wormbase/rest
-VERSION ?= "0.9.6"
+WORMBASE_REST_VERSION ?= "0.9.7"
 EBX_CONFIG := .ebextensions/.config
 WB_DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
@@ -8,7 +8,7 @@ LOWER_WS_VERSION ?= $(shell echo ${WS_VERSION} | tr A-Z a-z)
 DEPLOY_JAR := app.jar
 PORT := 3000
 WB_ACC_NUM := 357210185381
-FQ_TAG := ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${VERSION}
+FQ_TAG := ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${WORMBASE_REST_VERSION}
 FQ_TAG_LATEST := ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:latest
 WB_FTP_URL := ftp://ftp.wormbase.org/pub/wormbase/releases/${WS_VERSION}
 
@@ -39,8 +39,8 @@ docker-ecr-login: $(call print-help,docker-ecr-login,"Login to ECR")
 docker-tag: $(call print-help,docker-tag,\
 	     "Tag the image with current git revision \
 	      and ':latest' alias")
-	@docker tag ${NAME}:${VERSION} ${FQ_TAG}
-	@docker tag ${NAME}:${VERSION} \
+	@docker tag ${NAME}:${WORMBASE_REST_VERSION} ${FQ_TAG}
+	@docker tag ${NAME}:${WORMBASE_REST_VERSION} \
 		    ${WB_ACC_NUM}.dkr.ecr.us-east-1.amazonaws.com/${NAME}
 
 
@@ -100,7 +100,7 @@ eb-local: docker-ecr-login $(call print-help,eb-local,\
 build: docker/${DEPLOY_JAR} \
        $(call print-help,build,\
 	"Build the docker images from using the current git revision.")
-	@docker build -t ${NAME}:${VERSION} \
+	@docker build -t ${NAME}:${WORMBASE_REST_VERSION} \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
 		--build-arg \
 			aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
@@ -132,7 +132,7 @@ run: $(call print-help,run,"Run the application in docker (locally).")
 		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
 		-e WB_DB_URI=${WB_DB_URI} \
 		-e PORT=${PORT} \
-		${NAME}:${VERSION}
+		${NAME}:${WORMBASE_REST_VERSION}
 
 .PHONY: run-latest
 run-latest: $(call print-help,run,"Run the application in docker (locally).")
