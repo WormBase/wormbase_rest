@@ -713,8 +713,8 @@
   {:data (some->> (:variation/pcr-product variation)
                   (map (fn [pcr]
                          {(:pcr-product/id pcr)
-                          (let [ohs (:pcr-product/oligo pcr)
-                                first-ohs-id (:id (pack-obj (:pcr-product.oligo/oligo (first ohs))))
+                          (when-let [ohs (:pcr-product/oligo pcr)]
+                               (let [first-ohs-id (:id (pack-obj (:pcr-product.oligo/oligo (first ohs))))
                                 [left-oh right-oh] (if (str/ends-with? first-ohs-id "_b")
                                                           [(second ohs) (first ohs)]
                                                           [(first ohs) (second ohs)])]
@@ -726,7 +726,7 @@
                                   :left_oligo (-> left-oh :pcr-product.oligo/oligo :oligo/sequence)
                                   :right_oligo (-> right-oh :pcr-product.oligo/oligo :oligo/sequence)})
                                :assay_type (if (contains? (-> ohs first :pcr-product.oligo/oligo) :oligo/sequence)
-                                             "sequence")})}))
+                                             "sequence")}))}))
                   (apply merge))
    :description "experimental assays for detecting this polymorphism"})
 

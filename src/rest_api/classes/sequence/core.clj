@@ -261,7 +261,7 @@
                                                                      (and (= status :cds)
                                                                           (or (= feature-type :five_prime_UTR)
                                                                               (= feature-type :three_prime_UTR)))))))
-                                                {:start (if (neg? start) 1 start)
+                                                {:start (if (< start 1) 1 start)
                                                  :stop (if (> stop context-length) context-length stop)
                                                  :type feature-type}))))
                                      (remove nil?))
