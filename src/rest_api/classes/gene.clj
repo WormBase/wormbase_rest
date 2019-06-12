@@ -13,8 +13,12 @@
    [rest-api.classes.gene.widgets.overview :as overview]
    [rest-api.classes.gene.widgets.phenotype :as phenotype]
    [rest-api.classes.gene.widgets.location :as location]
+   [rest-api.classes.gene.widgets.human-disease-graph :as human-disease-graph]
    [rest-api.classes.gene.widgets.human-diseases :as human-diseases]
    [rest-api.classes.gene.widgets.reagents :as reagents]
+   [rest-api.classes.gene.widgets.expression-anatomy-graph :as expression-anatomy-graph]
+   [rest-api.classes.gene.widgets.expression-lifestage-graph :as expression-lifestage-graph]
+   [rest-api.classes.gene.widgets.gene-ontology-graph :as gene-ontology-graph]
    [rest-api.classes.gene.widgets.phenotype-graph :as phenotype-graph]
    [rest-api.classes.gene.variation :as variation]
    [rest-api.classes.gene.expression :as exp]
@@ -25,15 +29,19 @@
    :widget
    {:external_links external-links/widget
     :expression expression/widget
+    :expression_anatomy_graph expression-anatomy-graph/widget
+    :expression_lifestage_graph expression-lifestage-graph/widget
     :feature feature/widget
     :gene_ontology gene-ontology/widget
+    :gene_ontology_graph gene-ontology-graph/widget
     :genetics genetics/widget
     :history history/widget
+    :human_disease_graph human-disease-graph/widget
+    :human_diseases human-diseases/widget
     :interactions interactions/widget
     :mapping_data mapping-data/widget
     :overview overview/widget
     :location location/widget
-    :human_diseases human-diseases/widget
     :sequences sequences/widget
     :references references/widget
     :reagents reagents/widget
