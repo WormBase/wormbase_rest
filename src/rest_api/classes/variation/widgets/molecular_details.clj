@@ -260,6 +260,8 @@
                  padding 500
                  flank-length 25
 
+                 strand (if (= (:locatable/strand variation) :locatable.strand/negative) "-" "+")
+
                  seq-length (+ 1
                                (- (:stop refseqobj)
                                   (:start refseqobj)))
@@ -412,7 +414,10 @@
 
                                       (contains? variation :variation/insertion)
                                       (let [insertion (:variation/insertion variation)
-                                            insert-str (or (:variation.insertion/text insertion)
+                                            insert-str (or (if-let [insert-value (:variation.insertion/text insertion)]
+                                                              (if (= strand "+")
+                                                                insert-value
+                                                                (generic-functions/dna-reverse-complement insert-value)))
                                                            (:transposon-family/id
                                                              (first
                                                                (:variation/transposon-insertion variation))))]
@@ -770,13 +775,13 @@
 
 (defn- compile-nucleotide-changes [variation] ;WBVar00116162 substitution
   (remove nil?
-          [(when-let [insertion (:variation/insertion variation)] ; tested with WBVar00269113
-             {:mutant (if-let [mut (or (:transposon-family/id
-                                           (first
-                                             (:variation/transposon-insertion variation)))
-                                         (:variation/d variation))] ; need to check method
-                          mut
-                          (:variation.insertion/text insertion))
+          [(when-let [insertion (or (:variation/insertion variation)
+                                    (:variation/transposon-insertion variation))] ; tested with WBVar00269113
+             {:mutant (or (:variation.insertion/text
+                            (:variation/insertion variation))
+                          (:transposon-family/id
+                            (first
+                              (:variation/transposon-insertion variation))))
               :mutant_label "variant"
               :wildtype_label "wild type"
               :type "Insertion"
