@@ -488,6 +488,34 @@
                ints-nearby (gene-nearby-interactions db (:db/id gene))]
            (build-interactions-graph db ints ints-nearby))})
 
+(defn interactor-types
+  [gene]
+  {:description "data for creating venn diagram of interactions by its type"
+   :data (let [db (d/entity-db gene)
+               tuples (d/q '[:find ?neighbour ?x
+                             :in $ % [?type-set ...] ?gene
+                             :where
+                             (x->neighbour ?gene _ ?neighbour _ ?int)
+                             [?int :interaction/type ?t]
+                             [?t :db/ident ?tident]
+                             [(name ?tident) ?tident-name]
+                             [(clojure.string/split ?tident-name #":") [?x]]
+                             [(= ?x ?type-set)]]
+                           db
+                           int-rules
+                           ["physical" "genetic" "regulatory"]
+                           (:db/id gene))]
+           (->> tuples
+
+                (map (fn [[gid type]]
+                       {:type type
+                        :interactor (pack-obj (if (string? gid)
+                                                gid
+                                                (d/entity db gid)))}))
+                (seq))
+)})
+
 (def widget
   {:name generic/name-field
-   :interactions interactions})
+   :interactions interactions
+   :interactor_types interactor-types})
