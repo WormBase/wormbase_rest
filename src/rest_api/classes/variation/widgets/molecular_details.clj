@@ -290,9 +290,11 @@
 
                  length-change (if-let [insertion (:variation/insertion variation)]
                                  (or (if-let [insertion-str (let [insertion (or (:variation.insertion/text insertion)
-                                                                                (:transposon-family/id
-                                                                                  (first
-                                                                                    (:variation/transposon-insertion variation))))]
+                                                                                (or
+                                                                                  (:transposon-family/id
+                                                                                    (first
+                                                                                      (:variation/transposon-insertion variation)))
+                                                                                  "-"))]
                                                               (if (= insertion "Mos") "<Mos>" insertion))]
                                        (if (contains? variation :variation/deletion)
                                          (- (count insertion-str)
@@ -415,12 +417,14 @@
                                       (contains? variation :variation/insertion)
                                       (let [insertion (:variation/insertion variation)
                                             insert-str (or (if-let [insert-value (:variation.insertion/text insertion)]
-                                                              (if (= strand "+")
-                                                                insert-value
-                                                                (generic-functions/dna-reverse-complement insert-value)))
-                                                           (:transposon-family/id
-                                                             (first
-                                                               (:variation/transposon-insertion variation))))]
+                                                             (if (= strand "+")
+                                                               insert-value
+                                                               (generic-functions/dna-reverse-complement insert-value)))
+                                                           (or
+                                                             (:transposon-family/id
+                                                               (first
+                                                                 (:variation/transposon-insertion variation)))
+                                                             "-"))]
                                         (str/replace
                                           (:sequence wildtype-positive)
                                           #"\-+"

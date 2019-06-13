@@ -4,17 +4,19 @@
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
-; tested with WBPaper00006202_Y41D4B_1.1
 (defn segment [p]
-  {:data (when-let [refseqobj (sequence-fns/genomic-obj p)]
-	   (let [s (sequence-fns/get-sequence refseqobj)]
-	     {:dna s
-              :length (count s)
-              :start (:start refseqobj)
-              :stop (:stop refseqobj)
-              :end (:stop refseqobj)
-              :ref (:seqname refseqobj)
-              :refseq (:seqname refseqobj)}))
+  {:data (if (contains? p :oligo/id);e.g. OK2488_external_b
+           {:dna (:oligo/sequence p)
+            :length (:oligo/length p)}
+           (when-let [refseqobj (sequence-fns/genomic-obj p)] ;e.g. cenix:10-b12
+             (let [s (sequence-fns/get-sequence refseqobj)]
+               {:dna s
+                :length (count s)
+                :start (:start refseqobj)
+                :stop (:stop refseqobj)
+                :end (:stop refseqobj)
+                :ref (:seqname refseqobj)
+                :refseq (:seqname refseqobj)})))
    :description "Sequence/segment data about this PCR product"})
 
 (defn oligos [p]
