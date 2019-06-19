@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.9.9] - 2019-06-19
+- Fix MTGE transcript bug found by user
+
 ## [0.9.8] - 2019-06-13
 - releasing PCR-oligo sequences widget
 - fixing a couple bugs with variation molecular details widget
