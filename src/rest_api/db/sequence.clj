@@ -79,9 +79,9 @@
     {:name variation-name}))
 
 (defn get-sequence [db-spec location start stop]
-  (let [low (if (> stop start) start stop)
+  (let [low (if (> stop start) (- start 1) (- stop 1))
         high (if (> stop start) stop start)
-        low-offset (- (* (int (/ low 2000)) 2000) 2000)
+        low-offset (* (int (/ low 2000)) 2000)
         high-offset  (* (+ 1 (int (/ high 2000))) 2000)
         offsets  (range low-offset  high-offset 2000)
         start-remove (mod low 2000)
@@ -97,7 +97,7 @@
                                   (str/join)
                                   (str/lower-case))]
     (subs offsets-sequence
-          (+ (mod low 2000) (- 2000 1))
+           (mod low 2000)
           (min (count offsets-sequence)
                (- high low-offset)))))
 
