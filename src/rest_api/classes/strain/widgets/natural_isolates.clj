@@ -19,7 +19,7 @@
                          {:substrate (:strain/substrate obj)
                           :longitude (when-let [longitude (:strain.geolocation/longitude
                                                             (:strain/geolocation obj))]
-                                       (generic-fns/round longitude :precision 2))
+                                      (str (generic-fns/round longitude :precision 2)))
                           :place (:strain/place obj)
                           :species (:species/id (:strain/species obj))
                           :isolated-by (some->> (:strain/isolated-by obj)
@@ -28,11 +28,11 @@
                           :strain (pack-obj obj)
                           :latitude (when-let [latitude (:strain.geolocation/latitude
                                                           (:strain/geolocation obj))]
-                                      (generic-fns/round latitude :precision 2))
+                                      (str (generic-fns/round latitude :precision 2)))
                           :landscape (when-let [landscape-kw (:strain/landscape obj)]
                                        (let [landscape-name (name landscape-kw)]
                                           (obj/humanize-ident landscape-name)))})))))
-   :description "the natural isolates of the strain"})
+   :description "a list of wild isolates of strains contained in WormBase"})
 
 (def widget
   {:name generic/name-field
