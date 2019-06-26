@@ -36,4 +36,4 @@
 
 (def widget
   {:name generic/name-field
-   :naturlal_isolates natural-isolates})
+   :natural_isolates natural-isolates})
