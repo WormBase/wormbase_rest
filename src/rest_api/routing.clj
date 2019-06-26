@@ -44,14 +44,17 @@
                 :pcr-product/id
                 (keyword entity-ns "id"))
           lookup-ref [attr id]]
-      (when-let [entity (or (d/entity db lookup-ref)
-                          (or (d/entity db [:oligo/id id])
-                              (d/entity db [:oligo-set/id id])))]
+      (when-let [entity (if (= id "all")
+                          "all"
+                          (or (d/entity db lookup-ref)
+                              (or (d/entity db [:oligo/id id])
+                                  (d/entity db [:oligo-set/id id]))))]
         (->> (conform-to-scheme scheme entity-handler entity request)
              (merge {:class entity-ns
                      :name id
                      :uri (conform-uri request)})
              (res/ok))))))
+
 (defprotocol RouteSpecification
   (-create-routes
     [route-spec]

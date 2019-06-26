@@ -4,6 +4,13 @@
     [rest-api.formatters.object :as obj :refer [pack-obj]]
     [clojure.string :as str]))
 
+(defn round
+  [x & {p :precision}]
+  (if p
+    (let [scale (Math/pow 10 p)]
+      (-> x (* scale) Math/round (/ scale)))
+    (Math/round x)))
+
 (defn dna-reverse-complement [dna]
   (some-> (str/reverse dna)
           (str/replace "a" "z")
