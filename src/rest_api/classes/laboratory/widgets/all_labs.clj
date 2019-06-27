@@ -18,7 +18,10 @@
                        (let [obj (d/entity db id)]
                          {:email (first (:laboratory/e-mail obj))
                           :allele_designation (:laboratory/allele-designation obj)
-                          :lab (pack-obj obj)
+                          :lab (let [lab-obj (pack-obj obj)]
+                                 (conj
+                                   lab-obj
+                                   {:label (:id lab-obj)}))
                           :url (when-let [url-raw (first (:laboratory/url obj))]
                                  (let [lc-url (str/lower-case url-raw)]
                                    (if (not  (or (str/starts-with? lc-url "http://")
@@ -27,7 +30,8 @@
                                      lc-url)))
                           :affiliation (first (:laboratory/mail obj))
                           :represenative (when-let [rep (:laboratory/representative obj)]
-                                           (pack-obj (first rep)))})))))
+                                           (pack-obj (first rep)))})))
+                (remove nil?)))
    :description "the natural isolates of the strain"})
 
 (def widget
