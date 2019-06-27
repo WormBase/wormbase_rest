@@ -45,7 +45,7 @@
                                                  (first))
                           :expression_patterns (some->> (:expr-pattern/_transgene obj)
                                                         (map pack-obj))
-                          :summary (:transgene.summary/text (first (:transgene/summary obj)))
+                          :summary (:transgene.summary/text (:transgene/summary obj))
                           :reference (some->> (:transgene/reference obj)
                                               (map :transgene.reference/paper)
                                               (map pack-obj)
