@@ -198,6 +198,6 @@
    :regulation_level regulation-level
    :remarks generic/remarks
    :confidence confidence
-   :hisotrical_gene generic/historical-gene
+   :historical_gene generic/historical-gene
    :rnai rnai
    :interactor interactor})
