@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.0] - 2019-06-19
+- created several of the entity level widgets
+- first release for WS271
+
 ## [0.9.9] - 2019-06-19
 - Fix MTGE transcript bug found by user
 
