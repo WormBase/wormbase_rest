@@ -506,9 +506,9 @@
                            ["physical" "genetic" "regulatory"]
                            (:db/id gene))]
            (->> tuples
-
-                (map (fn [[gid type]]
-                       {:type type
+                (group-by first)
+                (map (fn [[gid tuples-subset]]
+                       {:types (map second tuples-subset)
                         :interactor (pack-obj (if (string? gid)
                                                 gid
                                                 (d/entity db gid)))}))
