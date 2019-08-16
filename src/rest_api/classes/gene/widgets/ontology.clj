@@ -186,67 +186,80 @@
    :description
    "gene ontology associations"}))
 
-(def slim
-  (->>
-   ["GO:0003824" ;molecular function
-    ;; "GO:0004872"
-    "GO:0005102"
-    "GO:0005215"
-    "GO:0005198"
-    "GO:0008092"
-    "GO:0003677"
-    "GO:0003723"
-    ;; "GO:0001071"
-    "GO:0036094"
-    "GO:0046872"
-    "GO:0030246"
-    ;; "GO:0003674"
-    "GO:0008283" ;biological process
-    "GO:0071840"
-    "GO:0051179"
-    "GO:0032502"
-    "GO:0000003"
-    "GO:0002376"
-    "GO:0050877"
-    "GO:0050896"
-    "GO:0023052"
-    "GO:0010467"
-    "GO:0019538"
-    "GO:0006259"
-    "GO:0044281"
-    "GO:0050789"
-    "GO:0042592"
-    "GO:0007610"
-    ;; "GO:0008150"
-    "GO:0005576" ;cellular component
-    "GO:0005737"
-    "GO:0005856"
-    "GO:0005739"
-    "GO:0005634"
-    "GO:0005694"
-    "GO:0016020"
-    "GO:0031982"
-    "GO:0071944"
-    "GO:0030054"
-    "GO:0042995"
-    "GO:0032991"
-    "GO:0045202"
-    ;; "GO:0005575"
-    ]
-   (map vector (repeat :go-term/id) )))
+(def get-aspects
+  (memoize (fn [db]
+             (->> ["GO:0008150" "GO:0003674" "GO:0005575"]
+                  (map (fn [id]
+                         (d/entid db [:go-term/id id])))))))
 
-(def aspects
-  (->> ["GO:0008150" "GO:0003674" "GO:0005575"]
-       (map vector (repeat :go-term/id))))
+(def get-slim
+  (memoize (fn [db]
+             (let [aspects (set (get-aspects db))]
+               (->>
+                ["GO:0003824" ;molecular function
+                 ;; "GO:0004872"
+                 "GO:0005102"
+                 "GO:0005215"
+                 "GO:0005198"
+                 "GO:0008092"
+                 "GO:0003677"
+                 "GO:0003723"
+                 ;; "GO:0001071"
+                 "GO:0036094"
+                 "GO:0046872"
+                 "GO:0030246"
+                 ;; "GO:0003674"
+                 "GO:0008283" ;biological process
+                 "GO:0071840"
+                 "GO:0051179"
+                 "GO:0032502"
+                 "GO:0000003"
+                 "GO:0002376"
+                 "GO:0050877"
+                 "GO:0050896"
+                 "GO:0023052"
+                 "GO:0010467"
+                 "GO:0019538"
+                 "GO:0006259"
+                 "GO:0044281"
+                 "GO:0050789"
+                 "GO:0042592"
+                 "GO:0007610"
+                 ;; "GO:0008150"
+                 "GO:0005576" ;cellular component
+                 "GO:0005737"
+                 "GO:0005856"
+                 "GO:0005739"
+                 "GO:0005634"
+                 "GO:0005694"
+                 "GO:0016020"
+                 "GO:0031982"
+                 "GO:0071944"
+                 "GO:0030054"
+                 "GO:0042995"
+                 "GO:0032991"
+                 "GO:0045202"
+                 ;; "GO:0005575"
+                 ]
+                (map (fn [id]
+                       (d/entid db [:go-term/id id])))
+                (filter (fn [eid]
+                          (not (aspects eid)))))))))
 
-(defn slim-order [slim-ref]
-  (let [order (zipmap slim (iterate inc 0))
-        n (count slim)]
-    (or (order slim-ref)
-        n)))
+(def slim-sort-key-fn
+  (memoize (fn [slim]
+             (let [sort-key-map (zipmap slim (iterate inc 0))
+                   n (count slim)]
+               (fn [term-ref]
+                 (or (sort-key-map term-ref)
+                     n)
+                 )))))
 
 (defn gene-ontology-ribbon [gene]
   {:data (let [db (d/entity-db gene)
+               slim (get-slim db)
+               aspects (get-aspects db)
+               get-term-sort-key (slim-sort-key-fn slim)
                tuples (concat
                        ; annotated with descendants of slim term
                        (d/q '[:find ?slim ?term (count ?anno)
@@ -281,7 +294,7 @@
                                                                  :annotation_count anno-count})))
                         (zipmap (concat slim aspects) (repeat [])))
                 (sort-by (fn [[slim-ref _]]
-                           (slim-order slim-ref)))
+                           (get-term-sort-key slim-ref)))
                 (map (fn [[slim-ref terms]]
                        {:slim (let [slim-term (d/entity db slim-ref)
                                     packed (-> (pack-obj slim-term)
