@@ -186,67 +186,101 @@
    :description
    "gene ontology associations"}))
 
-(def slim
-  (->>
-   ["GO:0003824" ;molecular function
-    ;; "GO:0004872"
-    "GO:0005102"
-    "GO:0005215"
-    "GO:0005198"
-    "GO:0008092"
-    "GO:0003677"
-    "GO:0003723"
-    ;; "GO:0001071"
-    "GO:0036094"
-    "GO:0046872"
-    "GO:0030246"
-    ;; "GO:0003674"
-    "GO:0008283" ;biological process
-    "GO:0071840"
-    "GO:0051179"
-    "GO:0032502"
-    "GO:0000003"
-    "GO:0002376"
-    "GO:0050877"
-    "GO:0050896"
-    "GO:0023052"
-    "GO:0010467"
-    "GO:0019538"
-    "GO:0006259"
-    "GO:0044281"
-    "GO:0050789"
-    "GO:0042592"
-    "GO:0007610"
-    ;; "GO:0008150"
-    "GO:0005576" ;cellular component
-    "GO:0005737"
-    "GO:0005856"
-    "GO:0005739"
-    "GO:0005634"
-    "GO:0005694"
-    "GO:0016020"
-    "GO:0031982"
-    "GO:0071944"
-    "GO:0030054"
-    "GO:0042995"
-    "GO:0032991"
-    "GO:0045202"
-    ;; "GO:0005575"
-    ]
-   (map vector (repeat :go-term/id) )))
+(def get-aspects
+  (memoize (fn [db]
+             (->> ["GO:0008150" "GO:0003674" "GO:0005575"]
+                  (map (fn [id]
+                         (d/entid db [:go-term/id id])))))))
 
-(def aspects
-  (->> ["GO:0008150" "GO:0003674" "GO:0005575"]
-       (map vector (repeat :go-term/id))))
+(def get-slim
+  (memoize (fn [db]
+             (let [aspects (set (get-aspects db))]
+               (->>
+                [
+                 "GO:0003674" ; aspect: molecular function
+                 "GO:0016491" ; oxidoreductase
+                 "GO:0016787" ; hydrolase
+                 "GO:0016740" ; transferase
+                 "GO:0016874" ; ligase
+                 "GO:0030234" ; enzyme regulator
+                 "GO:0038023" ; signaling receptor
+                 "GO:0005102" ; signaling receptor binding
+                 "GO:0005215" ; transporter
+                 "GO:0005198" ; structural molecule
+                 "GO:0008092" ; cytoskeletal protein binding
+                 "GO:0003677" ; DNA binding
+                 "GO:0003723" ; RNA binding
+                 "GO:0003700" ; DNA-binding transcription factor
+                 "GO:0008134" ; transcription factor binding
+                 "GO:0036094" ; small molecule binding
+                 "GO:0046872" ; metal ion binding
+                 "GO:0030246" ; carbohydrate binding
+                 "GO:0097367" ; carbohydrate derivative binding
+                 "GO:0008289" ; lipid binding
+                 "GO:0003674" ; other functions
+                 "GO:0008150" ; aspect: biological process
+                 "GO:0007049" ; cell cycle
+                 "GO:0016043" ; cellular component organization
+                 "GO:0051234" ; establishment of localization
+                 "GO:0008283" ; cell proliferation
+                 "GO:0030154" ; cell differentiation
+                 "GO:0008219" ; cell death
+                 "GO:0032502" ; development
+                 "GO:0000003" ; reproduction
+                 "GO:0002376" ; immune system
+                 "GO:0050877" ; nervous system
+                 "GO:0050896" ; response to stimulus
+                 "GO:0023052" ; signaling
+                 "GO:0006259" ; DNA metabolism
+                 "GO:0016070" ; RNA metabolism
+                 "GO:0019538" ; protein metabolism
+                 "GO:0005975" ; carbohydrate metabolism
+                 "GO:1901135" ; carbohydrate derivative metabolism
+                 "GO:0006629" ; lipid metabolism
+                 "GO:0042592" ; homeostasis
+                 "GO:0009056" ; catabolism
+                 "GO:0065009" ; regulation of molecular function
+                 "GO:0050789" ; regulation of biological process
+                 "GO:0007610" ; behavior
+                 "GO:0008150" ; other processes
+                 "GO:0005575" ; aspect: cellular component
+                 "GO:0005576" ; extracellular region
+                 "GO:0005886" ; plasma membrane
+                 "GO:0045202" ; synapse
+                 "GO:0030054" ; cell junction
+                 "GO:0042995" ; cell projection
+                 "GO:0031410" ; cytoplasmic vesicle
+                 "GO:0005768" ; endosome
+                 "GO:0005773" ; vacuole
+                 "GO:0005794" ; Golgi apparatus
+                 "GO:0005783" ; endoplasmic reticulum
+                 "GO:0005829" ; cytosol
+                 "GO:0005739" ; mitochondrion
+                 "GO:0005634" ; nucleus
+                 "GO:0005694" ; chromosome
+                 "GO:0005856" ; cytoskeleton
+                 "GO:0032991" ; protein-containing complex
+                 "GO:0005575" ; other components
+                 ]
+                (map (fn [id]
+                       (d/entid db [:go-term/id id])))
+                (filter (fn [eid]
+                          (not (aspects eid)))))))))
 
-(defn slim-order [slim-ref]
-  (let [order (zipmap slim (iterate inc 0))
-        n (count slim)]
-    (or (order slim-ref)
-        n)))
+(def slim-sort-key-fn
+  (memoize (fn [slim]
+             (let [sort-key-map (zipmap slim (iterate inc 0))
+                   n (count slim)]
+               (fn [term-ref]
+                 (or (sort-key-map term-ref)
+                     n)
+                 )))))
 
 (defn gene-ontology-ribbon [gene]
   {:data (let [db (d/entity-db gene)
+               slim (get-slim db)
+               aspects (get-aspects db)
+               get-term-sort-key (slim-sort-key-fn slim)
                tuples (concat
                        ; annotated with descendants of slim term
                        (d/q '[:find ?slim ?term (count ?anno)
@@ -281,7 +315,7 @@
                                                                  :annotation_count anno-count})))
                         (zipmap (concat slim aspects) (repeat [])))
                 (sort-by (fn [[slim-ref _]]
-                           (slim-order slim-ref)))
+                           (get-term-sort-key slim-ref)))
                 (map (fn [[slim-ref terms]]
                        {:slim (let [slim-term (d/entity db slim-ref)
                                     packed (-> (pack-obj slim-term)
