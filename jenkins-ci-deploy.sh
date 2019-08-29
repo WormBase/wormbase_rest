@@ -22,6 +22,7 @@ make build-staging
 make docker-tag-latest
 
 # push containers to AWS ECR
+aws ecr get-login --no-include-email --region us-east-1 | sh
 make docker-push-ecr-latest
 
 # deploy container
