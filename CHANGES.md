@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.1] - 2019-09-29
+- release for WS272
+
 ## [1.0.0] - 2019-06-19
 - created several of the entity level widgets
 - first release for WS271

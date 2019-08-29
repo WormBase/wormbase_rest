@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "1.0.0"
+(defproject wormbase/rest-api "1.0.1"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/wormbase-rest"
@@ -62,7 +62,7 @@
           :source-paths ["dev"]
           :jvm-opts ["-Xmx1G"]
           :env
-          {:wb-db-uri "datomic:ddb://us-east-1/WS271/wormbase"
+          {:wb-db-uri "datomic:ddb://us-east-1/WS272/wormbase"
            :swagger-validator-url "http://localhost:8002"}
           :plugins
           [[jonase/eastwood "0.2.3"
