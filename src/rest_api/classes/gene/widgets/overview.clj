@@ -107,7 +107,7 @@
          (:db/id gene))
     "Transposon in origin"
 
-    (:gene/corresponding-pseudogene gene)
+    (:gene/_corresponding-pseudogene gene)
     "pseudogene"
 
     cds
