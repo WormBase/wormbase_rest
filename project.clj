@@ -21,7 +21,7 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [ring "1.6.3"]
-   [wormbase/pseudoace "0.6.6"]]
+   [wormbase/pseudoace "0.5.9"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
             [lein-pprint "1.1.1"]
