@@ -21,12 +21,12 @@
    [org.clojure/data.json "0.2.6"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [org.clojure/tools.reader "1.3.2"]
-   [ring "1.6.3"]
+   [ring "1.7.0"]
    [wormbase/pseudoace "0.6.6"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
             [lein-pprint "1.1.1"]
-            [lein-ring "0.11.0"]]
+            [lein-ring "0.12.5"]]
   :main ^:skip-aot rest-api.main
   :resource-paths ["resources"]
   :uberjar {:aot :all}
