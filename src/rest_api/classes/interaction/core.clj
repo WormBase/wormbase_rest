@@ -453,11 +453,11 @@
 
         edge-vals (comp vec fixup-citations vals :edges)]
     (if graph-only-mode?
-      (-> results
+      (-> {}
           (assoc :edges_all (edge-vals results))
           (assoc :include_details include-details?))
-      (-> results
-          (assoc :edges (edge-vals data))
+      (-> {}
+          (assoc :edges (edge-vals results))
           ;; (assoc :phenotypes (collect-phenotypes (edge-vals results))) ; not used in display now
           (assoc :include_details include-details?)))))
 
