@@ -449,14 +449,7 @@
         [include-details? results]
         (if graph-only-mode?
           [true (fill-interactions db (interactions-nearby-fun) data :nearby? true)]
-          ;; when graph-only-mode? is not set, use the following approach to determine
-          ;; whether to include nearby edges based on the number of direct and nearby edges
-          (if (> (count (:edges data)) 100)
-            [false data]
-            (let [ints-nearby (interactions-nearby-fun)]
-              (if (> (count ints-nearby) 500)
-                [false data]
-                [true (fill-interactions db ints-nearby data :nearby? true)]))))
+          [false data])
 
         edge-vals (comp vec fixup-citations vals :edges)]
     (if graph-only-mode?
@@ -465,7 +458,6 @@
           (assoc :include_details include-details?))
       (-> results
           (assoc :edges (edge-vals data))
-          (assoc :edges_all (edge-vals results))
           ;; (assoc :phenotypes (collect-phenotypes (edge-vals results))) ; not used in display now
           (assoc :include_details include-details?)))))
 
@@ -476,7 +468,7 @@
    :data (let [db (d/entity-db gene)]
            (build-interactions db
                                (partial gene-direct-interactions db (:db/id gene))
-                               (partial gene-nearby-interactions db (:db/id gene))
+                               nil
                                :graph-only-mode? false))})
 
 (defn interaction-details
