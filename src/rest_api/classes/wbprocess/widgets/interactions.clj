@@ -23,20 +23,14 @@
   [wbprocess]
   {:description "genetic and predicted interactions"
    :data (let [db (d/entity-db wbprocess)]
-           (interaction/build-interactions db
-                                           (partial wbprocess-direct-interactions db (:db/id wbprocess))
-                                           nil
-                                           :graph-only-mode? false))})
+           (interaction/build-interactions db (wbprocess-direct-interactions db (:db/id wbprocess))))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [wbprocess]
   {:description "addtional nearby interactions"
    :data (let [db (d/entity-db wbprocess)]
-           (interaction/build-interactions db
-                                           (partial wbprocess-direct-interactions db (:db/id wbprocess))
-                                           nil
-                                           :graph-only-mode? true))})
+           (interaction/build-interactions-graph db (wbprocess-direct-interactions db (:db/id wbprocess)) nil))})
 
 (def widget
   {:name generic/name-field

@@ -21,20 +21,14 @@
   [interaction]
   {:description "genetic and predicted interactions"
    :data (let [db (d/entity-db interaction)]
-           (interaction/build-interactions db
-                                           (partial interaction-direct-interactions db (:db/id interaction))
-                                           nil
-                                           :graph-only-mode? false))})
+           (interaction/build-interactions db (interaction-direct-interactions db (:db/id interaction))))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."
   [interaction]
   {:description "addtional nearby interactions"
    :data (let [db (d/entity-db interaction)]
-           (interaction/build-interactions db
-                                           (partial interaction-direct-interactions db (:db/id interaction))
-                                           nil
-                                           :graph-only-mode? true))})
+           (interaction/build-interactions-graph db (interaction-direct-interactions db (:db/id interaction)) nil))})
 
 (def widget
   {:name generic/name-field
