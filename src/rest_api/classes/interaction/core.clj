@@ -4,7 +4,7 @@
    [datomic.api :as d]
    [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
-   [rest-api.formatters.object :refer [pack-obj]]))
+   [rest-api.formatters.object :refer [pack-obj humanize-ident]]))
 
 (def ^:private sort-by-id (partial sort-by :id))
 
@@ -456,11 +456,12 @@
                             (mapcat (partial make-pairwise db))
                             (reduce (fn [result [interaction {:keys [type-name effector affected direction]}]]
                                       (conj result
-                                            {:type type-name                                             
+                                            {:type type-name
                                              :affected (pack-obj affected)
-                                             :effector (pack-obj effector)                                             
+                                             :effector (pack-obj effector)
                                              :direction direction
                                              :nearby nearby?
+                                             :throughput (humanize-ident (:interaction/throughput interaction))
                                              :interaction (pack-obj interaction)
                                              :citation (->> (:interaction/paper interaction)
                                                             (first)
@@ -484,7 +485,7 @@
   {:description "addtional nearby interactions"
    :data (let [db (d/entity-db gene)
                ints (gene-direct-interactions db (:db/id gene))
-               ints-nearby (gene-nearby-interactions db (:db/id gene))]           
+               ints-nearby (gene-nearby-interactions db (:db/id gene))]
            (build-interactions-graph db ints ints-nearby))})
 
 (def widget
