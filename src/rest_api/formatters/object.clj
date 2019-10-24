@@ -210,6 +210,10 @@
   (or (first (:motif/title motif))
       (:motif/id motif)))
 
+(defmethod obj-label "strain" [_ strain]
+  (or (:strain/public-name strain)
+      (:strain/id strain)))
+
 (defmethod obj-label :default [class obj]
   ((keyword class "id") obj))
 
