@@ -31,22 +31,14 @@
 				      db
 				      homologous-protein-id)
 			      (first)
-			      (d/entity db))
-		      ddkdkd (print (:locatable/score obj))
-		      ;                                            ddd (print (str (/ 1 (math/expt 10 (:locatable/score obj)))))
-		     ]
-		     {:k (keys obj)
-		     :plength plength
-		     ;                                         :dd (:homology/id obj)
-		     :hit (pack-obj homologous-protein)
-		     :taxonomy (let [[genus species] (str/split (:species/id (:protein/species homologous-protein)) #" ")]
+			      (d/entity db))]
+		     {:plength plength
+  	 	      :hit (pack-obj homologous-protein)
+		      :taxonomy (let [[genus species] (str/split (:species/id (:protein/species homologous-protein)) #" ")]
 				     {:genus (first genus)
-				     :species (str " " species)})
-			     :eval  1; (format "%7.3g" (** 10 (* -1 (:locatable/score obj))))
-			     :ls (:locatable/score obj)
-			      :s (keys homologous-protein)
-			       ;:d (some->> (:homology/protein obj)
-					       ;           (keys))
+		  		      :species (str " " species)})
+ 		      :eval  1; (format "%7.3g" (** 10 (* -1 (:locatable/score obj))))
+		      :ls (:locatable/score obj)
 		     }))))]
   {:data data
    :description (if data
