@@ -39,20 +39,19 @@
                                                                #" ")]
                                      {:genus (first genus)
                                       :species species})
-                              :description (when-let [description (or (:protein/description homologous-protein)
-                                                                     (or
-                                                                      (->> homologous-protein
-                                                                       :cds.corresponding-protein/_protein
-                                                                       :cds/brief-identification)
-                                                                      (when-let [cds-id (->> homologous-protein
-                                                                                             :cds.corresponding-protein/_protein
-                                                                                             (map (fn [h]
-                                                                                                (let [cds (:cds/_corresponding-protein h)]
-                                                                                                  (when (not (= "history" (:method/id (:locatable/method cds))))
-                                                                                                   (:cds/id cds)))))
-                                                                                             (first))]
-                                                                       (str "gene " cds-id))))]
-                                             description)
+                              :description (or (:protein/description homologous-protein)
+					      (or
+					       (->> homologous-protein
+						:cds.corresponding-protein/_protein
+						:cds/brief-identification)
+					       (when-let [cds-id (->> homologous-protein
+								  :cds.corresponding-protein/_protein
+								  (map (fn [h]
+									(let [cds (:cds/_corresponding-protein h)]
+									 (when (not (= "history" (:method/id (:locatable/method cds))))
+									  (:cds/id cds)))))
+								  (first))]
+						(str "gene " cds-id))))
                               :e_value (when-let [score (:locatable/score obj)]
                                        (format "%7.0e" (/ 1 (math/expt 10 score))))
                               :source_range (if (and (:homology/min obj) (:homology/max obj))
@@ -63,4 +62,4 @@
 
 (def widget
   {:name generic/name-field
-   :blast_details blast-details})
+   :blastp_details blast-details})
