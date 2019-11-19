@@ -13,24 +13,24 @@
        db (d/db datomic-conn)
        plength (->> p :protein/peptide :protein.peptide/length)]
    (some->> (d/q '[:find [?h ...]
-		            :in $hdb ?pid
-			    :where
-			     [$hdb ?e :protein/id ?pid]
-			     [$hdb ?h :homology/protein ?e]]
-			    db-homology
-			    (:protein/id p))
+	           :in $hdb ?pid
+	           :where
+	            [$hdb ?e :protein/id ?pid]
+	            [$hdb ?h :homology/protein ?e]]
+	          db-homology
+	          (:protein/id p))
 	    (map (fn [id]
 		  (let [obj (d/entity db-homology id)
-		   homologous-protein-id (some->> (:locatable/parent obj)
-			   (:protein/id))
-		   homologous-protein (some->> (d/q '[:find [?p ...]
-			                              :in $db ?pid
-                                                      :where
-                                                       [$db ?p :protein/id ?pid]]
-                        		             db
-				                     homologous-protein-id)
-			                       (first)
-          				       (d/entity db))]
+	  	        homologous-protein-id (some->> (:locatable/parent obj)
+		                                       (:protein/id))
+	                homologous-protein (some->> (d/q '[:find [?p ...]
+			                                   :in $db ?pid
+                                                           :where
+                                                            [$db ?p :protein/id ?pid]]
+                        		                 db
+				                         homologous-protein-id)
+			                            (first)
+          				            (d/entity db))]
 		   (when (not (str/starts-with? homologous-protein-id "MSP")) ; skip mass-spec results
 		    (when-let [score (:locatable/score obj)]
 
@@ -45,7 +45,7 @@
 				       (->> homologous-protein
 					:cds.corresponding-protein/_protein
 					:cds/brief-identification)
-				       (when-let [cds-id (->> homologous-protein
+      				        (when-let [cds-id (->> homologous-protein
 							  :cds.corresponding-protein/_protein
 							  (map (fn [h]
 								(let [cds (:cds/_corresponding-protein h)]
@@ -53,18 +53,18 @@
 								  (:cds/id cds)))))
 							  (first))]
 					(str "gene " cds-id))))
-					    :percent (if (and (:locatable/min obj) (:locatable/max obj))
-							    (let [hlength (- (:homology/max obj) (:homology/min obj))
-							     percentage (/ hlength plength)]
-							     (format "%.1f" (double (* 100 percentage)))))
-							   :taxonomy (if-let [species-id (->> homologous-protein :protein/species :species/id)]
-									   (let [[genus species] (str/split species-id #" ")]
-									    {:genus (first genus)
-									    :species species}))
-								   :score (:locatable/score obj)
-								   :species (->> homologous-protein :protein/species :species)})))))
+                      :percent (if (and (:locatable/min obj) (:locatable/max obj))
+				 (let [hlength (- (:homology/max obj) (:homology/min obj))
+				       percentage (/ hlength plength)]
+				     (format "%.1f" (double (* 100 percentage)))))
+                      :taxonomy (if-let [species-id (->> homologous-protein :protein/species :species/id)]
+				   (let [[genus species] (str/split species-id #" ")]
+				    {:genus (first genus)
+				     :species species}))
+				     :score (:locatable/score obj)
+				     :species (->> homologous-protein :protein/species :species/id)})))))
 	(remove nil?)
-(group-by :species)
+        (group-by :species)
 	(map (fn [method-group]
 	      (let [max-hit (apply max-key :score (second method-group))]
 	       (dissoc max-hit :score :species :method)))))))
