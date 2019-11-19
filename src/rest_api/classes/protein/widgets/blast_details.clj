@@ -33,7 +33,7 @@
                                                             (d/entity db))]
                             (when (not (str/starts-with? homologous-protein-id "MSP")) ; skip mass-spec results
                              {:hit (pack-obj homologous-protein)
-                              :species (let [[genus species] (str/split (->> homologous-protein
+                              :taxonomy (let [[genus species] (str/split (->> homologous-protein
                                                                             :protein/species
                                                                             :species/id)
                                                                #" ")]
@@ -52,12 +52,13 @@
 									  (:cds/id cds)))))
 								  (first))]
 						(str "gene " cds-id))))
-                              :e_value (when-let [score (:locatable/score obj)]
+                              :evalue (when-let [score (:locatable/score obj)]
                                        (format "%7.0e" (/ 1 (math/expt 10 score))))
                               :source_range (if (and (:homology/min obj) (:homology/max obj))
                                              (str (+ 1 (:homology/min obj)) ".." (:homology/max obj)))
                               :target_range (if (and (:locatable/min obj) (:locatable/max obj))
-                                             (str (+ 1 (:locatable/min obj)) ".." (:locatable/max obj)))}))))))
+                                             (str (+ 1 (:locatable/min obj)) ".." (:locatable/max obj)))}))))
+                    (remove nil?)))
    :description "The Blast details of the protein"})
 
 (def widget
