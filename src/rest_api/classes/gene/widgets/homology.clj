@@ -71,8 +71,8 @@
 (def widget
   {:name generic/name-field
    :paralogs paralogs
- ;  :best_blastp_matches best-blastp-matches
+   :best_blastp_matches best-blastp-matches
    :nematode_orthologs nematode-orthologs
-   :other_othologs other-orthologs
+   :other_orthologs other-orthologs
    :protein_domains protein-domains
    :treefam treefam})

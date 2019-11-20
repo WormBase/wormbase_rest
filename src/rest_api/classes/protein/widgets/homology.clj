@@ -15,15 +15,15 @@
 		 "no homologous proteins found, no best blastp hits to display")}))
 
 (defn homology-image [p]
-  {:data "1"
+  {:data 1
    :description "a dynamically generated image representing homologous regions of the protein"})
 
-(defn homology-group [p]
-  {:data (protein-core/get-homology-group p)
+(defn homology-groups [p]
+  {:data (protein-core/get-homology-groups p)
    :description "KOG homology groups of the protein"})
 
 (def widget
   {:name generic/name-field
    :best_blastp_matches best-blastp-matches
-   :homology_group homology-group
+   :homology_groups homology-groups
    :homology_image homology-image})

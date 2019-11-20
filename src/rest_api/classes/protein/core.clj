@@ -83,7 +83,7 @@
    (contains? group :homology-type/twog) "TWOG"
    :else  ""))
 
-(defn get-homology-group [p]
+(defn get-homology-groups [p]
  (some->> (:homology-group/_protein p)
   (map (fn [g]
 	{:title (first (:homology-group/title g))
