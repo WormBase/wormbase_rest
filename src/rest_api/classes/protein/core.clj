@@ -34,25 +34,15 @@
 		   (when (not (str/starts-with? homologous-protein-id "MSP")) ; skip mass-spec results
 		    (when-let [score (:locatable/score obj)]
 
-		     {:hit (pack-obj homologous-protein)
+		     {:hit (when-let [obj (pack-obj homologous-protein)]
+                             (conj obj {:label (:id obj)}))
 		      :method (->> obj :locatable/method :method/id)
 		      :evalue (let [evalue-str (format "%7.0e" (/ 1 (math/expt 10 score)))]
 				      (if (= evalue-str "  0e+00")
 				       "      0"
 				       evalue-str))
 		      :description (or (:protein/description homologous-protein)
-				      (or
-				       (->> homologous-protein
-					:cds.corresponding-protein/_protein
-					:cds/brief-identification)
-      				        (when-let [cds-id (->> homologous-protein
-							  :cds.corresponding-protein/_protein
-							  (map (fn [h]
-								(let [cds (:cds/_corresponding-protein h)]
-								 (when (not (= "history" (:method/id (:locatable/method cds))))
-								  (:cds/id cds)))))
-							  (first))]
-					(str "gene " cds-id))))
+                                      (first (:protein/gene-name homologous-protein)))
                       :percent (if (and (:locatable/min obj) (:locatable/max obj))
 				 (let [hlength (- (:homology/max obj) (:homology/min obj))
 				       percentage (/ hlength plength)]
@@ -64,7 +54,7 @@
 				     :score (:locatable/score obj)
 				     :species (->> homologous-protein :protein/species :species/id)})))))
 	(remove nil?)
-        (group-by :species)
+        (group-by :method)
 	(map (fn [method-group]
 	      (let [max-hit (apply max-key :score (second method-group))]
 	       (dissoc max-hit :score :species :method)))))))
