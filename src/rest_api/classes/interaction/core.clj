@@ -497,6 +497,10 @@
                              :where
                              (x->neighbour ?gene _ ?neighbour _ ?int)
                              [?int :interaction/type ?t]
+                             (not [?int :interaction/type :interaction.type/gi-module-three:neutral])
+                             (not-join [?int]
+                                       [?int :interaction/regulation-result ?rr]
+                                       [?rr :interaction.regulation-result/value :interaction.regulation-result.value/does-not-regulate])
                              [?t :db/ident ?tident]
                              [(name ?tident) ?tident-name]
                              [(clojure.string/split ?tident-name #":") [?x]]
