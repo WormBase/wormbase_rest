@@ -496,6 +496,7 @@
                              :in $ % [?type-set ...] ?gene
                              :where
                              (x->neighbour ?gene _ ?neighbour _ ?int)
+                             [?neighbour :gene/id _]
                              [?int :interaction/type ?t]
                              (not [?int :interaction/type :interaction.type/gi-module-three:neutral])
                              (not-join [?int]
