@@ -24,6 +24,29 @@
    :interactor-info.interactor-type/trans-regulated :affected
    :interactor-info.interactor-type/trans-regulator :effector})
 
+(def ^:private interactor-role-rules
+  '[[(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/affected]]
+    [(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/bait]]
+    [(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/cis-regulated]]
+    [(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/trans-regulated]]
+
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/cis-regulator]]
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/target]]
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/trans-regulator]]
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/effector]]
+
+    [(non-directed ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/non-directional]]
+    ])
+
 (def ^:private interaction-target
   (some-fn :interaction.feature-interactor/feature
            :interaction.interactor-overlapping-gene/gene
@@ -495,7 +518,14 @@
                tuples (d/q '[:find ?neighbour ?x
                              :in $ % [?type-set ...] ?gene
                              :where
-                             (x->neighbour ?gene _ ?neighbour ?nh ?int)
+                             (x->neighbour ?gene ?gh ?neighbour ?nh ?int)
+                             (or-join [?gh ?nh]
+                                      (and (effector ?gh)
+                                           (affected ?nh))
+                                      (and (affected ?gh)
+                                           (effector ?nh))
+                                      (and (non-directed ?gh)
+                                           (non-directed ?nh)))
                              (not [?nh :interaction.other-interactor/text _])
                              [?neighbour :gene/id _]
                              [?int :interaction/type ?t]
@@ -508,7 +538,8 @@
                              [(clojure.string/split ?tident-name #":") [?x]]
                              [(= ?x ?type-set)]]
                            db
-                           int-rules
+                           (concat int-rules
+                                   interactor-role-rules)
                            ["physical" "genetic" "regulatory"]
                            (:db/id gene))]
            (->> tuples
