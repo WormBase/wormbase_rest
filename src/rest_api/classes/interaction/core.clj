@@ -495,7 +495,8 @@
                tuples (d/q '[:find ?neighbour ?x
                              :in $ % [?type-set ...] ?gene
                              :where
-                             (x->neighbour ?gene _ ?neighbour _ ?int)
+                             (x->neighbour ?gene _ ?neighbour ?nh ?int)
+                             (not [?nh :interaction.other-interactor/text _])
                              [?neighbour :gene/id _]
                              [?int :interaction/type ?t]
                              (not [?int :interaction/type :interaction.type/gi-module-three:neutral])
