@@ -515,34 +515,35 @@
   [gene]
   {:description "data for creating venn diagram of interactions by its type"
    :data (let [db (d/entity-db gene)
-               tuples (d/q '[:find ?neighbour ?x
-                             :in $ % [?type-set ...] ?gene
-                             :where
-                             (x->neighbour ?gene ?gh ?neighbour ?nh ?int)
-                             (or-join [?gh ?nh]
-                                      (and (effector ?gh)
-                                           (affected ?nh))
-                                      (and (affected ?gh)
-                                           (effector ?nh))
-                                      (and (non-directed ?gh)
-                                           (non-directed ?nh)))
-                             (not [?nh :interaction.other-interactor/text _])
-                             [?neighbour :gene/id _]
-                             [?int :interaction/type ?t]
-                             (not [?int :interaction/type :interaction.type/gi-module-three:neutral])
-                             (not-join [?int]
-                                       [?int :interaction/regulation-result ?rr]
-                                       [?rr :interaction.regulation-result/value :interaction.regulation-result.value/does-not-regulate])
-                             [?t :db/ident ?tident]
-                             [(name ?tident) ?tident-name]
-                             [(clojure.string/split ?tident-name #":") [?x]]
-                             [(= ?x ?type-set)]]
-                           db
-                           (concat int-rules
-                                   interactor-role-rules)
-                           ["physical" "genetic" "regulatory"]
-                           (:db/id gene))]
-           (->> tuples
+               query-results
+               (d/q '[:find ?neighbour ?tn
+                      :in $ % [?type-set ...] ?gene
+                      :where
+                      (x->neighbour ?gene ?gh ?neighbour ?nh ?int)
+                      (or-join [?gh ?nh]
+                               (and (effector ?gh)
+                                    (affected ?nh))
+                               (and (affected ?gh)
+                                    (effector ?nh))
+                               (and (non-directed ?gh)
+                                    (non-directed ?nh)))
+                      (not [?nh :interaction.other-interactor/text _])
+                      [?neighbour :gene/id _]
+                      [?int :interaction/type ?t]
+                      (not [?int :interaction/type :interaction.type/gi-module-three:neutral])
+                      (not-join [?int]
+                                [?int :interaction/regulation-result ?rr]
+                                [?rr :interaction.regulation-result/value :interaction.regulation-result.value/does-not-regulate])
+                      [?t :db/ident ?tident]
+                      [(name ?tident) ?tident-name]
+                      [(clojure.string/split ?tident-name #":") [?tn]]
+                      [(= ?tn ?type-set)]]
+                    db
+                    (concat int-rules
+                            interactor-role-rules)
+                    ["physical" "genetic" "regulatory"]
+                    (:db/id gene))]
+           (->> query-results
                 (group-by first)
                 (map (fn [[gid tuples-subset]]
                        {:types (map second tuples-subset)
