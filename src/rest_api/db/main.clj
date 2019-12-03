@@ -16,7 +16,7 @@
 (defn- connect-homology []
  (let [uri (datomic-uri)]
   (do
-   (let [db-uri (str uri "-homology")]
+   (let [db-uri (str uri "-homol")]
     (println (format "Using Datomic: %s" db-uri))
     (d/connect db-uri)))))
 
