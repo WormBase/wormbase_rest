@@ -14,6 +14,7 @@
    [rest-api.classes.gene.widgets.phenotype :as phenotype]
    [rest-api.classes.gene.widgets.location :as location]
    [rest-api.classes.gene.widgets.human-diseases :as human-diseases]
+   [rest-api.classes.gene.widgets.homology :as homology]
    [rest-api.classes.gene.widgets.reagents :as reagents]
    [rest-api.classes.gene.widgets.phenotype-graph :as phenotype-graph]
    [rest-api.classes.gene.variation :as variation]
@@ -33,6 +34,7 @@
     :mapping_data mapping-data/widget
     :overview overview/widget
     :location location/widget
+    ;:homology homology/widget
     :human_diseases human-diseases/widget
     :sequences sequences/widget
     :references references/widget
