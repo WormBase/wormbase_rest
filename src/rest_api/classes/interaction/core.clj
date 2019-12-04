@@ -24,6 +24,29 @@
    :interactor-info.interactor-type/trans-regulated :affected
    :interactor-info.interactor-type/trans-regulator :effector})
 
+(def ^:private interactor-role-rules
+  '[[(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/affected]]
+    [(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/bait]]
+    [(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/cis-regulated]]
+    [(affected ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/trans-regulated]]
+
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/cis-regulator]]
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/target]]
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/trans-regulator]]
+    [(effector ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/effector]]
+
+    [(non-directed ?itr)
+     [?itr :interactor-info/interactor-type :interactor-info.interactor-type/non-directional]]
+    ])
+
 (def ^:private interaction-target
   (some-fn :interaction.feature-interactor/feature
            :interaction.interactor-overlapping-gene/gene
@@ -488,6 +511,49 @@
                ints-nearby (gene-nearby-interactions db (:db/id gene))]
            (build-interactions-graph db ints ints-nearby))})
 
+(defn interactor-types
+  [gene]
+  {:description "data for creating venn diagram of interactions by its type"
+   :data (let [db (d/entity-db gene)
+               query-results
+               (d/q '[:find ?neighbour ?tn
+                      :in $ % [?type-set ...] ?gene
+                      :where
+                      (x->neighbour ?gene ?gh ?neighbour ?nh ?int)
+                      (or-join [?gh ?nh]
+                               (and (effector ?gh)
+                                    (affected ?nh))
+                               (and (affected ?gh)
+                                    (effector ?nh))
+                               (and (non-directed ?gh)
+                                    (non-directed ?nh)))
+                      (not [?nh :interaction.other-interactor/text _])
+                      [?neighbour :gene/id _]
+                      [?int :interaction/type ?t]
+                      (not [?int :interaction/type :interaction.type/gi-module-three:neutral])
+                      (not-join [?int]
+                                [?int :interaction/regulation-result ?rr]
+                                [?rr :interaction.regulation-result/value :interaction.regulation-result.value/does-not-regulate])
+                      [?t :db/ident ?tident]
+                      [(name ?tident) ?tident-name]
+                      [(clojure.string/split ?tident-name #":") [?tn]]
+                      [(= ?tn ?type-set)]]
+                    db
+                    (concat int-rules
+                            interactor-role-rules)
+                    ["physical" "genetic" "regulatory"]
+                    (:db/id gene))]
+           (->> query-results
+                (group-by first)
+                (map (fn [[gid tuples-subset]]
+                       {:types (map second tuples-subset)
+                        :interactor (pack-obj (if (string? gid)
+                                                gid
+                                                (d/entity db gid)))}))
+                (seq))
+)})
+
 (def widget
   {:name generic/name-field
-   :interactions interactions})
+   :interactions interactions
+   :interactor_types interactor-types})
