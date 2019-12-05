@@ -29,8 +29,8 @@
                                      (str "http://" lc-url)
                                      lc-url)))
                           :affiliation (first (:laboratory/mail obj))
-                          :represenative (when-let [rep (:laboratory/representative obj)]
-                                           (pack-obj (first rep)))})))
+                          :representative (when-let [rep (:laboratory/representative obj)]
+                                            (pack-obj (first rep)))})))
                 (remove nil?)))
    :description "the natural isolates of the strain"})
 
