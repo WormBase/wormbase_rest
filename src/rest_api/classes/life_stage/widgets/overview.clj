@@ -20,7 +20,8 @@
 ;   :description "The prominent cell group for this life stage"})
 
 (defn definition [ls]
-  {:data (first (:life-stage/definition ls))
+  {:data (->> (:life-stage/definition ls)
+              (:life-stage.definition/text))
    :description "brief definition  of the life stage"})
 
 (defn contained-in-life-stage [ls]
