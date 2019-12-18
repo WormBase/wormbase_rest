@@ -177,7 +177,10 @@
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_translation (subs pseq 0 (parse-int mutant-stop))}
+         :mutant_conceptual_translation (->> (parse-int mutant-stop)
+                                             (dec)
+                                             (subs pseq 0)
+                                             (format "%s*"))}
         (get-feature-affected-evidence holder)))))
 
 (defn- get-missense-obj [predicted-cds-holder]
