@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.0] - 2019-12-19
+- release for WS274
+- retrieve protein homology data
+- retrieve data for interaction venn
+- fix the display of premature stop codon
+- fix life-stage description/definiton WormBase/website#7463
+- fix typo in all_labs representative column
+
 ## [1.0.2] - 2019-10-24
 - release for WS273
 - stop merging annotations for interactions
