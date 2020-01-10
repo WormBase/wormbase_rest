@@ -1,7 +1,9 @@
 (ns rest-api.classes.gene.widgets.homology
   (:require
    [clojure.string :as str]
+   [datomic.api :as d]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.db.main :refer [datomic-homology-conn]]
    [rest-api.formatters.object :as obj :refer [pack-obj]]
    [rest-api.classes.protein.core :as protein-core]))
 
@@ -84,7 +86,32 @@
 
 
 (defn protein-domains [g]
-  {:data nil
+  {:data (let [db (d/entity-db g)
+               hdb (d/db datomic-homology-conn)]
+           (some->> (d/q '[:find [?m ...]
+                           :in $ $hdb ?gid ?mdid
+                           :where
+                           [$ ?g :gene/id ?gid]
+                           [$ ?g :gene/corresponding-cds ?cdsh]
+                           [$ ?cdsh :gene.corresponding-cds/cds ?cds]
+                           [$ ?cds :cds/corresponding-protein ?ph]
+                           [$ ?ph :cds.corresponding-protein/protein ?p]
+                           [$ ?p :protein/id ?pid]
+                           [$hdb ?hp :protein/id ?pid]
+                           [$hdb ?l :locatable/parent ?hp]
+                           [$hdb ?l :locatable/method ?md]
+                           [$hdb ?md :method/id ?mdid]
+                           [$hdb ?l :homology/motif ?hm]
+                           [$hdb ?hm :motif/id ?mid]
+                           [$ ?m :motif/id ?mid]
+                           ]
+                         db hdb (:gene/id g) "interpro")
+                    (seq)
+                    (map #(d/entity db %))
+                    (map pack-obj)
+                    (map (fn [packed-motif]
+                           [(:label packed-motif) packed-motif]))
+                    (into {})))
    :description "protein domains of the gene"})
 
 (defn treefam [g]
