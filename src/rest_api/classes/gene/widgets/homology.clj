@@ -46,7 +46,7 @@
                             (gene-fn)
                             (pack-obj))
              :method (some->> (:evidence/from-analysis oh)
-                              (map :analysis/id))
+                              (map pack-obj))
              :species (when-let [species-id (->> oh
                                                  (species-fn)
                                                  (:species/id))]
