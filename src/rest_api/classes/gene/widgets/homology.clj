@@ -9,10 +9,6 @@
 (defn ** [x n] (reduce * (repeat n x)))
 
 
-(defn paralogs [g]
- {:data nil
-  :description "precalculated paralog assignments"})
-
 (defn best-blastp-matches [g]
  (let [longest-protein (some->> (:gene/corresponding-cds g)
                                 (map :gene.corresponding-cds/cds)
@@ -31,30 +27,61 @@
                  "best BLASTP hits from selected species"
 		 "no homologous proteins found, no best blastp hits to display")}))
 
-(defn- get-orthologs [g want-nematode]
- (when-let [species-id (->> g :gene/species :species/id)]
-             (some->> (:gene/ortholog g)
-	              (filter (fn [oh]
-			       (let [is-nematode (contains? (:gene.ortholog/gene oh) :gene/corresponding-cds)] ;; only create and connect genes to cds objects if it is a nematode
-				(if want-nematode
-				 is-nematode
-				 (not is-nematode)))))
-		      (map (fn [oh]
-			    {:ortholog (->> oh :gene.ortholog/gene pack-obj)
-                             :method (some->> (:evidence/from-analysis oh)
-                                              (map :analysis/id))
-                             :species (when-let [species-id (->> oh :gene.ortholog/species :species/id)]
-                                         (let [[genus species] (str/split species-id #" ")]
-                                          {:genus (first genus)
-                                           :species species}))})))))
+(defn- get-orthologs [homolog-holders want-nematode]
+  (let [species-fn
+        (fn [oh]
+          (or (:gene.ortholog/species oh)
+              (:gene.paralog/species oh)))
+
+        gene-fn
+        (fn [oh]
+          (or (:gene.ortholog/gene oh)
+              (:gene.paralog/gene oh)))
+        ]
+
+    (some->>
+     homolog-holders
+     (map (fn [oh]
+	    {:ortholog (->> oh
+                            (gene-fn)
+                            (pack-obj))
+             :method (some->> (:evidence/from-analysis oh)
+                              (map :analysis/id))
+             :species (when-let [species-id (->> oh
+                                                 (species-fn)
+                                                 (:species/id))]
+                        (let [[genus species] (str/split species-id #" ")]
+                          {:genus (first genus)
+                           :species species}))}))
+     (seq)))
+
+  )
+
+(defn- is-nematode-ortholog [ortholog-holder]
+  (->> ortholog-holder
+       :gene.ortholog/gene
+       :gene/corresponding-cds)) ;; only create and connect genes to cds objects if it is a nematode
+
 
 (defn nematode-orthologs [g]
-  {:data (get-orthologs g true)
+  {:data (let [holders (->> g
+                            (:gene/ortholog)
+                            (filter is-nematode-ortholog))]
+           (get-orthologs holders true))
    :description "precalculated ortholog assignments for this gene"})
 
 (defn other-orthologs [g]
-  {:data (get-orthologs g false)
+  {:data (let [holders (->> g
+                            (:gene/ortholog)
+                            (remove is-nematode-ortholog))]
+           (get-orthologs holders false))
    :description "orthologs of this gene to other species outside of core nematodes at WormBase"})
+
+(defn paralogs [g]
+  {:data (let [holders (:gene/paralog g)]
+           (get-orthologs holders false))
+   :description "precalculated paralog assignments"})
+
 
 (defn protein-domains [g]
   {:data nil
