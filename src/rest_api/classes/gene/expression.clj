@@ -189,10 +189,12 @@
                       :label (format "<strong>and %s more</strong>" (- size capacity)))])
       (map pack-obj terms))))
 
-(defn- expr-pattern-detail [expr-pattern qualifier]
+(defmulti expression-detail (fn [entity holder] (obj/obj-class entity)))
+
+(defmethod expression-detail "expr-pattern" [expr-pattern qualifier]
   (pace-utils/vmap
    :Type (seq (expr-pattern-type expr-pattern))
-   :Description (str/join "<br/>" (:expr-pattern/pattern expr-pattern))
+   :Description (:expr-pattern/pattern expr-pattern)
 
    :Reagents
    (->> [:expr-pattern/transgene :expr-pattern/construct :expr-pattern/antibody-info :expr-pattern/variation]
@@ -224,6 +226,59 @@
 
    ))
 
+(defmethod expression-detail "expression-cluster" [expression-cluster expression-cluster-info]
+  (->>
+   [:expression-cluster/microarray-experiment
+    :expression-cluster/mass-spectrometry
+    :expression-cluster/rnaseq
+    :expression-cluster/tiling-array
+    :expression-cluster/qpcr
+    :expression-cluster/expr-pattern]
+   (reduce (fn [result key]
+             (if-let [packed-values (some->> (get expression-cluster key)
+                                             (map pack-obj))]
+               (assoc result (case key
+                               :expression-cluster/qpcr "qPCR"
+                               :expression-cluster/rnaseq "RNASeq"
+                               (obj/humanize-ident key))
+                      packed-values)
+               result))
+           {})
+   (into
+    (pace-utils/vmap
+     :Description
+     (->> expression-cluster
+          :expression-cluster/description
+          (str/join " "))
+
+     :Citation
+     (->> expression-cluster
+          :expression-cluster/reference
+          (map :expression-cluster.reference/paper)
+          (map pack-obj))
+
+     :Algorithm
+     (->> expression-cluster
+          :expression-cluster/algorithm
+          (str/join " "))
+
+     :Method_of_isolation
+     (->> expression-cluster-info
+          (keys)
+          (reduce (fn [result key]
+                    (if (= "expression-cluster-info" (namespace key))
+                      (if (get expression-cluster-info key)
+                        (conj (case key
+                                :expression-cluster-info/facs "FACS"
+                                :expression-cluster-info/mrna-tagging "mRNA tagging"
+                                (name key)))
+                        result)
+                      result))
+                  {})
+          )
+     ))
+   ))
+
 (defn- expression-table-row [db ontology-term-dbid relations]
   (let [ontology-term (d/entity db ontology-term-dbid)]
     {:ontology_term (pack-obj ontology-term)
@@ -246,7 +301,8 @@
             (let [expr-pattern (d/entity db expr-pattern-dbid)
                   qualifier (d/entity db qualifier-dbid)]
               {:text (pack-obj expr-pattern)
-               :evidence (expr-pattern-detail expr-pattern qualifier)}))
+               :evidence (expression-detail expr-pattern qualifier)
+               }))
           relations)}))
 
 (defn- expression-table [db ontology-relations]
@@ -269,8 +325,19 @@
                   (not [?ep :expr-pattern/epic])
                   [?ep :expr-pattern/anatomy-term ?th]
                   [?th :expr-pattern.anatomy-term/anatomy-term ?t]]
+                db (:db/id gene))
+           anatomy-relations-from-cluster
+           (d/q '[:find ?t ?ec ?ah
+                  :in $ ?gene
+                  :where
+                  [?gh :expression-cluster.gene/gene ?gene]
+                  [?ec :expression-cluster/gene ?gh]
+                  [?ec :expression-cluster/anatomy-term ?ah]
+                  [?ah :expression-cluster-info/enriched ?]
+                  [?ah :expression-cluster.anatomy-term/anatomy-term ?t]]
                 db (:db/id gene))]
-       (expression-table db anatomy-relations))
+       (expression-table db (concat anatomy-relations
+                                    anatomy-relations-from-cluster)))
      :description "the tissue in which the gene is expressed"}))
 
 (defn expressed-during [gene]
@@ -285,7 +352,17 @@
                   (not [?ep :expr-pattern/epic])
                   [?ep :expr-pattern/life-stage ?th]
                   [?th :expr-pattern.life-stage/life-stage ?t]]
-                db (:db/id gene))]
+                db (:db/id gene))
+           ;; leave out life-stage from expression cluster until SObA includes them
+           ;; life-stage-relations-from-cluster
+           ;; (d/q '[:find ?t ?ec
+           ;;        :in $ ?gene
+           ;;        :where
+           ;;        [?gh :expression-cluster.gene/gene ?gene]
+           ;;        [?ec :expression-cluster/gene ?gh]
+           ;;        [?ec :expression-cluster/life-stage ?t]]
+           ;;      db (:db/id gene))
+           ]
        (expression-table db life-stage-relations))
      :description "the developmental stage in which the gene is expressed"}))
 
