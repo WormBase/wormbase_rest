@@ -49,7 +49,7 @@
 					 "      0"
 					 evalue-str)))
                               :percentage (if (and (:locatable/min obj) (:locatable/max obj))
-					      (let [hlength (- (:locatable/max obj) (:locatable/min obj))
+					      (let [hlength (- (:homology/max obj) (:homology/min obj))
 					       percentage (/ hlength plength)]
 					       (format "%.1f" (double (* 100 percentage)))))
                               :source_range (if (and (:homology/min obj) (:homology/max obj))
