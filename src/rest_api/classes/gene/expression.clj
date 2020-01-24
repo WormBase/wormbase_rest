@@ -237,10 +237,13 @@
    (reduce (fn [result key]
              (if-let [packed-values (some->> (get expression-cluster key)
                                              (map pack-obj))]
-               (assoc result (case key
-                               :expression-cluster/qpcr "qPCR"
-                               :expression-cluster/rnaseq "RNASeq"
-                               (obj/humanize-ident key))
+               (assoc result (->>
+                              (case key
+                                :expression-cluster/qpcr "qPCR"
+                                :expression-cluster/rnaseq "RNASeq"
+                                :expression-cluster/microarray-experiment "Microarray"
+                                (obj/humanize-ident key))
+                              (format "Method of analysis, %s"))
                       packed-values)
                result))
            {})
