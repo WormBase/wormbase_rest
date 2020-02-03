@@ -34,7 +34,15 @@
 		   (when (not (str/starts-with? homologous-protein-id "MSP")) ; skip mass-spec results
 		    (when-let [score (:locatable/score obj)]
 
-		     {:hit (when-let [obj (pack-obj homologous-protein)]
+		     {:id (str/join "-"
+				     [(->> homologous-protein :protein/species :species/id)
+				      homologous-protein-id
+				      (:locatable/max obj)
+				      (:locatable/min obj)
+				      (:homology/max obj)
+				      (:homology/min obj)
+				      (:locatable/score obj)])
+                      :hit (when-let [obj (pack-obj homologous-protein)]
                              (conj obj {:label (:id obj)}))
 		      :method (->> obj :locatable/method :method/id)
 		      :evalue (let [evalue-str (format "%7.0e" (/ 1 (math/expt 10 score)))]
@@ -54,6 +62,10 @@
 				     :score (:locatable/score obj)
 				     :species (->> homologous-protein :protein/species :species/id)})))))
 	(remove nil?)
+        (group-by :id)
+        (vals)
+        (map first)
+        (map (fn [obj] (dissoc obj :id)))
         (group-by :method)
 	(map (fn [method-group]
 	      (let [max-hit (apply max-key :score (second method-group))]

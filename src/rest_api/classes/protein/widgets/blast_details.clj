@@ -33,30 +33,43 @@
 				                            (first)
                                                             (d/entity db))]
                             (when (not (str/starts-with? homologous-protein-id "MSP")) ; skip mass-spec results
-                             {:hit (when-let [obj (pack-obj homologous-protein)]
-                                    (conj obj {:label (:id obj)}))
-                              :taxonomy (let [[genus species] (str/split (->> homologous-protein
-                                                                            :protein/species
-                                                                            :species/id)
-                                                               #" ")]
-                                     {:genus (first genus)
-                                      :species species})
-                              :description (or (:protein/description homologous-protein)
-					      (first (:protein/gene-name homologous-protein)))
-                              :evalue (when-let [score (:locatable/score obj)]
-                                       (let [evalue-str (format "%7.0e" (/ 1 (math/expt 10 score)))]
-					(if (= evalue-str "  0e+00")
-					 "      0"
-					 evalue-str)))
-                              :percentage (if (and (:locatable/min obj) (:locatable/max obj))
-					      (let [hlength (- (:homology/max obj) (:homology/min obj))
-					       percentage (/ hlength plength)]
-					       (format "%.1f" (double (* 100 percentage)))))
-                              :source_range (if (and (:homology/min obj) (:homology/max obj))
-                                             (str (+ 1 (:homology/min obj)) ".." (:homology/max obj)))
-                              :target_range (if (and (:locatable/min obj) (:locatable/max obj))
-                                             (str (+ 1 (:locatable/min obj)) ".." (:locatable/max obj)))}))))
-                    (remove nil?)))
+			     {:id (str/join "-"
+                                            [(->> homologous-protein :protein/species :species/id)
+					     homologous-protein-id
+                                             (:locatable/max obj)
+                                             (:locatable/min obj)
+                                             (:homology/max obj)
+                                             (:homology/min obj)
+                                             (:locatable/score obj)])
+			      :hit (when-let [obj (pack-obj homologous-protein)]
+					     (conj obj {:label (:id obj)}))
+
+			      :taxonomy (let [[genus species] (str/split (->> homologous-protein
+			  				                      :protein/species
+			                  				      :species/id)
+                                                                         #" ")]
+					     {:genus (first genus)
+					      :species species})
+			     :description (or (:protein/description homologous-protein)
+					     (first (:protein/gene-name homologous-protein)))
+			     :evalue (when-let [score (:locatable/score obj)]
+					     (let [evalue-str (format "%7.0e" (/ 1 (math/expt 10 score)))]
+					      (if (= evalue-str "  0e+00")
+					       "      0"
+					       evalue-str)))
+			     :percentage (if (and (:locatable/min obj) (:locatable/max obj))
+					     (let [hlength (- (:homology/max obj) (:homology/min obj))
+					      percentage (/ hlength plength)]
+					      (format "%.1f" (double (* 100 percentage)))))
+			     :source_range (if (and (:homology/min obj) (:homology/max obj))
+					    (str (+ 1 (:homology/min obj)) ".." (:homology/max obj)))
+			     :target_range (if (and (:locatable/min obj) (:locatable/max obj))
+			  	 	    (str (+ 1 (:locatable/min obj)) ".." (:locatable/max obj)))}))))
+                    (remove nil?)
+                    (group-by :id)
+                    (vals)
+                    (map first)
+                    (map (fn [obj] (dissoc obj :id)))))
    :description "The Blast details of the protein"})
 
 (def widget
