@@ -72,7 +72,14 @@
 (defn genes-summary [g]
   {:data (some->> (get-genes g)
                   (map (fn [annot]
-                      (apply dissoc annot [:with :evidence_code :annot_id]))))
+                      (apply dissoc annot [:with :evidence_code :annot_id])))
+                  (map (fn [t]
+                       (conj t
+                          {:id (str/join "-" [(:species t) (->> t :gene :id)])})))
+                  (group-by :id)
+                  (vals)
+                  (map first)
+                  (map (fn [obj] (dissoc obj :id))))
    :description "genes annotated with this term"})
 
 (defn phenotype [g] ;GO:0005739
