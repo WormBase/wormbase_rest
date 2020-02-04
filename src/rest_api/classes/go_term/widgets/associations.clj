@@ -79,6 +79,7 @@
   {:data (some->> (:phenotype-info.go-term/_go-term g)
                   (map :phenotype-info/_go-term)
                   (map :rnai.phenotype/phenotype)
+                  (remove nil?)
                   (map (fn [p]
                       {:description (->> p :phenotype/description :phenotype.description/text)
                        :phenotype_info (pack-obj p)})))
@@ -103,6 +104,6 @@
 ;   :homology_group homology-group
 ;   :cds cds
    :genes_summary genes-summary
-   :phenotype phenotype
+;  :phenotype phenotype
 ;   :cell cell
    :motif motif})
