@@ -34,7 +34,7 @@
     :mapping_data mapping-data/widget
     :overview overview/widget
     :location location/widget
-    ;:homology homology/widget
+    :homology homology/widget
     :human_diseases human-diseases/widget
     :sequences sequences/widget
     :references references/widget
