@@ -8,8 +8,7 @@
 
 (defn motif-details [p]
  {:data (let [hdb (d/db datomic-homology-conn)
-	      db (d/db datomic-conn)
-	      plength (->> p :protein/peptide :protein.peptide/length)]
+	      db (d/db datomic-conn)]
 	  (some->> (d/q '[:find ?m ?l
 		          :in $ $hdb ?pid
 		          :where
