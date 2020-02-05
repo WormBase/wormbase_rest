@@ -13,7 +13,7 @@
    :description "proteins related to this homology_group"})
 
 (defn title [h]
-  {:data nil
+  {:data (first (:homology-group/title h))
    :description "title for this homology group"})
 
 (defn type-field [h]

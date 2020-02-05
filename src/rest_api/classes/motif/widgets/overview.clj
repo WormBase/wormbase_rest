@@ -41,14 +41,14 @@
 	    (map (fn [id]
 	          (let [obj (d/entity db id)]
 		   {:type (cond
-				   (contains? obj :protein/id) ; eg. PFAM:PF00292
-				   "Peptide"
+		           (contains? obj :protein/id) ; eg. PFAM:PF00292
+			   "Peptide"
 
-				   (contains? obj :dna/id)
-				   "DNA"
+			   (contains? obj :dna/id)
+			   "DNA"
 
-				   (contains? obj :motif/id)
-				   "Motif")
+			   (contains? obj :motif/id)
+			   "Motif")
 		   :homolog (pack-obj obj)
 		   :species (pack-obj
 				   (cond

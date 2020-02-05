@@ -7,5 +7,5 @@
 (routing/defroutes
   {:entity-ns "structure-data"
    :widget
-   {;:overview overview/widget
+   {:overview overview/widget
     :external_links external-links/widget}})
