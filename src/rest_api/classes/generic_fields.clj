@@ -561,6 +561,7 @@
 
                  "protein" ;; need to make it filter for only the row with the protein
                  (when-let [cdshs (:cds.corresponding-protein/_protein object)]
+                   (flatten
                    (for [cdsh cdshs
                          :let [cds (:cds/_corresponding-protein cdsh)]]
                      (when-let [ths (:transcript.corresponding-cds/_cds cds)]
@@ -573,7 +574,7 @@
                                    (for [gh ghs]
                                      (:gene/_corresponding-transcript gh)))))]
                          (for [gene genes]
-                           (corresponding-all-gene gene cds "cds" nil)))))))]
+                           (corresponding-all-gene gene cds "cds" nil))))))))]
       {:data (if (= role "transcript")
                (first data)
                (not-empty data))

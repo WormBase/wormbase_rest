@@ -3,7 +3,7 @@
    [clojure.string :as str]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
-;
+
 (defn estimated-molecular-weight [p]
   {:data (when-let [mwh (:protein/molecular-weight p)]
       (format "%.1f" (:protein.molecular-weight/float (first mwh))))
@@ -30,7 +30,7 @@
  ;  :estimated_molecular_weight estimated-molecular-weight
  ;  :status generic/status status does not exist on this entity
  ;  :pfam_graph pfam-graph
- ;  :best_human_match best-human-match
+   :best_human_match best-human-match
  ;  :taxonomy generic/taxonomy
  ;  :description generic/description
  ;  :estimated_isoelectric_point estimated-isoelectric-point
