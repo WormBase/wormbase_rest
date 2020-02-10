@@ -31,7 +31,8 @@
                                          (first))}
 		   :start (+ 1 (:locatable/min locatable))
 		   :stop (:locatable/max locatable)
-		   :feat (pack-obj motif)
+		   :feat (let [motif-obj (pack-obj motif)]
+                           (conj motif-obj {:label (:id motif-obj)}))
 		   :desc (or (first (:motif/title motif))
                              (:motif/id motif))
 		   :score (:locatable/score locatable)})))))

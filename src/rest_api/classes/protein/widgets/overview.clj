@@ -14,7 +14,7 @@
    :description "The motif graph of the protein"})
 
 (defn best-human-match [p]
-  {:data nil ; requires homology data
+  {:data (keys p) ; requires homology data
    :description "best human BLASTP hit"})
 
 (defn estimated-isoelectric-point [p]
@@ -22,7 +22,11 @@
    :description "the estimated isoelectric point of the protein"})
 
 (defn type-field [p]
-  {:data (keys p)
+  {:data (some->> (:cds.corresponding-protein/_protein p)
+                  (map :cds/_corresponding-protein)
+                  (map :locatable/method)
+                  (map :method/id))
+   :dbi (:db/id p)
    :description "The type of the protein"})
 
 (def widget
@@ -36,4 +40,5 @@
  ;  :estimated_isoelectric_point estimated-isoelectric-point
  ;  :remarks generic/remarks
    :type type-field
-   :corresponding_all generic/corresponding-all})
+;   :corresponding_all generic/corresponding-all
+})

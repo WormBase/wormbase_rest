@@ -48,7 +48,10 @@
 			   "DNA"
 
 			   (contains? obj :motif/id)
-			   "Motif")
+			   "Motif"
+                           
+                           (contains? obj :other/id); fix this 
+                           "Other")
 		   :homolog (pack-obj obj)
 		   :species (pack-obj
 				   (cond
