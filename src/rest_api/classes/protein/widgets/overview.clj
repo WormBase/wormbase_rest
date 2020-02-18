@@ -16,7 +16,9 @@
 
 (defn pfam-graph [p]
   {:data (let [hdb (d/db datomic-homology-conn)
-               db (d/db datomic-conn)]
+               db (d/db datomic-conn)
+               colors ["#2dcf00" "#ff5353" "#e469fe" "#ffa500" "#00ffff" "#86bcff" "#ff7ff0" "#f2ff7f" "#7ff2ff"]
+               idx (atom -1)]
           (some->> (d/q '[:find ?m ?l
                           :in $ $hdb ?pid
                           :where
@@ -29,38 +31,41 @@
                    (map (fn [ids]
                      (let [motif (d/entity db (first ids))
                            locatable (d/entity hdb (second ids))]
-                       {:mdb (some->> (:motif/database motif)
-                                      (map :motif.database/database)
-                                      (map :database/id)
-                                      (first))
-                        :colour nil
-                        :href (str/replace (:motif/id motif) #":" "/")
-                        :startStyle "straight"
-                        :text (some->> (:motif/database motif)
-                                       (map (fn [mdh]
-                                           (if (= (->> mdh
-                                                       :motif.database/field
-                                                       :database-field/id)
-                                                  "short_name")
-                                             (:motif.database/accession mdh))))
-                                       (remove nil?)
-                                       (first))
-                        :start (+ 1 (:locatable/min locatable))
-                        :end (:locatable/max locatable)
-                        :length (- (:locatable/max locatable)
-                                   (+ 1(:locatable/min locatable)))
-                        :metadata {:identifier (:motif/id motif)
-                                   :description (or (first (:motif/title motif))
-                                                    (:motif/id motif))
-                                   :database (->> motif
-                                                  :motif/database
-                                                  first
-                                                  :motif.database/database
-                                                  :database/id)
-                                   :end (:locatable/max locatable)}})))
+			   (do
+			    (swap! idx inc)
+			    {:mdb (some->> (:motif/database motif)
+					    (map :motif.database/database)
+					    (map :database/id)
+					    (first))
+			    :colour (nth colors (mod @idx (count colors)))
+			    :href (str/replace (:motif/id motif) #":" "/")
+			    :startStyle "straight"
+			    :text (some->> (:motif/database motif)
+					    (map (fn [mdh]
+						  (if (= (->> mdh
+							  :motif.database/field
+							  :database-field/id)
+						       "short_name")
+						   (:motif.database/accession mdh))))
+					    (remove nil?)
+					    (first))
+			    :start (+ 1 (:locatable/min locatable))
+			    :end (:locatable/max locatable)
+			    :length (- (:locatable/max locatable)
+					    (+ 1(:locatable/min locatable)))
+			    :metadata {:identifier (:motif/id motif)
+			    :description (or (first (:motif/title motif))
+					    (:motif/id motif))
+			    :database (->> motif
+					   :motif/database
+					   first
+					   :motif.database/database
+					   :database/id)
+	                    :end (:locatable/max locatable)}}))))
                    (group-by :mdb)
                    (map (fn [[database regions]]
-			 {database {:regions (some->> regions
+			 {:source database
+                          :value {:regions (some->> regions
 						      (remove (fn [region]
 							       (= 1 (:length region))))
  				 	              (map (fn [region]
