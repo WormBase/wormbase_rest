@@ -37,6 +37,7 @@
 			    :colour (nth colors (mod idx (count colors)))
 			    :href (str/replace (:motif/id motif) #":" "/")
 			    :startStyle "straight"
+			    :endStyle "straight"
 			    :text (some->> (:motif/database motif)
 					    (map (fn [mdh]
 						  (if (= (->> mdh
