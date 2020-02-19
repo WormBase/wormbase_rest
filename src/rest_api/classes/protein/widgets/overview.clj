@@ -36,7 +36,7 @@
 					    (first))
 			    :colour (nth colors (mod idx (count colors)))
 			    :href (str/replace (:motif/id motif) #":" "/")
-			    :text (some->> (:motif/database motif)
+			    :text (or (some->> (:motif/database motif)
 					    (map (fn [mdh]
 						  (if (= (->> mdh
 							  :motif.database/field
@@ -45,6 +45,7 @@
 						   (:motif.database/accession mdh))))
 					    (remove nil?)
 					    (first))
+                                      "")
 			    :start (+ 1 (:locatable/min locatable))
 			    :end (:locatable/max locatable)
 			    :length (- (:locatable/max locatable)
