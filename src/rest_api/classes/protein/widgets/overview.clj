@@ -36,8 +36,6 @@
 					    (first))
 			    :colour (nth colors (mod idx (count colors)))
 			    :href (str/replace (:motif/id motif) #":" "/")
-			    :startStyle "straight"
-			    :endStyle "straight"
 			    :text (some->> (:motif/database motif)
 					    (map (fn [mdh]
 						  (if (= (->> mdh
@@ -50,7 +48,7 @@
 			    :start (+ 1 (:locatable/min locatable))
 			    :end (:locatable/max locatable)
 			    :length (- (:locatable/max locatable)
-					    (+ 1(:locatable/min locatable)))
+				       (:locatable/min locatable))
 			    :metadata {:identifier (:motif/id motif)
 			    :description (or (first (:motif/title motif))
 					    (:motif/id motif))
@@ -70,8 +68,8 @@
 							    (dissoc region :mdb :length)))
                                                       (map (fn [region]
                                                             (conj region
-                                                                  (:startStyle "straight")
-                                                                  (:endStyle "straight")))))
+                                                                  {:startStyle "straight"
+                                                                   :endStyle "straight"}))))
                                     :markups (some->> regions
 						      (remove (fn [region]
 							       (< 1 (:length region))))
@@ -79,8 +77,8 @@
 							    (dissoc region :mdb :end :length)))
                                                       (map (fn [region]
                                                             (conj region
-                                                                  (:metadata (dissoc (:metadata region) :end))
-                                                                  (:headStyle "diamond")))))
+                                                                  {:metadata (dissoc (:metadata region) :end)
+                                                                   :headStyle "diamond"}))))
 
                                     :length (->> p
                                                  :protein/peptide
