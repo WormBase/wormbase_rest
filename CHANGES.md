@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.0] - 2019-02-24
+- release for WS275
+- contains protein overview and motif details widget
+- contains GOTerm page associations widget
+- contains gene Homology widet!  
+
 ## [1.1.0] - 2019-12-19
 - release for WS274
 - retrieve protein homology data
