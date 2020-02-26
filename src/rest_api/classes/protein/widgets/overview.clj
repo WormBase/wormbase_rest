@@ -11,7 +11,7 @@
 
 (defn estimated-molecular-weight [p]
   {:data (when-let [mwh (:protein/molecular-weight p)]
-      (format "%.0f" (:protein.molecular-weight/float (first mwh))))
+      (format "%.1f" (:protein.molecular-weight/float (first mwh))))
    :description "the estimated molecular weight of the protein"})
 
 (defn pfam-graph [p]
@@ -33,7 +33,8 @@
 			    {:mdb (some->> (:motif/database motif)
 					    (map :motif.database/database)
 					    (map :database/id)
-					    (first))
+					    (first)
+                                            (str/lower-case))
 			    :colour (nth colors (mod idx (count colors)))
 			    :href (str/replace (:motif/id motif) #":" "/")
 			    :text (or (some->> (:motif/database motif)
@@ -84,6 +85,7 @@
                                     :length (->> p
                                                  :protein/peptide
                                                  :protein.peptide/length)}}))
+                    (sort-by :source)
                     (merge)))
                          
    :description "The motif graph of the protein"})
@@ -141,7 +143,8 @@
   {:data (some->> (:cds.corresponding-protein/_protein p)
                   (map :cds/_corresponding-protein)
                   (map :locatable/method)
-                  (map :method/id))
+                  (map :method/id)
+                  (first))
    :description "The type of the protein"})
 
 (def widget

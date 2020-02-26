@@ -66,7 +66,7 @@ docker-push-ecr-latest: docker-ecr-login $(call print-help,docker-push-ecr,\
 eb-create: $(call print-help,eb-create,\
 	    "Create an ElasticBeanStalk environment using \
 	     the Docker platofrm.")
-	@eb create rest-${WS_VERSION} \
+	eb create rest-${WS_VERSION} \
 		--region=us-east-1 \
 		--tags="CreatedBy=${AWS_EB_PROFILE},Role=RestAPI" \
 		--cname="wormbase-rest-${LOWER_WS_VERSION}"
@@ -100,7 +100,7 @@ eb-local: docker-ecr-login $(call print-help,eb-local,\
 build: docker/${DEPLOY_JAR} \
        $(call print-help,build,\
 	"Build the docker images from using the current git revision.")
-	@docker build -t ${NAME}:${WORMBASE_REST_VERSION} \
+	docker build -t ${NAME}:${WORMBASE_REST_VERSION} \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
 		--build-arg \
 			aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \
