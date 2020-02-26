@@ -57,7 +57,7 @@
 					      (if (= evalue-str "  0e+00")
 					       "      0"
 					       evalue-str)))
-			     :percentage (if (and (:locatable/min obj) (:locatable/max obj))
+			     :percentage (if (and (:homology/min obj) (:homology/max obj))
 					     (let [hlength (- (:homology/max obj) (:homology/min obj))
 					      percentage (/ hlength plength)]
 					      (format "%.1f" (double (* 100 percentage)))))
