@@ -2,10 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.2.1] - 2019-02-26
+## [1.2.2] -2020-03-02
+- Fix for bug for public-name found during caching
+
+## [1.2.1] - 2020-02-26
 - Removing Protein overview and motif details widget
 
-## [1.2.0] - 2019-02-24
+## [1.2.0] - 2020-02-24
 - release for WS275
 - contains protein overview and motif details widget
 - contains GOTerm page associations widget
