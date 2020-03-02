@@ -51,7 +51,10 @@
                                 public-name (:gene/public-name gene)]
                             (some->> (:gene/other-name gene)
                                      (map :gene.other-name/text)
-                                     (filter #(.contains % public-name))
+                                     (filter (fn [other-name]
+                                               (and
+                                                (identity public-name)
+                                                (.contains other-name public-name))))
                                      (map #(stash-former-member % gene))))))
                       (flatten)
                       (group-by :species-name))))
