@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.3] -2020-03-06
+- Fixing 500 error when gene does not have an associated protein in the homology widget
+
 ## [1.2.2] -2020-03-02
 - Fix for bug for public-name found during caching
 
