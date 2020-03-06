@@ -22,7 +22,8 @@
 					            :protein.peptide/length)
 				       :obj p}))
                                 (apply max-key :length))
-       hits (protein-core/get-best-blastp-matches (:obj longest-protein))]
+       hits  (when (not (nil? longest-protein))
+                 (protein-core/get-best-blastp-matches (:obj longest-protein)))]
   {:data {:biggest (->> longest-protein :obj :protein/id)
           :hits hits}
    :description (if hits
