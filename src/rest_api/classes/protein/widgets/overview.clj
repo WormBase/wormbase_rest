@@ -9,32 +9,34 @@
   (:import
    (org.biojava.nbio.aaproperties PeptideProperties)))
 
+
 (defn estimated-molecular-weight [p]
   {:data (when-let [mwh (:protein/molecular-weight p)]
       (format "%.1f" (:protein.molecular-weight/float (first mwh))))
    :description "the estimated molecular weight of the protein"})
 
+
 (defn pfam-graph [p]
   {:data (let [hdb (d/db datomic-homology-conn)
                db (d/db datomic-conn)
                colors ["#2dcf00" "#ff5353" "#e469fe" "#ffa500" "#00ffff" "#86bcff" "#ff7ff0" "#f2ff7f" "#7ff2ff"]]
-          (some->> (d/q '[:find ?m ?l
+          (some->> (d/q '[:find ?m ?h
                           :in $ $hdb ?pid
                           :where
                            [$hdb ?hp :protein/id ?pid]
-                           [$hdb ?l :locatable/parent ?hp]
-                           [$hdb ?l :homology/motif ?hm]
+                           [$hdb ?h :locatable/parent ?hp]
+                           [$hdb ?h :homology/motif ?hm]
                            [$hdb ?hm :motif/id ?mid]
                            [$ ?m :motif/id ?mid]]
                           db hdb (:protein/id p))
                    (map-indexed (fn [idx ids]
                      (let [motif (d/entity db (first ids))
                            locatable (d/entity hdb (second ids))]
-			    {:mdb (some->> (:motif/database motif)
-					    (map :motif.database/database)
-					    (map :database/id)
-					    (first)
-                                            (str/lower-case))
+			    {:mdb (->> locatable
+                                       :locatable/method
+				       :method/id
+                                       str/lower-case)
+                            :locatable locatable
 			    :colour (nth colors (mod idx (count colors)))
 			    :href (str/replace (:motif/id motif) #":" "/")
 			    :text (or (some->> (:motif/database motif)
@@ -52,14 +54,14 @@
 			    :length (- (:locatable/max locatable)
 				       (:locatable/min locatable))
 			    :metadata {:identifier (:motif/id motif)
-			    :description (or (first (:motif/title motif))
-					    (:motif/id motif))
-			    :database (->> motif
-					   :motif/database
-					   first
-					   :motif.database/database
-					   :database/id)
-	                    :end (:locatable/max locatable)}})))
+		            	       :description (or (first (:motif/title motif))
+				          	        (:motif/id motif))
+			               :database (->> motif
+				               	      :motif/database
+					              first
+					              :motif.database/database
+					              :database/id)
+	                               :end (:locatable/max locatable)}})))
                    (group-by :mdb)
                    (map (fn [[database regions]]
 			 {:source database
@@ -87,8 +89,8 @@
                                                  :protein.peptide/length)}}))
                     (sort-by :source)
                     (merge)))
-                         
    :description "The motif graph of the protein"})
+
 
 (defn best-human-match [p]
   {:data (let [hdb (d/db datomic-homology-conn)
@@ -131,6 +133,7 @@
              (last)))
    :description "best human BLASTP hit"})
 
+
 (defn estimated-isoelectric-point [p]
   {:data (when-let [aa (->> p
 			  :protein/peptide
@@ -138,6 +141,7 @@
 			  :peptide/sequence)]
            (format "%.2f" (. PeptideProperties getIsoelectricPoint aa)))
    :description "the estimated isoelectric point of the protein"})
+
 
 (defn type-field [p]
   {:data (some->> (:cds.corresponding-protein/_protein p)
@@ -150,7 +154,7 @@
 (def widget
   {:name generic/name-field
    :estimated_molecular_weight estimated-molecular-weight
-  ; :status generic/status status does not exist on this entity
+   ;:status generic/status ;status does not exist on this entity
    :pfam_graph pfam-graph
    :best_human_match best-human-match
    :taxonomy generic/taxonomy
