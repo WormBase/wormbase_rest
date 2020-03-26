@@ -36,7 +36,6 @@
                                        :locatable/method
 				       :method/id
                                        str/lower-case)
-                            :locatable locatable
 			    :colour (nth colors (mod idx (count colors)))
 			    :href (str/replace (:motif/id motif) #":" "/")
 			    :text (or (some->> (:motif/database motif)
