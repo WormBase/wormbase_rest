@@ -25,10 +25,14 @@
                                   (if (str/includes? mid ":")
                                     (second (str/split mid #":"))
                                     mid))
-                            :db (some->> (:motif/database motif)
+                            :db (or
+                                  (some->> (:motif/database motif)
                                          (map :motif.database/database)
                                          (map :database/id)
-                                         (first))}
+                                         (first))
+                                  (->> locatable
+                                       :locatable/method
+                                       :method/id))}
 		   :start (+ 1 (:locatable/min locatable))
 		   :stop (:locatable/max locatable)
 		   :feat (let [motif-obj (pack-obj motif)]
