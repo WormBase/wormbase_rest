@@ -118,7 +118,7 @@
       (if response
         response
         (res/not-found
-         {:reason "These are not the worms you're looking for"})))))
+         {:reason "Either the URI is incorrect or the ID does not exist for the entity type of the endpoint"})))))
 
 (defn init
   "Entry-point for ring server initialization."

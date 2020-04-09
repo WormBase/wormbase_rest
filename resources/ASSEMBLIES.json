@@ -3,7 +3,7 @@
       "assemblies" : [
          {
             "appeared_in" : "WS252",
-            "assembly_accession" : null,
+            "assembly_accession" : "GCA_000002995.5",
             "assembly_name" : "B_malayi-4.0",
             "bioproject" : "PRJNA10729",
             "bioproject_description" : "University of Pittsburgh B. malayi genome project",
@@ -11,7 +11,8 @@
             "laboratory" : [
                "University of Pittsburgh, Pittsburgh, PA"
             ],
-            "strain" : "FR3",
+            "short_label" : "B_malayi-4.0",
+            "strain" : "WBStrain00041073",
             "ucsc_name" : null
          }
       ],
@@ -29,7 +30,8 @@
             "laboratory" : [
                "Caltech, Pasadena CA"
             ],
-            "strain" : "PS1010",
+            "short_label" : "WBStrain00042004",
+            "strain" : "WBStrain00042004",
             "ucsc_name" : null
          }
       ],
@@ -47,7 +49,8 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "PB2801",
+            "short_label" : "WBStrain00041997",
+            "strain" : "WBStrain00041997",
             "ucsc_name" : "caePb2"
          }
       ],
@@ -66,7 +69,8 @@
                "University of Maryland, College Park MD",
                "Washington University, St. Louis MO"
             ],
-            "strain" : "AF16",
+            "short_label" : "WBStrain00040935",
+            "strain" : "WBStrain00040935",
             "ucsc_name" : null
          }
       ],
@@ -85,7 +89,8 @@
                "Washington University, St. Louis MO",
                "European Bioinformatics Institute; Hinxton, United Kingdom"
             ],
-            "strain" : "N2",
+            "short_label" : "WBStrain00000001",
+            "strain" : "WBStrain00000001",
             "ucsc_name" : "ce11"
          },
          {
@@ -98,7 +103,8 @@
             "laboratory" : [
                "University of Washington, Seattle WA"
             ],
-            "strain" : "CB4856",
+            "short_label" : "WBStrain00004602",
+            "strain" : "WBStrain00004602",
             "ucsc_name" : null
          },
          {
@@ -111,7 +117,8 @@
             "laboratory" : [
                "Cornell University, Ithaca NY"
             ],
-            "strain" : "VC2010",
+            "short_label" : "WBStrain00000002",
+            "strain" : "WBStrain00000002",
             "ucsc_name" : null
          }
       ],
@@ -129,7 +136,8 @@
             "laboratory" : [
                "Forestry and Forest Products Research Institute, Ibaraki, Japan"
             ],
-            "strain" : "Unknown strain",
+            "short_label" : "WBStrain00047056",
+            "strain" : "WBStrain00047056",
             "ucsc_name" : null
          }
       ],
@@ -147,7 +155,8 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "DF5080",
+            "short_label" : "WBStrain00041018",
+            "strain" : "WBStrain00041018",
             "ucsc_name" : null
          }
       ],
@@ -165,7 +174,8 @@
             "laboratory" : [
                "University of Texas, Arlington TX"
             ],
-            "strain" : "Unknown strain",
+            "short_label" : "WBStrain00047057",
+            "strain" : "WBStrain00047057",
             "ucsc_name" : null
          }
       ],
@@ -183,7 +193,8 @@
             "laboratory" : [
                "Cornell University, Ithaca NY"
             ],
-            "strain" : "JU1422",
+            "short_label" : "WBStrain00041224",
+            "strain" : "WBStrain00041224",
             "ucsc_name" : null
          }
       ],
@@ -201,7 +212,8 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "PB4641",
+            "short_label" : "WBStrain00041998",
+            "strain" : "WBStrain00041998",
             "ucsc_name" : "caeRem3"
          },
          {
@@ -214,7 +226,8 @@
             "laboratory" : [
                "University of Texas, Arlington TX"
             ],
-            "strain" : "PX356",
+            "short_label" : "WBStrain00042020",
+            "strain" : "WBStrain00042020",
             "ucsc_name" : null
          },
          {
@@ -227,7 +240,8 @@
             "laboratory" : [
                "University of Texas, Arlington TX"
             ],
-            "strain" : "PX356",
+            "short_label" : "WBStrain00042020",
+            "strain" : "WBStrain00042020",
             "ucsc_name" : null
          },
          {
@@ -240,7 +254,8 @@
             "laboratory" : [
                "University of Texas, Arlington TX"
             ],
-            "strain" : "PX439",
+            "short_label" : "WBStrain00042021",
+            "strain" : "WBStrain00042021",
             "ucsc_name" : null
          }
       ],
@@ -256,9 +271,10 @@
             "bioproject_description" : "University of Edinburgh Caenorhabditis sinica genome project",
             "is_canonical" : true,
             "laboratory" : [
-               "Institute of Evolutionary Biology, University of Edinburgh, Edinburgh, UK"
+               "Wellcome Sanger Institute; Hinxton, United Kingdom"
             ],
-            "strain" : "JU800",
+            "short_label" : "WBStrain00041132",
+            "strain" : "WBStrain00041132",
             "ucsc_name" : null
          }
       ],
@@ -276,7 +292,8 @@
             "laboratory" : [
                "Washington University, St. Louis MO"
             ],
-            "strain" : "JU1373",
+            "short_label" : "WBStrain00041208",
+            "strain" : "WBStrain00041208",
             "ucsc_name" : null
          }
       ],
@@ -292,9 +309,10 @@
             "bioproject_description" : "The genome of Oscheius tipulae",
             "is_canonical" : true,
             "laboratory" : [
-               "Institute of Evolutionary Biology, University of Edinburgh, Edinburgh, UK"
+               "Wellcome Sanger Institute; Hinxton, United Kingdom"
             ],
-            "strain" : "Unknown strain",
+            "short_label" : "Oscheius_tipulae_assembly_v2",
+            "strain" : "WBStrain00047058",
             "ucsc_name" : null
          }
       ],
@@ -312,7 +330,8 @@
             "laboratory" : [
                "Wellcome Trust Sanger Institute, Cambridge, UK"
             ],
-            "strain" : "O_volvulus_Cameroon_isolate",
+            "short_label" : "O_volvulus_Cameroon_v3",
+            "strain" : "WBStrain00041977",
             "ucsc_name" : null
          }
       ],
@@ -331,7 +350,8 @@
                "Washington University, St. Louis MO",
                "MPI, Tuebingen, Germany"
             ],
-            "strain" : "PS312",
+            "short_label" : "P_pacificus-El_Paco",
+            "strain" : "WBStrain00042002",
             "ucsc_name" : null
          }
       ],
@@ -349,7 +369,8 @@
             "laboratory" : [
                "Caltech, Pasadena CA"
             ],
-            "strain" : "MT8872",
+            "short_label" : "Pred3",
+            "strain" : "WBStrain00041455",
             "ucsc_name" : null
          }
       ],
@@ -367,7 +388,8 @@
             "laboratory" : [
                "Wellcome Trust Sanger Institute, Cambridge, UK"
             ],
-            "strain" : "ED321",
+            "short_label" : "S_ratti_ED321_v5_0_4",
+            "strain" : "WBStrain00041039",
             "ucsc_name" : null
          }
       ],
@@ -385,7 +407,8 @@
             "laboratory" : [
                "Wellcome Trust Sanger Institute, Cambridge, UK"
             ],
-            "strain" : "Edinburgh",
+            "short_label" : "T_muris-TMUE3.1",
+            "strain" : "WBStrain00041054",
             "ucsc_name" : null
          }
       ],
