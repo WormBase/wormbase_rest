@@ -26,6 +26,7 @@
                  (let [protein (d/entity db (first ids))
                        locatable (d/entity hdb (second ids))]
                   {:source (pack-obj protein)
+                   :species (pack-obj (:protein/species protein))
                    :locatable  {:method (->> locatable :locatable/method :method/id)
                                 :min (:locatable/min locatable)
                                 :max (:locatable/max locatable)
