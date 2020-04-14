@@ -8,6 +8,43 @@
 
 (defn ** [x n] (reduce * (repeat n x)))
 
+(defn get-motif-details [p]
+ (let [hdb (d/db datomic-homology-conn)
+       db (d/db datomic-conn)]
+  (some->> (d/q '[:find ?m ?l
+ 	   :in $ $hdb ?pid
+ 	   :where
+ 	    [$hdb ?hp :protein/id ?pid]
+ 	    [$hdb ?l :locatable/parent ?hp]
+ 	    [$hdb ?l :homology/motif ?hm]
+ 	    [$hdb ?hm :motif/id ?mid]
+ 	    [$ ?m :motif/id ?mid]]
+ 	    db hdb (:protein/id p))
+   (map (fn [ids]
+ 	(let [motif (d/entity db (first ids))
+ 	 locatable (d/entity hdb (second ids))]
+ 	 {:source {:id (let [mid (:motif/id motif)]
+ 			 (if (str/includes? mid ":")
+ 			  (second (str/split mid #":"))
+ 			  mid))
+ 	  :db (or
+ 	       (some->> (:motif/database motif)
+ 		(map :motif.database/database)
+ 		(map :database/id)
+ 		(first))
+ 	       (->> locatable
+ 		:locatable/method
+ 		:method/id))}
+ 	 :start (+ 1 (:locatable/min locatable))
+ 	 :stop (:locatable/max locatable)
+ 	 :feat (let [motif-obj (pack-obj motif)]
+ 		 (conj motif-obj {:label (:id motif-obj)}))
+ 	 :desc (or
+                  (first (:motif/title motif))
+ 		 (:motif/id motif))
+ 	 :score (:locatable/score locatable)}))))))
+
+
 (defn get-best-blastp-matches [p]
  (let [db-homology (d/db datomic-homology-conn)
        db (d/db datomic-conn)

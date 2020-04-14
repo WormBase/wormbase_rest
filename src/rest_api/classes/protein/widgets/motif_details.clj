@@ -2,45 +2,14 @@
   (:require
    [datomic.api :as d]
    [clojure.string :as str]
+   [rest-api.classes.protein.core :as protein-core]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.db.main :refer [datomic-homology-conn datomic-conn]]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn motif-details [p]
- {:data (let [hdb (d/db datomic-homology-conn)
-	      db (d/db datomic-conn)]
-	  (some->> (d/q '[:find ?m ?l
-		          :in $ $hdb ?pid
-		          :where
-  		           [$hdb ?hp :protein/id ?pid]
-			   [$hdb ?l :locatable/parent ?hp]
-			   [$hdb ?l :homology/motif ?hm]
-			   [$hdb ?hm :motif/id ?mid]
-			   [$ ?m :motif/id ?mid]]
-			  db hdb (:protein/id p))
-	   (map (fn [ids]
-		 (let [motif (d/entity db (first ids))
-                       locatable (d/entity hdb (second ids))]
-		  {:source {:id (let [mid (:motif/id motif)]
-                                  (if (str/includes? mid ":")
-                                    (second (str/split mid #":"))
-                                    mid))
-                            :db (or
-                                  (some->> (:motif/database motif)
-                                         (map :motif.database/database)
-                                         (map :database/id)
-                                         (first))
-                                  (->> locatable
-                                       :locatable/method
-                                       :method/id))}
-		   :start (+ 1 (:locatable/min locatable))
-		   :stop (:locatable/max locatable)
-		   :feat (let [motif-obj (pack-obj motif)]
-                           (conj motif-obj {:label (:id motif-obj)}))
-		   :desc (or (first (:motif/title motif))
-                             (:motif/id motif))
-		   :score (:locatable/score locatable)})))))
-   :description "The motif details of the protein"})
+ {:data (protein-core/get-motif-details p)
+  :description "The motif details of the protein"})
 
 (def widget
   {:name generic/name-field
