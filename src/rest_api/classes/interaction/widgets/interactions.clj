@@ -11,17 +11,20 @@
   (d/q '[:find ?intx ?g1h ?g2h
          :in $ % ?intx
          :where
-         (interaction-> ?intx ?g1h _)
-         (interaction-> ?intx ?g2h _)
-         [(not= ?g1h ?g2h)]]
+         (interaction-> ?intx ?g1h ?it1 _)
+         (interaction-> ?intx ?g2h ?it2 _)
+         (not-join [?g1h ?g2h ?it1 ?it2]
+                   [(= ?g1h ?g2h)]
+                   [(= ?it1 ?it2)])]
        db interaction/int-rules interaction))
 
 (defn interactions
   "Produces a data structure suitable for rendering the table listing."
   [interaction]
   {:description "genetic and predicted interactions"
-   :data (let [db (d/entity-db interaction)]
-           (interaction/build-interactions db (interaction-direct-interactions db (:db/id interaction))))})
+   :data (let [db (d/entity-db interaction)
+               interaction-tuples (interaction-direct-interactions db (:db/id interaction))]
+           (interaction/build-interactions db interaction-tuples))})
 
 (defn interaction-details
   "Produces a data-structure suitable for rendering a cytoscape graph."

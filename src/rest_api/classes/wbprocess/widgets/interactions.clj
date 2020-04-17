@@ -13,9 +13,11 @@
          :where
          [?p :wbprocess/interaction ?ih]
          [?ih :wbprocess.interaction/interaction ?intx]
-         (interaction-> ?intx ?g1h _)
-         (interaction-> ?intx ?g2h _)
-         [(not= ?g1h ?g2h)]]
+         (interaction-> ?intx ?g1h ?it1 _)
+         (interaction-> ?intx ?g2h ?it2 _)
+         (not-join [?g1h ?g2h ?it1 ?it2]
+                   [(= ?g1h ?g2h)]
+                   [(= ?it1 ?it2)])]
        db interaction/int-rules wbprocess))
 
 (defn interactions
