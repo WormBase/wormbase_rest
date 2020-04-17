@@ -486,7 +486,12 @@
                                              :nearby nearby?
                                              :throughput (humanize-ident (:interaction/throughput interaction))
                                              :interaction (pack-obj interaction)
-                                             :citation (->> (:interaction/paper interaction)
+                                             :citation (->> (concat (:interaction/paper interaction)
+                                                                    (->> interaction
+                                                                         (:interaction/remark)
+                                                                         (map :evidence/person-evidence)
+                                                                         (apply concat)))
+
                                                             (first)
                                                             (pack-obj))}))
                                     [])
