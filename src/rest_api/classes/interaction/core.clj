@@ -476,7 +476,7 @@
                                                      affected
                                                      direction))
                           {}))
-        edge-vals (comp vec fixup-citations vals :edges)]
+        edge-vals (comp vec vals :edges)]
     {:edges (edge-vals data)}))
 
 (defn build-interactions-graph [db ints-direct ints-nearby]
