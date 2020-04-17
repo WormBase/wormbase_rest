@@ -382,7 +382,12 @@
   (str/trimr
    (str x " " y " " type-name " " direction " " (:label phenotype))))
 
-
+(defn- interaction-citation [interaction]
+  (concat (:interaction/paper interaction)
+          (->> interaction
+               (:interaction/remark)
+               (map :evidence/person-evidence)
+               (apply concat))))
 
 (defn- process-obj-interaction
   [data interaction type-name effector affected direction]
@@ -391,7 +396,8 @@
         [packed-effector packed-affected] packed-roles
         [e-name a-name] (map :id packed-roles)
         papers (:interaction/paper interaction)
-        packed-papers (pack-papers papers)
+        packed-papers (->> (interaction-citation interaction)
+                           (map pack-obj))
         phenotype (first (interaction-phenotype-kw interaction))
         packed-int (pack-obj "interaction" interaction)
         packed-phenotype (pack-obj "phenotype" phenotype)
@@ -486,12 +492,7 @@
                                              :nearby nearby?
                                              :throughput (humanize-ident (:interaction/throughput interaction))
                                              :interaction (pack-obj interaction)
-                                             :citation (->> (concat (:interaction/paper interaction)
-                                                                    (->> interaction
-                                                                         (:interaction/remark)
-                                                                         (map :evidence/person-evidence)
-                                                                         (apply concat)))
-
+                                             :citation (->> (interaction-citation interaction)
                                                             (first)
                                                             (pack-obj))}))
                                     [])
