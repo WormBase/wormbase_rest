@@ -39,7 +39,8 @@
 
         transgenes
         (->> (:disease-model-annotation/modeled-by-transgene model)
-             (map :disease-model-annotation.modeled-by-transgene/transgene))]
+             (map :disease-model-annotation.modeled-by-transgene/transgene)
+             (distinct))]
 
     (let [strain-genotype (strain/get-genotype strain)
           {strain-str :str
