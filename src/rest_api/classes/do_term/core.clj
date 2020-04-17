@@ -51,10 +51,16 @@
                      non-strain-entities)
           entities-str (->> entities
                             (map (fn [e]
-                                   (if (:variation/id e)
-                                     (let [gene (variation-gene-fn e)]
-                                       (format "%s(%s)" (:label (pack-obj gene)) (:label (pack-obj e))))
-                                     (:label (pack-obj e)))))
+                                   (cond (:variation/id e)
+                                         (let [gene (variation-gene-fn e)]
+                                           (format "%s(%s)" (:label (pack-obj gene)) (:label (pack-obj e))))
+
+                                         (:transgene/summary e)
+                                         (->> e
+                                              (:transgene/summary)
+                                              (:transgene.summary/text))
+
+                                         :else (:label (pack-obj e)))))
                             (cons (when strain-str
                                     (str/replace strain-str #"\.$" "")))
                             (filter identity)
