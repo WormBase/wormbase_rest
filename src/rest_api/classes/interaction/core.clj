@@ -133,13 +133,6 @@
 ;; Schema doesn't change once a process is running
 (def interactor-refs (memoize interactor-idents))
 
-(defn- interactor-role [interactor]
-  (let [int-types (:interactor-info/interactor-type interactor)]
-    (or (interactor-role-map (first int-types))
-        (if (corresponding-cds (interaction-target interactor))
-          :associated-product)
-        :other)))
-
 (defn- regulatory-result [interaction]
   (some->> (:interaction/regulation-result interaction)
            (map :interaction.regulation-result/value)
@@ -359,16 +352,30 @@
        nil
 
        :default
-       (let [{effectors :effector
-              affected :affected
-              others :other
-              associated :associated-product} (group-by interactor-role
-                                                        [holder1 holder2])
+       (let [holders [holder1 holder2]
+
+             has-role
+             (fn [role]
+               (fn [holder]
+                 (->> holder
+                      (:interactor-info/interactor-type)
+                      (some #(= role (or (interactor-role-map %)
+                                         :other))))))
+
+             effectors
+             (filter (has-role :effector) holders)
+
+             affected
+             (filter (has-role :affected) holders)
+
+             others
+             (filter (has-role :other) holders)
+
               pack-iroles (partial pack-int-roles ia)
               roles (cond (and effectors affected)
                           (pack-iroles effectors affected "Effector->Affected")
 
-                          (and others (not (or effectors affected associated)))
+                          (and others (not (or effectors affected)))
                           (pack-iroles [holder1] [holder2] "non-directional")
 
                           :else nil)]
