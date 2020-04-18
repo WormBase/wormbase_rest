@@ -29,6 +29,7 @@
          :max (int (Math/floor (/ new-stop-position 3)))})))))
 
 
+; This is likely going to be provided through the GFF files for JBrowse
 (defn protein-homology [p]
  {:data (let [hdb (d/db datomic-homology-conn)
               db (d/db datomic-conn)]
@@ -105,8 +106,7 @@
 
 (def widget
   {:name generic/name-field
-;   :best_blastp_matches best-blastp-matches
-   :protein_homology protein-homology
-;   :homology_groups homology-groups
-;   :homology_image homology-image
-})
+   :best_blastp_matches best-blastp-matches
+  ; :protein_homology protein-homology
+   :homology_groups homology-groups
+   :homology_image homology-image})

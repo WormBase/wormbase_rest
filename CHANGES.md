@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.4] - 2020-04-17
+- Initial WS276 release
+- Bug fixes for interactions
+- Protein Motif Details and Overview Widgets
+- Homology-group Overview widget
+
 ## [1.2.3] -2020-03-06
 - Fixing 500 error when gene does not have an associated protein in the homology widget
 
