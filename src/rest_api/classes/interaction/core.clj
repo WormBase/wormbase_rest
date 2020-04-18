@@ -69,39 +69,50 @@
   (some-fn :molecule/id :gene/id :rearrangement/id :feature/id))
 
 (def int-rules
-  '[[(->interaction ?gene ?h ?int)
+  '[[(->interaction ?gene ?it ?h ?int)
      [?h :interaction.interactor-overlapping-gene/gene ?gene]
+     [?h :interactor-info/interactor-type ?it]
      [?int :interaction/interactor-overlapping-gene ?h]]
-    [(->interaction ?feature ?h ?int)
+    [(->interaction ?feature ?it ?h ?int)
      [?h :interaction.feature-interactor/feature ?feature]
+     [?h :interactor-info/interactor-type ?it]
      [?int :interaction/feature-interactor ?h]]
-    [(->interaction ?molecule ?h ?int)
+    [(->interaction ?molecule ?it ?h ?int)
      [?h :interaction.molecule-interactor/molecule ?molecule]
+     [?h :interactor-info/interactor-type ?it]
      [?int :interaction/molecule-interactor ?h]]
-    [(->interaction ?rearrangement ?h ?int)
+    [(->interaction ?rearrangement ?it ?h ?int)
      [?h :interaction.rearrangement/rearrangement ?rearrangement]
+     [?h :interactor-info/interactor-type ?it]
      [?int :interaction/rearrangement ?h]]
 
-    [(interaction-> ?int ?h ?gene)
+    [(interaction-> ?int ?h ?it ?gene)
      [?int :interaction/interactor-overlapping-gene ?h]
+     [?h :interactor-info/interactor-type ?it]
      [?h :interaction.interactor-overlapping-gene/gene ?gene]]
-    [(interaction-> ?int ?h ?feature)
+    [(interaction-> ?int ?h ?it ?feature)
      [?int :interaction/feature-interactor ?h]
+     [?h :interactor-info/interactor-type ?it]
      [?h :interaction.feature-interactor/feature ?feature]]
-    [(interaction-> ?int ?h ?molecule)
+    [(interaction-> ?int ?h ?it ?molecule)
      [?int :interaction/molecule-interactor ?h]
+     [?h :interactor-info/interactor-type ?it]
      [?h :interaction.molecule-interactor/molecule ?molecule]]
-    [(interaction-> ?int ?h ?rearrangement)
+    [(interaction-> ?int ?h ?it ?rearrangement)
      [?int :interaction/rearrangement ?h]
+     [?h :interactor-info/interactor-type ?it]
      [?h :interaction.rearrangement/rearrangement ?rearrangement]]
-    [(interaction-> ?int ?h ?other)
+    [(interaction-> ?int ?h ?it ?other)
      [?int :interaction/other-interactor ?h]
+     [?h :interactor-info/interactor-type ?it]
      [?h :interaction.other-interactor/text ?other]]
 
     [(x->neighbour ?x ?xh ?neighbour ?nh ?ix)
-     (->interaction ?x ?xh ?ix)
-     (interaction-> ?ix ?nh ?neighbour)
-     [(not= ?x ?neighbour)]]
+     (->interaction ?x ?xit ?xh ?ix)
+     (interaction-> ?ix ?nh ?nit ?neighbour)
+     (not-join [?x ?neighbour ?xit ?nit]
+               [(= ?x ?neighbour)]
+               [(= ?xit ?nit)])]
     [(x->neighbour-non-predicted ?gene ?gh ?neighbour ?nh ?ix)
      (x->neighbour ?gene ?gh ?neighbour ?nh ?ix)
      (not
@@ -121,13 +132,6 @@
 
 ;; Schema doesn't change once a process is running
 (def interactor-refs (memoize interactor-idents))
-
-(defn- interactor-role [interactor]
-  (let [int-types (:interactor-info/interactor-type interactor)]
-    (or (interactor-role-map (first int-types))
-        (if (corresponding-cds (interaction-target interactor))
-          :associated-product)
-        :other)))
 
 (defn- regulatory-result [interaction]
   (some->> (:interaction/regulation-result interaction)
@@ -348,16 +352,30 @@
        nil
 
        :default
-       (let [{effectors :effector
-              affected :affected
-              others :other
-              associated :associated-product} (group-by interactor-role
-                                                        [holder1 holder2])
+       (let [holders [holder1 holder2]
+
+             has-role
+             (fn [role]
+               (fn [holder]
+                 (->> holder
+                      (:interactor-info/interactor-type)
+                      (some #(= role (or (interactor-role-map %)
+                                         :other))))))
+
+             effectors
+             (filter (has-role :effector) holders)
+
+             affected
+             (filter (has-role :affected) holders)
+
+             others
+             (filter (has-role :other) holders)
+
               pack-iroles (partial pack-int-roles ia)
               roles (cond (and effectors affected)
                           (pack-iroles effectors affected "Effector->Affected")
 
-                          (and others (not (or effectors affected associated)))
+                          (and others (not (or effectors affected)))
                           (pack-iroles [holder1] [holder2] "non-directional")
 
                           :else nil)]
