@@ -161,7 +161,7 @@
                            (:rnai/genotype rnai)
 
                            :Strain
-                           (:strain/id (:rnai/strain rnai))
+                           (pack-obj (:rnai/strain rnai))
 
                            :paper
                            (let [paper-ref (:rnai/reference rnai)]
