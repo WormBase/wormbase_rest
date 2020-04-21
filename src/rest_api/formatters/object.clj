@@ -156,43 +156,60 @@
           (:oligo-set/id pcr))))
 
 (def q-interactor
-  '[:find [?interactor ...]
+  '[:find ?interactor ?interactor-type
     :in $ ?int
     :where
     (or-join
-     [?int ?interactor]
+     [?int ?interactor ?interactor-type]
      (and
       [?int
        :interaction/interactor-overlapping-gene ?gi]
       [?gi
        :interaction.interactor-overlapping-gene/gene
-       ?interactor])
+       ?interactor]
+      [?gi
+       :interactor-info/interactor-type
+       ?interactor-type])
      (and
       [?int :interaction/molecule-interactor ?mi]
       [?mi
        :interaction.molecule-interactor/molecule
-       ?interactor])
+       ?interactor]
+      [?mi
+       :interactor-info/interactor-type
+       ?interactor-type])
      (and
       [?int :interaction/other-interactor ?orint]
       [?orint
        :interaction.other-interactor/text
-       ?interactor])
+       ?interactor]
+      [?orint
+       :interactor-info/interactor-type
+       ?interactor-type])
      (and
       [?int :interaction/rearrangement ?ri]
       [?ri
        :interaction.rearrangement/rearrangement
-       ?interactor])
+       ?interactor]
+      [?ri
+       :interactor-info/interactor-type
+       ?interactor-type])
      (and
       [?int :interaction/feature-interactor ?fi]
       [?fi
        :interaction.feature-interactor/feature
-       ?interactor]))])
+       ?interactor]
+      [?fi
+       :interactor-info/interactor-type
+       ?interactor-type]))])
 
 (defmethod obj-label "interaction" [_ int]
   ;; Note that only certain types of interactor are considered when
   ;; computing the display name.
   (let [db (d/entity-db int)]
-    (if-let [il (seq (d/q q-interactor db (:db/id int)))]
+    (if-let [il (->> (d/q q-interactor db (:db/id int))
+                     (map first)
+                     (seq))]
       (->> il
            (map
             (fn [interactor]
