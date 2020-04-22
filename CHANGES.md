@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.6] - 2020-04-22
+- pre-production hotix
+- adding non-coding transcripts to sequences table on gene page
+
 ## [1.2.5] - 2020-04-21
 - pre-production hotfix
 
