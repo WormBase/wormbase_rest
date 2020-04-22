@@ -502,7 +502,8 @@
 			(= type-str "non coding transcript"))
 		    (str "<strong>" type-str "</strong>")
 		    type-str))}))
-	(some->> (:gene/corresponding-transcript gene)
+	(some->> (when (= role "gene")
+                   (:gene/corresponding-transcript gene))
        	         (map :gene.corresponding-transcript/transcript)
 		 (map (fn [t]
 		       (when (not (contains? t :transcript/corresponding-cds))
