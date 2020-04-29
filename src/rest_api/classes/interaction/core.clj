@@ -363,13 +363,19 @@
                                          :other))))))
 
              effectors
-             (filter (has-role :effector) holders)
+             (->> holders
+                  (filter (has-role :effector))
+                  (seq))
 
              affected
-             (filter (has-role :affected) holders)
+             (->> holders
+                  (filter (has-role :affected))
+                  (seq))
 
              others
-             (filter (has-role :other) holders)
+             (->> holders
+                  (filter (has-role :other))
+                  (seq))
 
               pack-iroles (partial pack-int-roles ia)
               roles (cond (and effectors affected)
@@ -484,16 +490,16 @@
        (not-empty)))
 
 (defn build-interactions [db ints]
-  (let [data (->> ints
-                  (mapcat (partial make-pairwise db))
-                  (reduce (fn [result [interaction {:keys [type-name effector affected direction]}]]
-                            (process-obj-interaction result
-                                                     interaction
-                                                     type-name
-                                                     effector
-                                                     affected
-                                                     direction))
-                          {}))
+  (let [pairs (mapcat (partial make-pairwise db) ints)
+        data (reduce (fn [result [interaction {:keys [type-name effector affected direction]}]]
+                       (process-obj-interaction result
+                                                interaction
+                                                type-name
+                                                effector
+                                                affected
+                                                direction))
+                     {}
+                     pairs)
         edge-vals (comp vec vals :edges)]
     {:edges (edge-vals data)}))
 
