@@ -32,6 +32,9 @@
                    (map-indexed (fn [idx ids]
                      (let [motif (d/entity db (first ids))
                            locatable (d/entity hdb (second ids))]
+                       (when-let [high (:locatable/max locatable)]
+                        (when-let [low (:locatable/min locatable)]
+
 			    {:mdb (->> locatable
                                        :locatable/method
 				       :method/id
@@ -48,10 +51,9 @@
 					    (remove nil?)
 					    (first))
                                       "")
-			    :start (+ 1 (:locatable/min locatable))
-			    :end (:locatable/max locatable)
-			    :length (- (:locatable/max locatable)
-				       (:locatable/min locatable))
+			    :start (+ 1 low)
+			    :end high
+			    :length (- high low)
 			    :metadata {:identifier (:motif/id motif)
 		            	       :description (or (first (:motif/title motif))
 				          	        (:motif/id motif))
@@ -60,7 +62,8 @@
 					              first
 					              :motif.database/database
 					              :database/id)
-	                               :end (:locatable/max locatable)}})))
+	                               :end high}})))))
+                   (remove nil?)
                    (group-by :mdb)
                    (map (fn [[database regions]]
 			 {:source database
