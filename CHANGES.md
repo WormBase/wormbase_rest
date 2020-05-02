@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.7] - 2020-05-01
+- Fix for protein widget 500 error when location of motif is not in db
+- small change for interactions core
+
 ## [1.2.6] - 2020-04-22
 - pre-production hotix
 - adding non-coding transcripts to sequences table on gene page
