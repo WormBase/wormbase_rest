@@ -17,11 +17,14 @@
    :description "clones contained in the strain"})
 
 (defn alleles [s]
-  {:data (when-let [vhs (:variation.strain/_strain s)]
-           (for [vh vhs
-                 :let [variation (:variation/_strain vh)]]
-             (variation-core/process-variation variation (set []))))
-   :description "alleles contained in the strain"})
+  (let [vhs (:variation.strain/_strain s)]
+    {:data (if (< (count vhs) 3000)
+             (for [vh vhs
+                   :let [variation (:variation/_strain vh)]]
+               (variation-core/process-variation variation (set []))))
+     :count (count vhs)
+     :description "alleles contained in the strain"}
+    ))
 
 (defn genes [s]
   {:data (when-let [genes (:gene/_strain s)]
