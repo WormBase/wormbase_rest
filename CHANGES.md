@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.8] - 2020-05-11
+- Compute counts for variations for strains and avoid returning large number of variations
+
 ## [1.2.7] - 2020-05-01
 - Fix for protein widget 500 error when location of motif is not in db
 - small change for interactions core
@@ -32,7 +35,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - release for WS275
 - contains protein overview and motif details widget
 - contains GOTerm page associations widget
-- contains gene Homology widet!  
+- contains gene Homology widet!
 
 ## [1.1.0] - 2019-12-19
 - release for WS274
