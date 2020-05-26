@@ -1,6 +1,7 @@
 (ns rest-api.classes.anatomy-term.widgets.associations
   (:require
     [clojure.string :as str]
+    [datomic.api :as d]
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer [pack-obj]]
     [rest-api.classes.generic-functions :as generic-functions]
@@ -11,16 +12,25 @@
    :description "transgenes annotated with this anatomy_term"})
 
 (defn gene-ontology [a]
-  {:data (when-let [ghs (:anatomy-term/go-term a)]
-           (for [gh ghs]
-             (pace-utils/vmap
-               :term
-               (when-let [go-term (:anatomy-term.go-term/go-term gh)]
-                 (pack-obj go-term))
-
-               :ao_code
-               (when-let [ao-code (:anatomy-term.go-term/ao-code gh)]
-                 (pack-obj ao-code)))))
+  {:data (let [db (d/entity-db a)]
+           (->> (d/q '[:find ?gt ?paper
+                       :in $ ?at
+                       :where
+                       [?at :anatomy-term/go-term ?gh]
+                       [?gh :anatomy-term.go-term/go-term ?gt]
+                       [?gh :evidence/paper-evidence ?paper]]
+                     db
+                     (:db/id a))
+                (group-by first)
+                (map (fn [[go-term-id tuples]]
+                       (let [go-term (d/entity db go-term-id)]
+                         {:term (pack-obj go-term)
+                          :reference (->> tuples
+                                          (map (fn [[_ paper-id]]
+                                                 (->> (d/entity db paper-id)
+                                                      (pack-obj))))
+                                          (seq))})))
+                (seq)))
    :description "go_terms associated with this anatomy_term"})
 
 (defn- anatomy-function [a bool]
