@@ -78,18 +78,33 @@
 (defn detailed-disease-model [gene]
   {:data (let [db (d/entity-db gene)
                models (->> (d/q '[:find [?e ...]
-                              :in $ ?g
-                              :where
-                              [?gh :disease-model-annotation.modeled-by-disease-relevant-gene/gene ?g]
-                              [?e :disease-model-annotation/modeled-by-disease-relevant-gene ?gh]]
+                                  :in $ ?g
+                                  :where
+                                  [?gh :disease-model-annotation.modeled-by-disease-relevant-gene/gene ?g]
+                                  [?e :disease-model-annotation/modeled-by-disease-relevant-gene ?gh]
+                                  (not [?e :disease-model-annotation/qualifier-not true])]
                             db (:db/id gene))
                            (map (partial d/entity db)))]
            (do-term/process-disease-models models))
    :description "Detailed disease model based on experimental data"})
+
+(defn detailed-disease-model-not [gene]
+  {:data (let [db (d/entity-db gene)
+               models (->> (d/q '[:find [?e ...]
+                                  :in $ ?g
+                                  :where
+                                  [?gh :disease-model-annotation.modeled-by-disease-relevant-gene/gene ?g]
+                                  [?e :disease-model-annotation/modeled-by-disease-relevant-gene ?gh]
+                                  [?e :disease-model-annotation/qualifier-not true]]
+                            db (:db/id gene))
+                           (map (partial d/entity db)))]
+           (do-term/process-disease-models models))
+   :description "Detailed disease model negative experimental data "})
 
 (def widget
   {:name generic/name-field
    :human_disease_relevance human-disease-relevance
    :human_diseases human-diseases
    :detailed_disease_model detailed-disease-model
+   :detailed_disease_model_not detailed-disease-model-not
    })
