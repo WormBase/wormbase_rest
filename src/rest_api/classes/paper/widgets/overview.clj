@@ -143,6 +143,13 @@
            (first (str/split date #"-")))
    :description "The year of publication"})
 
+(defn retracted-in [paper]
+  {:data (->> paper
+              (:paper/_retraction-of)
+              (first)
+              (pack-obj))
+   :description "In which this paper is retracted, if applicable."})
+
 (def widget
   {:name generic/name-field
    :intext_citation intext-citation
@@ -162,4 +169,5 @@
    :abstract abstract
    :pmid pmid
    :pages pages
-   :year year})
+   :year year
+   :retracted_in retracted-in})
