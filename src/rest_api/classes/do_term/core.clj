@@ -24,23 +24,32 @@
         variation-genes
         (map variation-gene-fn variations)
 
+        transgenes
+        (->> (:disease-model-annotation/modeled-by-transgene model)
+             (map :disease-model-annotation.modeled-by-transgene/transgene)
+             (distinct))
+
         genes
         (concat (->> (:disease-model-annotation/modeled-by-disease-relevant-gene model)
                      (map :disease-model-annotation.modeled-by-disease-relevant-gene/gene))
                 (:disease-model-annotation/interacting-gene model))
 
         non-redundant-genes
-        (let [variation-gene-set (set variation-genes)
-              strain-gene-set (set (:gene/_strain strain))]
-          (filter (fn [gene]
-                    (and (not (variation-gene-set gene))
-                         (not (strain-gene-set gene))))
-                  genes))
+        (if (and (not (:disease-model-annotation/modeled-by-strain model))
+                 (not (:disease-model-annotation/modeled-by-variation model))
+                 (not (:disease-model-annotation/modeled-by-transgene model)))
+          genes)
 
-        transgenes
-        (->> (:disease-model-annotation/modeled-by-transgene model)
-             (map :disease-model-annotation.modeled-by-transgene/transgene)
-             (distinct))]
+        ;; previous rule to exclude certain genes
+        ;; non-redundant-genes
+        ;; (let [variation-gene-set (set variation-genes)
+        ;;       strain-gene-set (set (:gene/_strain strain))]
+        ;;   (filter (fn [gene]
+        ;;             (and (not (variation-gene-set gene))
+        ;;                  (not (strain-gene-set gene))))
+        ;;           genes))
+
+        ]
 
     (let [strain-genotype (strain/get-genotype strain)
           {strain-str :str
