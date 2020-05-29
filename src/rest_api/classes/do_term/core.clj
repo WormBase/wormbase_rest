@@ -118,5 +118,8 @@
                            (if modifiers
                              {:text modifiers
                               :evidence {:modifier_association_type (obj/humanize-ident (:disease-model-annotation/modifier-association-type model))}}))
+               :description (->> model
+                                 (:disease-model-annotation/disease-model-description)
+                                 (first))
                :reference (pack-obj (:disease-model-annotation/paper-evidence model))}))
        (seq)))
