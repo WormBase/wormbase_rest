@@ -2,6 +2,7 @@
   (:require
    [clojure.string :as str]
    [datomic.api :as d]
+   [pseudoace.utils :as pace-utils]
    [rest-api.classes.generic-fields :as generic]
    [rest-api.db.main :refer [datomic-homology-conn]]
    [rest-api.formatters.object :as obj :refer [pack-obj]]
@@ -10,25 +11,28 @@
 
 (defn ** [x n] (reduce * (repeat n x)))
 
-
 (defn best-blastp-matches [g]
- (let [longest-protein (some->> (:gene/corresponding-cds g)
+ (let [proteins (some->> (:gene/corresponding-cds g)
                                 (map :gene.corresponding-cds/cds)
                                 (map :cds/corresponding-protein)
                                 (map :cds.corresponding-protein/protein)
+                                (remove nil?)
                                 (map (fn [p]
-				      {:length (->> p
-				                    :protein/peptide
-					            :protein.peptide/length)
-				       :obj p}))
-                                (apply max-key :length))
-       hits  (when (not (nil? longest-protein))
+                                     {:length (->> p
+                                                   :protein/peptide
+                                                   :protein.peptide/length)
+                                      :obj p})))
+        longest-protein (when (< 0 (count proteins))
+                                (apply max-key :length proteins))
+        hits (when (not (nil? longest-protein))
                  (protein-core/get-best-blastp-matches (:obj longest-protein)))]
-  {:data {:biggest (->> longest-protein :obj :protein/id)
-          :hits hits}
+  {:data (pace-utils/vmap
+          :biggest (->> longest-protein :obj :protein/id)
+          :hits hits)
    :description (if hits
                  "best BLASTP hits from selected species"
 		 "no homologous proteins found, no best blastp hits to display")}))
+
 
 (defn- get-orthologs [homolog-holders want-nematode]
   (let [species-fn
