@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.2.9] - 2020-06-03
+- Fixing rare 500 error for homology widget
+
 ## [1.2.8] - 2020-05-11
 - Compute counts for variations for strains and avoid returning large number of variations
 
