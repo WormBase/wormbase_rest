@@ -127,12 +127,6 @@
           :method method}))
      :description (str "Genetic position of " role ": " (id-kw object))}))
 
-(defn fusion-reporter [object]
-  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-        role (namespace id-kw)]
-    {:data (when-let [t ((keyword role "fusion-reporter") object)] (first t))
-     :description (str "reporter construct for this " role)}))
-
 (defn genomic-position [object-orig]
   (let [object (or (:variation/merged-into object-orig)
                        object-orig)

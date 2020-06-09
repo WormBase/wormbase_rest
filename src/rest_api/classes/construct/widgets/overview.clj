@@ -104,12 +104,14 @@
                     (map pack-obj))
      :description "gene that drives the construct"});)
 
-
+(defn fusion-reporter [c]
+    {:data (some->> (:construct/fusion-reporter c))
+     :description "Reporter for this construct"})
 
 (def widget
   {:construction_summary construction-summary
    :driven_by_gene driven-by-gene
-   :fusion_reporter generic/fusion-reporter
+   :fusion_reporter fusion-reporter
    :gene_product generic/gene-product
    :other_reporter other-reporter
    :remarks generic/remarks
