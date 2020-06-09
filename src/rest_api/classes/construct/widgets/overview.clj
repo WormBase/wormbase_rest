@@ -98,9 +98,17 @@
                   (map pack-obj))
    :description "3' UTR for this transgene"})
 
+(defn driven-by-gene [c]
+    {:data (some->> (:construct/driven-by-gene c)
+                    (map :construct.driven-by-gene/gene)
+                    (map pack-obj))
+     :description "gene that drives the construct"});)
+
+
+
 (def widget
   {:construction_summary construction-summary
-   :driven_by_gene generic/driven-by-gene
+   :driven_by_gene driven-by-gene
    :fusion_reporter generic/fusion-reporter
    :gene_product generic/gene-product
    :other_reporter other-reporter

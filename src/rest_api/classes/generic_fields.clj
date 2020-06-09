@@ -133,14 +133,6 @@
     {:data (when-let [t ((keyword role "fusion-reporter") object)] (first t))
      :description (str "reporter construct for this " role)}))
 
-(defn driven-by-gene [object]
-  (let [id-kw (first (filter #(= (name %) "id") (keys object)))
-        role (namespace id-kw)]
-    {:data (when-let [gene ((keyword (str role ".driven-by-gene") "gene")
-                            (first ((keyword role "driven-by-gene") object)))]
-             (pack-obj gene))
-     :description "gene that drives the construct"}))
-
 (defn genomic-position [object-orig]
   (let [object (or (:variation/merged-into object-orig)
                        object-orig)
