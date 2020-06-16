@@ -249,6 +249,60 @@
     {:data data
      :description "The Phenotype summary of the gene"}))
 
+(defmulti phenotype-annotation-details
+  (fn [holder allele-or-rnai pheno]
+    (obj/obj-class allele-or-rnai)))
+
+(defmethod phenotype-annotation-details "variation" [holder allele pheno]
+  {:Allele
+   {:text (pack-obj allele)
+    :evidence (phenotype-core/get-evidence holder allele pheno)}})
+
+(defmethod phenotype-annotation-details "rnai" [holder rnai pheno]
+  {:RNAi
+   {:text (pack-obj rnai)
+    :evidence (merge
+               (pace-utils/vmap :Genotype (:rnai/genotype rnai)
+
+                                :Strain (pack-obj (:rnai/strain rnai))
+
+                                :Paper_evidence
+                                (let [paper-ref (:rnai/reference rnai)]
+                                  (if-let [paper (:rnai.reference/paper paper-ref)]
+                                    (paper-core/evidence paper))))
+               (phenotype-core/get-evidence holder rnai pheno))}})
+
+(defn- phenotype-field-flat-row [db pheno-dbid allele-or-rnai-dbid holder-dbid]
+  (let [pheno (d/entity db pheno-dbid)
+        allele-or-rnai (d/entity db allele-or-rnai-dbid)
+        holder (d/entity db holder-dbid)]
+    {:entity (phenotype-core/get-pato-from-holder holder)
+     :phenotype (pack-obj pheno)
+     :evidence (phenotype-annotation-details holder allele-or-rnai pheno)}))
+
+(defn phenotype-field-flat [gene]
+  (let [db (d/entity-db gene)
+        pheno-var-results (d/q '[:find ?pheno ?var ?ph
+                                 :in $ ?g
+                                 :where [?gh :variation.gene/gene ?g]
+                                 [?var :variation/gene ?gh]
+                                 [?var :variation/phenotype ?ph]
+                                 [?ph :variation.phenotype/phenotype ?pheno]]
+                               db
+                               (:db/id gene))
+        pheno-rnai-results (d/q '[:find ?pheno ?rnai ?ph
+                                  :in $ ?g
+                                  :where [?gh :rnai.gene/gene ?g]
+                                  [?rnai :rnai/gene ?gh]
+                                  [?rnai :rnai/phenotype ?ph]
+                                  [?ph :rnai.phenotype/phenotype ?pheno]]
+                                db
+                                (:db/id gene))]
+    {:data (->> (concat pheno-var-results pheno-rnai-results)
+                (map (partial apply phenotype-field-flat-row db))
+                (seq))
+     :description "The Phenotype summary of the gene"}))
+
 (defn phenotype-by-interaction [gene]
   (let [db (d/entity-db gene)
         gid (:db/id gene)

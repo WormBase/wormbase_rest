@@ -46,7 +46,8 @@
                                       pato-term)))))
         var-combo (into {} (for [x sot]
                              (apply merge x)))]
-    {(str/join "_" (sort (keys var-combo))) (vals var-combo)}))
+    (if (> (count var-combo) 0)
+      {(str/join "_" (sort (keys var-combo))) (vals var-combo)})))
 
 (defn get-pato-combinations [db pid phenos]
   (if-let [tp (phenos pid)]

@@ -45,4 +45,5 @@
    {:alleles_other variation/alleles-other
     :interaction_details interactions/interaction-details
     :polymorphisms variation/polymorphisms
-    :fpkm_expression_summary_ls exp/fpkm-expression-summary-ls}})
+    :fpkm_expression_summary_ls exp/fpkm-expression-summary-ls
+    :phenotype_flat phenotype/phenotype-field-flat}})
