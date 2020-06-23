@@ -22,7 +22,7 @@
  	    db hdb (:protein/id p))
    (map (fn [ids]
  	(let [motif (d/entity db (first ids))
- 	 locatable (d/entity hdb (second ids))]
+  	 locatable (d/entity hdb (second ids))]
  	 {:source {:id (let [mid (:motif/id motif)]
  			 (if (str/includes? mid ":")
  			  (second (str/split mid #":"))
@@ -35,7 +35,8 @@
  	       (->> locatable
  		:locatable/method
  		:method/id))}
- 	 :start (+ 1 (:locatable/min locatable))
+ 	 :start (when-let [lmin (:locatable/min locatable)]
+                   (+ 1 lmin))
  	 :stop (:locatable/max locatable)
  	 :feat (let [motif-obj (pack-obj motif)]
  		 (conj motif-obj {:label (:id motif-obj)}))
