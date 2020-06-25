@@ -46,4 +46,6 @@
     :interaction_details interactions/interaction-details
     :polymorphisms variation/polymorphisms
     :fpkm_expression_summary_ls exp/fpkm-expression-summary-ls
-    :phenotype_flat phenotype/phenotype-field-flat}})
+    :phenotype_flat phenotype/phenotype-field-flat
+    :phenotype_not_observed_flat phenotype/phenotype-not-observed-field-flat
+    :drives_overexpression_flat phenotype/drives-overexpression-flat}})
