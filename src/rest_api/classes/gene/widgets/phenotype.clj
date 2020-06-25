@@ -303,6 +303,30 @@
                 (seq))
      :description "The Phenotype summary of the gene"}))
 
+(defn phenotype-not-observed-field-flat [gene]
+  (let [db (d/entity-db gene)
+        pheno-var-results (d/q '[:find ?pheno ?var ?ph
+                                 :in $ ?g
+                                 :where [?gh :variation.gene/gene ?g]
+                                 [?var :variation/gene ?gh]
+                                 [?var :variation/phenotype-not-observed ?ph]
+                                 [?ph :variation.phenotype-not-observed/phenotype ?pheno]]
+                               db
+                               (:db/id gene))
+        pheno-rnai-results (d/q '[:find ?pheno ?rnai ?ph
+                                  :in $ ?g
+                                  :where [?gh :rnai.gene/gene ?g]
+                                  [?rnai :rnai/gene ?gh]
+                                  [?rnai :rnai/phenotype-not-observed ?ph]
+                                  [?ph :rnai.phenotype-not-observed/phenotype ?pheno]]
+                                db
+                                (:db/id gene))]
+    {:data (->> (concat pheno-var-results pheno-rnai-results)
+                (map (partial apply phenotype-field-flat-row db))
+                (seq))
+     :description "The Phenotype not observed summary of the gene"}))
+
+
 (defn phenotype-by-interaction [gene]
   (let [db (d/entity-db gene)
         gid (:db/id gene)
