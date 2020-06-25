@@ -258,6 +258,11 @@
    {:text (pack-obj allele)
     :evidence (phenotype-core/get-evidence holder allele pheno)}})
 
+(defmethod phenotype-annotation-details "transgene" [holder transgene pheno]
+  {:Transgene
+   {:text (pack-obj transgene)
+    :evidence (phenotype-core/get-evidence holder transgene pheno)}})
+
 (defmethod phenotype-annotation-details "rnai" [holder rnai pheno]
   {:RNAi
    {:text (pack-obj rnai)
@@ -325,6 +330,22 @@
                 (map (partial apply phenotype-field-flat-row db))
                 (seq))
      :description "The Phenotype not observed summary of the gene"}))
+
+(defn drives-overexpression-flat [gene]
+  (let [db (d/entity-db gene)
+        pheno-transgene-results (d/q '[:find ?pheno ?tg ?ph
+                                       :in $ ?g
+                                       :where
+                                       [?gh :phenotype-info.caused-by-gene/gene ?g]
+                                       [?ph :phenotype-info/caused-by-gene ?gh]
+                                       [?tg :transgene/phenotype ?ph]
+                                       [?ph :transgene.phenotype/phenotype ?pheno]]
+                               db
+                               (:db/id gene))]
+    {:data (->> pheno-transgene-results
+                (map (partial apply phenotype-field-flat-row db))
+                (seq))
+     :description (str "phenotypes due to overexpression under the promoter of this gene")}))
 
 
 (defn phenotype-by-interaction [gene]
