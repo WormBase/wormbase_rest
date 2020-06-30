@@ -11,6 +11,25 @@
  {:data (protein-core/get-motif-details p)
   :description "The motif details of the protein"})
 
+(defn schematic-parameters [p]
+  {:data (let [db (d/entity-db p)
+               cds-name (some->> (d/q '[:find ?cds .
+                                        :in $ ?p
+                                        :where
+                                        [?ph :cds.corresponding-protein/protein ?p]
+                                        [?cds :cds/corresponding-protein ?ph]]
+                                      db
+                                      (:db/id p))
+                            (d/entity db)
+                            (:cds/id))
+               peptide-length (some->> (:protein/peptide p)
+                                       (:protein.peptide/length))]
+           (if (and cds-name peptide-length)
+             {:location (format "%s:1..%s" cds-name peptide-length)
+              :reference_id cds-name}))
+   :description "jbrowse location in protein schematics"})
+
 (def widget
   {:name generic/name-field
-   :motif_details motif-details})
+   :motif_details motif-details
+   :schematic_parameters schematic-parameters})
