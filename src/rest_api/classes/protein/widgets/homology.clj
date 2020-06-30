@@ -5,7 +5,8 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]
    [clojure.math.numeric-tower :as math]
    [rest-api.classes.generic-fields :as generic]
-   [rest-api.classes.protein.core :as protein-core]))
+   [rest-api.classes.protein.core :as protein-core]
+   [rest-api.classes.protein.widgets.motif-details :as protein-motif-details]))
 
 
 (defn ** [x n] (reduce * (repeat n x)))
@@ -103,29 +104,10 @@
   {:data (protein-core/get-homology-groups p)
    :description "KOG homology groups of the protein"})
 
-(defn schematic-parameters [p]
-  {:data (let [db (d/entity-db p)
-               cds-name (some->> (d/q '[:find ?cds .
-                                        :in $ ?p
-                                        :where
-                                        [?ph :cds.corresponding-protein/protein ?p]
-                                        [?cds :cds/corresponding-protein ?ph]]
-                                      db
-                                      (:db/id p))
-                            (d/entity db)
-                            (:cds/id))
-               peptide-length (some->> (:protein/peptide p)
-                                       (:protein.peptide/length))]
-           (if (and cds-name peptide-length)
-             {:location (format "%s:1..%s" cds-name peptide-length)
-              :reference_id cds-name}))
-   :description "jbrowse location in protein schematics"})
-
-
 (def widget
   {:name generic/name-field
    :best_blastp_matches best-blastp-matches
   ; :protein_homology protein-homology
    :homology_groups homology-groups
    :homology_image homology-image
-   :schematic_parameters schematic-parameters})
+   :schematic_parameters protein-motif-details/schematic-parameters})
