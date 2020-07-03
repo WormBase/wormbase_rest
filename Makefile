@@ -108,11 +108,11 @@ build: docker/${DEPLOY_JAR} \
 			aws_access_key_id=${AWS_ACCESS_KEY_ID} \
 		--rm ./docker/
 
-.PHONY: build-staging
+.PHONY: build-latest
 build-staging: docker/${DEPLOY_JAR} \
        $(call print-help,build,\
 	"Build the docker images from using the current git revision.")
-	@docker build -t ${NAME}:latest \
+	docker build -t ${NAME}:latest \
 		--build-arg uberjar_path=${DEPLOY_JAR} \
 		--build-arg \
 			aws_secret_access_key=${AWS_SECRET_ACCESS_KEY} \

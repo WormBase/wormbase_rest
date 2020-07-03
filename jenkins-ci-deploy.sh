@@ -13,21 +13,10 @@ env
 make clean && make docker/app.jar
 
 # build container
-make build-staging
+docker stop wormbase-rest
+docker rm wormbase-rest
+make build-latest
+make clean
 
-# Unit tests: WormBase API and REST API
-#make build-run-test | tee $TEST_LOG
-
-# tag container
-make docker-tag-latest
-
-# push containers to AWS ECR
-aws ecr get-login --no-include-email --region us-east-1 | sh
-make docker-push-ecr-latest
-
-# deploy container
-make dockerrun-latest
-cat Dockerrun.aws.json
-git add Dockerrun.aws.json
-git commit -m "use latest wormbase/rest container"  # only needed locally and subsequent build will discard this commit
-eb local run --port 3000 --envvars WB_DB_URI="datomic:ddb://us-east-1/WS277/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS277/wormbase"
+make run-latest
