@@ -30,4 +30,4 @@ make dockerrun-latest
 cat Dockerrun.aws.json
 git add Dockerrun.aws.json
 git commit -m "use latest wormbase/rest container"  # only needed locally and subsequent build will discard this commit
-make staging-deploy
+eb local run --port 3000 --envvars WB_DB_URI="datomic:ddb://us-east-1/WS277/wormbase"
