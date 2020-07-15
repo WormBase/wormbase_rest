@@ -8,7 +8,14 @@
    [rest-api.db.sequencesql :as sequencesql]))
 
 (defn database-version []
-  (pace-utils/wbdb-name (db/datomic-uri)))
+ (first
+  (str/split
+   (second
+    (reverse
+     (str/split
+      (db/datomic-uri)
+      #"/")))
+  #"\.")))
 
 (def species-assemblies
   (->> "ASSEMBLIES.json"
