@@ -8,14 +8,14 @@
    [rest-api.db.sequencesql :as sequencesql]))
 
 (defn database-version []
- (first
-  (str/split
-   (second
-    (reverse
-     (str/split
-      (db/datomic-uri)
-      #"/")))
-  #"\.")))
+ (subs
+  (second
+   (reverse
+    (str/split
+     (db/datomic-uri)
+     #"/")))
+ 0 5))
+
 
 (def species-assemblies
   (->> "ASSEMBLIES.json"

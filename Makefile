@@ -109,7 +109,7 @@ build: docker/${DEPLOY_JAR} \
 		--rm ./docker/
 
 .PHONY: build-latest
-build-staging: docker/${DEPLOY_JAR} \
+build-latest: docker/${DEPLOY_JAR} \
        $(call print-help,build,\
 	"Build the docker images from using the current git revision.")
 	docker build -t ${NAME}:latest \
