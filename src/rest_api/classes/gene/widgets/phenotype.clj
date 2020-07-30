@@ -281,7 +281,10 @@
   (let [pheno (d/entity db pheno-dbid)
         allele-or-rnai (d/entity db allele-or-rnai-dbid)
         holder (d/entity db holder-dbid)]
-    {:entity (phenotype-core/get-pato-from-holder holder)
+    {:entity (->> (phenotype-core/get-pato-from-holder holder)
+                  (vals)
+                  (zipmap (range))
+                  (not-empty))
      :phenotype (pack-obj pheno)
      :evidence (phenotype-annotation-details holder allele-or-rnai pheno)}))
 
