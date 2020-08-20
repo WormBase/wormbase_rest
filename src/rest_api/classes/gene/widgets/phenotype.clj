@@ -401,8 +401,8 @@
      :description "The Phenotype not observed summary of the gene"}))
 
 (def widget
-  {:drives_overexpression    drives-overexpression
+  {:drives_overexpression    drives-overexpression-flat
    :name                     generic/name-field
-   :phenotype                phenotype-field
+   :phenotype                phenotype-field-flat
    :phenotype_by_interaction phenotype-by-interaction
-   :phenotype_not_observed   phenotype-not-observed-field})
+   :phenotype_not_observed   phenotype-not-observed-field-flat})
