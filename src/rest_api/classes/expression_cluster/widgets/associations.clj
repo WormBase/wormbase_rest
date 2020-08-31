@@ -7,7 +7,8 @@
   {:data (when-let [lss (:expression-cluster/life-stage ec)]
            (for [ls lss]
              {:life_stages (pack-obj ls)
-              :definition (first (:life-stage/definition ls))}))
+              :definition (->> (:life-stage/definition ls)
+                               (:life-stage.definition/text))}))
    :description "Life stages associated with this expression cluster"})
 
 (defn go-terms [ec] ; non in the database
