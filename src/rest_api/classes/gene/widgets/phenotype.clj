@@ -283,8 +283,8 @@
         holder (d/entity db holder-dbid)]
     {:entity (->> (phenotype-core/get-pato-from-holder holder)
                   (vals)
-                  (zipmap (range))
-                  (not-empty))
+                  (flatten)
+                  (seq))
      :phenotype (pack-obj pheno)
      :evidence (phenotype-annotation-details holder allele-or-rnai pheno)}))
 
