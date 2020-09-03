@@ -281,7 +281,10 @@
   (let [pheno (d/entity db pheno-dbid)
         allele-or-rnai (d/entity db allele-or-rnai-dbid)
         holder (d/entity db holder-dbid)]
-    {:entity (phenotype-core/get-pato-from-holder holder)
+    {:entity (->> (phenotype-core/get-pato-from-holder holder)
+                  (vals)
+                  (flatten)
+                  (seq))
      :phenotype (pack-obj pheno)
      :evidence (phenotype-annotation-details holder allele-or-rnai pheno)}))
 
@@ -398,8 +401,8 @@
      :description "The Phenotype not observed summary of the gene"}))
 
 (def widget
-  {:drives_overexpression    drives-overexpression
+  {:drives_overexpression    drives-overexpression-flat
    :name                     generic/name-field
-   :phenotype                phenotype-field
+   :phenotype                phenotype-field-flat
    :phenotype_by_interaction phenotype-by-interaction
-   :phenotype_not_observed   phenotype-not-observed-field})
+   :phenotype_not_observed   phenotype-not-observed-field-flat})
