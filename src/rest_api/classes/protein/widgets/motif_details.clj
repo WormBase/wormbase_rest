@@ -27,8 +27,7 @@
                peptide-length (some->> (:protein/peptide p)
                                        (:protein.peptide/length))
                g-species (->> (:protein/species p)
-                              (:species/other-name)
-                              (first)
+                              (:species/id)
                               (xform-species-name))
                assembly (->>
                          (get-in species-assemblies [g-species "assemblies"])
