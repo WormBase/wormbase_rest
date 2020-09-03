@@ -4,7 +4,9 @@
    [clojure.string :as str]
    [rest-api.classes.protein.core :as protein-core]
    [rest-api.classes.generic-fields :as generic]
+   [rest-api.classes.generic-functions :refer [xform-species-name]]
    [rest-api.db.main :refer [datomic-homology-conn datomic-conn]]
+   [rest-api.db.sequence :refer [species-assemblies]]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn motif-details [p]
@@ -23,10 +25,21 @@
                             (d/entity db)
                             (:cds/id))
                peptide-length (some->> (:protein/peptide p)
-                                       (:protein.peptide/length))]
+                                       (:protein.peptide/length))
+               g-species (->> (:protein/species p)
+                              (:species/other-name)
+                              (first)
+                              (xform-species-name))
+               assembly (->>
+                         (get-in species-assemblies [g-species "assemblies"])
+                         (filter #(= (get % "is_canonical") true))
+                         (first))]
+
            (if (and cds-name peptide-length)
              {:location (format "%s:1..%s" cds-name peptide-length)
-              :reference_id cds-name}))
+              :reference_id cds-name
+              :species g-species
+              :bioproject (get assembly "bioproject")}))
    :description "jbrowse location in protein schematics"})
 
 (def widget
