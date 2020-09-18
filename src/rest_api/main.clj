@@ -49,7 +49,6 @@
    [rest-api.classes.transposon-family :as transposon-family]
    [rest-api.classes.variation :as variation]
    [rest-api.classes.wbprocess :as wbprocess]
-   [rest-api.intermine :as intermine]
    [rest-api.db.endpoints :as db-endpoints]))
 
 (def ^:private all-routes
@@ -97,7 +96,6 @@
    transposon/routes
    variation/routes
    wbprocess/routes
-   intermine/routes
    db-endpoints/routes])
 
 (def ^:private swagger-validator-url
