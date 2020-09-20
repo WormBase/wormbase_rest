@@ -29,7 +29,7 @@
       "..."))
 
   (instance? clojure.lang.PersistentHashSet entity)
-  (let [data (if (< 100 (count entity))
+  (let [data (if (< 30 (count entity))
               (str "Count: " (str (count entity)))
               (some->> entity
                        (map (fn [e]
@@ -57,15 +57,49 @@
 
 (defn dataview [entity]
  {:data (let [max-depth 5
-              depth 0]
-          (get-data-forward entity max-depth depth))
+              depth 0
+              db (d/db datomic-conn)
+              id-kw (first (filter #(= (name %) "id") (keys entity)))
+              role (namespace id-kw)
+              schema (schema-datomic/raw-schema-from-db db)
+              backwards-pointers (remove nil?
+                                  (flatten
+                                   (for [[k v] schema
+                                   :when (not (= role k))]
+                                    (some->> v
+                                             (map :db/ident)
+                                             (map (fn [id]
+                                                 (when (= (name id) role)
+                                                   (keyword (namespace id) (str "_" (name id))))))))))]
+         {:forwards
+          (get-data-forward entity max-depth depth)
+
+          :backwards
+          (some->> backwards-pointers
+                   (map (fn [p]
+                         (when-let [values
+                          (some->> (p entity)
+                                   (map (fn [d]
+                                       (let [name-parts (str/split (namespace p) #"\.")
+                                             fields (if (= 2 (count name-parts))
+                                                     (conj (keys d)
+                                                           (keyword (str (first name-parts) "/_" (second name-parts))))
+                                                     (keys d))]
+                                         (some->> fields
+                                                  (filter (fn [k]
+                                                          (and (not (= k (keyword (namespace p) (str/replace (str (name p)) #"_" ""))))
+                                                                (not (= k :importer/temp)))))
+                                                  (map (fn [k]
+                                                     {k (get-data-forward (k d) 1 0)}))
+                                                     (into {}))))))]
+                             {p values})))
+                         (remove nil?))})
   :description "Data directly related to the endity"})
 
- (defn schemaview [object]
+ (defn schemaview [entity]
   {:data (let [db (d/db datomic-conn)
-               id-kw (first (filter #(= (name %) "id") (keys object)))
+               id-kw (first (filter #(= (name %) "id") (keys entity)))
                role (namespace id-kw)
-               
                schema (schema-datomic/raw-schema-from-db db)
                clj-schema (into {} 
                            (for [[k v] schema
