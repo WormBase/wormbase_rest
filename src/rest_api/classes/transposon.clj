@@ -4,12 +4,14 @@
     [rest-api.classes.transposon.widgets.location :as location]
     [rest-api.classes.transposon.widgets.feature :as feature]
     [rest-api.classes.transposon.widgets.associations :as associations]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "transposon"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :feature feature/widget
     :associations associations/widget
     :location location/widget}})

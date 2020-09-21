@@ -8,12 +8,14 @@
     [rest-api.classes.pseudogene.widgets.sequences :as sequences]
     [rest-api.classes.pseudogene.widgets.location :as location]
     [rest-api.classes.gene.expression :as gene-expression]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "pseudogene"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :feature feature/widget
     :genetics genetics/widget
     :reagents reagents/widget

@@ -6,12 +6,14 @@
     [rest-api.classes.rnai.widgets.details :as details]
     [rest-api.classes.rnai.widgets.movies :as movies]
     [rest-api.classes.rnai.widgets.references :as references]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "rnai"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :phenotypes phenotypes/widget
     :references references/widget
     :details details/widget

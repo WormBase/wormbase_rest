@@ -11,6 +11,18 @@
 
 (defn get-data-forward [entity max-depth depth]
  (cond 
+  (or
+   (instance? java.lang.String entity)
+   (instance? clojure.lang.Keyword entity))
+  entity
+
+  (or
+   (instance? java.util.Date entity)
+   (instance? java.lang.Double entity)
+   (instance? java.lang.Long entity)
+   (instance? java.lang.Boolean entity))
+  (str entity)
+
   (> depth max-depth)
   nil
 
@@ -39,18 +51,6 @@
    (if (not-empty data)
     data
     "..."))
-
-  (or
-   (instance? java.lang.String entity)
-   (instance? clojure.lang.Keyword entity))
-  entity
-
-  (or
-   (instance? java.util.Date entity)
-   (instance? java.lang.Double entity)
-   (instance? java.lang.Long entity)
-   (instance? java.lang.Boolean entity))
-  (str entity)
 
   :else
   (str (type entity))))
@@ -94,7 +94,7 @@
                                                      (into {}))))))]
                              {p values})))
                          (remove nil?))})
-  :description "Data directly related to the endity"})
+  :description "Data directly related to the entity"})
 
  (defn schemaview [entity]
   {:data (let [db (d/db datomic-conn)

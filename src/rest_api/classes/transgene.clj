@@ -8,12 +8,14 @@
     [rest-api.classes.transgene.widgets.tissue-specific-transgenes :as tissue-specific-transgenes]
     [rest-api.classes.transgene.widgets.mapped-transgenes :as mapped-transgenes]
     [rest-api.classes.transgene.widgets.references :as references]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "transgene"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :phenotypes phenotypes/widget
     :expr_pattern expression/widget
     :human_diseases human-diseases/widget

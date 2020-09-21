@@ -5,6 +5,7 @@
     [rest-api.classes.person.widgets.overview :as overview]
     [rest-api.classes.person.widgets.publications :as publications]
     [rest-api.classes.person.widgets.tracking :as tracking]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
@@ -13,5 +14,6 @@
    {:laboratory laboratory/widget
     :lineage lineage/widget
     :overview overview/widget
+    :graphview graphview/widget
     :publications publications/widget
     :tracking tracking/widget}})
