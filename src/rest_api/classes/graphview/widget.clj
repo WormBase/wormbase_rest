@@ -9,6 +9,52 @@
    [rest-api.formatters.object :refer [pack-obj humanize-ident]]))
 
 
+(defn has-page? [role]
+ (some #(= role %)
+            ["analysis"
+             "anatomy-term"
+             "antibody"
+             "cds"
+             "clone"
+             "construct"
+             "do-term"
+             "expression-cluster"
+             "expr-pattern"
+             "expr-profile"
+             "feature"
+             "gene-class"
+             "gene"
+             "gene-cluster"
+             "go-term"
+             "homology-group"
+             "interaction"
+             "laboratory"
+             "life-stage"
+             "microarray-results"
+             "molecule"
+             "motif"
+             "operon"
+             "paper"
+             "pcr-product" "oligo"
+             "person"
+             "phenotype"
+             "picture"
+             "position-matrix"
+             "protein"
+             "pseudogene"
+             "rearrangement"
+             "rnai"
+             "sequence"
+             "strain"
+             "structure-data"
+             "transcript"
+             "transgene"
+             "transposon"
+             "transposon-family"
+             "variation"
+             "wbprocess"]))
+
+
 (defn get-data-forward [entity max-depth depth]
  (cond 
   (or
@@ -27,15 +73,20 @@
   nil
 
   (instance? datomic.query.EntityMap entity)
-  (let [data (some->> (keys entity)
-                      (map (fn [k]
-                       (when (not (= k :importer/temp))
-                        (let [value  (get-data-forward (k entity) max-depth (+ depth 1))]
-                         (when (and (not (nil? value))
-                                    (not (= "..." value)))
-                          {k value})))))
-                      (remove nil?)
-                      (into {}))]
+  (let [data (let [id-kw (first (filter #(= (name %) "id") (keys entity)))
+                   role (when (not (nil? id-kw)) (namespace id-kw))]
+              (if (and (not (= depth 0))
+                       (has-page? role))
+               (pack-obj entity)
+               (some->> (keys entity)
+                        (map (fn [k]
+                              (when (not (= k :importer/temp))
+                               (let [value  (get-data-forward (k entity) max-depth (+ depth 1))]
+                                (when (and (not (nil? value))
+                                           (not (= "..." value)))
+                                 {k value})))))
+                        (remove nil?)
+                        (into {}))))]
     (if (not-empty data)
       data
       "..."))
@@ -77,23 +128,27 @@
           :backwards
           (some->> backwards-pointers
                    (map (fn [p]
-                         (when-let [values
-                          (some->> (p entity)
-                                   (map (fn [d]
-                                       (let [name-parts (str/split (namespace p) #"\.")
-                                             fields (if (= 2 (count name-parts))
-                                                     (conj (keys d)
-                                                           (keyword (str (first name-parts) "/_" (second name-parts))))
-                                                     (keys d))]
-                                         (some->> fields
-                                                  (filter (fn [k]
-                                                          (and (not (= k (keyword (namespace p) (str/replace (str (name p)) #"_" ""))))
-                                                                (not (= k :importer/temp)))))
-                                                  (map (fn [k]
-                                                     {k (get-data-forward (k d) 1 0)}))
-                                                     (into {}))))))]
-                             {p values})))
-                         (remove nil?))})
+                         (when-let [entities (p entity)]
+                          {p
+                           (some->> entities
+                                    (map (fn [d]
+                                          (let [id-kw (first (filter #(= (name %) "id") (keys d)))
+                                                role (when (not (nil? id-kw)) (namespace id-kw))]
+                                           (if (has-page? role)
+                                            (pack-obj d)
+                                            (let [name-parts (str/split (namespace p) #"\.")
+                                                  fields (if (= 2 (count name-parts))
+                                                          (conj (keys d)
+                                                                (keyword (str (first name-parts) "/_" (second name-parts))))
+                                                          (keys d))]
+                                             (some->> fields
+                                                      (filter (fn [k]
+                                                               (and (not (= k (keyword (namespace p) (str/replace (str (name p)) #"_" ""))))
+                                                                    (not (= k :importer/temp)))))
+                                                      (map (fn [k]
+                                                            {k (get-data-forward (k d) 1 0)}))
+                                                      (into {}))))))))})))
+                   (remove nil?))})
   :description "Data directly related to the entity"})
 
  (defn schemaview [entity]
