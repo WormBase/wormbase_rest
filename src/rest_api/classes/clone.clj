@@ -5,12 +5,14 @@
     [rest-api.classes.clone.widgets.location :as location]
     [rest-api.classes.clone.widgets.sequences :as sequences]
     [rest-api.classes.clone.widgets.references :as references]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "clone"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :location location/widget
     :sequences sequences/widget
     :external_links external-links/widget

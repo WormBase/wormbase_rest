@@ -7,12 +7,14 @@
     [rest-api.classes.phenotype.widgets.rnai :as rnai]
     [rest-api.classes.phenotype.widgets.transgene :as transgene]
     [rest-api.classes.phenotype.widgets.variation :as variation]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "phenotype"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     ;:associated_anatomy associated-anatomy/widget
     :go_term go-term/widget
     :rnai rnai/widget

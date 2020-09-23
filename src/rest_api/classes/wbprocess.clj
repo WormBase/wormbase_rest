@@ -10,12 +10,14 @@
     [rest-api.classes.wbprocess.widgets.interactions :as interactions]
     [rest-api.classes.wbprocess.widgets.phenotypes :as phenotypes]
     [rest-api.classes.wbprocess.widgets.references :as references]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "wbprocess"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :phenotypes phenotypes/widget
     :pathways pathways/widget
     :expression_clusters expression-clusters/widget

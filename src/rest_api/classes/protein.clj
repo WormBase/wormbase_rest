@@ -8,12 +8,14 @@
     [rest-api.classes.protein.widgets.homology :as homology]
     [rest-api.classes.protein.widgets.blast-details :as blast-details]
     [rest-api.classes.protein.widgets.history :as history]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "protein"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :location location/widget
     :history history/widget
     :homology homology/widget

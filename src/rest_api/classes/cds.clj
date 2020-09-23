@@ -8,6 +8,7 @@
     [rest-api.classes.cds.widgets.reagents :as reagents]
     [rest-api.classes.cds.widgets.references :as references]
     [rest-api.classes.gene.expression :as gene-expression]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
@@ -19,6 +20,7 @@
     :sequences sequences/widget
     :reagents reagents/widget
     :external_links external-links/widget
+    :graphview graphview/widget
     :references references/widget}
    :field
    {:fpkm_expression_summary_ls gene-expression/fpkm-expression-summary-ls}})

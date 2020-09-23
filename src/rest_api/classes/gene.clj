@@ -18,6 +18,7 @@
    [rest-api.classes.gene.widgets.reagents :as reagents]
    [rest-api.classes.gene.widgets.phenotype-graph :as phenotype-graph]
    [rest-api.classes.gene.variation :as variation]
+   [rest-api.classes.graphview.widget :as graphview]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.routing :as routing]))
 
@@ -25,6 +26,7 @@
   {:entity-ns "gene"
    :widget
    {:external_links external-links/widget
+    :graphview graphview/widget
     :expression expression/widget
     :feature feature/widget
     :gene_ontology gene-ontology/widget

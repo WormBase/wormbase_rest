@@ -7,6 +7,7 @@
    [rest-api.classes.transcript.widgets.feature :as feature]
    [rest-api.classes.transcript.widgets.sequences :as sequences]
    [rest-api.classes.transcript.widgets.references :as references]
+   [rest-api.classes.graphview.widget :as graphview]
    [rest-api.classes.gene.expression :as exp]
    [rest-api.formatters.object :as obj]
    [rest-api.routing :as routing]))
@@ -21,6 +22,7 @@
 
 (def expression-widget
   {:name obj/name-field
+   :graphview graphview/widget
    :gene_name (delegate-to-gene obj/name-field)
    :expressed_in (delegate-to-gene exp/expressed-in)
    :expressed_during (delegate-to-gene exp/expressed-during)
@@ -37,6 +39,7 @@
   {:entity-ns "transcript"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :reagents reagents/widget
     :expression expression-widget
     :external_links external-links/widget

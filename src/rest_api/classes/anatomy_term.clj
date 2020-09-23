@@ -5,12 +5,14 @@
     [rest-api.classes.anatomy-term.widgets.associations :as associations]
     [rest-api.classes.anatomy-term.widgets.expression-markers :as expression-markers]
     [rest-api.classes.anatomy-term.widgets.ontology-browser :as ontology-browser]
+    [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
 (routing/defroutes
   {:entity-ns "anatomy-term"
    :widget
    {:overview overview/widget
+    :graphview graphview/widget
     :ontology_browser ontology-browser/widget
     :associations associations/widget
     :expression_markers expression-markers/widget
