@@ -5,12 +5,29 @@
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 
-(defn synonym [genotype]
-  {:data (sort (:genotype/genotype-synonym genotype))
+(defn synonyms [genotype]
+  {:data (->> (:genotype/genotype-synonym genotype)
+              (sort)
+              (seq))
    :description "a synonym for the genotype"})
 
+(defn genotype-components [genotype]
+  {:data (->> (concat (:genotype/variation genotype)
+                      (:genotype/transgene genotype)
+                      (:genotype/rearrangement genotype)
+                      (:genotype/other-component genotype))
+              (map pack-obj)
+              (seq))})
+
+(defn models-diseases [genotype]
+  {:data (->> (:genotype/models-disease genotype)
+              (map pack-obj)
+              (seq))})
 
 (def widget
   {:name generic/name-field
-   :synonym synonym
+   :synonyms synonyms
+   :taxonomy generic/taxonomy
+   :genotype_components genotype-components
+   :models_diseases models-diseases
    })
