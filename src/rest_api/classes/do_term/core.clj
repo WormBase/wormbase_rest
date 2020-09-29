@@ -11,6 +11,9 @@
              (first)
              (:disease-model-annotation.modeled-by-strain/strain))
 
+        genotype
+        (:disease-model-annotation/modeled-by-genotype model)
+
         variations
         (concat (->> (:disease-model-annotation/modeled-by-variation model)
                      (map :disease-model-annotation.modeled-by-variation/variation))
@@ -55,7 +58,9 @@
     (let [strain-genotype (strain/get-genotype strain)
           {strain-str :str
            strain-data :data} (strain/get-genotype strain)
-          non-strain-entities (concat variations transgenes non-redundant-genes)
+          non-strain-entities (if (nil? genotype)
+                                (concat variations transgenes non-redundant-genes)
+                                (list genotype))
           entities (if (and strain (not strain-genotype))
                      (cons strain non-strain-entities)
                      non-strain-entities)
