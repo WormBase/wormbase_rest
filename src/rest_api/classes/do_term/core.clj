@@ -1,6 +1,7 @@
 (ns rest-api.classes.do-term.core
   (:require
    [clojure.string :as str]
+   [datomic.api :as d]
    [rest-api.classes.strain.core :as strain]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -91,7 +92,7 @@
                :genotype {:genotype (get-model-genotype model)}
                :genetic_entity (:entities(get-model-genotype model))
                :association_type (obj/humanize-ident (:disease-model-annotation/association-type model))
-               :evidence_code (->> (:disease-model-annotation/evidence-code model)
+               :evidence_code (->> (:disease-model-annotation/go-code model)
                                    (map (fn [evidence-code]
                                           {:text (:go-code/id evidence-code)
                                            :evidence {:description (:go-code/description evidence-code)
