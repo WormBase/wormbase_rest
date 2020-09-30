@@ -21,6 +21,7 @@
    [rest-api.classes.gene :as gene]
    [rest-api.classes.gene-class :as gene-class]
    [rest-api.classes.gene-cluster :as gene-cluster]
+   [rest-api.classes.genotype :as genotype]
    [rest-api.classes.go-term :as go-term]
    [rest-api.classes.homology-group :as homology-group]
    [rest-api.classes.interaction :as interaction]
@@ -68,6 +69,7 @@
    gene-class/routes
    gene-cluster/routes
    gene/routes
+   genotype/routes
    go-term/routes
    homology-group/routes
    interaction/routes

@@ -136,6 +136,10 @@
   (or (:transgene/public-name tg)
       (:transgene/id tg)))
 
+(defmethod obj-label "genotype" [_ genotype]
+  (or (:genotype/genotype-name genotype)
+      (:genotype/id genotype)))
+
 (defmethod obj-label "go-term" [_ go]
   (if-let [name (first (:go-term/name go))]
     (str/replace name #"_" " "))) ;; Not clear why multiples allowed here!

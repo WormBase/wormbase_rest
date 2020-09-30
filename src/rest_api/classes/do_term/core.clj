@@ -1,6 +1,7 @@
 (ns rest-api.classes.do-term.core
   (:require
    [clojure.string :as str]
+   [datomic.api :as d]
    [rest-api.classes.strain.core :as strain]
    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
@@ -9,6 +10,9 @@
         (->> (:disease-model-annotation/modeled-by-strain model)
              (first)
              (:disease-model-annotation.modeled-by-strain/strain))
+
+        genotype
+        (:disease-model-annotation/modeled-by-genotype model)
 
         variations
         (concat (->> (:disease-model-annotation/modeled-by-variation model)
@@ -54,7 +58,9 @@
     (let [strain-genotype (strain/get-genotype strain)
           {strain-str :str
            strain-data :data} (strain/get-genotype strain)
-          non-strain-entities (concat variations transgenes non-redundant-genes)
+          non-strain-entities (if (nil? genotype)
+                                (concat variations transgenes non-redundant-genes)
+                                (list genotype))
           entities (if (and strain (not strain-genotype))
                      (cons strain non-strain-entities)
                      non-strain-entities)
@@ -91,7 +97,7 @@
                :genotype {:genotype (get-model-genotype model)}
                :genetic_entity (:entities(get-model-genotype model))
                :association_type (obj/humanize-ident (:disease-model-annotation/association-type model))
-               :evidence_code (->> (:disease-model-annotation/evidence-code model)
+               :evidence_code (->> (:disease-model-annotation/go-code model)
                                    (map (fn [evidence-code]
                                           {:text (:go-code/id evidence-code)
                                            :evidence {:description (:go-code/description evidence-code)
