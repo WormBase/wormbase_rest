@@ -15,7 +15,7 @@
   {:data (->> (concat (:genotype/variation genotype)
                       (:genotype/transgene genotype)
                       (:genotype/rearrangement genotype)
-                      (:genotype/other-component genotype))
+                      (list (:genotype/other-component genotype)))
               (map pack-obj)
               (seq))})
 
