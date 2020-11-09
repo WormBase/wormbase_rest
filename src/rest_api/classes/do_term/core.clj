@@ -90,6 +90,7 @@
                      (concat entities variation-genes))
        :entities (->> entities
                       (cons strain)
+                      (distinct)
                       (filter identity)
                       (map pack-obj))})))
 
