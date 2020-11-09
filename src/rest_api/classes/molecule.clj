@@ -6,6 +6,7 @@
     [rest-api.classes.molecule.widgets.strains :as strains]
     [rest-api.classes.molecule.widgets.affected :as affected]
     [rest-api.classes.molecule.widgets.references :as references]
+    [rest-api.classes.molecule.widgets.human-diseases :as human-diseases]
     [rest-api.classes.graphview.widget :as graphview]
     [rest-api.routing :as routing]))
 
@@ -17,5 +18,6 @@
     :structure structure/widget
     :strains strains/widget
     :affected affected/widget
+    :human_diseases human-diseases/widget
     :external_links external-links/widget
     :references references/widget}})

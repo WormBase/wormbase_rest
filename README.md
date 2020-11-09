@@ -6,7 +6,7 @@
 
 - Make sure correct WS version is specified in files
 - Make get-assembly-json
-- Change version of d-t-c in project.clj and Dockerrun.aws.json
+- Change version of app in project.clj and Dockerrun.aws.json
 - create tag (git hf release start <version>; docker hf release finish <version>)
 
 ## Deployment

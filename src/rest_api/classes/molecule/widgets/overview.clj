@@ -146,6 +146,24 @@
               :evidence (obj/get-evidence br)}))
    :description "Controlled vocabulary for specific role of molecule in nematode biology, with particular regards to biological pathways"})
 
+(defn induces-disease [m]
+  {:data (->> m
+              (:disease-model-annotation/_inducing-chemical)
+              (map :disease-model-annotation/disease-term)
+              (distinct)
+              (map pack-obj)
+              (seq))
+   :description "Diseases induced by this molecule"})
+
+(defn modifies-disease [m]
+  {:data (->> m
+              (:disease-model-annotation/_modifier-molecule)
+              (map :disease-model-annotation/disease-term)
+              (distinct)
+              (map pack-obj)
+              (seq))
+   :description "Diseases modified by this molecule"})
+
 (def widget
   {:name generic/name-field
    :detection_status detection-status
@@ -163,4 +181,7 @@
    :biological_role biological-role
    :smiles smiles
    :inchi inchi
-   :biofunction_role biofunction-role})
+   :biofunction_role biofunction-role
+   :induces_disease induces-disease
+   :modifies_disease modifies-disease
+   })
