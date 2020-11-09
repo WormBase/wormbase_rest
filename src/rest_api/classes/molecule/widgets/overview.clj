@@ -150,6 +150,7 @@
   {:data (->> m
               (:disease-model-annotation/_inducing-chemical)
               (map :disease-model-annotation/disease-term)
+              (distinct)
               (map pack-obj)
               (seq))
    :description "Diseases induced by this molecule"})
@@ -158,6 +159,7 @@
   {:data (->> m
               (:disease-model-annotation/_modifier-molecule)
               (map :disease-model-annotation/disease-term)
+              (distinct)
               (map pack-obj)
               (seq))
    :description "Diseases modified by this molecule"})
