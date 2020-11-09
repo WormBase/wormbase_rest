@@ -19,15 +19,6 @@
                      (map :disease-model-annotation.modeled-by-variation/variation))
                 (:disease-model-annotation/interacting-variation model))
 
-        variation-gene-fn
-        (fn [var]
-          (->> (:variation/gene var)
-               (first)
-               (:variation.gene/gene)))
-
-        variation-genes
-        (map variation-gene-fn variations)
-
         transgenes
         (->> (:disease-model-annotation/modeled-by-transgene model)
              (map :disease-model-annotation.modeled-by-transgene/transgene)
@@ -43,6 +34,18 @@
                  (not (:disease-model-annotation/modeled-by-variation model))
                  (not (:disease-model-annotation/modeled-by-transgene model)))
           genes)
+
+        variation-gene-fn
+        (fn [var]
+          (->> (:variation/gene var)
+               (map :variation.gene/gene)
+               (set)
+               (clojure.set/intersection (set genes))
+               (into [])
+               (first)))
+
+        variation-genes
+        (map variation-gene-fn variations)
 
         ;; previous rule to exclude certain genes
         ;; non-redundant-genes
@@ -87,6 +90,7 @@
                      (concat entities variation-genes))
        :entities (->> entities
                       (cons strain)
+                      (distinct)
                       (filter identity)
                       (map pack-obj))})))
 
