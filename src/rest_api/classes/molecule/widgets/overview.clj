@@ -156,7 +156,7 @@
 
 (defn modifies-disease [m]
   {:data (->> m
-              (:disease-model-annotation/_modifier-moleculel)
+              (:disease-model-annotation/_modifier-molecule)
               (map :disease-model-annotation/disease-term)
               (map pack-obj)
               (seq))
