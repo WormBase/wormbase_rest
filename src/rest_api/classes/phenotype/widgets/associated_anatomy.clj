@@ -35,21 +35,24 @@
                       :phenotype
                       (when-let [ph (:anatomy-function/phenotype af)]
                         {:text (pack-obj p)
-                         :evidence (obj/get-evidence ph)})
+                         :evidence (let [ev-obj (obj/get-evidence ph)]
+                                    (if-let [remark (:anatomy-function-info/remark ph)]
+                                      (first (conj ev-obj {"Remark" remark}))
+                                      ev-obj))})
 
                       :bp_not_inv
-                      (when-let [nihs (:anatomy-function/not-involved af)]
-                        (for [nih nihs]
-                          {:text (when-let [at (:anatomy-function.not-involved/anatomy-term nih)]
-                                   (pack-obj at))
-                           :evidence (obj/get-evidence nih)}))
+                      (some->> (:anatomy-function/not-involved af)
+                               (map (fn [afh]
+                                     {:evidence (obj/get-evidence-anatomy-function afh)
+                                      :text (when-let [at (:anatomy-function.not-involved/anatomy-term afh)]
+-                                            (pack-obj at))})))
 
                       :bp_inv
-                      (when-let [ihs (:anatomy-function/involved af)]
-                        (for [ih ihs
-                              :let [at (:anatomy-function.involved/anatomy-term ih)]                             ]
-                          {:text (pack-obj at)
-                           :evidence (obj/get-evidence ih)}))}))))))
+                      (some->> (:anatomy-function/involved af)
+                               (map (fn [afh]
+                                     {:evidence (obj/get-evidence-anatomy-function afh)
+                                      :text (when-let [at (:anatomy-function.involved/anatomy-term afh)]
+-                                            (pack-obj at))})))}))))))
 
    :description "anatomy_functions associatated with this anatomy_term"})
 

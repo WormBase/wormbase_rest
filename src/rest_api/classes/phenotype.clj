@@ -15,7 +15,7 @@
    :widget
    {:overview overview/widget
     :graphview graphview/widget
-    ;:associated_anatomy associated-anatomy/widget
+    :associated_anatomy associated-anatomy/widget
     :go_term go-term/widget
     :rnai rnai/widget
     :transgene transgene/widget

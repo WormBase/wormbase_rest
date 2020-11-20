@@ -490,6 +490,22 @@
      :description (format "The name and WormBase internal ID of %s"
                           (:id data))}))
 
+(defn get-evidence-anatomy-function [anatomy-function-info-holder]
+ (->> [:anatomy-function-info/autonomous
+  :anatomy-function-info/insufficient
+  :anatomy-function-info/necessary
+  :anatomy-function-info/nonautonomous
+  :anatomy-function-info/sufficient
+  :anatomy-function-info/unnecessary]
+  (reduce (fn [coll attr]
+           (if-let [attr-values (attr anatomy-function-info-holder)]
+            (assoc coll
+             (humanize-ident attr)
+             (format "%s" attr-values))
+            coll))
+   (pace-utils/vmap
+    :remark (:anatomy-function-info/remark anatomy-function-info-holder)))))
+
 (defn tag-obj [label]
   {:taxonomy "all"
    :class "tag"

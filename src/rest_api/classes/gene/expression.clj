@@ -569,21 +569,7 @@
 (defn- anatomy-functions-table-row [db [anatomy-function-dbid involved-dbid]]
   (let [anatomy-function (d/entity db anatomy-function-dbid)
         involved (d/entity db involved-dbid)]
-    {:bp_inv {:text (pack-obj (:anatomy-function.involved/anatomy-term involved))
-              :evidence (->> [:anatomy-function-info/autonomous
-                              :anatomy-function-info/insufficient
-                              :anatomy-function-info/necessary
-                              :anatomy-function-info/nonautonomous
-                              :anatomy-function-info/sufficient
-                              :anatomy-function-info/unnecessary]
-                             (reduce (fn [coll attr]
-                                       (if-let [attr-values (attr involved)]
-                                         (assoc coll
-                                                (obj/humanize-ident attr)
-                                                (format "%s" attr-values))
-                                         coll))
-                                     (pace-utils/vmap
-                                      :remark (:anatomy-function-info/remark involved))))}
+    {:bp_inv (obj/get-evidence-anatomy-function involved)
      :assay (if-let [assay-holders (seq (:anatomy-function/assay anatomy-function))]
               {:text (->> (map :anatomy-function.assay/ao-code assay-holders)
                           (map :ao-code/id)
