@@ -30,30 +30,37 @@
 		 (when-let [ahs (:anatomy-function/assay af)]
 		  (for [ah ahs]
 		   (pace-utils/vmap
-		    :text (obj/humanize-ident
-			    (:ao-code/id (:anatomy-function.assay/ao-code ah)))
+		    :text (:ao-code/id (:anatomy-function.assay/ao-code ah))
 		    :evidence (obj/get-evidence ah))))
 
                  :phenotype
 		 (when-let [ph (:anatomy-function/phenotype af)]
-		  {:text (pack-obj p)
-		   :evidence (let [ev-obj (obj/get-evidence ph)]
+                  (if-let [ev (let [ev-obj (obj/get-evidence ph)]
 		              (if-let [remark (:anatomy-function-info/remark ph)]
-		  	       (first (conj ev-obj {"Remark" remark}))
-			       ev-obj))})
+		  	       (first (conj (dissoc ev-obj :remark) {"Remark" remark}))
+			       ev-obj))]
+		  {:text (pack-obj p)
+		   :evidence ev}
+                  (pack-obj p)))
 
                  :bp_not_inv
  	         (some->> (:anatomy-function/not-involved af)
 	  	          (map (fn [afh]
-		 	        {:evidence (obj/get-evidence-anatomy-function afh)
+		 	        {:evidence (let [ev (obj/get-evidence-anatomy-function afh)]
+                                            (if-let [remark (:remark ev)]
+                                             (conj (dissoc ev :remark) {:Remark remark})
+                                             ev))
 				 :text (when-let [at (:anatomy-function.not-involved/anatomy-term afh)]
 		                        (pack-obj at))})))
 
                  :bp_inv
 		 (some->> (:anatomy-function/involved af)
 			  (map (fn [afh]
-			        {:evidence (obj/get-evidence-anatomy-function afh)
-			         :text (when-let [at (:anatomy-function.involved/anatomy-term afh)]
+			        {:evidence (let [ev (obj/get-evidence-anatomy-function afh)]
+                                            (if-let [remark (:remark ev)]
+                                             (conj (dissoc ev :remark) {:Remark remark})
+                                             ev))
+  			         :text (when-let [at (:anatomy-function.involved/anatomy-term afh)]
 		                        (pack-obj at))})))}))))))))
    :description "anatomy_functions associatated with this anatomy_term"})
 
