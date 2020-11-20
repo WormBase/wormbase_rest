@@ -10,6 +10,7 @@
            (pack-obj protein))
    :description "sequence of structure"})
 
+;; We decided this data would only be provided to the UI through the JBrowse
 (defn homology-data [s]
   {:data nil
    :description "Protein homologs for this structure"})
@@ -49,5 +50,5 @@
    :sequence sequence-field
    :protein_homology protein-homology
    :status status
-   :homology_data homology-data
+   ;:homology_data homology-data
    :remarks generic/remarks})
