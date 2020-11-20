@@ -504,6 +504,8 @@
              (format "%s" attr-values))
             coll))
    (pace-utils/vmap
+    :Sufficient_remark (when-let [sr (:anatomy-function-info/sufficient-remark anatomy-function-info-holder)]
+                         (pack-obj sr))
     :remark (:anatomy-function-info/remark anatomy-function-info-holder)))))
 
 (defn tag-obj [label]
