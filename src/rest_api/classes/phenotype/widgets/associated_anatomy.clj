@@ -30,7 +30,7 @@
 		 (when-let [ahs (:anatomy-function/assay af)]
 		  (for [ah ahs]
 		   (pace-utils/vmap
-		    :text (:ao-code/id (:anatomy-function.assay/ao-code ah))
+		    :text (obj/humanize-ident (:ao-code/id (:anatomy-function.assay/ao-code ah)))
 		    :evidence (obj/get-evidence ah))))
 
                  :phenotype
