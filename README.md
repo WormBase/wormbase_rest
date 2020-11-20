@@ -14,7 +14,7 @@
 Run following commands and test each step happens correctly.
 
 ```bash
-export WB_DB_URI="datomic:ddb://us-east-1/WS279.1/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS279/wormbase"
 lein ring server-headless 8130
 lein do eastwood, test
 make docker-build
@@ -33,7 +33,7 @@ eb deploy
 ## Setting environment variables
 
 ```bash
-export WB_DB_URI="datomic:ddb://us-east-1/WS279.1/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS279/wormbase"
 ```
 
 ## Starting server in development
