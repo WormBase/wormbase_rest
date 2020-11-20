@@ -48,7 +48,7 @@
 	  	          (map (fn [afh]
 		 	        {:evidence (let [ev (obj/get-evidence-anatomy-function afh)]
                                             (if-let [remark (:remark ev)]
-                                             (conj (dissoc ev :remark) {:Remark remark})
+                                             (dissoc (conj ev {:Remark remark}) :remark)
                                              ev))
 				 :text (when-let [at (:anatomy-function.not-involved/anatomy-term afh)]
 		                        (pack-obj at))})))
@@ -58,7 +58,7 @@
 			  (map (fn [afh]
 			        {:evidence (let [ev (obj/get-evidence-anatomy-function afh)]
                                             (if-let [remark (:remark ev)]
-                                             (conj (dissoc ev :remark) {:Remark remark})
+                                             (dissoc (conj ev {:Remark remark}) :remark)
                                              ev))
   			         :text (when-let [at (:anatomy-function.involved/anatomy-term afh)]
 		                        (pack-obj at))})))}))))))))
