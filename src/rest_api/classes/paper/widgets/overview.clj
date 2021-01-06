@@ -150,6 +150,13 @@
               (pack-obj))
    :description "In which this paper is retracted, if applicable."})
 
+(defn author-first-pass [paper]
+  {:data (->> paper
+              (:person/_author-first-pass-curation)
+              (first)
+              (pack-obj))
+   :description "The author who reviewed the automated annotations through Author First Pass"})
+
 (def widget
   {:name generic/name-field
    :intext_citation intext-citation
@@ -170,4 +177,5 @@
    :pmid pmid
    :pages pages
    :year year
-   :retracted_in retracted-in})
+   :retracted_in retracted-in
+   :author_first_pass author-first-pass})
