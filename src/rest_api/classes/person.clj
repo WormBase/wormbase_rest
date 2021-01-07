@@ -1,5 +1,6 @@
 (ns rest-api.classes.person
   (:require
+   [rest-api.classes.person.widgets.community-curation :as community-curation]
     [rest-api.classes.person.widgets.laboratory :as laboratory]
     [rest-api.classes.person.widgets.lineage :as lineage]
     [rest-api.classes.person.widgets.overview :as overview]
@@ -11,7 +12,8 @@
 (routing/defroutes
   {:entity-ns "person"
    :widget
-   {:laboratory laboratory/widget
+   {:community_curation community-curation/widget
+    :laboratory laboratory/widget
     :lineage lineage/widget
     :overview overview/widget
     :graphview graphview/widget
