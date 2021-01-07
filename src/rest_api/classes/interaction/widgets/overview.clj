@@ -151,7 +151,7 @@
                     :variation nil}))
                (when-let [hs (:interaction/other-interactor i)]
                  (for [h hs]
-                   {:interactor (:interaction.other-interactor/text h)
+                   {:interactor (pack-obj (:interaction.other-interactor/text h))
                     :interactor_type "Other interactor"
                     :role (when-let [roles (:interactor-info/interactor-type h)]
                             (for [role roles] (str/capitalize (name role))))
