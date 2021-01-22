@@ -118,7 +118,7 @@
                                             :paper_evidence (some->> (:evidence/paper-evidence em)
                                                                      (first)
                                                                      (pack-obj))})))})))]
-           (not-empty
+           (->>
              (for [[k v] (seq data)]
                (when (some? k)
                  (let [columns (group-by :column v)]
@@ -126,7 +126,9 @@
                     :status (map :value (:status columns))
                     :detection_method  (map :value (:detection_method columns))
                     :extraction_method (map :value (:extraction_method columns))
-                    :paper_evidence k})))))
+                    :paper_evidence k})))
+             (filter identity)
+             (seq)))
    :desciption "Controlled vocabulary for specific role of molecule in nematode biology, with particular regards to biological pathways"})
 
 (defn smiles [m]
