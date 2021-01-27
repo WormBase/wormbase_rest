@@ -2,7 +2,8 @@
   (:require
     [clojure.string :as str]
     [datomic.api :as d]
-    [pseudoace.utils :as pace-utils]))
+    [pseudoace.utils :as pace-utils]
+    [rest-api.formatters.object :as obj :refer [pack-obj]]))
 
 (defn publications [person]
   (let [db (d/entity-db person)
@@ -26,7 +27,10 @@
                           :class "paper"
                           :label (:paper/brief-citation paper)
                           :id (:paper/id paper))
-                        :brief_citation (:paper/brief-citation paper)))))
+                        :brief_citation (:paper/brief-citation paper)
+                        :author_first_pass (->> (:person/_author-first-pass-curation paper)
+                                                (map pack-obj)
+                                                (seq))))))
              (seq)(group-by :year))]
     {:data (if (empty? data) nil data)
      :description
