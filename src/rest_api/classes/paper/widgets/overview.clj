@@ -153,8 +153,8 @@
 (defn author-first-pass [paper]
   {:data (->> paper
               (:person/_author-first-pass-curation)
-              (first)
-              (pack-obj))
+              (map pack-obj)
+              (seq))
    :description "The author who reviewed the automated annotations through Author First Pass"})
 
 (def widget
