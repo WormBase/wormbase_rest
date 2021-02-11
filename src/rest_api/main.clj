@@ -5,6 +5,7 @@
    [mount.core :as mount]
    [pseudoace.utils :as pace-utils]
    [ring.util.http-response :as res]
+   [ring.middleware.cors :refer [wrap-cors]]
    [ring.middleware.gzip :as ring-gzip]
    [rest-api.classes.analysis :as analysis]
    [rest-api.classes.anatomy-term :as anatomy-term]
@@ -125,6 +126,10 @@
   []
   (mount/start))
 
+(def cors-policy
+  {:access-control-allow-origin [#".*"]
+   :access-control-allow-methods [:get]})
+
 (def app
   "Entry-point for ring request handler."
   (sweet/api
@@ -152,6 +157,7 @@
    (sweet/context "/" []
      :middleware [ring-gzip/wrap-gzip wrap-not-found]
      (sweet/context "/rest" []
-       (->> all-routes
-            (flatten)
-            (apply sweet/routes))))))
+       (as-> all-routes handler
+            (flatten handler)
+            (apply sweet/routes handler)
+            (apply wrap-cors handler (into [] cat cors-policy)))))))
