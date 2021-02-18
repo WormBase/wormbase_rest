@@ -126,39 +126,35 @@
   []
   (mount/start))
 
-(def cors-policy
-  {:access-control-allow-origin [#".*"]
-   :access-control-allow-methods [:get]})
-
 (def app
   "Entry-point for ring request handler."
-  (sweet/api
-   {:swagger
-    {:ui "/"
-     :spec "/swagger.json"
-     :formats {:format api-output-formats}
-     :coercion nil
-     :consumes nil
-     :produces api-output-formats
-     :definitions {}
-     :options
-     {:ui
-      {:validatorUrl swagger-validator-url}}
-     :data
-     {:info
-      {:title "WormBase REST API"
-       :description
-       (str "Widget and field endpoints "
-            "used by the official [WormBase]"
-            "(http://www.wormbase.org) site.")
-       :contact {:name "the WormBase development team"
-                 :email "developers@wormbase.org"}
-       :version (pace-utils/package-version "wormbase/rest-api")}}}}
-   (sweet/context "/" []
-     :middleware [ring-gzip/wrap-gzip wrap-not-found]
-     (sweet/context "/rest" []
-       (as-> all-routes handler
-            (flatten handler)
-            (apply sweet/routes handler)
-       ;     (apply wrap-cors handler (into [] cat cors-policy))
-              )))))
+  (-> (sweet/api
+       {:swagger
+        {:ui "/"
+         :spec "/swagger.json"
+         :formats {:format api-output-formats}
+                   :coercion nil
+                   :consumes nil
+                   :produces api-output-formats
+                   :definitions {}
+                   :options
+         {:ui
+          {:validatorUrl swagger-validator-url}}
+         :data
+          {:info
+           {:title "WormBase REST API"
+            :description
+             (str "Widget and field endpoints "
+                  "used by the official [WormBase]"
+                  "(http://www.wormbase.org) site.")
+            :contact {:name "the WormBase development team"
+            :email "developers@wormbase.org"}
+            :version (pace-utils/package-version "wormbase/rest-api")}}}}
+       (sweet/context "/" []
+        :middleware [ring-gzip/wrap-gzip wrap-not-found]
+        (sweet/context "/rest" []
+         (->> all-routes
+              (flatten)
+              (apply sweet/routes)))))
+      (wrap-cors :access-control-allow-origin [#".*"]
+                 :access-control-allow-methods [:get])))
