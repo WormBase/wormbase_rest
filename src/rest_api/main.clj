@@ -160,4 +160,5 @@
        (as-> all-routes handler
             (flatten handler)
             (apply sweet/routes handler)
-            (apply wrap-cors handler (into [] cat cors-policy)))))))
+       ;     (apply wrap-cors handler (into [] cat cors-policy))
+              )))))
