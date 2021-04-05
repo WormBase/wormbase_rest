@@ -681,6 +681,78 @@
                                    {:item
                                     (pack-obj t)
 
+                                    :vep_consequence
+                                    (some-> (:molecular-change/vep-consequence h)
+                                            (first)
+                                            (str/replace "_" " "))
+
+                                    :vep_impact
+                                    (some->> (:molecular-change/vep-impact h)
+                                             (first)
+                                             (:molecular-change.vep-impact/text)
+                                             (str/lower-case))
+
+                                    :polyphen
+                                    (some->> (:molecular-change/polyphen h)
+                                             (first)
+                                             ((fn [polyphen]
+                                                {:text (some-> (:molecular-change.polyphen/text polyphen)
+                                                               (str/replace "_" " "))
+                                                 :evidence {:PolyPhen_score (:molecular-change.polyphen/float polyphen)}})))
+                                    :sift
+                                    (some->> (:molecular-change/sift h)
+                                             (first)
+                                             ((fn [sift]
+                                                {:text (some-> (:molecular-change.sift/text sift)
+                                                               (str/replace "_" " "))
+                                                 :evidence {:SIFT_score (:molecular-change.sift/float sift)}})))
+
+                                    :cds_position
+                                    (some->> (:molecular-change/cds-position h)
+                                             (first)
+                                             (:molecular-change.cds-position/text))
+
+                                    :cdna_position
+                                    (some->> (:molecular-change/cdna-position h)
+                                             (first)
+                                             (:molecular-change.cdna-position/text))
+
+                                    :protein_position
+                                    (some->> (:molecular-change/protein-position h)
+                                             (first)
+                                             (:molecular-change.protein-position/text))
+
+                                    :codon_change
+                                    (some->> (:molecular-change/codon-change h)
+                                             (first)
+                                             (:molecular-change.codon-change/text))
+
+                                    :amino_acid_change
+                                    (some->> (:molecular-change/amino-acid-change h)
+                                             (first)
+                                             (:molecular-change.amino-acid-change/text))
+
+                                    :exon_number
+                                    (some->> (:molecular-change/exon-number h)
+                                             (first)
+                                             (:molecular-change.exon-number/text))
+
+                                    :intron_number
+                                    (some->> (:molecular-change/intron-number h)
+                                             (first)
+                                             (:molecular-change.intron-number/text))
+
+                                    :hgvsc
+                                    (some->> (:molecular-change/hgvsc h)
+                                             (first)
+                                             (:molecular-change.hgvsc/text))
+
+                                    :hgvsp
+                                    (some->> (:molecular-change/hgvsp h)
+                                             (first)
+                                             (:molecular-change.hgvsp/text))
+
+
                                     :location_effects
                                     (not-empty
                                       (pace-utils/vmap
