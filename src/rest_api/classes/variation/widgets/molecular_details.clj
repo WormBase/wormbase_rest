@@ -673,8 +673,7 @@
              (some->> (:variation/transcript variation)
                       (map (fn [h]
                              (let [t (:variation.transcript/transcript h)]
-                               (when-let [refseqobj (sequence-fns/genomic-obj t)]
-                                 (conj
+                               (conj
                                    (pack-obj t)
                                    (when (some? varrefseqobj)
                                      (fetch-coords-in-feature varrefseqobj t))
@@ -706,6 +705,12 @@
                                                 {:text (some-> (:molecular-change.sift/text sift)
                                                                (str/replace "_" " "))
                                                  :evidence {:SIFT_score (:molecular-change.sift/float sift)}})))
+
+                                    :cds
+                                    (some->> (:variation.transcript/transcript h)
+                                             (:transcript/corresponding-cds)
+                                             (:transcript.corresponding-cds/cds)
+                                             (pack-obj))
 
                                     :cds_position
                                     (some->> (:molecular-change/cds-position h)
@@ -762,7 +767,7 @@
 
                                         :UTR_3
                                         (get-feature-affected-evidence
-                                          (:molecular-change/three-prime-utr h))))}))))))
+                                          (:molecular-change/three-prime-utr h))))})))))
 
              "Pseudogene" ;tested with WBVar00601206
              (some->> (:variation/pseudogene variation)
