@@ -706,6 +706,12 @@
                                                                (str/replace "_" " "))
                                                  :evidence {:SIFT_score (:molecular-change.sift/float sift)}})))
 
+                                    :cds
+                                    (some->> (:variation.transcript/transcript h)
+                                             (:transcript/corresponding-cds)
+                                             (:transcript.corresponding-cds/cds)
+                                             (pack-obj))
+
                                     :cds_position
                                     (some->> (:molecular-change/cds-position h)
                                              (first)
