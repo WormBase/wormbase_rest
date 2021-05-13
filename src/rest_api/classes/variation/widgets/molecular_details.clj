@@ -97,10 +97,9 @@
           (count from))
          1))))
 
-(defn- get-silent-obj [predicted-cds-holder]
+(defn- get-silent-obj [predicted-cds-holder cds]
   (when-let [holder (first (:molecular-change/silent predicted-cds-holder))]
-     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-           description (:molecular-change.silent/text holder)
+     (let [description (:molecular-change.silent/text holder)
            [full added-aa location-str] (re-matches #"(.*)\ \((.*)\)" description)
            location (Integer/parseInt location-str)
            protein (:cds.corresponding-protein/protein
@@ -129,10 +128,9 @@
     s))
 
 
-(defn- get-readthrough-obj [predicted-cds-holder]
+(defn- get-readthrough-obj [predicted-cds-holder cds]
   (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
-     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-           description (when-let[t (:molecular-change.readthrough/text holder)]
+     (let [description (when-let[t (:molecular-change.readthrough/text holder)]
                         (str/replace t "*" "STOP"))
            [tmp-txt removed-aa added-aa] (re-matches #"(.*)\* to (.*)"(:molecular-change.readthrough/text holder))
            protein (:cds.corresponding-protein/protein
@@ -156,10 +154,9 @@
          :mutant_conceptual_translation (str (remove-from-end pseq removed-aa) added-aa)}
         (get-feature-affected-evidence holder)))))
 
-(defn- get-nonsense-obj [predicted-cds-holder]
+(defn- get-nonsense-obj [predicted-cds-holder cds]
   (when-let [holder (:molecular-change/nonsense predicted-cds-holder)]
-     (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-           description (:molecular-change.nonsense/text holder)
+     (let [description (:molecular-change.nonsense/text holder)
            mutant-stop (last (re-matches #".*\((\d+)\).*" description))
            position (re-matches #"\(.*\)" description)
            protein (:cds.corresponding-protein/protein
@@ -183,10 +180,9 @@
                                              (format "%s*"))}
         (get-feature-affected-evidence holder)))))
 
-(defn- get-missense-obj [predicted-cds-holder]
+(defn- get-missense-obj [predicted-cds-holder cds]
   (when-let [m (first (:molecular-change/missense predicted-cds-holder))]
-    (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-          description (:molecular-change.missense/text m)
+    (let [description (:molecular-change.missense/text m)
           position (:molecular-change.missense/int m)
           [full from to] (re-matches #"(.*)\sto\s(.*)" description)
           protein (:cds.corresponding-protein/protein
@@ -221,29 +217,26 @@
              (str insertion-str " transposon insertion" )))
    :description "the general class of this polymorphism"})
 
+
 (defn amino-acid-change [variation] ; e.g. WBVar00271007
-  {:data (some->> (:variation/predicted-cds variation)
-                  (map (fn [pcdsh]
-                        (cond
-                          (contains? pcdsh :molecular-change/missense) ;add case for nonsense if we get the truncated sequence in the database in the future. (e.g. WBVar00466445)
-                          {:amino_acid_change (:aa_change (get-missense-obj pcdsh))
-                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+ {:data (some->> (:variation/transcript variation)
+                 (map (fn [h]
+                       (when-let [cds  (some->> (:variation.transcript/transcript h)
+                                                (:transcript/corresponding-cds)
+                                                (:transcript.corresponding-cds/cds)
+                                                (pack-obj))]
+                        {(:id cds)
+                         {:amino_acid_change
+                          (some->> (:molecular-change/amino-acid-change h)
+                                   (first)
+                                   (:molecular-change.amino-acid-change/text))
 
-                          (contains? pcdsh :molecular-change/nonsense)
-                          {:amino_acid_change (:aa_change (get-nonsense-obj pcdsh))
-                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
+                          :transcript
+                          cds}})))
+                   (into {})
+                   (vals))
+ :description "amino acid changes for this variation, if appropriate"})
 
-                          (contains? pcdsh :molecular-change/readthrough)
-                          {:amino_acid_change (:aa_change (get-readthrough-obj pcdsh))
-                           :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
-
-                         ; (contains? pcdsh :molecular-change/silent) ; e.g. WBVar00829234
-                         ; {:amin_acid_change (:aa_change (get-silent-obj pcdsh))
-                         ;  :transcript (pack-obj (:variation.predicted-cds/cds pcdsh))}
-                         )))
-                  (remove nil?)
-                  (not-empty))
-   :description "amino acid changes for this variation, if appropriate"})
 
 (defn detection-method [variation] ; WBVar00601206
   {:data (first (:variation/detection-method variation))
@@ -610,14 +603,15 @@
                              :taxonomy (:taxonomy obj)}))))
 
              "Predicted_CDS" ;tested with WBVar01112111
-             (some->> (:variation/predicted-cds variation)
-                      (map
-                        (fn [predicted-cds-holder]
-                          (let [cds (:variation.predicted-cds/cds predicted-cds-holder)
-                                missense-obj (get-missense-obj predicted-cds-holder)
-                                nonsense-obj (get-nonsense-obj predicted-cds-holder)
-                                readthrough-obj (get-readthrough-obj predicted-cds-holder)
-                                cds-obj (or missense-obj
+             (some->> (:variation/transcript variation)
+                      (map (fn [predicted-cds-holder]
+                            (let [cds (some->> (:variation.transcript/transcript predicted-cds-holder)
+                                                (:transcript/corresponding-cds)
+                                                (:transcript.corresponding-cds/cds))
+                                  missense-obj (get-missense-obj predicted-cds-holder cds)
+                                  nonsense-obj (get-nonsense-obj predicted-cds-holder cds)
+                                  readthrough-obj (get-readthrough-obj predicted-cds-holder cds)
+                                  cds-obj (or missense-obj
                                             (or nonsense-obj
                                                 (select-keys readthrough-obj
                                                              [:from :to])))]
@@ -822,16 +816,30 @@
                   (apply merge))
    :description "experimental assays for detecting this polymorphism"})
 
-(defn affects-splice-site [variation] ; made from WBVar00750883. This was in Ace code but wasn't working and format slightly changed
-  {:data (some->> (:variation/predicted-cds variation)
-                  (map :molecular-change/splice-site)
+
+(defn affects-splice-site [variation] ; made from WBVar00750883
+ {:data (some->> (:variation/transcript variation)
+                 (map (fn [h]
+                       (let [t (:variation.transcript/transcript h)
+                             consequence (some-> (:molecular-change/vep-consequence h)
+                                                 (first)
+                                                 (str/replace "_" " "))
+                             hgvsc (some->> (:molecular-change/hgvsc h)
+                                            (first)
+                                            (:molecular-change.hgvsc/text))]
+                                            (not-empty
+                                             (pace-utils/vmap
+                                              :donor
+                                              (when (= consequence "splice donor variant") hgvsc)
+
+                                              :acceptor
+                                              (when (= consequence "splice acceptor variant")
+                                               hgvsc))))))
                   (remove nil?)
-                  (map (fn [mc]
-                         {:value (name
-                                   (:molecular-change.splice-site/value mc))
-                          :text (:molecular-change.splice-site/text mc)}))
+                  (first)
                   (not-empty))
    :description "Affects splice site"})
+
 
 (defn polymorphism-status [variation]; WBVar00116162 is predicted
   {:data (if (contains? variation :variation/confirmed-snp)
@@ -923,11 +931,19 @@
    :description "strains that this variant has been observed in"})
 
 (defn causes-frameshift [variation]; e.g. WBVar01943248 this does not work on Ace version
-  {:data (some->> (:variation/predicted-cds variation)
+  {:data (some->> (:variation/transcript variation)
+                  (map (fn [h]
+                        (let [consequence (some-> (:molecular-change/vep-consequence h)
+                                                  (first)
+                                                  (str/replace "_" " "))]
+                        (not-empty
+                         (when (= consequence "frameshift variant")
+                         (some->> (:molecular-change/amino-acid-change h)
+                                  (first)
+                                  (:molecular-change.amino-acid-change/text)))))))
+                  (remove nil?)
                   (first)
-                  (:molecular-change/frameshift)
-                  (first)
-                  (:molecular-change.frameshift/text))
+                  (not-empty))
    :description "A variation that alters the reading frame"})
 
 (defn sequencing-status [variation]
