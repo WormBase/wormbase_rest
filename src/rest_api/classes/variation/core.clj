@@ -62,8 +62,10 @@
                          & {:keys [window]
                             :or {window 20}}]
   (let [slice (comp seq (partial take window))
-        cds-changes (->> (:variation/predicted-cds var)
-                         (filter #(relevant-location? (:variation.predicted-cds/cds %)))
+        cds-changes (->> (:variation/transcript var)
+                         (:variation.transcript/transcript)
+                         (:transcript/corresponding-cds)
+                         (filter #(relevant-location? (:transcript.corresponding-cds/cds %)))
                          (slice))
         trans-changes (->> (:variation/transcript var)
                            (filter #(relevant-location? (:variation.transcript/transcript %)))
@@ -153,7 +155,7 @@
      (->> (for [cc cds-changes
                 :when (or (:molecular-change/missense cc)
                           (:molecular-change/nonsense cc))]
-            (pack-obj "cds" (:variation.predicted-cds/cds cc)))
+            (pack-obj "cds" (:variation.transcript/cds cc)))
           (seq)
           (not-empty))
      :phen_count
