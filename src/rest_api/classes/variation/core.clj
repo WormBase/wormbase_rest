@@ -41,7 +41,7 @@
        (mapcat keys)
        (set)))
 
-;; TODO: split up and refactor this function.
+
 (defn process-variation [var relevant-location?
                          & {:keys [window]
                             :or {window 20}}]
@@ -55,7 +55,7 @@
         gene-changes (->> (:variation/gene var)
                           (filter #(relevant-location? (:variation.gene/gene %)))
                           (slice))]
-   (pace-utils/vmap
+    (pace-utils/vmap
      :variation
      (pack-obj "variation" var)
 
@@ -116,6 +116,7 @@
      :locations
      (some->> trans-changes
               (map (fn [tc]
+                   (when-let [effects
                     (pace-utils/those
                      (when (:molecular-change/intron tc)
                        "Intron")
@@ -128,11 +129,8 @@
                      (when (:molecular-change/five-prime-utr tc)
                        "5' UTR")
                      (when (:molecular-change/three-prime-utr tc)
-                       "3' UTR"))))
-              (flatten)
-              (distinct)
-              (remove nil?)
-              (str/join ", ")
+                       "3' UTR"))]
+                    (str/join "," effects))))
               (not-empty))
 
      :effects
@@ -149,22 +147,15 @@
                               (map :molecular-change.amino-acid-change/text)
                               (map (fn [s]
                                 (str/join "<br />" 
-                                 (map (partial apply str) (partition-all 20 s))))))))
-              (flatten)
-              (remove nil?)
-              (distinct)
-              (str/join ",<br /><br />")
-              (not-empty))
+                                 (map (partial apply str) (partition-all 20 s)))))))))
 
      :aa_position
      (some->> trans-changes
               (map (fn [h]
                      (some->> (:molecular-change/protein-position h)
                               (first)
-                              (:molecular-change.protein-position/text))))
-              (remove nil?)
-              (distinct)
-              (str/join "<br />"))
+                              (:molecular-change.protein-position/text)
+                              (str/join "<br />")))))
 
      :sift
      (some->> trans-changes
@@ -173,11 +164,13 @@
                              (first)
                              ((fn [sift]
                                (some-> (:molecular-change.sift/text sift)
-                                       (str/replace "_" " ")))))))
-              (flatten)
-              (remove nil?)
-              (distinct)
-              (str/join "<br />"))
+                                       (str/replace "_" " "))))))))
+
+     :transcript
+     (some->> trans-changes
+              (map :variation.transcript/transcript)
+              (map (fn [t]
+               (pack-obj t))))
 
      :isoform
      (some->> trans-changes
@@ -187,8 +180,6 @@
                               (:transcript/corresponding-cds)
                               (:transcript.corresponding-cds/cds)
                               (pack-obj)))))
-              (remove nil?)
-              (first)
               (not-empty))
 
      :phen_count
