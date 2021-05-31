@@ -122,7 +122,8 @@
         (get-feature-affected-evidence holder)))))
 
 (defn- remove-from-end [s end]
-  (if (.endsWith s end)
+  (if (and (and (some? s) (some? end))
+           (.endsWith s end))
     (.substring s 0 (- (count s)
                        (count end)))
     s))
