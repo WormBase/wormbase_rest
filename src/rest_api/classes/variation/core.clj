@@ -15,12 +15,6 @@
    :molecular-change/regulatory-feature "Regulatory feature"
    :molecular-change/readthrough "Readthrough"})
 
-(def ^{:private true} molecular-change-kinds
-  {:molecular-change/intron "Intron"
-   :molecular-change/coding-exon "Coding exon"
-   :molecular-change/utr-5 "5' UTR"
-   :molecular-change/utr-3 "3' UTR"})
-
 (defn- process-aa-change [molecular-change]
   (pace-utils/cond-let
    [n]
@@ -40,16 +34,6 @@
    (nth (re-find #"\((\d+)\)"
                  (:molecular-change.nonsense/text n)) 1)))
 
-(defn- process-aa-composite [molecular-change]
-  (let [change (process-aa-change molecular-change)
-        position (process-aa-position molecular-change)]
-    (if (and change position)
-      (let [change-parts (str/split change #"\s+")]
-        (->>
-         [(first change-parts) position (nth change-parts 2)]
-         (map str/capitalize)
-         (str/join ""))))))
-
 (defn- change-set
   "Return a the set of keys of all maps in `change-map-seqs`."
   [& change-map-seqs]
@@ -57,7 +41,11 @@
        (mapcat keys)
        (set)))
 
-;; TODO: split up and refactor this function.
+
+(defn remove-when-all-nil [x]
+ (when (some #(not (nil? %)) x) x))
+
+
 (defn process-variation [var relevant-location?
                          & {:keys [window]
                             :or {window 20}}]
@@ -65,10 +53,8 @@
         cds-changes (->> (:variation/transcript var)
                          (:variation.transcript/transcript)
                          (:transcript/corresponding-cds)
-                         (filter #(relevant-location? (:transcript.corresponding-cds/cds %)))
                          (slice))
         trans-changes (->> (:variation/transcript var)
-                           (filter #(relevant-location? (:variation.transcript/transcript %)))
                            (slice))
         gene-changes (->> (:variation/gene var)
                           (filter #(relevant-location? (:variation.gene/gene %)))
@@ -105,10 +91,11 @@
                    "")
                (str/replace (:method/id method) #"_" " ")))
 
-     :gene (when-let [ghs (:variation/gene var)]
-             (for [gh ghs
-                   :let [gene (:variation.gene/gene gh)]]
-               (pack-obj gene)))
+     :gene
+     (when-let [ghs (:variation/gene var)]
+      (for [gh ghs
+            :let [gene (:variation.gene/gene gh)]]
+       (pack-obj gene)))
 
      :molecular_change
      (cond
@@ -129,42 +116,92 @@
 
        :default
        "Not curated")
+
      :locations
-     (let [changes (change-set cds-changes gene-changes trans-changes)]
-       (->> (map molecular-change-kinds changes)
-            (filter identity)))
+     (some->> trans-changes
+              (map (fn [tc]
+                   (when-let [effects
+                    (pace-utils/those
+                     (when (:molecular-change/intron tc)
+                       "Intron")
+                     (when (:molecular-change/coding-exon tc)
+                       "Coding exon")
+                     (when (:molecular-change/genomic-neighbourhood tc)
+                       "Genomic Neighbourhood")
+                     (when (:molecular-change/noncoding-exon tc)
+                       "Noncoding Exon")
+                     (when (:molecular-change/five-prime-utr tc)
+                       "5' UTR")
+                     (when (:molecular-change/three-prime-utr tc)
+                       "3' UTR"))]
+                    (str/join ", " effects))))
+              (remove-when-all-nil)
+              (not-empty))
+
      :effects
      (let [changes (change-set cds-changes gene-changes trans-changes)]
        (->> changes
             (map molecular-change-effects)
             (filter identity)
+            (remove-when-all-nil)
             (not-empty)))
-     :aa_change
-     (->> (map process-aa-change cds-changes)
-          (filter identity)
-          (not-empty))
-     :aa_position
-     (->> (map process-aa-position cds-changes)
-          (filter identity)
-          (not-empty))
+
      :composite_change
-     (->> (map process-aa-composite cds-changes)
-          (filter identity)
-          (not-empty))
+     (some->> trans-changes
+              (map (fn [h]
+                     (some->> (:molecular-change/amino-acid-change h)
+                              (map :molecular-change.amino-acid-change/text)
+                              (map (fn [s]
+                                (str/join "<br />"
+                                 (map (partial apply str) (partition-all 20 s))))))))
+              (remove-when-all-nil))
+
+     :aa_position
+     (some->> trans-changes
+              (map (fn [h]
+                     (some->> (:molecular-change/protein-position h)
+                              (first)
+                              (:molecular-change.protein-position/text)
+                              (str/join "<br />"))))
+              (remove-when-all-nil))
+
+     :sift
+     (some->> trans-changes
+              (map (fn [h]
+                    (some->> (:molecular-change/sift h)
+                             (first)
+                             ((fn [sift]
+                               (some-> (:molecular-change.sift/text sift)
+                                       (str/replace "_" " ")))))))
+              (remove-when-all-nil))
+
+     :transcript
+     (some->> trans-changes
+              (map :variation.transcript/transcript)
+              (map (fn [t]
+               (pack-obj t)))
+              (remove-when-all-nil))
+
      :isoform
-     (->> (for [cc cds-changes
-                :when (or (:molecular-change/missense cc)
-                          (:molecular-change/nonsense cc))]
-            (pack-obj "cds" (:variation.transcript/cds cc)))
-          (seq)
-          (not-empty))
+     (some->> trans-changes
+              (map (fn [h]
+                    (when (:molecular-change/cds-position h)
+                     (some->> (:variation.transcript/transcript h)
+                              (:transcript/corresponding-cds)
+                              (:transcript.corresponding-cds/cds)
+                              (pack-obj)))))
+              (remove-when-all-nil)
+              (not-empty))
+
      :phen_count
      (count (:variation/phenotype var))
+
      :strain
      (->> (:variation/strain var)
           (map :variation.strain/strain)
           (map #(pack-obj "strain" %))
           (not-empty))
+
      :sources
      (let [var-refs (:variation/reference var)
            sources (if (empty? var-refs)
