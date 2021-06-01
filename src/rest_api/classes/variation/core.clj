@@ -42,6 +42,10 @@
        (set)))
 
 
+(defn remove-when-all-nil [x]
+ (when (some #(not (nil? %)) x) x))
+
+
 (defn process-variation [var relevant-location?
                          & {:keys [window]
                             :or {window 20}}]
@@ -130,7 +134,8 @@
                        "5' UTR")
                      (when (:molecular-change/three-prime-utr tc)
                        "3' UTR"))]
-                    (str/join "," effects))))
+                    (str/join ", " effects))))
+              (remove-when-all-nil)
               (not-empty))
 
      :effects
@@ -138,6 +143,7 @@
        (->> changes
             (map molecular-change-effects)
             (filter identity)
+            (remove-when-all-nil)
             (not-empty)))
 
      :composite_change
@@ -146,8 +152,9 @@
                      (some->> (:molecular-change/amino-acid-change h)
                               (map :molecular-change.amino-acid-change/text)
                               (map (fn [s]
-                                (str/join "<br />" 
-                                 (map (partial apply str) (partition-all 20 s)))))))))
+                                (str/join "<br />"
+                                 (map (partial apply str) (partition-all 20 s))))))))
+              (remove-when-all-nil))
 
      :aa_position
      (some->> trans-changes
@@ -155,7 +162,8 @@
                      (some->> (:molecular-change/protein-position h)
                               (first)
                               (:molecular-change.protein-position/text)
-                              (str/join "<br />")))))
+                              (str/join "<br />"))))
+              (remove-when-all-nil))
 
      :sift
      (some->> trans-changes
@@ -164,13 +172,15 @@
                              (first)
                              ((fn [sift]
                                (some-> (:molecular-change.sift/text sift)
-                                       (str/replace "_" " "))))))))
+                                       (str/replace "_" " ")))))))
+              (remove-when-all-nil))
 
      :transcript
      (some->> trans-changes
               (map :variation.transcript/transcript)
               (map (fn [t]
-               (pack-obj t))))
+               (pack-obj t)))
+              (remove-when-all-nil))
 
      :isoform
      (some->> trans-changes
@@ -180,6 +190,7 @@
                               (:transcript/corresponding-cds)
                               (:transcript.corresponding-cds/cds)
                               (pack-obj)))))
+              (remove-when-all-nil)
               (not-empty))
 
      :phen_count
