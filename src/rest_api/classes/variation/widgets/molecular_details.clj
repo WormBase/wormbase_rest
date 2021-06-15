@@ -562,7 +562,8 @@
 
 ;test WBVar01112111 WBVar00601206
 (defn features-affected [variation]
-  {:data (let [varrefseqobj (sequence-fns/genomic-obj variation)]
+  {:data (let [varrefseqobj (sequence-fns/genomic-obj variation)
+               d (println varrefseqobj)]
            (pace-utils/vmap
              "Clone" ;checked with WBVar00274017
              (when-let [s (:variation/mapping-target variation)]
@@ -606,13 +607,13 @@
              "Predicted_CDS" ;tested with WBVar01112111
              (some->> (:variation/transcript variation)
                       (map (fn [predicted-cds-holder]
-                            (let [cds (some->> (:variation.transcript/transcript predicted-cds-holder)
+                            (when-let [cds (some->> (:variation.transcript/transcript predicted-cds-holder)
                                                 (:transcript/corresponding-cds)
-                                                (:transcript.corresponding-cds/cds))
-                                  missense-obj (get-missense-obj predicted-cds-holder cds)
-                                  nonsense-obj (get-nonsense-obj predicted-cds-holder cds)
-                                  readthrough-obj (get-readthrough-obj predicted-cds-holder cds)
-                                  cds-obj (or missense-obj
+                                                (:transcript.corresponding-cds/cds))]
+                             (let [missense-obj (get-missense-obj predicted-cds-holder cds)
+                                   nonsense-obj (get-nonsense-obj predicted-cds-holder cds)
+                                   readthrough-obj (get-readthrough-obj predicted-cds-holder cds)
+                                   cds-obj (or missense-obj
                                             (or nonsense-obj
                                                 (select-keys readthrough-obj
                                                              [:from :to])))]
@@ -662,7 +663,7 @@
 
                                     "Intron" ;tested with WBVar00271172
                                     (when-let [i (:molecular-change/intron predicted-cds-holder)]
-                                      (get-feature-affected-evidence i))))))))))
+                                      (get-feature-affected-evidence i)))))))))))
 
              "Transcript"
              (some->> (:variation/transcript variation)
