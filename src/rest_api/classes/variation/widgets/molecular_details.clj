@@ -562,8 +562,7 @@
 
 ;test WBVar01112111 WBVar00601206
 (defn features-affected [variation]
-  {:data (let [varrefseqobj (sequence-fns/genomic-obj variation)
-               d (println varrefseqobj)]
+  {:data (let [varrefseqobj (sequence-fns/genomic-obj variation)]
            (pace-utils/vmap
              "Clone" ;checked with WBVar00274017
              (when-let [s (:variation/mapping-target variation)]
@@ -663,7 +662,8 @@
 
                                     "Intron" ;tested with WBVar00271172
                                     (when-let [i (:molecular-change/intron predicted-cds-holder)]
-                                      (get-feature-affected-evidence i)))))))))))
+                                      (get-feature-affected-evidence i))))))))))
+                        (remove nil?))
 
              "Transcript"
              (some->> (:variation/transcript variation)
