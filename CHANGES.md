@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.4.0] - 2012-06-15
+- fixing molecular details widget predicted CDS bug
+
 ## [1.3.9] - 2012-06-01
 - Adding VEP results to genetics widget
 
