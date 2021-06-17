@@ -26,9 +26,14 @@
                   (sort-by :label))
    :description "Historical record of the dead genes originally associated with this transgene"})
 
+(defn dna-text [c]
+  {:data (:construct/dna-text c)
+   :descriptoiin "DNA sequence of the construct"})
+
 (def widget
   {:laboratory generic/laboratory
    :clone clone
    :construction_summary construction-summary
    :historical_gene historical-gene
+   :dna_text dna-text
    :name generic/name-field})
