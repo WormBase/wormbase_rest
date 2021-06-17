@@ -27,7 +27,7 @@
    :description "Historical record of the dead genes originally associated with this transgene"})
 
 (defn dna-text [c]
-  {:data (:construct/dna-text c)
+  {:data (first (:construct/dna-text c))
    :descriptoiin "DNA sequence of the construct"})
 
 (def widget
