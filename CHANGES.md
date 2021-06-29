@@ -2,13 +2,16 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.4.0] - 2012-06-15
+## [1.4.1] - 2021-05-28
+- initial release for WS281
+
+## [1.4.0] - 2021-06-15
 - fixing molecular details widget predicted CDS bug
 
-## [1.3.9] - 2012-06-01
+## [1.3.9] - 2021-06-01
 - Adding VEP results to genetics widget
 
-## [1.3.8] - 2012-05-30
+## [1.3.8] - 2021-05-30
 - Fix moldecular details bug
 
 ## [1.3.7] - 2021-05-21
