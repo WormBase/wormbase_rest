@@ -11,7 +11,6 @@
 
 (defn construction-summary [c]
   {:data (first (:construct/construction-summary c))
-   :d (:db/id c)
    :description "Construction details for the transgene"})
 
 (defn historical-gene [c]

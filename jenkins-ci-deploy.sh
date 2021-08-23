@@ -18,5 +18,5 @@ docker rm wormbase-rest
 make build-latest
 make clean
 
-export WB_DB_URI="datomic:ddb://us-east-1/WS281/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS282/wormbase"
 make run-latest
