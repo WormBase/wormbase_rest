@@ -74,6 +74,10 @@
   (or (:variation/public-name obj)
       (:variation/id obj)))
 
+(defmethod obj-label "antibody" [_ obj]
+  (or (->> obj :antibody/public-name first)
+      (:antibody/id obj)))
+
 ;; Helpers for paper labels.
 (defn- author-name [author-holder]
   (-> (:paper.author/author author-holder)
