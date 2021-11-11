@@ -245,7 +245,8 @@
            "Anatomy_function"
            (some->> (:anatomy-function/_reference p)
                     (map pack-obj)
-                    (sort-by :label))
+                    (sort-by :label)
+                    (map :label))
 
            "Mass_spec_experiment"
            (some->> (:mass-spec-experiment/_reference p)
