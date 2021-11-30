@@ -152,7 +152,7 @@
          :mutant_stop position
          :wildtype_start position
          :wildtype_stop (str (count pseq))
-         :description (str from " to stop (" position ")")
+         :description (str from " to amber stop (" position ")")
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
