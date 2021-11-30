@@ -133,11 +133,11 @@
 (defn- get-nonsense-obj [predicted-cds-holder cds]
  (when (contains? (:molecular-change/vep-consequence predicted-cds-holder)
                    "stop_gained")
-     (let [description (when-let [t (some->> (:molecular-change/amino-acid-change predicted-cds-holder)
+     (let [aa_change (when-let [t (some->> (:molecular-change/amino-acid-change predicted-cds-holder)
                                 (map :molecular-change.amino-acid-change/text)
                                 (first))]
                         (str/replace t "*" "STOP"))
-           mutant-stop (last (re-matches #"(.*)/STOP" description))
+           from (last (re-matches #"(.*)/STOP" aa_change))
            position (some->> (:molecular-change/protein-position predicted-cds-holder)
                             (map :molecular-change.protein-position/text)
                             (first))
@@ -147,16 +147,16 @@
                      (:protein/peptide protein))
            pseq (:peptide/sequence peptide)]
       (conj
-        {:aa_change (str mutant-stop " to STOP")
+        {:aa_change (str from " to STOP")
          :mutant_start position
          :mutant_stop position
          :wildtype_start position
          :wildtype_stop (str (count pseq))
-         :description description
+         :description (str from " to stop (" position ")")
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_translation (mutant-conceptual-translation pseq position mutant-stop "")}
+         :mutant_conceptual_translation (mutant-conceptual-translation pseq position from "")}
         (get-feature-affected-evidence predicted-cds-holder)))))
 
 (defn- get-missense-obj [predicted-cds-holder cds]
