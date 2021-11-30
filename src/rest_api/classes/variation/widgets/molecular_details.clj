@@ -9,9 +9,6 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.object :as obj :refer  [pack-obj]]))
 
-(defn- parse-int [s]
-  (Integer/parseInt (re-find #"\A-?\d+" s)))
-
 (defn- str-insert
   "Insert c in string s at index i."
   [s c i]
@@ -88,38 +85,14 @@
     (subs
       pseq
       0
-      (- position 1))
+      (- (Integer/parseInt position) 1))
     to
     (subs
       pseq
       (- (+
-          position
+          (Integer/parseInt position)
           (count from))
          1))))
-
-(defn- get-silent-obj [predicted-cds-holder cds]
-  (when-let [holder (first (:molecular-change/silent predicted-cds-holder))]
-     (let [description (:molecular-change.silent/text holder)
-           [full added-aa location-str] (re-matches #"(.*)\ \((.*)\)" description)
-           location (Integer/parseInt location-str)
-           protein (:cds.corresponding-protein/protein
-                     (:cds/corresponding-protein cds))
-           peptide (:protein.peptide/peptide
-                     (:protein/peptide protein))
-           pseq (:peptide/sequence peptide)]
-      (conj
-        {:aa_change description
-         :mutant_start (str (count pseq))
-         :mutant_stop (str (+ (count pseq)
-                       (count added-aa)))
-         :wildtype_start (str (count pseq))
-         :wildtype_stop (str (count pseq))
-         :description description
-         :protein (pack-obj protein)
-         :peptide (pack-obj peptide)
-         :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_translation pseq}
-        (get-feature-affected-evidence holder)))))
 
 (defn- remove-from-end [s end]
   (if (and (and (some? s) (some? end))
@@ -128,12 +101,14 @@
                        (count end)))
     s))
 
-
 (defn- get-readthrough-obj [predicted-cds-holder cds]
-  (when-let [holder (first (:molecular-change/readthrough predicted-cds-holder))]
-     (let [description (when-let[t (:molecular-change.readthrough/text holder)]
-                        (str/replace t "*" "STOP"))
-           [tmp-txt removed-aa added-aa] (re-matches #"(.*)\* to (.*)"(:molecular-change.readthrough/text holder))
+  (when (contains? (:molecular-change/vep-consequence predicted-cds-holder)
+                   "stop_lost")
+     (let [description (when-let [t (some->> (:molecular-change/amino-acid-change predicted-cds-holder)
+                                             (map :molecular-change.amino-acid-change/text)
+                                             (first))]
+                       (str/replace t "*" "STOP"))
+           [tmp-txt removed-aa added-aa] (re-matches #"(.*)/(.*)" description)
            protein (:cds.corresponding-protein/protein
                      (:cds/corresponding-protein cds))
            peptide (:protein.peptide/peptide
@@ -153,39 +128,47 @@
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
          :mutant_conceptual_translation (str (remove-from-end pseq removed-aa) added-aa)}
-        (get-feature-affected-evidence holder)))))
+        (get-feature-affected-evidence predicted-cds-holder)))))
 
 (defn- get-nonsense-obj [predicted-cds-holder cds]
-  (when-let [holder (:molecular-change/nonsense predicted-cds-holder)]
-     (let [description (:molecular-change.nonsense/text holder)
-           mutant-stop (last (re-matches #".*\((\d+)\).*" description))
-           position (re-matches #"\(.*\)" description)
+ (when (contains? (:molecular-change/vep-consequence predicted-cds-holder)
+                   "stop_gained")
+     (let [description (when-let [t (some->> (:molecular-change/amino-acid-change predicted-cds-holder)
+                                (map :molecular-change.amino-acid-change/text)
+                                (first))]
+                        (str/replace t "*" "STOP"))
+           mutant-stop (last (re-matches #"(.*)/STOP" description))
+           position (some->> (:molecular-change/protein-position predicted-cds-holder)
+                            (map :molecular-change.protein-position/text)
+                            (first))
            protein (:cds.corresponding-protein/protein
                      (:cds/corresponding-protein cds))
            peptide (:protein.peptide/peptide
                      (:protein/peptide protein))
            pseq (:peptide/sequence peptide)]
       (conj
-        {:aa_change (str (first description) " to STOP")
-         :mutant_start mutant-stop
-         :mutant_stop mutant-stop
-         :wildtype_start mutant-stop
+        {:aa_change (str mutant-stop " to STOP")
+         :mutant_start position
+         :mutant_stop position
+         :wildtype_start position
          :wildtype_stop (str (count pseq))
          :description description
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_translation (->> (parse-int mutant-stop)
-                                             (dec)
-                                             (subs pseq 0)
-                                             (format "%s*"))}
-        (get-feature-affected-evidence holder)))))
+         :mutant_conceptual_translation (mutant-conceptual-translation pseq position mutant-stop "")}
+        (get-feature-affected-evidence predicted-cds-holder)))))
 
 (defn- get-missense-obj [predicted-cds-holder cds]
-  (when-let [m (first (:molecular-change/missense predicted-cds-holder))]
-    (let [description (:molecular-change.missense/text m)
-          position (:molecular-change.missense/int m)
-          [full from to] (re-matches #"(.*)\sto\s(.*)" description)
+  (when (contains? (:molecular-change/vep-consequence predicted-cds-holder)
+          "missense_variant")
+    (let [description (some->> (:molecular-change/amino-acid-change predicted-cds-holder)
+                  (map :molecular-change.amino-acid-change/text)
+                  (first))
+          position (some->> (:molecular-change/protein-position predicted-cds-holder)
+                            (map :molecular-change.protein-position/text)
+                            (first))
+          [_ from to] (re-matches #"(.*)/(.*)" description)
           protein (:cds.corresponding-protein/protein
                     (:cds/corresponding-protein cds))
           peptide (:protein.peptide/peptide
@@ -205,7 +188,7 @@
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ; eg. WBVar01684110
          :mutant_conceptual_translation (mutant-conceptual-translation pseq position from to)}
-        (get-feature-affected-evidence m)))))
+        (get-feature-affected-evidence predicted-cds-holder)))))
 
 (defn polymorphism-type [variation]
   {:data (if (contains? variation :variation/snp)
@@ -629,11 +612,15 @@
                                 (not-empty
                                   (pace-utils/vmap
                                     "Silent" ;tested with WBVar01112111
-                                    (some->> (:molecular-change/silent predicted-cds-holder)
-                                             (map (fn [mc]
-                                                    (conj
-                                                      {:description (:molecular-change.silent/text mc)}
-                                                      (get-feature-affected-evidence mc)))))
+                                    (when (= (first (:molecular-change/vep-consequence predicted-cds-holder) )
+                                             "synonymous_variant")
+                                     (when-let [aac (some->> (:molecular-change/amino-acid-change predicted-cds-holder)
+                                                             (map :molecular-change.amino-acid-change/text)
+                                                             (first))]
+                                      (let [position (some->> (:molecular-change/protein-position predicted-cds-holder)
+                                                              (map :molecular-change.protein-position/text)
+                                                              (first))]
+                                     {:description (str aac " (" position ")")})))
 
                                     "Missense" ; eg. WBVar01684110
                                     (when (some? missense-obj)
