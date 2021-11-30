@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.4.3] - 2021-11-30
+- initial release for WS283
+- Fixes for changes to the schema for VEP
+
 ## [1.4.2] - 2021-08-23
 - initial release for WS282
 
