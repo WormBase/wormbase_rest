@@ -152,11 +152,14 @@
          :mutant_stop position
          :wildtype_start position
          :wildtype_stop (str (count pseq))
-         :description (str from " to amber stop (" position ")")
+         :description (str from " to stop (" position ")")
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_translation (mutant-conceptual-translation pseq position from "")}
+         :mutant_conceptual_translation (->> (Integer/parseInt position)
+                                             (dec)
+                                             (subs pseq 0)
+                                             (format "%s*"))}
         (get-feature-affected-evidence predicted-cds-holder)))))
 
 (defn- get-missense-obj [predicted-cds-holder cds]
