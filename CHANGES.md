@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.4.4] - 2021-12-13
+- fix for Log4j security volnurability to 2.5 by adding LOG4J_FORMAT_MSG_NO_LOOKUPS=True
+
 ## [1.4.3] - 2021-11-30
 - initial release for WS283
 - Fixes for changes to the schema for VEP
