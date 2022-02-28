@@ -28,7 +28,7 @@
             "bioproject_description" : "California Institute of Technology C. angaria genome project",
             "is_canonical" : true,
             "laboratory" : [
-               "Caltech, Pasadena CA"
+               "California Institute of Technology; Pasadena CA, United States of America"
             ],
             "short_label" : "WBStrain00042004",
             "strain" : "WBStrain00042004",
@@ -36,6 +36,40 @@
          }
       ],
       "full_name" : "Caenorhabditis angaria"
+   },
+   "c_becei" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536315.3",
+            "assembly_name" : "CBECE_v1",
+            "bioproject" : "PRJEB28243",
+            "bioproject_description" : "University of Edinburgh C. becei genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00048674",
+            "strain" : "WBStrain00048674",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis becei"
+   },
+   "c_bovis" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_902636285.1",
+            "assembly_name" : "CBOVIS_v1",
+            "bioproject" : "PRJEB34497",
+            "bioproject_description" : "University of Edinburgh C. bovis genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00048675",
+            "strain" : "WBStrain00048675",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis bovis"
    },
    "c_brenneri" : {
       "assemblies" : [
@@ -101,7 +135,7 @@
             "bioproject_description" : "University of Washington C. elegans CB4856 genome project",
             "is_canonical" : false,
             "laboratory" : [
-               "University of Washington, Seattle WA"
+               "University of Washington School of Medicine; Seattle WA, United States of America"
             ],
             "short_label" : "WBStrain00004602",
             "strain" : "WBStrain00004602",
@@ -131,7 +165,7 @@
             "assembly_accession" : "GCA_003052745.1",
             "assembly_name" : "Sp34_v7",
             "bioproject" : "PRJDB5687",
-            "bioproject_description" : "University of Miyazaki",
+            "bioproject_description" : "University of Miyazaki C. inopinata genome project",
             "is_canonical" : true,
             "laboratory" : [
                "Forestry and Forest Products Research Institute, Ibaraki, Japan"
@@ -169,7 +203,7 @@
             "assembly_accession" : "GCA_002259235.1",
             "assembly_name" : "CaeLat1.0",
             "bioproject" : "PRJNA248912",
-            "bioproject_description" : "University of Oregon",
+            "bioproject_description" : "University of Oregon C. latens genome project",
             "is_canonical" : true,
             "laboratory" : [
                "University of Texas, Arlington TX"
@@ -200,6 +234,57 @@
       ],
       "full_name" : "Caenorhabditis nigoni"
    },
+   "c_panamensis" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900883565.2",
+            "assembly_name" : "CPANA_v1",
+            "bioproject" : "PRJEB28259",
+            "bioproject_description" : "University of Edinburgh C. panamensis genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00048673",
+            "strain" : "WBStrain00048673",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis panamensis"
+   },
+   "c_parvicauda" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536235.3",
+            "assembly_name" : "CPARV_v1",
+            "bioproject" : "PRJEB12595",
+            "bioproject_description" : "University of Edinburgh C. parvicauda genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00048676",
+            "strain" : "WBStrain00048676",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis parvicauda"
+   },
+   "c_quiockensis" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536415.3",
+            "assembly_name" : "CQUIO_v1",
+            "bioproject" : "PRJEB11354",
+            "bioproject_description" : "University of Edinburgh C. quiockensis genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00041427",
+            "strain" : "WBStrain00041427",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis quiockensis"
+   },
    "c_remanei" : {
       "assemblies" : [
          {
@@ -217,45 +302,15 @@
             "ucsc_name" : "caeRem3"
          },
          {
-            "appeared_in" : "WS250",
-            "assembly_accession" : "GCA_001643735.1",
-            "assembly_name" : "ASM164373v1",
-            "bioproject" : "PRJNA248909",
-            "bioproject_description" : "University of Oregon University C. remanei PX356 genome project",
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_010183535.1",
+            "assembly_name" : "CRPX506",
+            "bioproject" : "PRJNA577507",
+            "bioproject_description" : "University of Oregon University C. remanei PX506 genome project",
             "is_canonical" : false,
-            "laboratory" : [
-               "University of Texas, Arlington TX"
-            ],
-            "short_label" : "WBStrain00042020",
-            "strain" : "WBStrain00042020",
-            "ucsc_name" : null
-         },
-         {
-            "appeared_in" : "WS268",
-            "assembly_accession" : "GCA_001643735.2",
-            "assembly_name" : "ASM164373v2",
-            "bioproject" : "PRJNA248909",
-            "bioproject_description" : "University of Oregon University C. remanei PX356 genome project",
-            "is_canonical" : false,
-            "laboratory" : [
-               "University of Texas, Arlington TX"
-            ],
-            "short_label" : "WBStrain00042020",
-            "strain" : "WBStrain00042020",
-            "ucsc_name" : null
-         },
-         {
-            "appeared_in" : "WS268",
-            "assembly_accession" : "GCA_002259225.1",
-            "assembly_name" : "CaeRem1.0",
-            "bioproject" : "PRJNA248911",
-            "bioproject_description" : "University of Oregon University C. remanei PX439 genome project",
-            "is_canonical" : false,
-            "laboratory" : [
-               "University of Texas, Arlington TX"
-            ],
-            "short_label" : "WBStrain00042021",
-            "strain" : "WBStrain00042021",
+            "laboratory" : [],
+            "short_label" : "WBStrain00047440",
+            "strain" : "WBStrain00047440",
             "ucsc_name" : null
          }
       ],
@@ -280,6 +335,40 @@
       ],
       "full_name" : "Caenorhabditis sinica"
    },
+   "c_sulstoni" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536325.3",
+            "assembly_name" : "CSULS_v1",
+            "bioproject" : "PRJEB12601",
+            "bioproject_description" : "University of Edinburgh C.sulstoni genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00041426",
+            "strain" : "WBStrain00041426",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis sulstoni"
+   },
+   "c_tribulationis" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536305.3",
+            "assembly_name" : "CTRIB_v1",
+            "bioproject" : "PRJEB12608",
+            "bioproject_description" : "University of Edinburgh C. tribulationis genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00041428",
+            "strain" : "WBStrain00041428",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis tribulationis"
+   },
    "c_tropicalis" : {
       "assemblies" : [
          {
@@ -299,6 +388,57 @@
       ],
       "full_name" : "Caenorhabditis tropicalis"
    },
+   "c_uteleia" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536295.3",
+            "assembly_name" : "CUTEL_v1",
+            "bioproject" : "PRJEB12600",
+            "bioproject_description" : "University of Edinburgh C. uteleia genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00041423",
+            "strain" : "WBStrain00041423",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis uteleia"
+   },
+   "c_waitukubuli" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536345.3",
+            "assembly_name" : "CWAIT_v1",
+            "bioproject" : "PRJEB12602",
+            "bioproject_description" : "University of Edinburgh C. waitukubuli genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00041960",
+            "strain" : "WBStrain00041960",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis waitukubuli"
+   },
+   "c_zanzibari" : {
+      "assemblies" : [
+         {
+            "appeared_in" : "WS281",
+            "assembly_accession" : "GCA_900536285.3",
+            "assembly_name" : "CZANZ_v1",
+            "bioproject" : "PRJEB12596",
+            "bioproject_description" : "University of Edinburgh C. zanzibari genome project",
+            "is_canonical" : true,
+            "laboratory" : [],
+            "short_label" : "WBStrain00041421",
+            "strain" : "WBStrain00041421",
+            "ucsc_name" : null
+         }
+      ],
+      "full_name" : "Caenorhabditis zanzibari"
+   },
    "o_tipulae" : {
       "assemblies" : [
          {
@@ -306,7 +446,7 @@
             "assembly_accession" : "GCA_900184235.1",
             "assembly_name" : "Oscheius_tipulae_assembly_v2",
             "bioproject" : "PRJEB15512",
-            "bioproject_description" : "The genome of Oscheius tipulae",
+            "bioproject_description" : "University of Edinburgh O. tipulae genome project",
             "is_canonical" : true,
             "laboratory" : [
                "Wellcome Sanger Institute; Hinxton, United Kingdom"
@@ -367,7 +507,7 @@
             "bioproject_description" : "California Institute of Technology P. redivivus genome project",
             "is_canonical" : true,
             "laboratory" : [
-               "Caltech, Pasadena CA"
+               "California Institute of Technology; Pasadena CA, United States of America"
             ],
             "short_label" : "Pred3",
             "strain" : "WBStrain00041455",
