@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.4.5] - 2022-03-06
+- initial release for WS284
+
 ## [1.4.4] - 2021-12-13
 - fix for Log4j security volnurability to 2.5 by adding LOG4J_FORMAT_MSG_NO_LOOKUPS=True
 
