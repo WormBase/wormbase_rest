@@ -316,10 +316,15 @@
                                         (re-matches #"(.+)\.(mov|mp4)")
                                         (second))]
               (format "/img-static/movies/%s/%s.mp4" paper-id file-name))
-            (if-let [rnai-db-id (some->> (:movie/db-info obj)
-                                         (first)
-                                         (:movie.db-info/accession))]
-              (format "http://www.rnai.org/movies/%s" rnai-db-id)))
+           (or 
+              (if-let [file-name (some->> (:movie/public-name obj)
+                                          (re-matches #"(.+)\.(avi)")
+                                          (second))]
+                (format "/img-static/movies/%s/%s.avi" paper-id file-name))
+              (if-let [rnai-db-id (some->> (:movie/db-info obj)
+                                           (first)
+                                           (:movie.db-info/accession))]
+                (format "http://www.rnai.org/movies/%s" rnai-db-id))))
         ))))
 
 (defmethod pack-obj-helper "text" [class obj & args]
