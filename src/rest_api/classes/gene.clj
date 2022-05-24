@@ -20,6 +20,7 @@
    [rest-api.classes.gene.variation :as variation]
    [rest-api.classes.graphview.widget :as graphview]
    [rest-api.classes.gene.expression :as exp]
+   [rest-api.classes.gene.widgets.biocyc :as biocyc]
    [rest-api.routing :as routing]))
 
 (routing/defroutes
@@ -42,7 +43,8 @@
     :references references/widget
     :reagents reagents/widget
     :phenotype_graph phenotype-graph/widget
-    :phenotype phenotype/widget}
+    :phenotype phenotype/widget
+    :biocyc biocyc/widget}
    :field
    {:alleles_other variation/alleles-other
     :interaction_details interactions/interaction-details
