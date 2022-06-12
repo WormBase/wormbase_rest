@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.4.8] - 2022-06-12
+- We all grok what's happening now; version bump only
+
 ## [1.4.7] - 2022-06-12
 - fixing collision with prior pr
 
