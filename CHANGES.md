@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.4.9] - 2022-08-04
+- Pulling in fixes for the expression pattern widget
+
 ## [1.4.8] - 2022-06-12
 - We all grok what's happening now; version bump only
 
