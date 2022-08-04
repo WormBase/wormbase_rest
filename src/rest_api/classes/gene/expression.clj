@@ -529,7 +529,8 @@
                   :where
                   [?gh :expr-pattern.gene/gene ?gene]
                   [?ep :expr-pattern/gene ?gh]
-                  [?ep :expr-pattern/movieurl ?th]]
+                  ; [?ep :expr-pattern/movieurl ?th]
+                  ]
                 db (:db/id gene))]
        (if (not-empty expr-pattern-dbids)
          (reduce (fn [coll expr-pattern-dbid]
@@ -537,7 +538,7 @@
                      (assoc coll
                             (:expr-pattern/id expr-pattern)
                             {:object (pack-obj expr-pattern)
-                             :movie (:expr-pattern/movieurl expr-pattern)
+                             ; :movie (:expr-pattern/movieurl expr-pattern)
                              :details (str/join "; " (:expr-pattern/pattern expr-pattern))})))
                  {} expr-pattern-dbids)))
      :description "interactive 4D expression movies"}))
