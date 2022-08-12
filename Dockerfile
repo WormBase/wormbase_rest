@@ -10,6 +10,6 @@ ENV AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
 ARG uberjar_path=
 ADD $uberjar_path /srv/app.jar
 
-
+EXPOSE 80
 
 CMD ["java", "-server", "-jar", "/srv/app.jar"]
