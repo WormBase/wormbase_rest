@@ -12,4 +12,4 @@ COPY $uberjar_path app.jar
 
 EXPOSE 80
 
-ENTRYPOINT ["java", "-server", "-jar", "yapp.jar"]
+ENTRYPOINT ["java", "-server", "-jar", "/app.jar"]
