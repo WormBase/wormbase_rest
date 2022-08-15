@@ -12,4 +12,4 @@ ADD $uberjar_path /srv/app.jar
 
 EXPOSE 80
 
-CMD ["java", "-server", "-jar", "/srv/app.jar"]
+ENTRYPOINT ["java", "-server", "-jar", "/srv/app.jar"]
