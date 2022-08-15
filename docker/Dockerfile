@@ -8,8 +8,8 @@ ENV AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
     LOG4J_FORMAT_MSG_NO_LOOKUPS=True
 
 ARG uberjar_path=
-ADD $uberjar_path /srv/app.jar
+COPY $uberjar_path app.jar
 
+EXPOSE 80
 
-
-CMD ["java", "-server", "-jar", "/srv/app.jar"]
+ENTRYPOINT ["java", "-server", "-jar", "yapp.jar"]
