@@ -1,0 +1,6 @@
+version: "3.7"
+services:
+  api:
+    image: 357210185381.dkr.ecr.us-east-1.amazonaws.com/wormbase/rest:1.4.9
+    ports:
+      - "3000:3000"
