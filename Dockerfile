@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-alpine
+FROM java:8
 
 ARG aws_access_key_id=
 ARG aws_secret_access_key=
