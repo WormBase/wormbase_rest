@@ -1,4 +1,4 @@
-FROM java:8
+FROM openjdk:8-jre-alpine
 
 ARG aws_access_key_id=
 ARG aws_secret_access_key=
@@ -8,8 +8,9 @@ ENV AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
     LOG4J_FORMAT_MSG_NO_LOOKUPS=True
 
 ARG uberjar_path=
-COPY $uberjar_path app.jar
+ADD $uberjar_path /srv/app.jar
+
 
 EXPOSE 80
 
-ENTRYPOINT ["java", "-server", "-jar", "/app.jar"]
+CMD ["java", "-server", "-jar", "/srv/app.jar"]
