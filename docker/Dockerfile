@@ -1,15 +1,15 @@
 FROM java:8
 
- ARG aws_access_key_id=
- ARG aws_secret_access_key=
+ARG aws_access_key_id=
+ARG aws_secret_access_key=
 
- ENV AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
-     AWS_ACCESS_KEY_ID=$aws_access_key_id \
-     LOG4J_FORMAT_MSG_NO_LOOKUPS=True
+ENV AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
+    AWS_ACCESS_KEY_ID=$aws_access_key_id \
+    LOG4J_FORMAT_MSG_NO_LOOKUPS=True
 
- ARG uberjar_path=
- COPY $uberjar_path app.jar
+ARG uberjar_path=
+COPY $uberjar_path app.jar
 
- EXPOSE 80
+EXPOSE 80
 
- ENTRYPOINT ["java", "-server", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-server", "-jar", "/app.jar"]
