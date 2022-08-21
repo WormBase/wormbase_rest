@@ -163,6 +163,8 @@ Now to test the ElasticBeanStalk `eb local run` command, do:
 
 `make eb-local`
 
+With the new AWS Linux 2 deployment strategy, sometimes the `make eb-local` command won't work properly, failing to start the container, outputting an error while trying to run the `app.jar` file, among other things. In order to test, maybe creating the environment on EB with the `eb create` command is an easier approach.
+
 ## Deployment
 
 Initial deployment:
