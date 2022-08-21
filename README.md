@@ -30,6 +30,10 @@ make eb-local
 eb deploy
 ```
 
+ _`make eb-local` might fail, use `eb create` to create a new environment and test directly on EB_
+ 
+ 
+ 
 ## Setting environment variables
 
 ```bash
