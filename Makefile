@@ -1,5 +1,5 @@
 NAME := wormbase/rest
-WORMBASE_REST_VERSION ?= "1.4.9"
+WORMBASE_REST_VERSION ?= "1.5.0"
 EBX_CONFIG := .ebextensions/.config
 WB_DB_URI ?= $(shell sed -rn 's|value:(.*)|\1|p' \
                   ${EBX_CONFIG} | tr -d " " | head -n 1)
@@ -66,10 +66,10 @@ docker-push-ecr-latest: docker-ecr-login $(call print-help,docker-push-ecr,\
 eb-create: $(call print-help,eb-create,\
 	    "Create an ElasticBeanStalk environment using \
 	     the Docker platofrm.")
-	eb create rest-${WS_VERSION} \
+	@eb create rest2-${WS_VERSION} \
 		--region=us-east-1 \
 		--tags="CreatedBy=${AWS_EB_PROFILE},Role=RestAPI" \
-		--cname="wormbase-rest-${LOWER_WS_VERSION}"
+		--cname="wormbase-rest2-${LOWER_WS_VERSION}"
 
 .PHONY: eb-create-staging
 eb-create-staging: $(call print-help,eb-create,\
@@ -94,7 +94,7 @@ eb-setenv: $(call print-help,eb-setenv,\
 eb-local: docker-ecr-login $(call print-help,eb-local,\
 			     "Runs the ElasticBeanStalk/docker \
 			      build and run locally.")
-	eb local run --envvars PORT=${PORT},WB_DB_URI=${WB_DB_URI}
+	@eb local run --envvars PORT=${PORT},WB_DB_URI=${WB_DB_URI}
 
 .PHONY: build
 build: docker/${DEPLOY_JAR} \
