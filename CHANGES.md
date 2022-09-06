@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.5.0] - 2022-08-21
+- Removed Dockerrun.aws.json file, converted to docker-compose.yaml
+- fixed .ebextensions for AWS Linux 2 compatibility - Perl modules, proxy timeout (moved to `.platform`)
+- overall upgrade to AWS Linux 2
+- small changes on Dockerfile
+
 ## [1.4.9] - 2022-08-04
 - Pulling in fixes for the expression pattern widget
 
