@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.5.1] - 2022-12-13
+- initial release for WS287
+
 ## [1.5.0] - 2022-08-21
 - Removed Dockerrun.aws.json file, converted to docker-compose.yaml
 - fixed .ebextensions for AWS Linux 2 compatibility - Perl modules, proxy timeout (moved to `.platform`)
