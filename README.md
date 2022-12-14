@@ -6,7 +6,7 @@
 
 - Make sure correct WS version is specified in files
 - Make get-assembly-json
-- Change version of app in project.clj and Dockerrun.aws.json
+- Change version of app in project.clj and docker-compose.yaml
 - create tag (git hf release start <version>; docker hf release finish <version>)
 
 ## Deployment
@@ -14,7 +14,7 @@
 Run following commands and test each step happens correctly.
 
 ```bash
-export WB_DB_URI="datomic:ddb://us-east-1/WS285/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS287/wormbase"
 lein ring server-headless 8130
 lein do eastwood, test
 make docker-build
