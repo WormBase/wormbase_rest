@@ -37,7 +37,7 @@ eb deploy
 ## Setting environment variables
 
 ```bash
-export WB_DB_URI="datomic:ddb://us-east-1/WS285/wormbase"
+export WB_DB_URI="datomic:ddb://us-east-1/WS287/wormbase"
 ```
 
 ## Starting server in development
