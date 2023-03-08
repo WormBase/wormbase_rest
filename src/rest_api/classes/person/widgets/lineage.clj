@@ -6,7 +6,9 @@
     [pseudoace.utils :as pace-utils]
     [rest-api.formatters.date :as date]))
 
-(def scaling-map (json/parse-string (slurp "http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/wbpersonLineageScalingIntegers.json") true))
+;(def scaling-map (json/parse-string (slurp "http://tazendra.caltech.edu/~azurebrd/cgi-bin/forms/wbpersonLineageScalingIntegers.json") true))
+
+(def scaling-map (json/parse-string (slurp "https://raw.githubusercontent.com/WormBase/wormbase_rest/wbperson/resources/wbpersonLineageScalingIntegers.json") true))
 
 (def role-colour
   {"Phd" "#B40431"
