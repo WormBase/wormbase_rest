@@ -24,6 +24,7 @@
    [org.clojure/tools.reader "1.3.2"]
    [ring "1.7.0"]
    [ring-cors "0.1.13"]
+   [javax.xml.bind/jaxb-api "2.3.0"]
    [wormbase/pseudoace "0.6.6"]]
   :source-paths ["src"]
   :plugins [[lein-environ "1.1.0"]
@@ -79,3 +80,4 @@
       :test
       {:resource-paths ["test/resources"]}}
   :repl-options {:init (set! *print-length* 10)})
+
