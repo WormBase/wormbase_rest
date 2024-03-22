@@ -2,8 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.5.5] - 2023-10-15
+## [1.5.6] - 2024-03-22
+- initial release for WS292
+
+## [1.5.5] - 2024-01-09
 - initial release for WS291
+
+## [1.5.4b] - 2023-10-15
+- hotfix release for WS290
 
 ## [1.5.4] - 2023-10-15
 - initial release for WS290
