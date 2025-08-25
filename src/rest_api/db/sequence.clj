@@ -51,7 +51,8 @@
               {(keyword db-name)
                {:subprotocol "mysql"
                 :connection-uri
-                 (str "jdbc:mysql://rdbms.wormbase.org:3306/"
+                 ;; (str "jdbc:mysql://rdbms.wormbase.org:3306/"
+			   (str "jdbc:mysql://10.0.1.202:3306/"
 		       db-name
                        (str "?user=wormbase&"
                             "password=sea3l3ganz&"
