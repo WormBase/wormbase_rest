@@ -92,7 +92,7 @@
                (str/replace (:method/id method) #"_" " ")))
 
      :gene
-     (when-let [ghs (:variation/gene var)]
+     (when-let [ghs gene-changes]
       (for [gh ghs
             :let [gene (:variation.gene/gene gh)]]
        (pack-obj gene)))
