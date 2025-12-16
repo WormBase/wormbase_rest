@@ -1,0 +1,89 @@
+{:entity-ids
+ {;; Genes - known to have varying data complexity
+  "gene" ["WBGene00006759"    ; unc-22 - many alleles/variations
+          "WBGene00000001"    ; aap-1
+          "WBGene00004013"    ; lin-12 - many interactions
+          "WBGene00000898"    ; daf-2 - many phenotypes
+          "WBGene00003883"]   ; let-60
+
+  ;; Variations
+  "variation" ["WBVar00248722"
+               "WBVar00278273"
+               "WBVar01495296"
+               "WBVar00600733"]
+
+  ;; Strains
+  "strain" ["N2"
+            "CB1370"
+            "BC18"
+            "BA836"]
+
+  ;; Proteins
+  "protein" ["WP:CE33017"
+             "WP:CE00001"]
+
+  ;; Papers
+  "paper" ["WBPaper00000001"
+           "WBPaper00024891"]
+
+  ;; Phenotypes
+  "phenotype" ["WBPhenotype:0000644"
+               "WBPhenotype:0000001"]
+
+  ;; Interactions
+  "interaction" ["WBInteraction:0000001"]
+
+  ;; RNAi
+  "rnai" ["WBRNAi00000001"]
+
+  ;; Transgenes
+  "transgene" ["WBTransgene00000001"]
+
+  ;; Expression patterns
+  "expr-pattern" ["Expr1"
+                  "Expr2"]
+
+  ;; GO terms
+  "go-term" ["GO:0008150"
+             "GO:0003674"]
+
+  ;; Anatomy terms
+  "anatomy-term" ["WBbt:0003679"
+                  "WBbt:0005738"]
+
+  ;; Life stages
+  "life-stage" ["WBls:0000003"
+                "WBls:0000041"]
+
+  ;; Molecules
+  "molecule" ["WBMol:00000001"]
+
+  ;; Operons
+  "operon" ["CEOP1100"]
+
+  ;; Clones
+  "clone" ["yk1"]
+
+  ;; CDS
+  "cds" ["B0205.1"
+         "F56C11.1"]
+
+  ;; Transcripts
+  "transcript" ["B0205.1.1"
+                "F56C11.1.1"]
+
+  ;; Pseudogenes
+  "pseudogene" ["Y74C9A.6"]
+
+  ;; Features
+  "feature" ["WBsf000001"]}
+
+ :thresholds
+ {:large-response-kb 500
+  :warning-response-kb 100
+  :deep-nesting-level 10
+  :high-entity-count 100}
+
+ :settings
+ {:sample-count 3
+  :output-dir "target/perf-reports"}}
