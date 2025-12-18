@@ -87,7 +87,7 @@
      (if-let [method (:variation/method var)]
        (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
                (or (:method.remark/text
-                    (first (:method/remark methods)))
+                    (first (:method/remark method)))
                    "")
                (str/replace (:method/id method) #"_" " ")))
 
