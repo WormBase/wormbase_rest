@@ -87,12 +87,12 @@
      (if-let [method (:variation/method var)]
        (format "<a class=\"longtext\" tip=\"%s\">%s</a>"
                (or (:method.remark/text
-                    (first (:method/remark methods)))
+                    (first (:method/remark method)))
                    "")
                (str/replace (:method/id method) #"_" " ")))
 
      :gene
-     (when-let [ghs (:variation/gene var)]
+     (when-let [ghs gene-changes]
       (for [gh ghs
             :let [gene (:variation.gene/gene gh)]]
        (pack-obj gene)))

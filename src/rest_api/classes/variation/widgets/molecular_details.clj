@@ -14,6 +14,14 @@
   [s c i]
   (str (subs s 0 i) c (subs s i)))
 
+(defn- parse-position
+  "Parse a position string that may be a range like '2-4'.
+   Returns the first (start) position as an integer."
+  [position]
+  (when position
+    (let [pos-str (first (str/split position #"-"))]
+      (Integer/parseInt pos-str))))
+
 (defn- get-deletion-str [variation]
   (or
     (when-let [deletion (:variation.deletion/text
@@ -85,12 +93,12 @@
     (subs
       pseq
       0
-      (- (Integer/parseInt position) 1))
+      (- (parse-position position) 1))
     to
     (subs
       pseq
       (- (+
-          (Integer/parseInt position)
+          (parse-position position)
           (count from))
          1))))
 
@@ -156,7 +164,7 @@
          :protein (pack-obj protein)
          :peptide (pack-obj peptide)
          :wildtype_conceptual_translation pseq ;eg. WBVar00466445
-         :mutant_conceptual_translation (->> (Integer/parseInt position)
+         :mutant_conceptual_translation (->> (parse-position position)
                                              (dec)
                                              (subs pseq 0)
                                              (format "%s*"))}
