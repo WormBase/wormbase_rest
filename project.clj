@@ -1,4 +1,4 @@
-(defproject wormbase/rest-api "1.6.3"
+(defproject wormbase/rest-api "1.6.4"
   :description
   "REST API for retrieving data from datomic on a per widget basis"
   :url "https://github.com/WormBase/wormbase-rest"
