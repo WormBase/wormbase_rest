@@ -383,7 +383,7 @@
                                             (str/upper-case (generic-functions/dna-reverse-complement altseq))
 
                                             :else
-                                            (str/upper-case varseq)) ; fallback when strand can't be determined
+                                            (str/upper-case varseq))
                                           (subs wildtype-seq (+ padding (count varseq)))))
 
                                       (and (contains? variation :variation/insertion)
@@ -916,7 +916,7 @@
                     :type "Substitution"}
 
                    :else
-                   nil))))))]) ; return nil when strand can't be determined
+                   nil))))]))
 
 (defn nucleotide-change [variation]
   {:data (compile-nucleotide-changes variation)
