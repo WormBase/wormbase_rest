@@ -104,10 +104,11 @@
                                                (:sequence))))
                                   (str/join)
                                   (str/lower-case))]
-    (subs offsets-sequence
-           (mod low 2000)
-          (min (count offsets-sequence)
-               (- high low-offset)))))
+    (when offsets-sequence
+      (subs offsets-sequence
+             (mod low 2000)
+            (min (count offsets-sequence)
+                 (- high low-offset))))))
 
 (defn get-seq-features [db-spec transcript]
   (sequencesql/get-seq-features db-spec {:name transcript}))
