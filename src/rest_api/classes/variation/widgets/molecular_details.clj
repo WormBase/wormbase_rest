@@ -350,7 +350,7 @@
                                                                               (count (:right_flank cgh-deleted-probes)))
                                                                     :stop (+ padding seq-length)}))})
 
-                 wildtype-negative (when (nil? placeholder)
+                 wildtype-negative (when (and (nil? placeholder) wildtype-sequence)
                                      {:sequence
                                       (generic-functions/dna-reverse-complement (:sequence wildtype-positive))
 
@@ -368,23 +368,24 @@
                                                                  :stop (:stop refseqobj)}))]
                                         (let [substitution (:variation/substitution variation)
                                               varseq (str/upper-case raw-varseq)
-                                            refseq (str/upper-case
-                                                     (:variation.substitution/ref substitution))
-                                            altseq (str/upper-case
-                                                     (:variation.substitution/alt substitution))
-                                            wildtype-seq (:sequence wildtype-positive)]
-                                        (str
-                                          (subs wildtype-seq 0 padding)
-                                          (cond
-                                            (= varseq refseq)
-                                            (str/upper-case altseq)
+                                              sub-ref (:variation.substitution/ref substitution)
+                                              sub-alt (:variation.substitution/alt substitution)
+                                              wildtype-seq (:sequence wildtype-positive)]
+                                          (when (and sub-ref sub-alt wildtype-seq)
+                                            (let [refseq (str/upper-case sub-ref)
+                                                  altseq (str/upper-case sub-alt)]
+                                              (str
+                                                (subs wildtype-seq 0 padding)
+                                                (cond
+                                                  (= varseq refseq)
+                                                  altseq
 
-                                            (= varseq (generic-functions/dna-reverse-complement refseq))
-                                            (str/upper-case (generic-functions/dna-reverse-complement altseq))
+                                                  (= varseq (generic-functions/dna-reverse-complement refseq))
+                                                  (generic-functions/dna-reverse-complement altseq)
 
-                                            :else
-                                            (str/upper-case varseq))
-                                          (subs wildtype-seq (+ padding (count varseq))))))
+                                                  :else
+                                                  varseq)
+                                                (subs wildtype-seq (+ padding (count varseq))))))))
 
                                       (and (contains? variation :variation/insertion)
                                             (contains? variation :variation/deletion))
@@ -394,12 +395,14 @@
                                                             (or (:transposon-family/id
                                                                   (first
                                                                     (:variation/transposon-insertion variation))))
-                                                            "-")]
+                                                            "-")
+                                               deletion-str (get-deletion-str variation)]
                                            (str/replace
                                              (:sequence wildtype-positive)
                                              #"[A-Z]+"
-                                             (if (str/includes? (:sequence wildtype-positive)
-                                                                (str/upper-case (get-deletion-str variation)))
+                                             (if (and deletion-str
+                                                      (str/includes? (:sequence wildtype-positive)
+                                                                     (str/upper-case deletion-str)))
                                                (str/upper-case insert-str)
                                                (generic-functions/dna-reverse-complement
                                                  (str/upper-case
@@ -457,7 +460,7 @@
                                                       length-change))
                                               (+ (:stop (:right_flank (:features wildtype-positive)))
                                                  length-change))}}})
-                 mutant-negative (when (nil? placeholder)
+                 mutant-negative (when (and (nil? placeholder) wildtype-sequence (:sequence mutant-positive))
                                    {:sequence
                                     (if-let [transposon-family-str (let [transposon-family (:transposon-family/id
                                                                                              (first
@@ -891,33 +894,34 @@
                 :wildtype_label "wild type"
                 :wildtype (get-deletion-str variation)}))
            (when-let [substitution (:variation/substitution variation)] ; e.g. tested with WBVar00274017
-             (if-let [refseqobj (sequence-fns/genomic-obj variation)]
-               (when-let [varseq (some-> (sequence-fns/get-sequence
-                                           (conj
-                                             refseqobj
-                                             {:start (:start refseqobj)
-                                              :stop (:stop refseqobj)}))
-                                         str/lower-case)]
-                 (cond
-                   (= varseq (str/lower-case
-                               (:variation.substitution/ref substitution)))
-                   {:mutant (:variation.substitution/alt substitution)
-                    :wildtype (:variation.substitution/ref substitution)
-                    :mutant_label "variant"
-                    :wildtype_label "wild type"
-                    :type "Substitution"}
+             (let [ref-seq (:variation.substitution/ref substitution)
+                   alt-seq (:variation.substitution/alt substitution)]
+               (when (and ref-seq alt-seq)
+                 (if-let [refseqobj (sequence-fns/genomic-obj variation)]
+                   (when-let [varseq (some-> (sequence-fns/get-sequence
+                                               (conj
+                                                 refseqobj
+                                                 {:start (:start refseqobj)
+                                                  :stop (:stop refseqobj)}))
+                                             str/lower-case)]
+                     (cond
+                       (= varseq (str/lower-case ref-seq))
+                       {:mutant alt-seq
+                        :wildtype ref-seq
+                        :mutant_label "variant"
+                        :wildtype_label "wild type"
+                        :type "Substitution"}
 
-                   (= varseq (str/lower-case
-                               (generic-functions/dna-reverse-complement
-                                 (:variation.substitution/ref substitution))))
-                   {:mutant (generic-functions/dna-reverse-complement (:variation.substitution/alt substitution))
-                    :wildtype (generic-functions/dna-reverse-complement (:variation.substitution/ref substitution))
-                    :mutant_label "variant"
-                    :wildtype_label "wild type"
-                    :type "Substitution"}
+                       (= varseq (str/lower-case
+                                   (generic-functions/dna-reverse-complement ref-seq)))
+                       {:mutant (generic-functions/dna-reverse-complement alt-seq)
+                        :wildtype (generic-functions/dna-reverse-complement ref-seq)
+                        :mutant_label "variant"
+                        :wildtype_label "wild type"
+                        :type "Substitution"}
 
-                   :else
-                   nil))))]))
+                       :else
+                       nil))))))]))
 
 (defn nucleotide-change [variation]
   {:data (compile-nucleotide-changes variation)
