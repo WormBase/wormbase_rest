@@ -307,7 +307,7 @@
 
                  cgh-deleted-probes (get-cgh-deleted-probes variation)
 
-                 wildtype-positive (when (nil? placeholder)
+                 wildtype-positive (when (and (nil? placeholder) wildtype-sequence)
                                      {:sequence (if (and
                                                       (not (contains? variation :variation/deletion))
                                                       (or
@@ -357,17 +357,17 @@
                                       :features
                                       (:features wildtype-positive)})
 
-                 mutant-positive (when (nil? placeholder)
+                 mutant-positive (when (and (nil? placeholder) wildtype-sequence)
                                    {:sequence
                                     (cond
                                       (contains? variation :variation/substitution)
-                                      (let [substitution (:variation/substitution variation)
-                                            varseq (str/upper-case
-                                                     (sequence-fns/get-sequence
-                                                       (conj
-                                                         refseqobj
-                                                         {:start (:start refseqobj)
-                                                          :stop (:stop refseqobj)})))
+                                      (when-let [raw-varseq (sequence-fns/get-sequence
+                                                              (conj
+                                                                refseqobj
+                                                                {:start (:start refseqobj)
+                                                                 :stop (:stop refseqobj)}))]
+                                        (let [substitution (:variation/substitution variation)
+                                              varseq (str/upper-case raw-varseq)
                                             refseq (str/upper-case
                                                      (:variation.substitution/ref substitution))
                                             altseq (str/upper-case
@@ -384,7 +384,7 @@
 
                                             :else
                                             (str/upper-case varseq))
-                                          (subs wildtype-seq (+ padding (count varseq)))))
+                                          (subs wildtype-seq (+ padding (count varseq))))))
 
                                       (and (contains? variation :variation/insertion)
                                             (contains? variation :variation/deletion))
@@ -892,11 +892,12 @@
                 :wildtype (get-deletion-str variation)}))
            (when-let [substitution (:variation/substitution variation)] ; e.g. tested with WBVar00274017
              (if-let [refseqobj (sequence-fns/genomic-obj variation)]
-               (let [varseq (str/lower-case (sequence-fns/get-sequence
-                                              (conj
-                                                refseqobj
-                                                {:start (:start refseqobj)
-                                                 :stop (:stop refseqobj)})))]
+               (when-let [varseq (some-> (sequence-fns/get-sequence
+                                           (conj
+                                             refseqobj
+                                             {:start (:start refseqobj)
+                                              :stop (:stop refseqobj)}))
+                                         str/lower-case)]
                  (cond
                    (= varseq (str/lower-case
                                (:variation.substitution/ref substitution)))
