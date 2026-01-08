@@ -279,31 +279,32 @@
                  wildtype-full-length (+ (* 2 padding)
                                          seq-length)
 
-                 length-change (if-let [insertion (:variation/insertion variation)]
-                                 (or (if-let [insertion-str (let [insertion (or (:variation.insertion/text insertion)
-                                                                                (or
-                                                                                  (:transposon-family/id
-                                                                                    (first
-                                                                                      (:variation/transposon-insertion variation)))
-                                                                                  "-"))]
-                                                              (if (= insertion "Mos") "<Mos>" insertion))]
-                                       (if (contains? variation :variation/deletion)
-                                         (- (count insertion-str)
-                                            (count (get-deletion-str variation)))
-                                         (count insertion-str))
-                                       (if (contains? variation :variation/deletion)
-                                         (- 1 (count (get-deletion-str variation)))
-                                         (when (contains? variation :variation/transposon-insertion)
-                                           (- (count (:transposon-family/id
-                                                       (first (:variation.transpon-insertion variation))))
-                                              1)))))
-                                 (if (contains? variation :variation/deletion)
-                                   (- 1 (count (get-deletion-str variation)))
-                                   (if-let [substitution (:variation/substitution variation)]
-                                     (- (count (:variation.substitution/alt substitution))
-                                        (count (:variation.substitution/ref substitution)))
-                                     (when (contains? variation :variation/tandem-duplication)
-                                       (- 1 seq-length)))))
+                 length-change (or (if-let [insertion (:variation/insertion variation)]
+                                     (or (if-let [insertion-str (let [insertion (or (:variation.insertion/text insertion)
+                                                                                    (or
+                                                                                      (:transposon-family/id
+                                                                                        (first
+                                                                                          (:variation/transposon-insertion variation)))
+                                                                                      "-"))]
+                                                                  (if (= insertion "Mos") "<Mos>" insertion))]
+                                           (if (contains? variation :variation/deletion)
+                                             (- (count insertion-str)
+                                                (count (get-deletion-str variation)))
+                                             (count insertion-str))
+                                           (if (contains? variation :variation/deletion)
+                                             (- 1 (count (get-deletion-str variation)))
+                                             (when (contains? variation :variation/transposon-insertion)
+                                               (- (count (:transposon-family/id
+                                                           (first (:variation.transpon-insertion variation))))
+                                                  1)))))
+                                     (if (contains? variation :variation/deletion)
+                                       (- 1 (count (get-deletion-str variation)))
+                                       (if-let [substitution (:variation/substitution variation)]
+                                         (- (count (:variation.substitution/alt substitution))
+                                            (count (:variation.substitution/ref substitution)))
+                                         (when (contains? variation :variation/tandem-duplication)
+                                           (- 1 seq-length)))))
+                                   0) ; default to 0 for variations without physical class
 
                  cgh-deleted-probes (get-cgh-deleted-probes variation)
 
